@@ -2240,9 +2240,12 @@ static void ReadEPD(struct Position *p, char *x)
 		int cnt = 0;
 
 		while((op = strtok(NULL, " "))) {
-		    goodmove[cnt] = ParseSAN(p, op);
-		    Print(0, "best move is %s\n", SAN(p, goodmove[cnt]));
-		    cnt++;
+            int mv = ParseSAN(p, op);
+            if (mv != 0) {
+                goodmove[cnt] = mv;
+    		    Print(0, "best move is %s\n", SAN(p, goodmove[cnt]));
+    		    cnt++;                
+            }
 		}
 		goodmove[cnt] = M_NONE;
 	    }
@@ -2250,9 +2253,12 @@ static void ReadEPD(struct Position *p, char *x)
 		int cnt = 0;
 
 		while((op = strtok(NULL, " "))) {
-		    badmove[cnt] = ParseSAN(p, op);
-		    Print(0, "bad move is %s\n", SAN(p, badmove[cnt]));
-		    cnt++;
+		    int mv = ParseSAN(p, op);
+            if (mv != 0) {
+    		    badmove[cnt] = mv;
+    		    Print(0, "bad move is %s\n", SAN(p, badmove[cnt]));
+    		    cnt++;                
+            }
 		}
 		badmove[cnt] = M_NONE;
 	    }
