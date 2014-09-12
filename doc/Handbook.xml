@@ -1,0 +1,289 @@
+<?xml version="1.0" standalone="no"?>
+
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+               "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+
+<book>
+  <title>The Amy Handbook</title>
+  <bookinfo>
+    <abstract>
+      <para>
+        Amy is a program for playing and analyzing chess games. This handbook
+        covers the installation, configuration and use of Amy.
+      </para>
+    </abstract>
+    <author>
+      <firstname>Thorsten</firstname>
+      <surname>Greiner</surname>
+    </author>
+    <copyright>
+      <year>2003-2004</year>
+      <holder>Thorsten Greiner</holder>
+    </copyright>
+    <releaseinfo>$Id: Handbook.xml 458 2004-03-04 21:32:33Z thorsten $</releaseinfo>
+  </bookinfo>
+  <chapter>
+    <title>Installation</title>
+    <section>
+      <title>Introduction</title>
+      <para>
+        The author releases Amy in source code only. Precompiled packages are
+        available for FreeBSD and Windows systems. If you want to use Amy on
+        a different operating system (e.g. Linux) or want to enable certain
+        runtime features (e.g. parallel search on multiprocessor systems) you
+        will want to compile Amy yourself.
+      </para>
+    </section>
+    <section>
+      <title>Unix / Linux systems</title>
+      <section>
+        <title>Prerequisites</title>
+        <para>
+          Amy uses the Berkeley DB library (<ulink url="http://www.sleepycat.com"/>)
+          software to store the opening book. 
+          If you plan to use Amy with an opening book (which is quite likely), 
+          you should install the Berkeley DB software prior to compiling Amy.
+          Note that there are several revisions of the Berkeley DB software. Amy
+          is known to work with revision 2 software (tested with versions 2.7.3 
+          and 2.7.7).
+        </para>
+      </section>
+      <section>
+        <title>Compiling from source</title>
+        <para>
+          Amy uses the <application>autoconf</application> utility to configure 
+          operating system dependant details. The standard procedure to build 
+          Amy is to issue the commands 
+          <userinput>./configure &amp;&amp; make &amp;&amp; 
+          make install</userinput>.
+          This will configure Amy for your platform, compile and install it in
+          <filename class="directory">/usr/local</filename>.
+        </para>
+        <para>
+          <table frame='all'>
+            <title>autoconf parameters</title>
+            <tgroup cols="2">
+              <thead>
+                <row>
+                  <entry>Option</entry>
+                  <entry>Description</entry>
+                    </row>
+              </thead>
+              <tbody>
+                <row>
+                  <entry><option>--with-dbpath=<filename class="directory">path</filename></option></entry>
+                  <entry>
+                    Allows you to specify the directory where the Berkeley DB
+                    software is installed.
+                  </entry>
+                </row>
+                <row>
+                  <entry><option>--enable-mt</option></entry>
+                  <entry>
+                    Enable multithreaded search.
+                  </entry>
+                </row>
+              </tbody>
+            </tgroup>
+          </table>
+        </para>
+      </section>
+      <section>
+        <title>Using the FreeBSD port</title>
+        <para>
+          On FreeBSD there is an Amy port located in 
+          <filename class="directory">/usr/ports/games/amy</filename>. 
+          To install Amy issue the command
+          <userinput>cd /usr/ports/games/amy &amp;&amp; make install</userinput>.
+        </para>
+      </section>
+    </section>
+    <section>
+      <title>Mac OS X</title>
+      <para>
+        Joshua Shriver reported that Amy works 'out of the box' using the
+        usual <userinput>./configure</userinput> and
+        <application>make</application> approach on OS X. He recommends setting
+        <envar>CFLAGS</envar> to "-O3 -faltivec -mcpu=7450" on a G4 Mac.
+      </para>
+    </section>
+    <section>
+      <title>Windows systems</title>
+      <para>
+        Thanks to Dann Corbit there are several precompiled versions of Amy
+        for Windows operating systems available on his ftp site.
+      </para>
+    </section>
+  </chapter>
+  <chapter>
+    <title>Configuration</title>
+    <section>
+      <title>Introduction</title>
+      <para>
+        Several runtime options of Amy can be configured by a resource file.
+        Amy looks for the resource file in the current directory. The resource
+        file is named <filename class="file">.amyrc</filename> (typically used
+        on Unix/Linux platforms) or
+        <filename class="file">Amy.ini</filename> (typically used on Windows).
+      </para>
+    </section>
+    <para>
+      A typical resource file might look like this:
+      <example>
+        <title>An Amy resource file</title>
+        <programlisting><![CDATA[
+#
+# Sample .amyrc
+#
+# Use 20 MB of hashtables:
+ht=20m
+#
+# Look for tablebases on /space/TB
+tbpath=/space/TB
+#
+# Use 2 processors for parallel search
+cpu=2
+#
+# Enable game autosaving to allow booklearning
+autosave=true]]></programlisting>
+      </example>
+      <table frame='all'>
+        <title>Resource file entries</title>
+        <tgroup cols="2">
+          <thead>
+            <row>
+              <entry>Option</entry>
+              <entry>Description</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry>autosave</entry>
+              <entry>
+                If set to <literal>true</literal> games played by Amy will
+                be automatically saved. This also enables 
+                <phrase>booklearning</phrase>.
+              </entry>
+            </row>
+            <row>
+              <entry>cpu</entry>
+              <entry>
+                Specifies the number of cpu to use for parallel search.
+              </entry>
+            </row>
+            <row>
+              <entry>ht</entry>
+              <entry>
+                Determines the size of the hashtable. Use the suffixes
+                <literal>k</literal> to specify the size in kilobytes or
+                <literal>m</literal> to specify the size in megabyes.
+              </entry>
+            </row>
+            <row>
+              <entry>tbpath</entry>
+              <entry>
+                Specifies the path were the endgame tablebases are located.
+              </entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </table>
+    </para>
+  </chapter>
+  <chapter>
+    <title>Using the command line interface</title>
+    <section>
+      <title>Introduction</title>
+      <para>
+        Several features of Amy (e.g. opening book creation, running test suites)
+        are accessible only via the command line interface.
+      </para>
+    </section>
+    <section>
+      <title>Creating an opening book</title>
+      <para>
+        Opening books are created or updated using the <command>bookup</command>
+        command. It expects the filename of an <acronym>PGN</acronym> file
+        containing one or more games in the <acronym>PGN</acronym> format.
+        While parsing the <acronym>PGN</acronym> file Amy will output a
+        dot for every hundred games red as a progress indicator.
+        <example>
+          <title>Creating an opening book</title>
+          <literallayout><prompt>White(1): </prompt><userinput>bookup <filename class="file">ClassicGames.pgn</filename></userinput>
+<computeroutput>   Parsing PGN file PGN/ClassicGames.pgn. '.'= 100 Games
+......................................................................(7000)
+...........................................................(12936)</computeroutput></literallayout>
+        </example>
+        The opening book created is stored in a file name
+        <filename class="file">Book.db</filename>.
+      </para>
+    </section>
+    <section>
+      <title>Flattening an opening book</title>
+      <para>
+        An opening book created from a <acronym>PGN</acronym> file will contain
+        many lines which will never be played by Amy since they occur only
+        once in the book. You can remove these lines by flattening the
+        book. This process removes all entries which occur less frequently
+        than some threshold.
+        <example>
+          <title>Flattening an opening book</title>
+          <literallayout><prompt>White(1): </prompt><userinput>flatten 5</userinput>
+<computeroutput>Flattening book with threshold 5
+Read 183189 entries, wrote 5272 entries</computeroutput></literallayout>
+        </example>
+      </para>
+      <para>
+        The <command>flatten</command> command produces a file
+        <filename class="file">Book2.db</filename>. This file can be used
+        instead of the standard opening book 
+        <filename class="file">Book.db</filename>.
+      </para>
+    </section>
+    <section>
+      <title>Running test suites</title>
+      <para>
+        You can run a test suite in <acronym>EPD</acronym> format with the 
+        <command>test</command> command. Typically you will first set a time
+        limit using the <command>level</command> as in the following example:
+        <example>
+          <title>Running a test suite</title>
+          <literallayout><prompt>White(1): </prompt><userinput>level fixed/5</userinput>
+<prompt>White(1): </prompt><userinput>test EPD/WAC.epd</userinput> 
+<computeroutput>&hellip;
+solved 289 out of 300  (BT2630 = 2597, LCT2 = 10570, BS2830 = 2749)
+-----------------------------------------------
+</computeroutput></literallayout>
+        </example>
+      </para>
+      <para>
+        The output reproduced above is from a real test run on a Dell Inspiron 8200
+        laptop. Out of the 300 test positions included in the "Win At Chess" test
+        suite Amy solved 289 at 5 seconds per test.
+      </para>
+      <para>
+        To simplify the evaluation of several standard test suites Amy outputs
+        the scores as calculated by the formulae given for the test suites
+        BT2630, LCT2 and BS2830.
+      </para>
+    </section>
+  </chapter>
+  <chapter>
+    <title>Using a graphical user interface</title>
+    <para>
+      Amy supports the <command>xboard</command> chess engine interface which
+      is used by <command>xboard</command> and <command>winboard</command>. This
+      includes the <command>feature</command> (since 0.8.3) to inform 
+      <command>xboard</command> about the features Amy supports.
+    </para>
+    <para>
+      To use Amy with <command>xboard</command> use the <option>-fcp</option> like
+      this: <userinput>xboard -fcp Amy</userinput>. This example assumes that your
+      <envar>PATH</envar> variable contains the path to the Amy executable.
+    </para>
+  </chapter>
+</book>
+
+<!--
+  vi: sw=2 ts=2
+-->

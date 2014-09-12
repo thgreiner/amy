@@ -1,0 +1,79 @@
+.\" $Id
+.Dd Feb 17, 2003
+.Dt AMY 6 CON
+.Os
+.Sh NAME
+.Nm Amy
+.Nd A chess program for playing and analyzing games
+.Sh SYNOPSIS
+.Nm
+.Op Fl ht Ao hash table size Ac
+.Op Fl cpu Ao number of cpus Ac
+.Sh DESCRIPTION
+.Nm
+is a chess playing program. It offers a simple command line oriented
+interface. It is fully compatible with the xboard graphical chessboard.
+.Pp
+Amy supports the following commands:
+.Bl -tag -width indent
+.It Sy <move>
+Any move legal in the current position is executed on the board. Moves can be
+input in algebraic notation (e.g. Nxe5) or from-to square notation (e.g. e2e4).
+.It Sy bench
+Runs a simple benchmark giving a raw indication of processor speed
+.It Sy book
+Shows the book moves in the current position
+.It Sy bookup filename
+Creates a book from the the supplied PGN file
+.It Sy d
+Displays the current position
+.It Sy e
+Shows the ECO code of the current game
+.It Sy easy
+Switches off permanent brain
+.It Sy epd EPD
+Setup a position in EPD
+.It Sy flatten threshold
+Flattens the book by removing all entries occuring less frequently than
+threshold
+.It Sy force
+Switch to force mode
+.It Sy go
+Start searching from the current position
+.It Sy hard
+Switches on permanent brain
+.It Sy help
+Show help
+.It Sy level
+Set the time control. Some examples:
+.Bl -tag -width indent
+.It level sd/5
+Game in 5 minutes
+.It level 40/15+10
+40 moves in 15 minutes with 10 seconds increment per move (Fischer clock)
+.It level 40/120 20/60
+First 40 moves in 2 hours, then 20 moves in 1 hour
+.El
+.It Sy load filename
+Load a game from a PGN file
+.It Sy moves
+Show all legal moves
+.It Sy name oppname
+Sets the opponents name
+.It Sy new
+Starts a new game
+.It Sy perft depth
+Run the perft benchmark
+.It Sy quit
+Quit Amy, return to shell.
+.It Sy save filename
+Save the current game to a PGN file
+.It Sy test filename
+Run an EPD test suite
+.It Sy undo
+Undo the last move
+.It Sy ?
+Move now, forces computer move
+.El
+.Sh BUGS
+Sure, lots of them.
