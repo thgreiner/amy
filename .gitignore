@@ -1,0 +1,6 @@
+*.db
+Makefile
+config.h
+config.log
+config.status
+Amy.log
