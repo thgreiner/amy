@@ -37,7 +37,7 @@
 #endif
 
 #if HAVE_LIBDB_5
-#include "/usr/local/BerkeleyDB.5.3/include/db.h"
+#include <db.h>
 #endif
 
 #include <math.h>

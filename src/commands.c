@@ -428,7 +428,7 @@ static void New(char *args)
      * Create a new save file.
      */
 
-    strlcpy(AutoSaveFileName, GetTmpFileName(), 64);
+    strcpy(AutoSaveFileName, GetTmpFileName());
 
     ForceMode = FALSE;
     FreePosition(CurrentPosition);

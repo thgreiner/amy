@@ -1,6 +1,12 @@
 *.db
 Makefile
+Makefile.in
 config.h
 config.log
 config.status
 Amy.log
+autom4te.cache
+configure
+aclocal.m4
+nsolved.epd
+stamp-h1

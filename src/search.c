@@ -134,11 +134,9 @@ int PBMove, PBActMove;
 int PBHit;
 int PBAltMove;
 
-#define LL 2048
-
-char BestLine[LL];
-char ShortBestLine[LL];
-char AnalysisLine[LL];
+char BestLine[2048];
+char ShortBestLine[2048];
+char AnalysisLine[2048];
 
 int HTry, HHit;
 int PTry, PHit;
@@ -1138,10 +1136,10 @@ static void AnaLoop(struct Position *p, int depth)
 
 static void AnalyzeHT(struct Position *p, int move)
 {
-    strlcpy(BestLine, NSAN(p, move), LL);
-    strlcat(BestLine, " ", LL);
-    strlcpy(ShortBestLine, SAN(p, move), LL);
-    strlcat(ShortBestLine, " ", LL);
+    strcpy(BestLine, NSAN(p, move));
+    strcat(BestLine, " ");
+    strcpy(ShortBestLine, SAN(p, move));
+    strcat(ShortBestLine, " ");
     DoMove(p, move);
     AnaLoop(p, 1);
     UndoMove(p, move);
@@ -1631,12 +1629,12 @@ int Iterate(struct Position *p)
      */
 
     if(cnt == 0) {
-        if(!InCheck(p, p->turn)) { strlcpy(AnalysisLine, "stalemate", LL); }
-        else { strlcpy(AnalysisLine, "mate", LL); }
+        if(!InCheck(p, p->turn)) strcpy(AnalysisLine, "stalemate");
+        else               strcpy(AnalysisLine, "mate");
         return M_NONE;
     }
     else if(cnt == 1 && SearchMode != Analyzing) {
-        strlcpy(AnalysisLine, "forced move", LL);
+        strcpy(AnalysisLine, "forced move");
         return mvs[0];
     }
 
