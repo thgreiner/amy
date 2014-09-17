@@ -9,11 +9,11 @@ with xboard, uses endgame table bases and an opening book.
 Copyright
 =========
 
-Amy is distributed under the GNU Public License. You should find a file
-'COPYING' in the Amy distribution containing this license.
+Amy is distributed under the BSD 2-Clause License. You should find a file
+'LICENSE' in the Amy distribution containing this license.
 
 Please note that Amy uses table base code developed and copyrighted by
-Eugene Nalimov. This code is *not* under the GPL.
+Eugene Nalimov. This code is *not* under the BSD License.
 
 Building Amy
 ============
