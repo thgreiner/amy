@@ -1,7 +1,7 @@
 /*
 
     Amy - a chess playing program
-    Copyright (C) 2002 Thorsten Greiner
+    Copyright (C) 2002, 2014 Thorsten Greiner
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -31,47 +31,45 @@
 #include "amy.h"
 
 int TMoves = 60,   TTime = 5*60;
-int Moves[3] = { 60, 60 }, 
-    Time[3]  = { 5*60, 5*60 }
-;
+int Moves[3] = { 60, 60 },
+               Time[3]  = { 5*60, 5*60 }
+                          ;
 int TMoves2, TTime2;
 int TwoTimeControls = FALSE;
 
 int Increment = 0;
 
-void DoTC(struct Position *p, int mtime)
-{
+void DoTC(struct Position *p, int mtime) {
     Time[p->turn] += -mtime + Increment;
-    
+
     if(Moves[p->turn] > 0) {
-	Moves[p->turn] -= 1;
-	if(Moves[p->turn] <= 0) {
+        Moves[p->turn] -= 1;
+        if(Moves[p->turn] <= 0) {
             if(TwoTimeControls) {
                 Print(0, "Switching to second time control.\n");
                 TMoves = TMoves2;
                 TTime  = TTime2;
                 TwoTimeControls = FALSE;
             }
-	    Moves[p->turn] = TMoves;
-	    Time[p->turn] += TTime;
-	}
+            Moves[p->turn] = TMoves;
+            Time[p->turn] += TTime;
+        }
     }
 }
 
-void CalcTime(struct Position *p, float *soft, float *hard)
-{
+void CalcTime(struct Position *p, float *soft, float *hard) {
     if(TMoves >= 0) {
-	if(Moves[p->turn] > 0) {
-	    /*  int limit = (13*TTime/TMoves)/8 + (3*Increment)/4;  */
-            float limit = (1.625*TTime/TMoves) + (0.75*Increment);
-	    
-	    Print(1, "TC: %d moves in %s\n", 
-                Moves[p->turn], 
-                TimeToText((unsigned int) (Time[p->turn]) * ONE_SECOND ));
+        if(Moves[p->turn] > 0) {
+            /*  int limit = (13*TTime/TMoves)/8 + (3*Increment)/4;  */
+            float limit = (1.625*TTime/TMoves) + (0.85*Increment);
 
-	    /*  *soft = (7*Time[p->turn]/Moves[p->turn])/8 + (3*Increment)/4;  */
+            Print(1, "TC: %d moves in %s\n",
+                  Moves[p->turn],
+                  TimeToText((unsigned int) (Time[p->turn]) * ONE_SECOND ));
+
+            /*  *soft = (7*Time[p->turn]/Moves[p->turn])/8 + (3*Increment)/4;  */
             *soft = (0.875*Time[p->turn]/Moves[p->turn]) + (0.75*Increment);
-	    if(*soft > limit) *soft = limit;
+            if(*soft > limit) *soft = limit;
 
             if(TwoTimeControls && Moves[p->turn] <= 5) {
                 int moves = TMoves2;
@@ -82,29 +80,27 @@ void CalcTime(struct Position *p, float *soft, float *hard)
                 *soft = 0.5 *((*soft)+(float)soft2);
                 Print(1, "Adjusted timing to %.4f secs\n", *soft);
             }
-	    *hard = 4.0*(*soft);
-	}
-	else {
+            *hard = 4.0*(*soft);
+        } else {
             /*  expect additional game length of 60 moves beyond current move */
-	    /*  use equations from section above with fixed Moves[p->turn] of 60  */
-	    /*  rearrange equation to eliminate floating point division  */
-	    /*  1.625 / 60 = 0.0271  */	
-            float limit =  0.0271 * (float)Time[p->turn];  
-	    
-	    Print(1, "TC: all moves in %s\n", 
-                TimeToText((unsigned int) (Time[p->turn]) * ONE_SECOND ));
+            /*  use equations from section above with fixed Moves[p->turn] of 60  */
+            /*  rearrange equation to eliminate floating point division  */
+            /*  1.625 / 60 = 0.0271  */
+            float limit =  0.0271 * ((float)Time[p->turn] + 60 * Increment);
 
-	    /*  0.875 / 60.0 = 0.0146  */
-	    *soft = 0.0146 * (float)Time[p->turn] + (0.75 * Increment);     
-	    if(*soft > limit) *soft = limit;
-	    *hard = 4.0*(*soft);
-	}	
-	if(*hard > Time[p->turn]) *hard = 0.5 * (float)Time[p->turn];
-	if(*soft > *hard) *soft = 0.67*(*hard);
-	
-	Print(1, "TL: %.2f/%.2f\n", *soft, *hard);
-    }
-    else {
-	*soft = *hard = (float)TTime;
+            Print(1, "TC: all moves in %s\n",
+                  TimeToText((unsigned int) (Time[p->turn]) * ONE_SECOND ));
+
+            /*  0.875 / 60.0 = 0.0146  */
+            *soft = 0.0146 * (float)Time[p->turn] + (0.85 * Increment);
+            if(*soft > limit) *soft = limit;
+            *hard = 4.0*(*soft);
+        }
+        if(*hard > Time[p->turn]) *hard = 0.5 * (float)Time[p->turn];
+        if(*soft > *hard) *soft = 0.67*(*hard);
+
+        Print(1, "TL: %.2f/%.2f\n", *soft, *hard);
+    } else {
+        *soft = *hard = (float)TTime;
     }
 }
