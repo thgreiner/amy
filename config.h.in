@@ -18,15 +18,6 @@
 /* Define to 1 if you have the `c_r' library (-lc_r). */
 #undef HAVE_LIBC_R
 
-/* Define to 1 if you have the `db' library (-ldb). */
-#undef HAVE_LIBDB
-
-/* Define to 1 if you have the `db2' library (-ldb2). */
-#undef HAVE_LIBDB2
-
-/* Define to 1 if you have the `db-3' library (-ldb-3). */
-#undef HAVE_LIBDB_3
-
 /* Define to 1 if you have the `db-5' library (-ldb-5). */
 #undef HAVE_LIBDB_5
 

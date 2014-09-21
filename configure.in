@@ -16,44 +16,7 @@ AM_CONFIG_HEADER(config.h)
 AC_PROG_CC()
 AC_PROG_CXX()
 
-dnl Check for Berkeley DB 
-cflags_save=$CFLAGS
-ldflags_save=$LDFLAGS
-if test "X$with_dbpath" != "X" ; then
-    CFLAGS="$CFLAGS -I$with_dbpath/include"
-    LDFLAGS="$LDFLAGS -L$with_dbpath/lib"
-fi
-
-AC_CHECK_LIB(db, db_open, ,
-    CFLAGS=$cflags_save
-    LDFLAGS=$ldflags_save)
-
-dnl Check for Berkeley DB (FreeBSD has libdb2)
-cflags_save=$CFLAGS
-CFLAGS="$CFLAGS -I/usr/local/include/db2"
-ldflags_save=$LDFLAGS
-LDFLAGS="-L/usr/local/lib"
-AC_CHECK_LIB(
-    db2, 
-    db_open, ,
-      CFLAGS=$cflags_save 
-      LDFLAGS=$ldflags_save
-)
-
-dnl Check for Berkeley DB3
-
-cflags_save=$CFLAGS
-ldflags_save=$LDFLAGS
-if test "X$with_dbpath" != "X" ; then
-    CFLAGS="$CFLAGS -I$with_dbpath/include"
-    LDFLAGS="$LDFLAGS -L$with_dbpath/lib"
-fi
-
-AC_CHECK_LIB(db-3, db_create, ,
-    CFLAGS=$cflags_save
-    LDFLAGS=$ldflags_save)
-
-dnl Check for Berkeley DB3
+dnl Check for Berkeley DB5
 
 cflags_save=$CFLAGS
 ldflags_save=$LDFLAGS

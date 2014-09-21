@@ -34,14 +34,6 @@
 
 #include "amy.h"
 
-#if HAVE_LIBDB || HAVE_LIBDB2
-#include <db.h>
-#endif
-
-#if HAVE_LIBDB3
-#include <db3/db.h>
-#endif
-
 #if HAVE_LIBDB_5
 #include <db.h>
 #endif
@@ -80,14 +72,13 @@ struct BookQuery {
     struct LearnEntry le;
 };
 
-#if HAVE_LIBDB || HAVE_LIBDB2 || HAVE_LIBDB3 || HAVE_LIBDB_5
+#if HAVE_LIBDB_5
 static DB *BookDB = NULL;
 static DB *LearnDB = NULL;
 #endif
 
-#if HAVE_LIBDB || HAVE_LIBDB2 || HAVE_LIBDB3 || HAVE_LIBDB_5
-static void PutBookEntry(DB *database, hash_t hk, int result, int elo)
-{
+#if HAVE_LIBDB_5
+static void PutBookEntry(DB *database, hash_t hk, int result, int elo) {
     Print(9, "storing position");
     if(database != NULL) {
         DBT key;
@@ -110,19 +101,22 @@ static void PutBookEntry(DB *database, hash_t hk, int result, int elo)
 
             if(res == 0) {
                 entry = value.data;
-            }
-            else {
+            } else {
                 entry = calloc(1, sizeof(struct BookEntry));
             }
 
-            if(result == 1) { entry->win += 1; }
-            else if(result == 0) { entry->draw += 1; }
-            else if(result == -1) {entry->loss += 1; }
+            if(result == 1) {
+                entry->win += 1;
+            } else if(result == 0) {
+                entry->draw += 1;
+            } else if(result == -1) {
+                entry->loss += 1;
+            }
 #if WITH_ELO
-	    if(elo != 0) {
-		entry->sumElo += elo;
-		entry->nElo += 1;
-	    }
+            if(elo != 0) {
+                entry->sumElo += elo;
+                entry->nElo += 1;
+            }
 #endif
 
             memset(&key, 0, sizeof(key));
@@ -140,8 +134,7 @@ static void PutBookEntry(DB *database, hash_t hk, int result, int elo)
             }
 
             free(entry);
-        }
-        else {
+        } else {
             Print(0, "Problem retrieving data: %s\n", strerror(res));
             Print(0, "%d < %d\n", sizeof(struct BookEntry), value.size);
         }
@@ -149,63 +142,36 @@ static void PutBookEntry(DB *database, hash_t hk, int result, int elo)
 }
 #endif
 
-#if HAVE_LIBDB || HAVE_LIBDB2
-static int OpenBookFile(DB **db)
-{
-    int result;
-
-    result = db_open(BOOK_NAME, DB_BTREE, DB_RDONLY, 0, NULL, NULL, db);
-    if(result != 0) {
-	result = db_open(DEFAULT_BOOK_NAME, DB_BTREE, DB_RDONLY, 0, NULL, NULL, db);
-    }
-
-    return result;
-}
-#endif
-
-#if HAVE_LIBDB3 || HAVE_LIBDB_5
-static int OpenBookFile(DB **db)
-{
-    int result;
-
-    result = db_create(db, NULL, 00);
-    if (result != 0) {
-    	return result;
-    }
-#if HAVE_LIBDB3
-    result = (*db)->open(*db, BOOK_NAME, NULL, DB_BTREE, DB_RDONLY, 0);
-#endif
 #if HAVE_LIBDB_5
+static int OpenBookFile(DB **db) {
+    int result;
+
+    result = db_create(db, NULL, 0);
+    if (result != 0) {
+        return result;
+    }
     result = (*db)->open(*db, NULL, BOOK_NAME, NULL, DB_BTREE, DB_RDONLY, 0);
-#endif
 
     if (result == 0) {
         Print(0, "Book file " BOOK_NAME " opened successfully.\n");
     }
     if(result != 0) {
-#if HAVE_LIBDB3
-	result = (*db)->open(*db, DEFAULT_BOOK_NAME, NULL, DB_BTREE, DB_RDONLY, 0);
-#endif
-#if HAVE_LIBDB_5
         result = (*db)->open(*db, NULL, DEFAULT_BOOK_NAME, NULL, DB_BTREE, DB_RDONLY, 0);
-#endif
     }
-
 
     return result;
 }
 #endif
 
-static struct BookEntry *GetBookEntry(hash_t hk)
-{
+static struct BookEntry *GetBookEntry(hash_t hk) {
     struct BookEntry *retval = NULL;
-#if HAVE_LIBDB || HAVE_LIBDB2 || HAVE_LIBDB3 || HAVE_LIBDB_5
+#if HAVE_LIBDB_5
     int result;
     DBT key;
     DBT value;
 
     if(BookDB == NULL) {
-	result = OpenBookFile(&BookDB);
+        result = OpenBookFile(&BookDB);
     }
     if(BookDB != NULL) {
         memset(&key, 0, sizeof(key));
@@ -226,17 +192,24 @@ static struct BookEntry *GetBookEntry(hash_t hk)
     return retval;
 }
 
-static struct LearnEntry *GetLearnEntry(hash_t hk)
-{
+static struct LearnEntry *GetLearnEntry(hash_t hk) {
     struct LearnEntry *retval = NULL;
-#if HAVE_LIBDB || HAVE_LIBDB2
+#if HAVE_LIBDB_5
     int result;
     DBT key;
     DBT value;
 
     if(LearnDB == NULL) {
-        result = db_open(LEARN_NAME, 
-                         DB_BTREE, DB_RDONLY, 0, NULL, NULL, &LearnDB);
+        result = db_create(&LearnDB, NULL, 0);
+        if (result != 0) {
+            LearnDB = NULL;
+            return NULL;
+        }
+        result = LearnDB->open(LearnDB, NULL, LEARN_NAME, NULL, DB_BTREE, DB_RDONLY, 0);
+        if (result != 0) {
+            LearnDB = NULL;
+            return NULL;
+        }
     }
     if(LearnDB != NULL) {
         memset(&key, 0, sizeof(key));
@@ -257,26 +230,22 @@ static struct LearnEntry *GetLearnEntry(hash_t hk)
     return retval;
 }
 
-#if HAVE_LIBDB || HAVE_LIBDB2 || HAVE_LIBDB3 || HAVE_LIBDB_5
+#if HAVE_LIBDB_5
 
 /**
  * Merge the contents from 'from' (usually an in memory database)
  * with 'to'.
  */
 
-static void DBMerge(DB *from, DB *to)
-{
+static void DBMerge(DB *from, DB *to) {
     DBC *cursor;
     int result;
 
-#if DB_VERSION_MAJOR == 2 && DB_VERSION_MINOR < 7
-    if((result = from->cursor(from, NULL, &cursor)) == 0) {
-#else
     if((result = from->cursor(from, NULL, &cursor, 0)) == 0) {
-#endif
-	DBT key, value;
-	DBT key2, value2;
-	u_int32_t flags = DB_FIRST;
+
+        DBT key, value;
+        DBT key2, value2;
+        u_int32_t flags = DB_FIRST;
 
         for(;;) {
             memset(&key, 0, sizeof(key));
@@ -285,80 +254,64 @@ static void DBMerge(DB *from, DB *to)
 
             if(result != 0) break;
 
-	    memset(&key2, 0, sizeof(key2));
-	    memset(&value2, 0, sizeof(value2));
-	    key2.data = key.data;
-	    value2.flags = DB_DBT_MALLOC;
+            memset(&key2, 0, sizeof(key2));
+            memset(&value2, 0, sizeof(value2));
+            key2.data = key.data;
+            value2.flags = DB_DBT_MALLOC;
 
-	    result = to->get(to, NULL, &key2, &value2, 0);
-	    if(result == 0) {
-		struct BookEntry *b1 = (struct BookEntry *) value.data;
-		struct BookEntry *b2 = (struct BookEntry *) value2.data;
+            result = to->get(to, NULL, &key2, &value2, 0);
+            if(result == 0) {
+                struct BookEntry *b1 = (struct BookEntry *) value.data;
+                struct BookEntry *b2 = (struct BookEntry *) value2.data;
 
-		b1->win        += b2->win;
-		b1->loss       += b2->loss;
-		b1->draw       += b2->draw;
+                b1->win        += b2->win;
+                b1->loss       += b2->loss;
+                b1->draw       += b2->draw;
 #if WITH_ELO
-		b1->sumElo     += b2->sumElo;
-		b1->nElo       += b2->nElo;
+                b1->sumElo     += b2->sumElo;
+                b1->nElo       += b2->nElo;
 #endif
-	    }
-	    to->put(to, NULL, &key, &value, 0);
-	    flags = DB_NEXT;
-	}
+            }
+            to->put(to, NULL, &key, &value, 0);
+            flags = DB_NEXT;
+        }
 
-	cursor->c_close(cursor);
+        cursor->c_close(cursor);
     } else {
-	Print(0, "Error creating cursor: %s\n", strerror(result));
+        Print(0, "Error creating cursor: %s\n", strerror(result));
     }
 }
 
-static DB *OpenTemporaryDB(void)
-{
+static DB *OpenTemporaryDB(void) {
     DB *tempdb;
     int result;
-#if HAVE_LIBDB || HAVE_LIBDB2
-    DB_INFO info;
 
-    memset(&info, 0, sizeof(info));
-    info.db_cachesize = 16*1024*1024; /* use 16 MB for mmap */
-    result = db_open(NULL, DB_BTREE, DB_CREATE, 0644, NULL, &info, &tempdb);
-#endif
-#if HAVE_LIBDB3 || HAVE_LIBDB_5
     result = db_create(&tempdb, NULL, 00);
     if (result == 0) {
-#if HAVE_LIBDB3
-	result = tempdb->open(tempdb, NULL, NULL, DB_BTREE, DB_CREATE, 0644);
-#endif
-#if HAVE_LIBDB_5
-	result = tempdb->open(tempdb, NULL, NULL, NULL, DB_BTREE, DB_CREATE, 0644);
-#endif
+        result = tempdb->open(tempdb, NULL, NULL, NULL, DB_BTREE, DB_CREATE, 0644);
     }
-#endif
 
     if(result) {
-	Print(0, "Cannot create temporary database: %s\n",
-	         strerror(result));
-	return NULL;
+        Print(0, "Cannot create temporary database: %s\n",
+              strerror(result));
+        return NULL;
     }
 
     return tempdb;
 }
 #endif
 
-void CloseBook()
-{
-#if HAVE_LIBDB || HAVE_LIBDB2 || HAVE_LIBDB3 || HAVE_LIBDB_5
+void CloseBook() {
+#if HAVE_LIBDB_5
     if(BookDB) {
         BookDB->close(BookDB, 0);
         BookDB = NULL;
     }
-#endif /* HAVE_LIBDB || HAVE_LIBDB2 */
+#endif 
 }
 
-static void BookupInternal(char *file_name, int verbosity)
-{
-#if HAVE_LIBDB || HAVE_LIBDB2 || HAVE_LIBDB3 || HAVE_LIBDB_5
+static void BookupInternal(char *file_name, int verbosity) {
+#if HAVE_LIBDB_5
     struct Position *p;
     FILE *fin;
     int result;
@@ -366,9 +319,7 @@ static void BookupInternal(char *file_name, int verbosity)
     DB *tmpbase;
     DB *database;
     int lines = 0;
-#if HAVE_LIBDB || HAVE_LIBDB2
-    DB_INFO info;
-#endif
+
     struct PGNHeader header;
     char move[12];
 
@@ -382,21 +333,10 @@ static void BookupInternal(char *file_name, int verbosity)
 
     CloseBook();
 
-#if HAVE_LIBDB || HAVE_LIBDB2
-    memset(&info, 0, sizeof(info));
-    info.db_cachesize = 20*1024*1024; /* use 20 MB for mmap */
-    result = db_open(BOOK_NAME, DB_BTREE, DB_CREATE,
-                      0644, NULL, &info, &database);
-#endif
-#if HAVE_LIBDB3 || HAVE_LIBDB_5
+#if HAVE_LIBDB_5
     result = db_create(&database, NULL, 00);
     if (result == 0) {
-#if HAVE_LIBDB3
-	result = database->open(database, BOOK_NAME, NULL, DB_BTREE, DB_CREATE, 0644);
-#endif
-#if HAVE_LIBDB_5
-	result = database->open(database, NULL, BOOK_NAME, NULL, DB_BTREE, DB_CREATE, 0644);
-#endif
+        result = database->open(database, NULL, BOOK_NAME, NULL, DB_BTREE, DB_CREATE, 0644);
     }
 #endif
 
@@ -411,7 +351,7 @@ static void BookupInternal(char *file_name, int verbosity)
     tmpbase = OpenTemporaryDB();
 
     if(tmpbase == NULL) {
-	database->close(database, 0);
+    database->close(database, 0);
         fclose(fin);
         return;
     }
@@ -432,22 +372,20 @@ static void BookupInternal(char *file_name, int verbosity)
                 printf("\n<%s>\n", move);
                 exit(1);
             }
-            
+
             int themove = ParseSAN(p, move);
             if(themove != M_NONE) {
                 DoMove(p, themove);
                 if(GetEcoCode(p->hkey) != 0) {
                     afterEco = 0;
-                }
-                else {
+                } else {
                     afterEco++;
                 }
                 if(afterEco <= 20) {
                     if(p->turn == Black) {
                         /* white played the move */
                         PutBookEntry(database, p->hkey, result, header.white_elo);
-                    }
-                    else {
+                    } else {
                         /* black played the move */
                         PutBookEntry(database, p->hkey, -result, header.black_elo);
                     }
@@ -462,16 +400,16 @@ static void BookupInternal(char *file_name, int verbosity)
             Print(0, ".");
             if((lines % 7000) == 0) {
                 Print(0, "(%d)\n", lines);
-		/*
-                DBMerge(tmpbase, database);
-                tmpbase->close(tmpbase, 0);
-                tmpbase = OpenTemporaryDB();
-                if(tmpbase == NULL) {
-                    database->close(database, 0);
-                    fclose(fin);
-                    return;
-                }
-		*/
+                /*
+                        DBMerge(tmpbase, database);
+                        tmpbase->close(tmpbase, 0);
+                        tmpbase = OpenTemporaryDB();
+                        if(tmpbase == NULL) {
+                            database->close(database, 0);
+                            fclose(fin);
+                            return;
+                        }
+                */
             }
         }
     }
@@ -495,10 +433,9 @@ void BookupQuiet(char *file_name) {
 }
 
 static void GetAllBookMoves(struct Position *p,
-                            int *cnt, 
-                            int *book_moves, 
-                            struct BookQuery *entries)
-{
+                            int *cnt,
+                            int *book_moves,
+                            struct BookQuery *entries) {
     int mvs[256];
     int mv_cnt = LegalMoves(p, mvs);
     int i;
@@ -529,8 +466,7 @@ static void GetAllBookMoves(struct Position *p,
     }
 }
 
-static void SortBook(int cnt, int *mvs, struct BookQuery *entries)
-{
+static void SortBook(int cnt, int *mvs, struct BookQuery *entries) {
     int done = FALSE;
 
     while(!done) {
@@ -539,9 +475,9 @@ static void SortBook(int cnt, int *mvs, struct BookQuery *entries)
         done = TRUE;
 
         for(i=1; i<cnt; i++) {
-	    int f1 = entries[i-1].be.win + entries[i-1].be.loss 
+            int f1 = entries[i-1].be.win + entries[i-1].be.loss
                      + entries[i-1].be.draw;
-	    int f2 = entries[i].be.win + entries[i].be.loss 
+            int f2 = entries[i].be.win + entries[i].be.loss
                      + entries[i].be.draw;
             if(f1 < f2) {
                 struct BookQuery betmp = entries[i];
@@ -558,10 +494,9 @@ static void SortBook(int cnt, int *mvs, struct BookQuery *entries)
     }
 }
 
-static void CalculatePropabilities(int cnt, 
-                                  struct BookQuery *entries,
-                                  double *props)
-{
+static void CalculatePropabilities(int cnt,
+                                   struct BookQuery *entries,
+                                   double *props) {
     int total = 0;
     double totalprops;
     int limit;
@@ -576,21 +511,21 @@ static void CalculatePropabilities(int cnt,
 
     for(i=0; i<cnt; i++) {
         struct BookQuery *entry = entries+i;
-	int freq = entry->be.win + entry->be.loss + entry->be.draw;
+        int freq = entry->be.win + entry->be.loss + entry->be.draw;
 
         props[i] = 0.0;
         if(freq > limit) {
-	    int avelo = 2000;
+            int avelo = 2000;
 
 #if WITH_ELO
-	    if(entry->be.nElo != 0) {
-		avelo = entry->be.sumElo / entry->be.nElo;
-	    }
+            if(entry->be.nElo != 0) {
+                avelo = entry->be.sumElo / entry->be.nElo;
+            }
 #endif
 
             props[i] = avelo * freq
-                     * (double)(2*entry->be.win + entry->be.draw)
-                     / (double)(freq);
+                       * (double)(2*entry->be.win + entry->be.draw)
+                       / (double)(freq);
 
             if(entry->le.flags & GoodMove) {
                 props[i] *= 2;
@@ -600,22 +535,22 @@ static void CalculatePropabilities(int cnt,
                 props[i] = 0.0;
             }
 
-	    /*
-	     * Never choose a variation that doesn't have a single win.
-	     */
+            /*
+             * Never choose a variation that doesn't have a single win.
+             */
 
-	    if(entry->be.win == 0) {
-		props[i] = 0.0;
-	    }
+            if(entry->be.win == 0) {
+                props[i] = 0.0;
+            }
 
             totalprops += props[i];
         }
     }
 
     if(totalprops != 0.0) {
-	totalprops = 1.0 / totalprops;
+        totalprops = 1.0 / totalprops;
     } else {
-	totalprops = 0.0;
+        totalprops = 0.0;
     }
 
 
@@ -624,8 +559,7 @@ static void CalculatePropabilities(int cnt,
     }
 }
 
-int SelectBook(struct Position *p)
-{
+int SelectBook(struct Position *p) {
     int i, cnt = 0;
     struct BookQuery be[32];
     int moves[32];
@@ -635,24 +569,23 @@ int SelectBook(struct Position *p)
     GetAllBookMoves(p, &cnt, moves, be);
 
     if(cnt != 0) {
-	SortBook(cnt, moves, be);
-	CalculatePropabilities(cnt, be, props);
+        SortBook(cnt, moves, be);
+        CalculatePropabilities(cnt, be, props);
 
-	for(i=0; i<cnt; i++) {
-	    if(props[i] > 0.0) {
-		random_value -= props[i];
-		if(random_value <= 0.0) {
-		    return moves[i];
-		}
-	    }
-	}
+        for(i=0; i<cnt; i++) {
+            if(props[i] > 0.0) {
+                random_value -= props[i];
+                if(random_value <= 0.0) {
+                    return moves[i];
+                }
+            }
+        }
     }
 
     return M_NONE;
 }
 
-void QueryBook(struct Position *p)
-{
+void QueryBook(struct Position *p) {
     int i, cnt = 0;
     struct BookQuery be[32];
     int moves[32];
@@ -665,7 +598,7 @@ void QueryBook(struct Position *p)
     Print(0, "\tmove    count  win loss draw av. elo prop\n");
     for(i=0; i<cnt; i++) {
         struct BookQuery *entry = be+i;
-	int freq = entry->be.win + entry->be.loss + entry->be.draw;
+        int freq = entry->be.win + entry->be.loss + entry->be.draw;
         char modifier = ' ';
 
         if(entry->le.flags & GoodMove) {
@@ -687,17 +620,20 @@ void QueryBook(struct Position *p)
               0,
 #endif
               props[i] * 100.0
-        );
+             );
     }
 
     Print(0, "\n");
 }
 
-static void PutLearnEntry(hash_t hk, int learn_value, int flags)
-{
-#if HAVE_LIBDB || HAVE_LIBDB2
+static void PutLearnEntry(hash_t hk, int learn_value, int flags) {
+#if HAVE_LIBDB_5
     if(LearnDB == NULL) {
-        db_open(LEARN_NAME, DB_BTREE, DB_CREATE, 0644, NULL, NULL, &LearnDB);
+        int result = db_create(&LearnDB, NULL, 0);
+        if (result != 0) {
+            return;
+        }
+        LearnDB->open(LearnDB, NULL, LEARN_NAME, NULL, DB_BTREE, DB_CREATE, 0644);
     }
 
     if(LearnDB != NULL) {
@@ -727,8 +663,7 @@ static void PutLearnEntry(hash_t hk, int learn_value, int flags)
 #endif /* HAVE_LIBDB || HAVE_LIBDB2 */
 }
 
-void CreateLearnDB(char *file_name)
-{
+void CreateLearnDB(char *file_name) {
     FILE *fin = fopen(file_name, "r");
     char buffer[1024];
     struct Position *p;
@@ -750,7 +685,7 @@ void CreateLearnDB(char *file_name)
             int flags = 0;
             char *modifier = move+strlen(move)-1;
             int themove;
-            
+
             if(*modifier == '!') {
                 flags = GoodMove;
                 *modifier = '\0';
@@ -780,21 +715,20 @@ void CreateLearnDB(char *file_name)
 
     fclose(fin);
 
-#if HAVE_LIBDB || HAVE_LIBDB2
+#if HAVE_LIBDB_5
     if(LearnDB != NULL) {
         LearnDB->close(LearnDB, 0);
         LearnDB = NULL;
     }
-#endif /* HAVE_LIBDB || HAVE_LIBDB2 */
+#endif 
 
 }
 
-void FlattenBook(int threshold)
-{
-#if HAVE_LIBDB || HAVE_LIBDB2
+void FlattenBook(int threshold) {
+#if HAVE_LIBDB_5
     int result;
     int read = 0;
-    int wrote = 0; 
+    int wrote = 0;
 
     if(BookDB == NULL) {
         result = OpenBookFile(&BookDB);
@@ -802,30 +736,26 @@ void FlattenBook(int threshold)
     if(BookDB != NULL) {
         DB *tmpdb;
         DBC *cursor;
-        DB_INFO info;
 
-        memset(&info, 0, sizeof(info));
-        info.db_cachesize = 8*1024*1024; /* use 8 MB for mmap */
-        result = db_open("Book2.db",
-                        DB_BTREE, DB_CREATE, 0644, NULL, &info, &tmpdb);
+        int result = db_create(&tmpdb, NULL, 0);
+        if (result == 0) {
+            result = tmpdb->open(tmpdb, NULL, "Book2.db", NULL, DB_BTREE, DB_CREATE, 0644);
+        }
 
-        if(tmpdb == NULL) {
+        if(result != 0) {
             Print(0, "Error creating database: %s\n", strerror(result));
             return;
         }
 
-#if DB_VERSION_MAJOR == 2 && DB_VERSION_MINOR < 7
-        if((result = BookDB->cursor(BookDB, NULL, &cursor)) == 0) {
-#else
         if((result = BookDB->cursor(BookDB, NULL, &cursor, 0)) == 0) {
-#endif
+
             DBT key, value;
             u_int32_t flags = DB_FIRST;
 
             Print(0, "Flattening book with threshold %d\n", threshold);
 
             for(;;) {
-		struct BookEntry *b;
+                struct BookEntry *b;
                 memset(&key, 0, sizeof(key));
                 memset(&value, 0, sizeof(key));
                 result = cursor->c_get(cursor, &key, &value, flags);
@@ -846,7 +776,7 @@ void FlattenBook(int threshold)
                 flags = DB_NEXT;
             }
             Print(0, "Read %d entries, wrote %d entries\n",
-                      read, wrote);
+                  read, wrote);
 
             cursor->c_close(cursor);
             tmpdb->close(tmpdb, 0);
@@ -854,5 +784,5 @@ void FlattenBook(int threshold)
             Print(0, "Error creating cursor: %s\n", strerror(result));
         }
     }
-#endif /* HAVE_LIBDB || HAVE_LIBDB2 */
+#endif 
 }
