@@ -616,49 +616,43 @@ static void Anno(char *args)
     RunAnnotate(arg1, side);
 }
 
+static char *distribution = 
+"\n    Copyright (c) 2014, Thorsten Greiner\n"
+"    All rights reserved.\n"
+"\n"
+"    Redistribution and use in source and binary forms, with or without\n"
+"    modification, are permitted provided that the following conditions are met:\n"
+"\n"
+"    * Redistributions of source code must retain the above copyright notice,\n"
+"      this list of conditions and the following disclaimer.\n"
+"\n"
+"    * Redistributions in binary form must reproduce the above copyright notice,\n"
+"      this list of conditions and the following disclaimer in the documentation\n"
+"      and/or other materials provided with the distribution.\n"
+"\n";
+
+static char *warranty = 
+"\n THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\"\n"
+" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE\n"
+" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE\n"
+" DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE\n"
+" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL\n"
+" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR\n"
+" SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER\n"
+" CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,\n"
+" OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\n"
+" OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n"
+"\n";
+
 static void ShowWarranty(char *args)
 {
-    static char *warranty1 = 
-"\n    11. BECAUSE THE PROGRAM IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY\n"
-"  FOR THE PROGRAM, TO THE EXTENT PERMITTED BY APPLICABLE LAW.  EXCEPT WHEN\n"
-"  OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES\n"
-"  PROVIDE THE PROGRAM \"AS IS\" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED\n"
-"  OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF\n"
-"  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.  THE ENTIRE RISK AS\n"
-"  TO THE QUALITY AND PERFORMANCE OF THE PROGRAM IS WITH YOU.  SHOULD THE\n"
-"  PROGRAM PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL NECESSARY SERVICING,\n"
-"  REPAIR OR CORRECTION.\n"
-"\n";
-    static char *warranty2 =
-"    12. IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING\n"
-"  WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MAY MODIFY AND/OR\n"
-"  REDISTRIBUTE THE PROGRAM AS PERMITTED ABOVE, BE LIABLE TO YOU FOR DAMAGES,\n"
-"  INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING\n"
-"  OUT OF THE USE OR INABILITY TO USE THE PROGRAM (INCLUDING BUT NOT LIMITED\n"
-"  TO LOSS OF DATA OR DATA BEING RENDERED INACCURATE OR LOSSES SUSTAINED BY\n"
-"  YOU OR THIRD PARTIES OR A FAILURE OF THE PROGRAM TO OPERATE WITH ANY OTHER\n"
-"  PROGRAMS), EVEN IF SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE\n"
-"  POSSIBILITY OF SUCH DAMAGES.\n\n";
-
-    Print(0, warranty1);
-    Print(0, warranty2);
+    Print(0, warranty);
 }
 
 static void ShowDistribution(char *args)
 {
-    static char distribution[] = 
-"\n    1. You may copy and distribute verbatim copies of the Program's\n"
-"  source code as you receive it, in any medium, provided that you\n"
-"  conspicuously and appropriately publish on each copy an appropriate\n"
-"  copyright notice and disclaimer of warranty; keep intact all the\n"
-"  notices that refer to this License and to the absence of any warranty;\n"
-"  and give any other recipients of the Program a copy of this License\n"
-"  along with the Program.\n"
-"\n"
-"  You may charge a fee for the physical act of transferring a copy, and\n"
-"  you may at your option offer warranty protection in exchange for a fee.\n\n";
-
     Print(0, distribution);
+    Print(0, warranty);
 }
 
 static void Help(char *args)
