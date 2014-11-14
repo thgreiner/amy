@@ -426,8 +426,8 @@ void ShowHashStatistics(void)
 void GuessHTSizes(char *size)
 {
     int last = strlen(size)-1;
-    int total_size;
-    int tmp;
+    long total_size;
+    long tmp;
 
     if(size[last] == 'k') {
         total_size = atoi(size) * 1024;
@@ -447,7 +447,7 @@ void GuessHTSizes(char *size)
     tmp = total_size * 4 / 5;
 
     for(HT_Bits = 1; HT_Bits < 32; HT_Bits++) {
-        int tmp2 = (1 << (HT_Bits+1)) * sizeof(struct HTEntry);
+        long tmp2 = (1 << (HT_Bits+1)) * sizeof(struct HTEntry);
         if(tmp2 > tmp) break;
     }
 
@@ -456,14 +456,14 @@ void GuessHTSizes(char *size)
     tmp = total_size / 2;
 
     for(PT_Bits = 1; PT_Bits < 32; PT_Bits++) {
-        int tmp2 = (1 << (PT_Bits+1)) * sizeof(struct PTEntry);
+        long tmp2 = (1 << (PT_Bits+1)) * sizeof(struct PTEntry);
         if(tmp2 > tmp) break;
     }
 
     total_size -= (1 << PT_Bits) * sizeof(struct PTEntry);
 
     for(ST_Bits = 1; ST_Bits < 32; ST_Bits++) {
-        int tmp2 = (1 << (ST_Bits+1)) * sizeof(struct STEntry);
+        long tmp2 = (1 << (ST_Bits+1)) * sizeof(struct STEntry);
         if(tmp2 > total_size) break;
     }
 }
