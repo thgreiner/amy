@@ -109,12 +109,12 @@ int ProbeHT(hash_t key, int *score, int depth, int *bestm, int *threat, int ply,
 int ProbeHT(hash_t key, int *score, int depth, int *bestm, int *threat, int ply)
 #endif
 {
-    struct HTEntry *h1 = TranspositionTable + ((key >> 32)& HT_Mask);
+    struct HTEntry *h1 = TranspositionTable + ((key >> 32) & HT_Mask);
     struct HTEntry *h = NULL;
     int result = Useless;
 
 #if MP && HAVE_LIBPTHREAD
-    pthread_mutex_lock(TranspositionMutex + (key & MUTEX_MASK));
+    pthread_mutex_lock(TranspositionMutex + ((key >> 32) & MUTEX_MASK));
 #endif /* MP && HAVE_LIBPTHREAD */
 
     if (h1->ht_Signature == (int)key) h = h1;
@@ -184,7 +184,7 @@ int ProbeHT(hash_t key, int *score, int depth, int *bestm, int *threat, int ply)
 #endif /* MP */
 
 #if MP && HAVE_LIBPTHREAD
-    pthread_mutex_unlock(TranspositionMutex + (key & MUTEX_MASK));
+    pthread_mutex_unlock(TranspositionMutex + ((key >> 32) & MUTEX_MASK));
 #endif /* MP && HAVE_LIBPTHREAD */
 
     return result;
@@ -195,7 +195,7 @@ int ProbePT(hash_t key, int *score, struct PawnFacts *pf) {
     int result = Useless;
 
 #if MP && HAVE_LIBPTHREAD
-    pthread_mutex_lock(PawnMutex + (key & MUTEX_MASK));
+    pthread_mutex_lock(PawnMutex + ((key >> 32) & MUTEX_MASK));
 #endif /* MP && HAVE_LIBPTHREAD */
 
     if (h->pt_Signature == (int)key && h->pt_Score != PT_INVALID) {
@@ -205,7 +205,7 @@ int ProbePT(hash_t key, int *score, struct PawnFacts *pf) {
     }
 
 #if MP && HAVE_LIBPTHREAD
-    pthread_mutex_unlock(PawnMutex  + (key & MUTEX_MASK));
+    pthread_mutex_unlock(PawnMutex  + ((key >> 32) & MUTEX_MASK));
 #endif /* MP && HAVE_LIBPTHREAD */
 
     return result;
@@ -216,14 +216,14 @@ int ProbeST(hash_t key, int *score) {
     int result = Useless;
 
 #if MP && HAVE_LIBPTHREAD
-    pthread_mutex_lock(ScoreMutex + (key & MUTEX_MASK));
+    pthread_mutex_lock(ScoreMutex + ((key >> 32) & MUTEX_MASK));
 #endif /* MP && HAVE_LIBPTHREAD */
     if (h->st_Signature == (int)key && h->st_Score != PT_INVALID) {
         *score = h->st_Score;
         result = Useful;
     }
 #if MP && HAVE_LIBPTHREAD
-    pthread_mutex_unlock(ScoreMutex + (key & MUTEX_MASK));
+    pthread_mutex_unlock(ScoreMutex + ((key >> 32) & MUTEX_MASK));
 #endif /* MP && HAVE_LIBPTHREAD */
 
     return result;
@@ -237,7 +237,7 @@ void StoreHT(hash_t key,
 
 
 #if MP && HAVE_LIBPTHREAD
-    pthread_mutex_lock(TranspositionMutex + (key & MUTEX_MASK));
+    pthread_mutex_lock(TranspositionMutex + ((key >> 32) & MUTEX_MASK));
 #endif /* MP && HAVE_LIBPTHREAD */
 
     if ((h = SelectHTEntry(key, depth)) != NULL) {
@@ -287,7 +287,7 @@ void StoreHT(hash_t key,
     }
 
 #if MP && HAVE_LIBPTHREAD
-    pthread_mutex_unlock(TranspositionMutex + (key & MUTEX_MASK));
+    pthread_mutex_unlock(TranspositionMutex + ((key >> 32) & MUTEX_MASK));
 #endif /* MP && HAVE_LIBPTHREAD */
 
 }
@@ -295,25 +295,25 @@ void StoreHT(hash_t key,
 void StorePT(hash_t key, int score, struct PawnFacts *pf) {
     struct PTEntry *h = PawnTable + ((key >> 32) & PT_Mask);
 #if MP && HAVE_LIBPTHREAD
-    pthread_mutex_lock(PawnMutex + (key & MUTEX_MASK));
+    pthread_mutex_lock(PawnMutex + ((key >> 32) & MUTEX_MASK));
 #endif /* MP && HAVE_LIBPTHREAD */
     h->pt_Signature = (int)key;
     h->pt_Score     = score;
     h->pt_PawnFacts = *pf;
 #if MP && HAVE_LIBPTHREAD
-    pthread_mutex_unlock(PawnMutex + (key & MUTEX_MASK));
+    pthread_mutex_unlock(PawnMutex + ((key >> 32) & MUTEX_MASK));
 #endif /* MP && HAVE_LIBPTHREAD */
 }
 
 void StoreST(hash_t key, int score) {
     struct STEntry *h = ScoreTable + ((key >> 32) & ST_Mask);
 #if MP && HAVE_LIBPTHREAD
-    pthread_mutex_lock(ScoreMutex + (key & MUTEX_MASK));
+    pthread_mutex_lock(ScoreMutex + ((key >> 32) & MUTEX_MASK));
 #endif /* MP && HAVE_LIBPTHREAD */
     h->st_Signature = (int)key;
     h->st_Score     = score;
 #if MP && HAVE_LIBPTHREAD
-    pthread_mutex_unlock(ScoreMutex + (key & MUTEX_MASK));
+    pthread_mutex_unlock(ScoreMutex + ((key >> 32) & MUTEX_MASK));
 #endif /* MP && HAVE_LIBPTHREAD */
 }
 
