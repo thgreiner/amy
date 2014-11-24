@@ -460,10 +460,10 @@ extern int EGTBProbe, EGTBProbeSucc;
 
 extern int Value[];
 extern int MaxPos;
-extern int PHit, PTry;
+extern long PHit, PTry;
 extern int PawnStructure;
-extern int SHit, STry;
-extern int HHit, HTry;
+extern long SHit, STry;
+extern long HHit, HTry;
 
 extern int FHTime, GUIMode;
 extern int ComputerSide;
