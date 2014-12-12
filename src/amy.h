@@ -299,6 +299,9 @@ struct SearchData
     struct SearchStatus *statusTable;
     struct KillerEntry  *killer;
     struct KillerEntry  *killerTable;
+#if MP
+    struct HTEntry      *localHashTable;
+#endif
 
     int                 *moveHeap;
     int                 *dataHeap;
@@ -494,8 +497,20 @@ extern int NumberOfCPUs;
 
 extern char OpponentName[OPP_NAME_LENGTH];
 
-int FindSetBit(BitBoard);
+extern int L_HT_Bits, L_HT_Size, L_HT_Mask;
+
+#if HAVE___BUILTIN_POPCOUNTLL
+#define CountBits(x) __builtin_popcountll(x)
+#else
 int CountBits(BitBoard);
+#endif
+
+#if HAVE___BUILTIN_FFSLL
+#define FindSetBit(x) (64 - __builtin_ffsll(x))
+#else
+int FindSetBit(BitBoard);
+#endif 
+
 void Bookup(char *);
 void BookupQuiet(char *);
 void FlattenBook(int );
@@ -550,11 +565,15 @@ void ClearHashTable(void);
 void AgeHashTable(void);
 void ClearPawnHashTable(void);
 void AllocateHT(void);
+#if MP
+void StoreHT(hash_t, int, int, int, int, int, int, int, struct HTEntry *);
+#else
 void StoreHT(hash_t, int, int, int, int, int, int, int);
+#endif
 void StorePT(hash_t, int, struct PawnFacts *);
 void StoreST(hash_t, int);
 #if MP
-int ProbeHT(hash_t, int *, int, int *, int *, int, int);
+int ProbeHT(hash_t, int *, int, int *, int *, int, int, struct HTEntry *);
 #else
 int ProbeHT(hash_t, int *, int, int *, int *, int);
 #endif

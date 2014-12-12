@@ -64,11 +64,15 @@ static int PT_Size,
 
 static int ST_Size,
        ST_Mask;
+       
+int L_HT_Bits = 14, L_HT_Size, L_HT_Mask;
 
 static struct HTEntry     *TranspositionTable = NULL;
 static struct PTEntry     *PawnTable          = NULL;
 static struct STEntry     *ScoreTable         = NULL;
 static int    HTGeneration                    = 0;
+
+static int    HTStoreFailed = 0;
 
 #if MP && HAVE_LIBPTHREAD
 
@@ -104,7 +108,7 @@ static struct HTEntry *SelectHTEntry(hash_t key, int depth) {
 
 #if MP
 int ProbeHT(hash_t key, int *score, int depth, int *bestm, int *threat, int ply,
-            int exclusiveP)
+            int exclusiveP, struct HTEntry *localHT)
 #else
 int ProbeHT(hash_t key, int *score, int depth, int *bestm, int *threat, int ply)
 #endif
@@ -122,6 +126,13 @@ int ProbeHT(hash_t key, int *score, int depth, int *bestm, int *threat, int ply)
         h1 = TranspositionTable + (((key >> 32) + 1) & HT_Mask);
         if (h1->ht_Signature == (int)key) h = h1;
     }
+
+#if MP
+    if (localHT != NULL && h == NULL) {
+        h1 = localHT + ((key >> 32) & L_HT_Mask);
+        if (h1->ht_Signature == (int)key) h = h1;
+    }
+#endif
 
     if (h != NULL) {
         *bestm = h->ht_Move;
@@ -232,7 +243,12 @@ int ProbeST(hash_t key, int *score) {
 void StoreHT(hash_t key,
              int best, int alpha, int beta,
              int bestm, int depth,
-             int threat, int ply) {
+             int threat, int ply
+#if MP
+             ,struct HTEntry *localHT
+#endif
+    ) {
+    
     struct HTEntry *h;
 
 
@@ -240,7 +256,13 @@ void StoreHT(hash_t key,
     pthread_mutex_lock(TranspositionMutex + ((key >> 32) & MUTEX_MASK));
 #endif /* MP && HAVE_LIBPTHREAD */
 
-    if ((h = SelectHTEntry(key, depth)) != NULL) {
+    if ((h = SelectHTEntry(key, depth)) == NULL) { 
+#if MP
+        h = localHT + ((key >> 32) & L_HT_Mask);
+#endif
+    }
+        
+    if (h != NULL) {
         int reduced = best;
 
         /*
@@ -284,6 +306,8 @@ void StoreHT(hash_t key,
         else                  h->ht_Flags |= HT_EXACT;
 #endif /* MP */
         if (threat)            h->ht_Flags |= HT_THREAT;
+    } else {
+        HTStoreFailed++;
     }
 
 #if MP && HAVE_LIBPTHREAD
@@ -334,6 +358,8 @@ void ClearHashTable(void) {
 void AgeHashTable(void) {
     HTGeneration++;
     HTGeneration &= HT_AGE;
+    
+    HTStoreFailed = 0;
 }
 
 void ClearPawnHashTable(void) {
@@ -387,6 +413,10 @@ void AllocateHT(void) {
 
     TranspositionTable = calloc(HT_Size, sizeof(struct HTEntry));
 
+    /* Thread-local hash table - only calculate sizes and bits here...*/
+    L_HT_Size = 1 << L_HT_Bits;
+    L_HT_Mask = L_HT_Size - 1;
+
     PT_Size = 1 << PT_Bits;
     PT_Mask = PT_Size - 1;
 
@@ -401,12 +431,14 @@ void AllocateHT(void) {
           ((1 << HT_Bits) * sizeof(struct HTEntry)) / 1024,
           ((1 << PT_Bits) * sizeof(struct PTEntry)) / 1024,
           ((1 << ST_Bits) * sizeof(struct STEntry)) / 1024 );
-          
+
+#if MP && HAVE_LIBPTHREAD          
     for (i = 0; i < MUTEX_COUNT; i++) {
         pthread_mutex_init(TranspositionMutex + i, NULL);
         pthread_mutex_init(PawnMutex + i, NULL);
         pthread_mutex_init(ScoreMutex + i, NULL);
     }
+#endif
 }
 
 void ShowHashStatistics(void) {
@@ -418,8 +450,8 @@ void ShowHashStatistics(void) {
         if ((h->ht_Flags & HT_AGE) == HTGeneration) cnt++;
     }
 
-    Print(1, "Hashtable 1:  entries = %d, use = %d\n",
-          i, cnt);
+    Print(1, "Hashtable 1:  entries = %d, use = %d (%d %%), store failed = %d\n",
+          i, cnt, (cnt / (i / 100)), HTStoreFailed);
 }
 
 void GuessHTSizes(char *size) {

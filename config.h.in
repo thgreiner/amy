@@ -6,6 +6,9 @@
 /* Define to 1 if you have the <fcntl.h> header file. */
 #undef HAVE_FCNTL_H
 
+/* Define to 1 if you have the `ffsll' function. */
+#undef HAVE_FFSLL
+
 /* Define to 1 if you have the `gethostname' function. */
 #undef HAVE_GETHOSTNAME
 
@@ -62,6 +65,13 @@
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
+
+/* Define to 1 if the system has the `__builtin_ffsll' built-in function */
+#undef HAVE___BUILTIN_FFSLL
+
+/* Define to 1 if the system has the `__builtin_popcountll' built-in function
+   */
+#undef HAVE___BUILTIN_POPCOUNTLL
 
 /* Enable multithreaded search */
 #undef MP

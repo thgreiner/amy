@@ -36,10 +36,11 @@
 
 #define USE_8BIT 1
 
+#if !HAVE___BUILTIN_FFSLL
 int FindSetBit(BitBoard b)
 {
-#if 1
-    return 64 - ffsll(b);
+#if HAVE_FFSLL
+   return 64 - ffsll(b);
 #else
     // return ffsl(b) - 1;
     union {
@@ -90,10 +91,13 @@ int FindSetBit(BitBoard b)
 #endif
 #endif
 }
+#endif
 
+#if !HAVE___BUILTIN_POPCOUNTLL
 int CountBits(BitBoard i)
 {
     i = i - ((i >> 1) & 0x5555555555555555);
     i = (i & 0x3333333333333333) + ((i >> 2) & 0x3333333333333333);
     return (((i + (i >> 4)) & 0xF0F0F0F0F0F0F0F) * 0x101010101010101) >> 56;
 }
+#endif

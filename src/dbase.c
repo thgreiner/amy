@@ -202,8 +202,8 @@ static void AtkSet(struct Position *p, int type, int color, int square)
         while(nsq >= 0) {
             SetBit(p->atkTo[square], nsq);
             SetBit(p->atkFr[nsq]   , square);
-	    nsq = (p->piece[nsq] != Neutral) ? 
-		md[nsq].nextDir : md[nsq].nextPos;
+	        nsq = (p->piece[nsq] != Neutral) ? 
+		        md[nsq].nextDir : md[nsq].nextPos;
         }
     }
 }
@@ -237,8 +237,7 @@ static void AtkClr(struct Position *p, int type, int color, int square)
         nsq = md[square].nextPos;
         while(nsq >= 0) {
             ClrBit(p->atkFr[nsq], square);
-	    nsq = (p->piece[nsq] != Neutral) ? 
-		md[nsq].nextDir : md[nsq].nextPos;
+	        nsq = (p->piece[nsq] != Neutral) ? md[nsq].nextDir : md[nsq].nextPos;
         }
     }
 }

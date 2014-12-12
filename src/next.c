@@ -98,6 +98,14 @@ struct SearchData *CreateSearchData(struct Position *p)
         exit(1);
     }
 
+#if MP
+    sd->localHashTable = calloc(sizeof(struct HTEntry), L_HT_Size);
+    if (!sd->localHashTable) {
+        Print(0, "Cannot allocate thread-local hashtable.\n");
+        exit(1);
+    }
+#endif
+    
     sd->ply = 0;
 
     return sd;
@@ -109,6 +117,10 @@ void FreeSearchData(struct SearchData *sd)
     free(sd->killerTable);
     free(sd->moveHeap);
     free(sd->dataHeap);
+#if MP
+    free(sd->localHashTable);
+#endif
+    
     free(sd);
 }
 

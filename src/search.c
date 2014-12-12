@@ -455,7 +455,11 @@ static void StoreResult(
         sd->historyTab[p->turn][move & 4095] += depth*depth;
     }
 
-    StoreHT(p->hkey, score, alpha, beta, move, depth, threat, sd->ply);
+    StoreHT(p->hkey, score, alpha, beta, move, depth, threat, sd->ply
+#if MP
+        , sd->localHashTable
+#endif
+    );
 }
 
 /*
@@ -628,7 +632,7 @@ static int negascout(struct SearchData *sd,
     HTry++;
 #if MP
     switch (ProbeHT(p->hkey, &tmp, depth, &(st->st_hashmove), &threat, sd->ply,
-                    exclusiveP))
+                    exclusiveP, sd->localHashTable))
 #else
     switch (ProbeHT(p->hkey, &tmp, depth, &(st->st_hashmove), &threat, sd->ply))
 #endif /* MP */
@@ -787,7 +791,7 @@ static int negascout(struct SearchData *sd,
      * a shallow search to find a good candidate.
      */
 
-    if (depth > 2*OnePly && alpha+1 != beta && !LegalMove(p, st->st_hashmove)) {
+    if (depth > 2*OnePly && ((alpha + 1) != beta) && !LegalMove(p, st->st_hashmove)) {
         int useless;
 #if MP
         useless = negascout(sd, alpha, beta, depth-2*OnePly, PVNode, 0);
@@ -1078,7 +1082,7 @@ static char *NSAN(struct Position *p, int move) {
     static char tmp[32];
 
     if (p->turn == White) sprintf(tmp, "%d. %s", 1+(p->ply+1)/2, SAN(p, move));
-    else                 sprintf(tmp, "%d. .. %s", 1+p->ply/2, SAN(p, move));
+    else                  sprintf(tmp, "%d. .. %s", 1+p->ply/2, SAN(p, move));
 
     return tmp;
 }
@@ -1093,7 +1097,7 @@ static void AnaLoop(struct Position *p, int depth) {
     int score;
 
 #if MP
-    if (ProbeHT(p->hkey, &score, 0, &move, &dummy, 0, 0) == Useless) return;
+    if (ProbeHT(p->hkey, &score, 0, &move, &dummy, 0, 0, NULL) == Useless) return;
 #else
     if (ProbeHT(p->hkey, &score, 0, &move, &dummy, 0) == Useless) return;
 #endif
@@ -1204,6 +1208,9 @@ static void *IterateInt(void *x) {
     struct SearchData *sd = x;
     struct Position *p;
 
+    if (!sd->master) {
+        usleep(5 * 1000);
+    }
     p = sd->position;
 
     InitSearch(sd);
