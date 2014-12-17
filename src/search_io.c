@@ -35,13 +35,16 @@
 #include <stdio.h>
 #include "amy.h"
 
+#define PV_BUFFER_SIZE 512
+
 static void PrintPV(char *pv)
 {
-    static char PVBuffer[512];
+    static char PVBuffer[PV_BUFFER_SIZE];
     char *x;
     int len = 21;
 
-    strcpy(PVBuffer, pv);
+    strncpy(PVBuffer, pv, PV_BUFFER_SIZE);
+    PVBuffer[PV_BUFFER_SIZE-1] = '\0';
 
     for(x=PVBuffer; *x;) {
         char *y = x;
