@@ -35,6 +35,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 #include "amy.h"
 
 #define HT_AGE            (0x3f)
@@ -456,16 +457,18 @@ void ShowHashStatistics(void) {
 
 void GuessHTSizes(char *size) {
     int last = strlen(size)-1;
-    long total_size;
-    long tmp;
+    int64_t total_size;
+    int64_t tmp;
 
     if (size[last] == 'k') {
-        total_size = atoi(size) * 1024;
+        total_size = atoi(size) * 1024L;
     } else if (size[last] == 'm') {
-        total_size = atoi(size) * 1024 * 1024;
+        total_size = atoi(size) * 1024L * 1024L;
     } else {
         total_size = atoi(size) * 1024;
     }
+
+    printf("%" PRId64 "\n", total_size);
 
     if (total_size < 64*1024) {
         Print(0, "I need at least 64k of hashtables.\n");
@@ -473,6 +476,8 @@ void GuessHTSizes(char *size) {
     }
 
     tmp = total_size * 4 / 5;
+    
+    printf("%" PRId64 "\n", tmp);
 
     for (HT_Bits = 1; HT_Bits < 32; HT_Bits++) {
         long tmp2 = (1 << (HT_Bits+1)) * sizeof(struct HTEntry);
