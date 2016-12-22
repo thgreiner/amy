@@ -76,7 +76,7 @@ enum {
      */
 
     ReduceNullMove         = 48,
-    ReduceNullMoveDeep     = 64
+    ReduceNullMoveDeep     = 65
 };
 
 /*

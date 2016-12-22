@@ -468,8 +468,6 @@ void GuessHTSizes(char *size) {
         total_size = atoi(size) * 1024;
     }
 
-    printf("%" PRId64 "\n", total_size);
-
     if (total_size < 64*1024) {
         Print(0, "I need at least 64k of hashtables.\n");
         total_size = 64*1024;
@@ -477,8 +475,6 @@ void GuessHTSizes(char *size) {
 
     tmp = total_size * 4 / 5;
     
-    printf("%" PRId64 "\n", tmp);
-
     for (HT_Bits = 1; HT_Bits < 32; HT_Bits++) {
         long tmp2 = (1 << (HT_Bits+1)) * sizeof(struct HTEntry);
         if (tmp2 > tmp) break;
