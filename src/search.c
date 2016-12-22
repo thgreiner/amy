@@ -42,6 +42,8 @@
 #define REVERSE "\x1B[7m"
 #define NORMAL  "\x1B[0m"
 
+#define MAX_DEFERRED 128
+
 /*
  * We use fractional ply extensions.
  * See D. Levy, D. Broughton and M. Taylor: The SEX Algorithm in Computer Chess
@@ -587,8 +589,8 @@ static int negascout(struct SearchData *sd,
 
 #if MP
     int deferred_cnt = 0;
-    int deferred_list[64];
-    int deferred_depth[64];
+    int deferred_list[MAX_DEFERRED];
+    int deferred_depth[MAX_DEFERRED];
 #endif
 
     EnterNode(sd);
