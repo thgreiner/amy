@@ -101,7 +101,7 @@
 	(((c) == White) ? (p) : -(p))
 
 #define M_FROM(m) ((m) & 63)
-#define M_TO(m)   (((m) >> 6) & 63) 
+#define M_TO(m)   (((m) >> 6) & 63)
 
 #define M_CAPTURE    (1 << 13)
 #define M_SCASTLE    (1 << 14)
@@ -195,7 +195,7 @@ enum CTypes { White = 0, Black = 1 };
 /*
  * Constants for chess board squares.
  */
- 
+
 enum {
     a1 = 0, b1, c1, d1, e1, f1, g1, h1,
         a2, b2, c2, d2, e2, f2, g2, h2,
@@ -509,7 +509,9 @@ int CountBits(BitBoard);
 #define FindSetBit(x) (64 - __builtin_ffsll(x))
 #else
 int FindSetBit(BitBoard);
-#endif 
+#endif
+
+BitBoard FlipBitBoard(BitBoard);
 
 void Bookup(char *);
 void BookupQuiet(char *);
@@ -609,7 +611,7 @@ int NextMove(struct SearchData *);
 int NextEvasion(struct SearchData *);
 int NextMoveQ(struct SearchData *, int);
 void PutKiller(struct SearchData *, int);
- 
+
 void SaveGame(struct Position *, char *);
 void LoadGame(struct Position *, char *);
 int scanHeader(FILE *, struct PGNHeader *);
@@ -635,7 +637,7 @@ void StopHelpers(void);
 
 void SearchHeader(void);
 void SearchOutput(int depth, int time, int score, char *line, int nodes);
-void SearchOutputFailHighLow(int, int, int, char *, int); 
+void SearchOutputFailHighLow(int, int, int, char *, int);
 void StateMachine(void);
 
 int SwapOff(struct Position *, int);

@@ -101,3 +101,12 @@ int CountBits(BitBoard i)
     return (((i + (i >> 4)) & 0xF0F0F0F0F0F0F0F) * 0x101010101010101) >> 56;
 }
 #endif
+
+BitBoard FlipBitBoard(BitBoard i) {
+    BitBoard result = 0;
+    for (int j = 0; j < 64; j+=8) {
+        result |= (i & 0xFF) << (56 - j);
+        i >>= 8;
+    }
+    return result;
+}
