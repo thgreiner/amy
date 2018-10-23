@@ -1141,7 +1141,7 @@ static int ScoreDevelopment(struct Position *p)
         score += Development;
     }
 
-    if(p->mask[Black][King] & WKingOpeningMask) {
+    if(p->mask[Black][King] & BKingOpeningMask) {
         score -= Development;
     }
 
