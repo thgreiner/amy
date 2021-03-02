@@ -66,8 +66,8 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
-/* Define to 1 if the system has the `__builtin_ffsll' built-in function */
-#undef HAVE___BUILTIN_FFSLL
+/* Define to 1 if the system has the `__builtin_clzll' built-in function */
+#undef HAVE___BUILTIN_CLZLL
 
 /* Define to 1 if the system has the `__builtin_popcountll' built-in function
    */

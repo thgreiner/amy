@@ -71,6 +71,7 @@ static void Flatten(char *);
 static void XboardTime(char *);
 static void Analyze(char *args);
 static void StopAnalyze(char *args);
+static void SelfPlay(char *args);
 
 static struct CommandEntry Commands[] =
 {
@@ -134,6 +135,8 @@ static struct CommandEntry Commands[] =
       "quit Amy", NULL },
     { "save",         &Save,             FALSE, FALSE,
       "save game to PGN file", NULL },
+    { "self",         &SelfPlay,         FALSE, FALSE,
+      "start self play", NULL },
     { "show",         &Show,             TRUE,  FALSE,
       "display current position", NULL },
     { "test",         &Test,             FALSE, FALSE,
@@ -822,4 +825,10 @@ static void Name(char *args)
         strncpy(OpponentName, args, OPP_NAME_LENGTH);
         Print(2, "Your name is %s\n", OpponentName);
     }
+}
+
+static void SelfPlay(char *args)
+{
+    SelfPlayMode = TRUE;
+    State = STATE_CALCULATING;
 }

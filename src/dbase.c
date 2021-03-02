@@ -39,8 +39,8 @@
  */
 char PieceName[]  = { ' ', 'P', 'N', 'B', 'R', 'Q', 'K' };
 
-/* 
- * material Values of Pieces 
+/*
+ * material Values of Pieces
  */
 
 int Value[] = {
@@ -75,7 +75,7 @@ const int PromoSquare[] = {
  * EPTranslate[e3] = e4 means a enpassant capture on e3 will remove pawn
  * on e4
  */
-  
+
 const int EPTranslate[] = {
      0,  0,  0,  0,  0,  0,  0,  0,
      0,  0,  0,  0,  0,  0,  0,  0,
@@ -85,7 +85,7 @@ const int EPTranslate[] = {
     a5, b5, c5, d5, e5, f5, g5, h5,
      0,  0,  0,  0,  0,  0,  0,  0,
      0,  0,  0,  0,  0,  0,  0,  0
-};       
+};
 
 /*
  * Masks for castle rights:
@@ -110,8 +110,8 @@ static void GainAttacks(struct Position *, int to);
 static void LooseAttacks(struct Position *, int to);
 int PromoType(int move);
 
-/* 
- * Routines to up/downdate the global database 
+/*
+ * Routines to up/downdate the global database
  */
 
 #ifdef DEBUG
@@ -168,7 +168,7 @@ static void DebugEngine(int move)
 }
 #endif
 
-/* 
+/*
  * Generate attacks for a piece "type" of "color" on square "square"
  */
 
@@ -202,7 +202,7 @@ static void AtkSet(struct Position *p, int type, int color, int square)
         while(nsq >= 0) {
             SetBit(p->atkTo[square], nsq);
             SetBit(p->atkFr[nsq]   , square);
-	        nsq = (p->piece[nsq] != Neutral) ? 
+	        nsq = (p->piece[nsq] != Neutral) ?
 		        md[nsq].nextDir : md[nsq].nextPos;
         }
     }
@@ -242,7 +242,7 @@ static void AtkClr(struct Position *p, int type, int color, int square)
     }
 }
 
-/* 
+/*
  * Recalculate Attacks from "from" to "to" after the piece on "to" has
  * been removed
  */
@@ -262,9 +262,9 @@ static void GainAttack(struct Position *p, int from, int to)
     }
 }
 
-/* 
- * Recalculate Attacks from "from" to "to" after a piece has been put 
- * onto "to" 
+/*
+ * Recalculate Attacks from "from" to "to" after a piece has been put
+ * onto "to"
  */
 
 static void LooseAttack(struct Position *p, int from, int to)
@@ -282,7 +282,7 @@ static void LooseAttack(struct Position *p, int from, int to)
     }
 }
 
-/* 
+/*
  * Recalculate all ray attacks which pass through square "to" after
  * the piece on this square has been removed
  */
@@ -295,11 +295,11 @@ static void GainAttacks(struct Position *p, int to)
     while(tmp) {
         i = FindSetBit(tmp);
         ClrBit(tmp, i);
-        GainAttack(p, i, to); 
+        GainAttack(p, i, to);
     }
 }
 
-/* 
+/*
  * Recalculate all ray attacks which pass through square "to" after
  * a piece has been put onto this square
  */
@@ -312,11 +312,11 @@ static void LooseAttacks(struct Position *p, int to)
     while(tmp) {
         i = FindSetBit(tmp);
         ClrBit(tmp, i);
-        LooseAttack(p, i, to); 
+        LooseAttack(p, i, to);
     }
 }
 
-/* 
+/*
  * Determine type of promotion from move
  */
 
@@ -331,7 +331,7 @@ int PromoType(int move)
     return Neutral;
 }
 
-/* 
+/*
  * Make a castle move
  * I seperated this routine from the normal DoMove routine since it has
  * to move two pieces
@@ -357,7 +357,7 @@ static void DoCastle(struct Position *p, int move)
     ClrBit(p->mask[p->turn][King], from);
     SetBit(p->mask[p->turn][0], to);
     SetBit(p->mask[p->turn][King], to);
-    
+
     /* move rook on the board */
     p->piece[nr] = p->piece[or];
     p->piece[or] = Neutral;
@@ -367,8 +367,8 @@ static void DoCastle(struct Position *p, int move)
     SetBit(p->mask[p->turn][0], nr);
     SetBit(p->mask[p->turn][Rook], nr);
     SetBit(p->slidingPieces, nr);
-    
-    /* re-calculate attacks through king-square 
+
+    /* re-calculate attacks through king-square
      * no need to do it for the rook, since it was on the edge of the board
      * For the same reason we don't have to LooseAttacks on any of the
      * new king/rook squares
@@ -376,7 +376,7 @@ static void DoCastle(struct Position *p, int move)
 
     GainAttacks(p, from);
 
-    /* King and rook gain their attacks 
+    /* King and rook gain their attacks
      */
 
     AtkSet(p, King, p->turn, to);
@@ -393,7 +393,7 @@ static void DoCastle(struct Position *p, int move)
         HashKeys[p->turn][Rook][nr] );
 }
 
-/* 
+/*
  * Unmake a castle move
  */
 
@@ -410,7 +410,7 @@ static void UndoCastle(struct Position *p, int move)
     /* rook looses its attacks */
     AtkClr(p, Rook, p->turn, nr);
 
-    /* re-calculate attacks through king-square 
+    /* re-calculate attacks through king-square
      * no need to do it for the rook, since it was on the edge of the board
      * For the same reason we don't have to LooseAttacks on any of the
      * new king/rook squares
@@ -424,7 +424,7 @@ static void UndoCastle(struct Position *p, int move)
     ClrBit(p->mask[p->turn][King], to);
     SetBit(p->mask[p->turn][0], from);
     SetBit(p->mask[p->turn][King], from);
-    
+
     /* move rook on the board */
     p->piece[or] = p->piece[nr];
     p->piece[nr] = Neutral;
@@ -434,8 +434,8 @@ static void UndoCastle(struct Position *p, int move)
     SetBit(p->mask[p->turn][0], or);
     SetBit(p->mask[p->turn][Rook], or);
     SetBit(p->slidingPieces, or);
-    
-    /* King and rook gain their attacks 
+
+    /* King and rook gain their attacks
      */
 
     AtkSet(p, King, p->turn, from);
@@ -443,7 +443,7 @@ static void UndoCastle(struct Position *p, int move)
     p->kingSq[p->turn] = from;
 }
 
-/* 
+/*
  * Make a move
  * updates the global database
  */
@@ -455,7 +455,7 @@ void DoMove(struct Position *p, int move)
     int tp = TYPE(p->piece[from]);
 
     /* save EnPassant and Castling */
-    /* muss ich das hier machen ?? 
+    /* muss ich das hier machen ??
      * Sollte in einer init-node routine geschehen! */
 
     p->actLog->gl_EnPassant = p->enPassant;
@@ -482,7 +482,7 @@ void DoMove(struct Position *p, int move)
         if(Sliding[tp]) ClrBit(p->slidingPieces, from);
         /* re-calculate attacks through from-square */
         GainAttacks(p, from);
-        
+
         /* update hashkey */
         p->hkey ^= HashKeys[p->turn][tp][from];
         if(tp == Pawn) p->pkey ^= HashKeys[p->turn][Pawn][from];
@@ -492,20 +492,20 @@ void DoMove(struct Position *p, int move)
             p->castle &= ~(CastleMask[p->turn][0]|CastleMask[p->turn][1]);
         }
         else if(tp == Rook) {
-            if(from == (p->turn == White ? h1 : h8)) 
+            if(from == (p->turn == White ? h1 : h8))
                 p->castle &= ~(CastleMask[p->turn][0]);
-            if(from == (p->turn == White ? a1 : a8)) 
+            if(from == (p->turn == White ? a1 : a8))
                 p->castle &= ~(CastleMask[p->turn][1]);
         }
         if(move & M_CAPTURE) {
             int sp = TYPE(p->piece[to]);
-            
+
             /* piece looses its attacks */
             AtkClr(p, sp, OPP(p->turn), to);
 
             /* remember type of captured piece */
             p->actLog->gl_Piece = p->piece[to];
-            
+
             ClrBit(p->mask[OPP(p->turn)][0], to);
             ClrBit(p->mask[OPP(p->turn)][sp], to);
             if(Sliding[sp]) ClrBit(p->slidingPieces, to);
@@ -531,13 +531,13 @@ void DoMove(struct Position *p, int move)
         }
         else if(move & M_ENPASSANT) {
             int so = EPTranslate[to];
-            
+
             /* piece looses its attacks */
             AtkClr(p, Pawn, OPP(p->turn), so);
-            
+
             /* captured piece must be a pawn */
             p->actLog->gl_Piece = ((OPP(p->turn) == White) ? Pawn : -Pawn);
-            
+
             ClrBit(p->mask[OPP(p->turn)][0], so);
             ClrBit(p->mask[OPP(p->turn)][Pawn], so);
 
@@ -546,7 +546,7 @@ void DoMove(struct Position *p, int move)
 
             /* remove captured pawn from the board */
             p->piece[so] = Neutral;
-            
+
             /* Update oppponents material and PawnCount */
             p->material[OPP(p->turn)] -= Value[Pawn];
 
@@ -586,10 +586,10 @@ void DoMove(struct Position *p, int move)
         SetBit(p->mask[p->turn][0], to);
         SetBit(p->mask[p->turn][tp], to);
         if(Sliding[tp]) SetBit(p->slidingPieces, to);
-        
+
         /* piece gains its attacks */
         AtkSet(p, tp, p->turn, to);
-        
+
         /* update hashkey */
         p->hkey ^= HashKeys[p->turn][tp][to];
         if(tp == Pawn) p->pkey ^= HashKeys[p->turn][Pawn][to];
@@ -601,7 +601,7 @@ void DoMove(struct Position *p, int move)
         p->hkey ^= HashKeysCastle[p->castle];
     }
 
-    /* 
+    /*
      * Check if double pawn push. There is a little trick here:
      * We only set the enPassant flag if there is a possibility
      * of an enPassant capture at all. This increases the efficiency of
@@ -685,13 +685,13 @@ void UndoMove(struct Position *p, int move)
 	    /* update material signature */
 	    p->material_signature[p->turn] |= SIGNATURE_BIT(Pawn);
         }
-        
+
         if(move & M_CAPTURE) {
             int sp = p->actLog->gl_Piece;
-            
+
             /* piece gains its attacks */
             AtkSet(p, TYPE(sp), OPP(p->turn), to);
-            
+
             p->piece[to] = sp;
             sp = TYPE(sp);
             SetBit(p->mask[OPP(p->turn)][0], to);
@@ -707,10 +707,10 @@ void UndoMove(struct Position *p, int move)
         }
         else if(move & M_ENPASSANT) {
             int so = EPTranslate[to];
-            
+
             /* piece looses its attacks */
             AtkSet(p, Pawn, OPP(p->turn), so);
-            
+
             SetBit(p->mask[OPP(p->turn)][0], so);
             SetBit(p->mask[OPP(p->turn)][Pawn], so);
 
@@ -720,7 +720,7 @@ void UndoMove(struct Position *p, int move)
             /* remove captured pawn from the board */
             p->piece[so] = (OPP(p->turn) == White) ? Pawn : -Pawn;
             p->piece[to] = Neutral;
-            
+
             /* re-calculate attacks through to-square */
             GainAttacks(p, to);
 
@@ -732,7 +732,7 @@ void UndoMove(struct Position *p, int move)
         }
         else {
             p->piece[to] = Neutral;
-            
+
             /* re-calculate attacks through to-square */
             GainAttacks(p, to);
         }
@@ -762,7 +762,7 @@ void UndoMove(struct Position *p, int move)
     */
 }
 
-/* 
+/*
  * Make a null move, i.e. swap the p->turn on the move
  */
 
@@ -773,7 +773,7 @@ void DoNull(struct Position *p)
     p->actLog->gl_EnPassant = p->enPassant;
     p->actLog->gl_Castle = p->castle;
     p->actLog->gl_HashKey = p->hkey;
-    
+
     p->actLog++;
     p->ply++;
 
@@ -792,7 +792,7 @@ void DoNull(struct Position *p)
     p->hkey ^= STMKey;
 }
 
-/* 
+/*
  * Unmake a null move
  */
 
@@ -808,7 +808,7 @@ void UndoNull(struct Position *p)
     p->hkey = p->actLog->gl_HashKey;
 }
 
-/* 
+/*
  * Given the Masks and the p->piece[] array, recalculate all necessary data
  */
 
@@ -826,7 +826,7 @@ void RecalcAttacks(struct Position *p)
     }
 
     p->slidingPieces = 0;
-    
+
     p->material[White] = p->material[Black] =
     p->nonPawn[White] = p->nonPawn[Black] =
     p->material_signature[White] = p->material_signature[Black] =
@@ -896,7 +896,7 @@ void RecalcAttacks(struct Position *p)
     }
 }
 
-/* 
+/*
  * Generate all capturing moves to a square "square"
  */
 
@@ -934,15 +934,15 @@ int GenEnpas(struct Position *p, int *moves)
 
     tmp = p->atkFr[p->enPassant] & p->mask[p->turn][Pawn];
     while(tmp) {
-		i = FindSetBit(tmp); ClrBit(tmp, i); 
+		i = FindSetBit(tmp); ClrBit(tmp, i);
         *(moves++) = i | (p->enPassant << 6) | M_ENPASSANT;
         cnt++;
     }
     return cnt;
 }
 
-/* 
- * Generate all non-capturing moves from "square" 
+/*
+ * Generate all non-capturing moves from "square"
  */
 
 int GenFrom(struct Position *p, int square, int *moves)
@@ -1010,7 +1010,7 @@ int GenFrom(struct Position *p, int square, int *moves)
     }
 }
 
-/* 
+/*
  * Test if castling is legal
  */
 
@@ -1030,9 +1030,9 @@ int MayCastle(struct Position *p, int move)
         /* Check if f and g square are empty */
         if(p->piece[fs] == Neutral && p->piece[gs] == Neutral) {
             /* Check if f and g square are not attacked by opponent */
-            if((p->atkFr[fs] | p->atkFr[gs]) & p->mask[OPP(p->turn)][0]) 
+            if((p->atkFr[fs] | p->atkFr[gs]) & p->mask[OPP(p->turn)][0])
                 return FALSE;
-            else 
+            else
                 return TRUE;
         }
     }
@@ -1044,12 +1044,12 @@ int MayCastle(struct Position *p, int move)
         int ds = (p->turn == White ? d1 : d8);
 
         /* Check if b, c and d square are empty */
-        if(p->piece[bs] == Neutral && p->piece[cs] == Neutral && 
+        if(p->piece[bs] == Neutral && p->piece[cs] == Neutral &&
            p->piece[ds] == Neutral) {
             /* Check if c and d square are not attacked by opponent */
-            if((p->atkFr[cs] | p->atkFr[ds]) & p->mask[OPP(p->turn)][0]) 
+            if((p->atkFr[cs] | p->atkFr[ds]) & p->mask[OPP(p->turn)][0])
                 return FALSE;
-            else                                         
+            else
                 return TRUE;
         }
     }
@@ -1057,8 +1057,8 @@ int MayCastle(struct Position *p, int move)
     return FALSE;
 }
 
-/* 
- * Test if a move is legal 
+/*
+ * Test if a move is legal
  */
 
 int LegalMove(struct Position *p, int move)
@@ -1127,7 +1127,7 @@ int LegalMove(struct Position *p, int move)
     /* return FALSE; */ /* never reached */
 }
 
-/* 
+/*
  * Test wether a move will give check
  */
 
@@ -1177,7 +1177,7 @@ int IsCheckingMove(struct Position *p, int move)
             break;
     }
 
-    /* 
+    /*
      * No direct check...
      * Let's see if it might be a discovered check...
      */
@@ -1200,7 +1200,7 @@ int IsCheckingMove(struct Position *p, int move)
     return FALSE;
 }
 
-/* 
+/*
  * Generate all non-capturing checking moves. Actually this routine only
  * generates 'candidate' moves for checks. Some move generated here may
  * not be checks!
@@ -1330,7 +1330,7 @@ int GenChecks(struct Position *p, int *moves)
         }
     }
 
-    /* 
+    /*
      * last find pawn checks
      */
 
@@ -1358,7 +1358,7 @@ int GenChecks(struct Position *p, int *moves)
     return cnt;
 }
 
-/* 
+/*
  * Test wether a p->turn is in check
  */
 
@@ -1370,8 +1370,8 @@ int InCheck(struct Position *p, int side)
     else                                 return FALSE;
 }
 
-/* 
- * Repetition check 
+/*
+ * Repetition check
  * if mode = TRUE, count the number of repetitions of current position
  * if mode = FALSE, only check if current position is repeated
  */
@@ -1380,11 +1380,11 @@ int Repeated(struct Position *p, int mode)
 {
     int i, cnt = 0;
     struct GameLog *gl;
-    
+
     if(p->ply == 0) return 0;
 
     if(p->actLog->gl_IrrevCount >= 100) return 3;
-    
+
     gl = p->actLog-1;
     for(i=p->actLog->gl_IrrevCount; i>0; i--, gl--) {
         if(gl->gl_HashKey == p->hkey) {
@@ -1396,7 +1396,7 @@ int Repeated(struct Position *p, int mode)
     return cnt;
 }
 
-/* 
+/*
  * Generate the SAN (Standard Algebraic Notation) for a move
  */
 
@@ -1496,7 +1496,7 @@ char *SAN(struct Position *p, int move)
     return buffer;
 }
 
-/* 
+/*
  * Generate the ICS SAN for a move
  */
 
@@ -1527,7 +1527,7 @@ char *ICS_SAN(int move)
     return buffer;
 }
 
-/* 
+/*
  * Parse a move string in e2e4 notation
  */
 
@@ -1540,7 +1540,7 @@ int ParseGSAN(struct Position *p, char *san)
 
     if(!strncmp(san, "O-O-O", 5) || !strncmp(san, "o-o-o", 5) ||
        !strncmp(san, "0-0-0", 5)) {
-        int move = M_LCASTLE | 
+        int move = M_LCASTLE |
           (p->turn == White ? (c1 << 6) + e1 : (c8 << 6) + e8);
         if(MayCastle(p, move)) return move;
     }
@@ -1580,7 +1580,7 @@ int ParseGSAN(struct Position *p, char *san)
     return M_NONE;
 }
 
-/* 
+/*
  * Parse a move string in e2e4 notation against a supplied move list
  */
 
@@ -1592,9 +1592,9 @@ int ParseGSANList(char *san, int side, int *mvs, int cnt)
 
     if(!strncmp(san, "O-O-O", 5) || !strncmp(san, "o-o-o", 5) ||
        !strncmp(san, "0-0-0", 5)) {
-        int move = M_LCASTLE | 
+        int move = M_LCASTLE |
           (side == White ? (c1 << 6) + e1 : (c8 << 6) + e8);
-	
+
 	for(i=0; i<cnt; i++) if(move == mvs[i]) return move;
 	return M_NONE;
     }
@@ -1634,8 +1634,8 @@ int ParseGSANList(char *san, int side, int *mvs, int cnt)
     return M_NONE;
 }
 
-/* 
- * Test a pseudolegal move for legality 
+/*
+ * Test a pseudolegal move for legality
  */
 
 static int TryMove(struct Position *p, int move)
@@ -1648,7 +1648,7 @@ static int TryMove(struct Position *p, int move)
     return !tmp;
 }
 
-/* 
+/*
  * Parse a move string (in SAN)
  */
 
@@ -1664,7 +1664,7 @@ int ParseSAN(struct Position *p, char *san)
 
     if(!strncmp(san, "O-O-O", 5) || !strncmp(san, "o-o-o", 5) ||
        !strncmp(san, "0-0-0", 5)) {
-        move = M_LCASTLE | 
+        move = M_LCASTLE |
           (p->turn == White ? (c1 << 6) + e1 : (c8 << 6) + e8);
         if(MayCastle(p, move)) return move;
 	else return M_NONE;
@@ -1737,8 +1737,8 @@ int ParseSAN(struct Position *p, char *san)
               else if(*san == 'N') pro = M_PKNIGHT;
               else return M_NONE;
               break;
-          case 'x': 
-          case '+': 
+          case 'x':
+          case '+':
           case '#':
               break;
             default:
@@ -1761,11 +1761,11 @@ int ParseSAN(struct Position *p, char *san)
 
         return mvs[i];
     }
-    
+
     return M_NONE;
 }
 
-/* 
+/*
  * Parse a move string (in SAN) against supplied move list
  */
 
@@ -1781,7 +1781,7 @@ int ParseSANList(char *san, int side, int *mvs, int cnt, int *pmap)
 
     if(!strncmp(san, "O-O-O", 5) || !strncmp(san, "o-o-o", 5) ||
        !strncmp(san, "0-0-0", 5)) {
-        move = M_LCASTLE | 
+        move = M_LCASTLE |
           (side == White ? (c1 << 6) + e1 : (c8 << 6) + e8);
 	for(i=0; i<cnt; i++) if(move == mvs[i]) return move;
 	return M_NONE;
@@ -1851,8 +1851,8 @@ int ParseSANList(char *san, int side, int *mvs, int cnt, int *pmap)
               else if(*san == 'N') pro = M_PKNIGHT;
               else return M_NONE;
               break;
-          case 'x': 
-          case '+': 
+          case 'x':
+          case '+':
           case '#':
               break;
             default:
@@ -1874,11 +1874,11 @@ int ParseSANList(char *san, int side, int *mvs, int cnt, int *pmap)
 
         return mvs[i];
     }
-    
+
     return M_NONE;
 }
 
-/* 
+/*
  * Generate all pseudolegal (!) moves
  * or test if there are any, if mvs = NULL
  */
@@ -2013,20 +2013,20 @@ void ShowPosition(struct Position *p)
         }
 	if(rk == 4) {
 	    int bit;
-	    Print(0, "|   Black (%5d, %5d)  ", 
+	    Print(0, "|   Black (%5d, %5d)  ",
 	          p->material[Black], p->nonPawn[Black]);
 	    for(bit = 0; bit < 5; bit++) {
-		Print(0, "%c", 
+		Print(0, "%c",
 		      (p->material_signature[Black] & (1 << bit)) ?
 		      PieceName[bit+1] : '.');
 	    }
 	    Print(0, "\n");
 	} else if(rk == 3) {
 	    int bit;
-	    Print(0, "|   White (%5d, %5d)  ", 
+	    Print(0, "|   White (%5d, %5d)  ",
 	          p->material[White], p->nonPawn[White]);
 	    for(bit = 0; bit < 5; bit++) {
-		Print(0, "%c", 
+		Print(0, "%c",
 		      (p->material_signature[White] & (1 << bit)) ?
 		      PieceName[bit+1] : '.');
 	    }
@@ -2078,7 +2078,7 @@ void ShowMoves(struct Position *p)
     if(i!=0) Print(0, "\n");
 }
 
-/* 
+/*
  * EPD stuff
  */
 
@@ -2231,7 +2231,7 @@ static void ReadEPD(struct Position *p, char *x)
     RecalcAttacks(p);
     p->ply = 0;
 
-    for(i=0, ops[i] = strtok(x, ";"); ops[i]; i++, 
+    for(i=0, ops[i] = strtok(x, ";"); ops[i]; i++,
         ops[i] = strtok(NULL, ";"));
 
     goodmove[0] = M_NONE;
@@ -2249,7 +2249,7 @@ static void ReadEPD(struct Position *p, char *x)
             if (mv != 0) {
                 goodmove[cnt] = mv;
     		    Print(0, "best move is %s\n", SAN(p, goodmove[cnt]));
-    		    cnt++;                
+    		    cnt++;
             }
 		}
 		goodmove[cnt] = M_NONE;
@@ -2262,7 +2262,7 @@ static void ReadEPD(struct Position *p, char *x)
             if (mv != 0) {
     		    badmove[cnt] = mv;
     		    Print(0, "bad move is %s\n", SAN(p, badmove[cnt]));
-    		    cnt++;                
+    		    cnt++;
             }
 		}
 		badmove[cnt] = M_NONE;
@@ -2270,7 +2270,7 @@ static void ReadEPD(struct Position *p, char *x)
 	}
     }
 
-    /* free the memory allocated 
+    /* free the memory allocated
      */
 
     free(line);
@@ -2285,7 +2285,7 @@ char *MakeEPD(struct Position *p)
     static char epdbuffer[2048];
     char wname[] = " PNBRQK";
     char bname[] = " pnbrqk";
-    
+
     char *x = epdbuffer;
     int i,j,cnt;
 
@@ -2398,7 +2398,7 @@ int CheckDraw(struct Position *p) {
             }
         }
         else if(p->nonPawn[White] == BISHOP_Value && p->mask[White][Bishop]) {
-            if(!(p->mask[White][Pawn] & NotAFileMask) && 
+            if(!(p->mask[White][Pawn] & NotAFileMask) &&
                (p->mask[Black][King] & CornerMaskA8)) {
                 if(p->mask[White][Bishop] & BlackSquaresMask) return TRUE;
             }
@@ -2431,13 +2431,13 @@ int CheckDraw(struct Position *p) {
     return FALSE;
 }
 
-/* 
+/*
  * Check if the pawn is passed
  */
 
 int IsPassed(struct Position *p, int sq, int side)
 {
-    if(side == White) 
+    if(side == White)
         return !(p->mask[Black][Pawn] & PassedMaskW[sq]);
     else
         return !(p->mask[White][Pawn] & PassedMaskB[sq]);
@@ -2477,12 +2477,12 @@ struct Position *InitialPosition(void)
 {
     struct Position *p = CreatePositionFromEPD(
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -");
-    
+
     /* we are 'in book' in the InitalPosition */
     p->outOfBookCnt[White] = p->outOfBookCnt[Black] = 0;
 
     return p;
-}    
+}
 
 struct Position *ClonePosition(struct Position *src)
 {

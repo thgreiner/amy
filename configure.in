@@ -8,7 +8,7 @@ AC_INIT(src/dbase.c)
 
 m4_include([m4/ax_gcc_builtin.m4])
 
-AC_ARG_WITH(dbpath, 
+AC_ARG_WITH(dbpath,
   [  --with-dbpath           specify path to Berkeley DB libraries])
 AC_ARG_ENABLE(mt,
   [  --enable-mt             enable multithreaded search])
@@ -63,7 +63,7 @@ AC_FUNC_MEMCMP
 AC_TYPE_SIGNAL
 AC_CHECK_FUNCS(gettimeofday select strerror strstr setbuf gethostname ffsll)
 
-AX_GCC_BUILTIN(__builtin_ffsll)
+AX_GCC_BUILTIN(__builtin_clzll)
 AX_GCC_BUILTIN(__builtin_popcountll)
 
 AC_OUTPUT(Makefile EPD/Makefile PGN/Makefile src/Makefile doc/Makefile)

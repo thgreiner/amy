@@ -63,7 +63,7 @@ void ParseEcoPgn(char *fname)
     struct Position *p;
 
     if(!fin) {
-        Print(0, "Can´t open file %s\n", fname);
+        Print(0, "Canï¿½t open file %s\n", fname);
         return;
     }
 

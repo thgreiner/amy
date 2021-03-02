@@ -42,6 +42,7 @@ int ForceMode = FALSE;
 int EasyMode  = FALSE;
 int PostMode = FALSE;
 int AutoSave = FALSE;
+int SelfPlayMode = FALSE;
 
 struct Position *CurrentPosition;
 int ComputerSide;
@@ -89,8 +90,7 @@ void StateMachine(void)
                 SearchRoot(CurrentPosition);
                 if(EasyMode || ForceMode) {
                     State = STATE_WAITING;
-                }
-                else {
+                } else if (!SelfPlayMode) {
                     State = STATE_PONDERING;
                 }
                 break;
@@ -124,6 +124,7 @@ void StateMachine(void)
             if(State == STATE_ANALYZING) {
                 State = STATE_WAITING;
             }
+            SelfPlayMode = FALSE;
         }
     }
 

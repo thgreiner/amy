@@ -36,7 +36,7 @@
 
 #define USE_8BIT 1
 
-#if !HAVE___BUILTIN_FFSLL
+#if !HAVE___BUILTIN_CLZLL
 int FindSetBit(BitBoard b)
 {
 #if HAVE_FFSLL
