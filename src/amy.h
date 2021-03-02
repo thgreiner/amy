@@ -33,30 +33,30 @@
 
 #ifdef _WIN32
 
-   /*
-    * Windows stuff by Dann Corbit.
-    */
+/*
+ * Windows stuff by Dann Corbit.
+ */
 
-#  define CDECL __cdecl
-#  define STDC_HEADERS 1
-#  define HAVE_FCNTL_H 1
+#define CDECL __cdecl
+#define STDC_HEADERS 1
+#define HAVE_FCNTL_H 1
 
 #else
-#  define CDECL
+#define CDECL
 #endif
 
 #if STDC_HEADERS
+#include <math.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdarg.h>
 #include <string.h>
-#include <math.h>
 #endif
 
 #ifdef _WIN32
-#include <windows.h>
 #include <conio.h>
 #include <io.h>
+#include <windows.h>
 #endif
 
 #if HAVE_UNISTD_H
@@ -68,96 +68,96 @@
 #endif
 
 #if TIME_WITH_SYS_TIME
-# include <sys/time.h>
-# include <time.h>
+#include <sys/time.h>
+#include <time.h>
 #else
-# if HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# else
-#  include <time.h>
-# endif
+#if HAVE_SYS_TIME_H
+#include <sys/time.h>
+#else
+#include <time.h>
+#endif
 #endif
 
 #if HAVE_LIBPTHREAD
 #include <pthread.h>
 #endif
 
-#include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 
-#define SQUARE(x) 'a'+((x) & 7), '1'+((x) >> 3)
+#define SQUARE(x) 'a' + ((x)&7), '1' + ((x) >> 3)
 
 #define SetBit(b, i) ((b) |= SetMask[i])
 #define ClrBit(b, i) ((b) &= ClrMask[i])
-#define TstBit(b, i) ((b) & SetMask[i])
+#define TstBit(b, i) ((b)&SetMask[i])
 
 #define OPP(x) (1 ^ (x))
 
 #define TYPE(x) (((x) >= 0) ? (x) : -(x))
 #define COLOR(x) (((x) == 0) ? Neutral : (((x) > 0) ? White : Black))
-#define SAME_COLOR(p, c) \
-	(((c) == White && (p) > 0) || ((c) == Black && (p) < 0))
-#define PIECEID(p, c) \
-	(((c) == White) ? (p) : -(p))
+#define SAME_COLOR(p, c)                                                       \
+    (((c) == White && (p) > 0) || ((c) == Black && (p) < 0))
+#define PIECEID(p, c) (((c) == White) ? (p) : -(p))
 
-#define M_FROM(m) ((m) & 63)
-#define M_TO(m)   (((m) >> 6) & 63)
+#define M_FROM(m) ((m)&63)
+#define M_TO(m) (((m) >> 6) & 63)
 
-#define M_CAPTURE    (1 << 13)
-#define M_SCASTLE    (1 << 14)
-#define M_LCASTLE    (1 << 15)
-#define M_PAWND      (1 << 16)
-#define M_PQUEEN     (1 << 17)
-#define M_PROOK      (1 << 18)
-#define M_PBISHOP    (1 << 19)
-#define M_PKNIGHT    (1 << 20)
-#define M_ENPASSANT  (1 << 21)
-#define M_NULL       (1 << 22)
-#define M_HASHED     (1 << 23)
+#define M_CAPTURE (1 << 13)
+#define M_SCASTLE (1 << 14)
+#define M_LCASTLE (1 << 15)
+#define M_PAWND (1 << 16)
+#define M_PQUEEN (1 << 17)
+#define M_PROOK (1 << 18)
+#define M_PBISHOP (1 << 19)
+#define M_PKNIGHT (1 << 20)
+#define M_ENPASSANT (1 << 21)
+#define M_NULL (1 << 22)
+#define M_HASHED (1 << 23)
 
-#define M_CANY       (M_SCASTLE|M_LCASTLE)
-#define M_PANY       (M_PQUEEN|M_PROOK|M_PBISHOP|M_PKNIGHT)
+#define M_CANY (M_SCASTLE | M_LCASTLE)
+#define M_PANY (M_PQUEEN | M_PROOK | M_PBISHOP | M_PKNIGHT)
 
-#define M_TACTICAL   (M_CAPTURE|M_ENPASSANT|M_PANY)
+#define M_TACTICAL (M_CAPTURE | M_ENPASSANT | M_PANY)
 
-#define M_NONE       0
+#define M_NONE 0
 
-#define PAWN_Value     1000
-#define KNIGHT_Value   3500
-#define BISHOP_Value   3500
-#define ROOK_Value     5500
-#define QUEEN_Value    11000
+#define PAWN_Value 1000
+#define KNIGHT_Value 3500
+#define BISHOP_Value 3500
+#define ROOK_Value 5500
+#define QUEEN_Value 11000
 
-#define STRUCTURE_FIANCHETTO_WK		(1<<0)
-#define STRUCTURE_FIANCHETTO_WQ		(1<<1)
-#define STRUCTURE_FIANCHETTO_BK		(1<<2)
-#define STRUCTURE_FIANCHETTO_BQ		(1<<3)
+#define STRUCTURE_FIANCHETTO_WK (1 << 0)
+#define STRUCTURE_FIANCHETTO_WQ (1 << 1)
+#define STRUCTURE_FIANCHETTO_BK (1 << 2)
+#define STRUCTURE_FIANCHETTO_BQ (1 << 3)
 
-#define INF           200000      /* max. score */
-#define CMLIMIT       100000      /* scores above this (or below -CMLIMIT)
-                                   * indicate checkmate */
-#define ON_EVALUATION (INF+1)
+#define INF 200000 /* max. score */
+#define CMLIMIT                                                                \
+    100000 /* scores above this (or below -CMLIMIT)                            \
+            * indicate checkmate */
+#define ON_EVALUATION (INF + 1)
 
-#define CUT_ABORTED (INF+1)
+#define CUT_ABORTED (INF + 1)
 
-#define MAX_TREE_SIZE     64    /* maximum depth we will search to */
+#define MAX_TREE_SIZE 64 /* maximum depth we will search to */
 #define MAX_SEARCH_HEAP 2000
 
-#define GAME_LOG_SIZE 1000  /* maximum do's we support */
+#define GAME_LOG_SIZE 1000 /* maximum do's we support */
 
-#define PB_NO_PB_MOVE     0
-#define PB_NO_PB_HIT      1
-#define PB_HIT            2
-#define PB_ALT_COMMAND    3
+#define PB_NO_PB_MOVE 0
+#define PB_NO_PB_HIT 1
+#define PB_HIT 2
+#define PB_ALT_COMMAND 3
 
-#define STATE_WAITING     0
+#define STATE_WAITING 0
 #define STATE_CALCULATING 1
-#define STATE_PONDERING   2
-#define STATE_ANALYZING   3
-#define STATE_END         4
+#define STATE_PONDERING 2
+#define STATE_ANALYZING 3
+#define STATE_END 4
 
 #ifndef TRUE
-#define TRUE  1
+#define TRUE 1
 #define FALSE 0
 #endif
 
@@ -167,14 +167,13 @@
 
 #define ONE_SECOND 100u
 #define ABS(x) ((x) < 0 ? -(x) : (x))
-#define MAX(x,y) ((x) > (y) ? (x) : (y))
-#define MIN(x,y) ((x) < (y) ? (x) : (y))
+#define MAX(x, y) ((x) > (y) ? (x) : (y))
+#define MIN(x, y) ((x) < (y) ? (x) : (y))
 
 #define SIGNATURE_BIT(x) (1 << ((x)-1))
-#define CALCULATE_INDEX(a,b) \
-    (((a) | (b)) + 32 * ((a) != 0 && (b) != 0))
-#define RECOGNIZER_INDEX(p) \
-    CALCULATE_INDEX((p)->material_signature[White], \
+#define CALCULATE_INDEX(a, b) (((a) | (b)) + 32 * ((a) != 0 && (b) != 0))
+#define RECOGNIZER_INDEX(p)                                                    \
+    CALCULATE_INDEX((p)->material_signature[White],                            \
                     (p)->material_signature[Black])
 
 #define BOOK_MOVE -1
@@ -197,23 +196,77 @@ enum CTypes { White = 0, Black = 1 };
  */
 
 enum {
-    a1 = 0, b1, c1, d1, e1, f1, g1, h1,
-        a2, b2, c2, d2, e2, f2, g2, h2,
-        a3, b3, c3, d3, e3, f3, g3, h3,
-        a4, b4, c4, d4, e4, f4, g4, h4,
-        a5, b5, c5, d5, e5, f5, g5, h5,
-        a6, b6, c6, d6, e6, f6, g6, h6,
-        a7, b7, c7, d7, e7, f7, g7, h7,
-        a8, b8, c8, d8, e8, f8, g8, h8
+    a1 = 0,
+    b1,
+    c1,
+    d1,
+    e1,
+    f1,
+    g1,
+    h1,
+    a2,
+    b2,
+    c2,
+    d2,
+    e2,
+    f2,
+    g2,
+    h2,
+    a3,
+    b3,
+    c3,
+    d3,
+    e3,
+    f3,
+    g3,
+    h3,
+    a4,
+    b4,
+    c4,
+    d4,
+    e4,
+    f4,
+    g4,
+    h4,
+    a5,
+    b5,
+    c5,
+    d5,
+    e5,
+    f5,
+    g5,
+    h5,
+    a6,
+    b6,
+    c6,
+    d6,
+    e6,
+    f6,
+    g6,
+    h6,
+    a7,
+    b7,
+    c7,
+    d7,
+    e7,
+    f7,
+    g7,
+    h7,
+    a8,
+    b8,
+    c8,
+    d8,
+    e8,
+    f8,
+    g8,
+    h8
 };
 
 /*
  * Constants for value status.
  */
 
-enum {
-    ExactScore, LowerBound, UpperBound, Useful, Useless, OnEvaluation
-};
+enum { ExactScore, LowerBound, UpperBound, Useful, Useless, OnEvaluation };
 
 typedef void (*COMMAND)(char *args);
 
@@ -222,22 +275,21 @@ typedef unsigned long BitBoard;
 typedef unsigned long ran_t;
 typedef long hash_t;
 #else
-#  if SIZEOF_LONG_LONG == 8
+#if SIZEOF_LONG_LONG == 8
 typedef unsigned long long BitBoard;
 typedef unsigned long long ran_t;
 typedef long long hash_t;
-#  else
-#    if defined(NT_i386) || defined(NT_AXP) || defined(_WIN32)
+#else
+#if defined(NT_i386) || defined(NT_AXP) || defined(_WIN32)
 typedef unsigned __int64 BitBoard;
 typedef unsigned __int64 ran_t;
-#    else
-#      error "Need 64 bit datatype!"
-#    endif
-#  endif
+#else
+#error "Need 64 bit datatype!"
+#endif
+#endif
 #endif
 
-struct Position
-{
+struct Position {
     BitBoard atkTo[64];
     BitBoard atkFr[64];
     BitBoard mask[2][7];
@@ -246,7 +298,7 @@ struct Position
     int ply;
     int castle;
     int enPassant;
-    int turn;           /* 0 == white, 1 == black */
+    int turn; /* 0 == white, 1 == black */
     hash_t hkey;
     hash_t pkey;
     int material[2], nonPawn[2];
@@ -257,8 +309,7 @@ struct Position
     int material_signature[2];
 };
 
-struct Command
-{
+struct Command {
     int move;
     COMMAND command_func;
     int allowed_during_search;
@@ -266,8 +317,7 @@ struct Command
     char *args;
 };
 
-struct CommandEntry
-{
+struct CommandEntry {
     char *name;
     COMMAND command_func;
     int allowed_during_search;
@@ -276,8 +326,7 @@ struct CommandEntry
     char *long_help;
 };
 
-struct SearchStatus
-{
+struct SearchStatus {
     int st_phase;
     int st_first;
     int st_nc_first;
@@ -287,78 +336,76 @@ struct SearchStatus
 };
 
 struct KillerEntry {
-    int killer1, killer2;   /* killer moves */
-    int kcount1, kcount2;   /* killer count */
+    int killer1, killer2; /* killer moves */
+    int kcount1, kcount2; /* killer count */
 };
 
-struct SearchData
-{
-    struct Position     *position;
+struct SearchData {
+    struct Position *position;
 
     struct SearchStatus *current;
     struct SearchStatus *statusTable;
-    struct KillerEntry  *killer;
-    struct KillerEntry  *killerTable;
+    struct KillerEntry *killer;
+    struct KillerEntry *killerTable;
 #if MP
-    struct HTEntry      *localHashTable;
+    struct HTEntry *localHashTable;
 #endif
 
-    int                 *moveHeap;
-    int                 *dataHeap;
-    unsigned int        counterTab[2][4096];  /* counter moves per side */
-    unsigned int        historyTab[2][4096];  /* history moves per side */
+    int *moveHeap;
+    int *dataHeap;
+    unsigned int counterTab[2][4096]; /* counter moves per side */
+    unsigned int historyTab[2][4096]; /* history moves per side */
 
-    int                 pv_save[64];
+    int pv_save[64];
 
-    int                 ply;
+    int ply;
 
-    int                 master;               /* true if a master process */
+    int master; /* true if a master process */
 
-    int                 best_move;
-    int                 depth;
+    int best_move;
+    int depth;
 
-    int                 nrootmoves;
-    int                 movenum;
+    int nrootmoves;
+    int movenum;
 };
 
-struct GameLog
-{
-    int    gl_Move;          /* the move that has been made in the position */
-    int    gl_Piece;         /* the piece that was captured (if any) */
-    int    gl_Castle;        /* the castling rights */
-    int    gl_EnPassant;     /* the enpassant target square (if any) */
-    int    gl_IrrevCount;    /* number of moves since last irreversible move */
-    hash_t gl_HashKey;       /* used to detect repetitions */
+struct GameLog {
+    int gl_Move;       /* the move that has been made in the position */
+    int gl_Piece;      /* the piece that was captured (if any) */
+    int gl_Castle;     /* the castling rights */
+    int gl_EnPassant;  /* the enpassant target square (if any) */
+    int gl_IrrevCount; /* number of moves since last irreversible move */
+    hash_t gl_HashKey; /* used to detect repetitions */
     hash_t gl_PawnKey;
 };
 
 struct PawnFacts {
     BitBoard pf_WhitePassers;
     BitBoard pf_BlackPassers;
-    int      pf_Flags;
-    char     pf_WhiteKingSide;
-    char     pf_BlackKingSide;
-    char     pf_WhiteQueenSide;
-    char     pf_BlackQueenSide;
+    int pf_Flags;
+    char pf_WhiteKingSide;
+    char pf_BlackKingSide;
+    char pf_WhiteQueenSide;
+    char pf_BlackQueenSide;
 };
 
 struct HTEntry {
-    int  ht_Signature;
-    int   ht_Move;
-    int   ht_Score;
+    int ht_Signature;
+    int ht_Move;
+    int ht_Score;
     short ht_Flags;
     short ht_Depth;
 };
 
 struct PTEntry {
-    unsigned int     pt_Signature;
-    int              pt_Score;
+    unsigned int pt_Signature;
+    int pt_Score;
     struct PawnFacts pt_PawnFacts;
 };
 
 struct STEntry {
     unsigned int st_Signature;
-    int          st_Score;
+    int st_Score;
 };
 
 struct MoveData {
@@ -366,8 +413,7 @@ struct MoveData {
     signed char nextDir;
 };
 
-struct PGNHeader
-{
+struct PGNHeader {
     char event[64];
     char site[64];
     char date[64];
@@ -375,8 +421,8 @@ struct PGNHeader
     char white[64];
     char black[64];
     char result[8];
-    int  white_elo;
-    int  black_elo;
+    int white_elo;
+    int black_elo;
 };
 
 extern int AutoSave;
@@ -442,7 +488,6 @@ extern BitBoard ConnectedMask[64];
 extern unsigned char FirstBit8[256];
 extern unsigned char FirstBit16[65536];
 
-
 extern int w_kingside_score, w_queenside_score;
 extern int b_kingside_score, b_queenside_score;
 
@@ -486,7 +531,7 @@ extern int EasyMode;
 extern int PostMode;
 extern int SelfPlayMode;
 
-extern int TMoves,   TTime;
+extern int TMoves, TTime;
 extern int Moves[3], Time[3];
 extern int Increment;
 extern int TMoves2, TTime2;
@@ -514,7 +559,7 @@ int FindSetBit(BitBoard);
 
 void Bookup(char *);
 void BookupQuiet(char *);
-void FlattenBook(int );
+void FlattenBook(int);
 void CreateLearnDB(char *);
 void QueryBook(struct Position *);
 int SelectBook(struct Position *);

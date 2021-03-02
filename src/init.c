@@ -8,8 +8,8 @@
     Redistribution and use in source and binary forms, with or without
     modification, are permitted provided that the following conditions are met:
 
-    * Redistributions of source code must retain the above copyright notice, this
-      list of conditions and the following disclaimer.
+    * Redistributions of source code must retain the above copyright notice,
+   this list of conditions and the following disclaimer.
 
     * Redistributions in binary form must reproduce the above copyright notice,
       this list of conditions and the following disclaimer in the documentation
@@ -17,14 +17,15 @@
 
     THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
     AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-    FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-    DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-    SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-    CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-    OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+   ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+   LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+   CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+   SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+   INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+   POSSIBILITY OF SUCH DAMAGE.
 
 */
 
@@ -80,101 +81,105 @@ BitBoard ConnectedMask[64];
 unsigned char FirstBit8[256];
 unsigned char FirstBit16[65536];
 
-void InitMasks(void)
-{
+void InitMasks(void) {
     BitBoard mask = -1;
     int i;
 
     mask = (mask << 63);
-    for(i=0; i<64; i++) {
+    for (i = 0; i < 64; i++) {
         SetMask[i] = mask;
         ClrMask[i] = ~mask;
         mask >>= 1;
     }
 
-    for(i=0; i<256; i++) {
+    for (i = 0; i < 256; i++) {
         int j;
-        for(j=0; j<8; j++) {
-            if(i & (1<<(7-j))) {
-                FirstBit8[i]=j;
+        for (j = 0; j < 8; j++) {
+            if (i & (1 << (7 - j))) {
+                FirstBit8[i] = j;
                 break;
             }
         }
     }
 
-    for(i=0; i<65536; i++) {
+    for (i = 0; i < 65536; i++) {
         int j;
-        for(j=0; j<16; j++) {
-            if(i & (1<<(15-j))) {
-                FirstBit16[i]=j;
+        for (j = 0; j < 16; j++) {
+            if (i & (1 << (15 - j))) {
+                FirstBit16[i] = j;
                 break;
             }
         }
     }
 
     ShiftUpMask = ShiftDownMask = ShiftLeftMask = ShiftRightMask = -1;
-    for(i=0; i<8; i++) {
+    for (i = 0; i < 8; i++) {
         ShiftUpMask &= ClrMask[i];
-        ShiftDownMask &= ClrMask[56+i];
-        ShiftLeftMask &= ClrMask[8*i+7];
-        ShiftRightMask &= ClrMask[8*i];
+        ShiftDownMask &= ClrMask[56 + i];
+        ShiftLeftMask &= ClrMask[8 * i + 7];
+        ShiftRightMask &= ClrMask[8 * i];
     }
 }
 
-void PrintBitBoard(BitBoard x)
-{
+void PrintBitBoard(BitBoard x) {
     int i, j;
-    for(i=7; i>=0; i--) {
-        for(j=0; j<8; j++)  {
-            int k=i*8+j;
-            if(x & SetMask[k]) Print(0, "*");
-            else               Print(0, ".");
+    for (i = 7; i >= 0; i--) {
+        for (j = 0; j < 8; j++) {
+            int k = i * 8 + j;
+            if (x & SetMask[k])
+                Print(0, "*");
+            else
+                Print(0, ".");
         }
         Print(0, "\n");
     }
 }
 
-void Print2BitBoards(BitBoard x1, BitBoard x2)
-{
+void Print2BitBoards(BitBoard x1, BitBoard x2) {
     int i, j;
-    for(i=7; i>=0; i--) {
-        for(j=0; j<8; j++)  {
-            int k=i*8+j;
-            if(x1 & SetMask[k]) Print(0, "*");
-            else                Print(0, ".");
+    for (i = 7; i >= 0; i--) {
+        for (j = 0; j < 8; j++) {
+            int k = i * 8 + j;
+            if (x1 & SetMask[k])
+                Print(0, "*");
+            else
+                Print(0, ".");
         }
-		printf("   ");
-        for(j=0; j<8; j++)  {
-            int k=i*8+j;
-            if(x2 & SetMask[k]) Print(0, "*");
-            else                Print(0, ".");
+        printf("   ");
+        for (j = 0; j < 8; j++) {
+            int k = i * 8 + j;
+            if (x2 & SetMask[k])
+                Print(0, "*");
+            else
+                Print(0, ".");
         }
         Print(0, "\n");
     }
 }
 
-void InitPawnMasks(void)
-{
+void InitPawnMasks(void) {
     int i, j;
 
-    for(i=0; i<8; i++) {
+    for (i = 0; i < 8; i++) {
         FileMask[i] = 0;
         IsoMask[i] = 0;
-        for(j=0; j<8; j++) {
-            FileMask[i] |= SetMask[8*j+i];
-            if(i > 0) IsoMask[i] |= SetMask[8*j+i-1];
-            if(i < 7) IsoMask[i] |= SetMask[8*j+i+1];
+        for (j = 0; j < 8; j++) {
+            FileMask[i] |= SetMask[8 * j + i];
+            if (i > 0)
+                IsoMask[i] |= SetMask[8 * j + i - 1];
+            if (i < 7)
+                IsoMask[i] |= SetMask[8 * j + i + 1];
         }
 #ifdef DEBUG
         PrintBitBoard(IsoMask[i]);
 #endif
     }
-    for(i=0; i<64; i++) {
+    for (i = 0; i < 64; i++) {
         ForwardRayW[i] = ForwardRayB[i] = 0;
-        for(j=i+8; j<64; j+=8) {
+        for (j = i + 8; j < 64; j += 8) {
             ForwardRayW[i] |= SetMask[j];
         }
-        for(j=i-8; j>=0; j-=8) {
+        for (j = i - 8; j >= 0; j -= 8) {
             ForwardRayB[i] |= SetMask[j];
         }
 #ifdef DEBUG
@@ -182,34 +187,42 @@ void InitPawnMasks(void)
         PrintBitBoard(ForwardRayB[i]);
 #endif
     }
-    for(i=0; i<64; i++) {
+    for (i = 0; i < 64; i++) {
         PassedMaskW[i] = ForwardRayW[i];
-        if((i&7) > 0) PassedMaskW[i] |= ForwardRayW[i-1];
-        if((i&7) < 7) PassedMaskW[i] |= ForwardRayW[i+1];
+        if ((i & 7) > 0)
+            PassedMaskW[i] |= ForwardRayW[i - 1];
+        if ((i & 7) < 7)
+            PassedMaskW[i] |= ForwardRayW[i + 1];
         PassedMaskB[i] = ForwardRayB[i];
-        if((i&7) > 0) PassedMaskB[i] |= ForwardRayB[i-1];
-        if((i&7) < 7) PassedMaskB[i] |= ForwardRayB[i+1];
+        if ((i & 7) > 0)
+            PassedMaskB[i] |= ForwardRayB[i - 1];
+        if ((i & 7) < 7)
+            PassedMaskB[i] |= ForwardRayB[i + 1];
         /* PrintBitBoard(PassedMaskW[i]); */
         /* PrintBitBoard(PassedMaskB[i]); */
         OutpostMaskW[i] = OutpostMaskB[i] = 0;
-        if((i&7) > 0) {
-            OutpostMaskW[i] |= ForwardRayW[i-1]; 
-            OutpostMaskB[i] |= ForwardRayB[i-1]; 
+        if ((i & 7) > 0) {
+            OutpostMaskW[i] |= ForwardRayW[i - 1];
+            OutpostMaskB[i] |= ForwardRayB[i - 1];
         }
-        if((i&7) < 7) {
-            OutpostMaskW[i] |= ForwardRayW[i+1]; 
-            OutpostMaskB[i] |= ForwardRayB[i+1]; 
+        if ((i & 7) < 7) {
+            OutpostMaskW[i] |= ForwardRayW[i + 1];
+            OutpostMaskB[i] |= ForwardRayB[i + 1];
         }
         /* PrintBitBoard(OutpostMaskW[i]); */
         /* PrintBitBoard(OutpostMaskB[i]); */
         ArtIsoMaskW[i] = ArtIsoMaskB[i] = IsoMask[i & 7];
-        for(j=i-3*8; j>0; j-= 8) {
-            if((i & 7) > 0) ClrBit(ArtIsoMaskW[i], j-1);
-            if((i & 7) < 7) ClrBit(ArtIsoMaskW[i], j+1);
+        for (j = i - 3 * 8; j > 0; j -= 8) {
+            if ((i & 7) > 0)
+                ClrBit(ArtIsoMaskW[i], j - 1);
+            if ((i & 7) < 7)
+                ClrBit(ArtIsoMaskW[i], j + 1);
         }
-        for(j=i+3*8; j<64; j+= 8) {
-            if((i & 7) > 0) ClrBit(ArtIsoMaskB[i], j-1);
-            if((i & 7) < 7) ClrBit(ArtIsoMaskB[i], j+1);
+        for (j = i + 3 * 8; j < 64; j += 8) {
+            if ((i & 7) > 0)
+                ClrBit(ArtIsoMaskB[i], j - 1);
+            if ((i & 7) < 7)
+                ClrBit(ArtIsoMaskB[i], j + 1);
         }
         /*
         printf("\n%c%c:\n", SQUARE(i));
@@ -217,24 +230,24 @@ void InitPawnMasks(void)
         */
     }
 
-    for(i=0; i<64; i++) {
+    for (i = 0; i < 64; i++) {
         int sq;
 
         WPawnBackwardMask[i] = BPawnBackwardMask[i] = 0;
-        for(sq = i; sq > 0; sq -= 8) {
-            if((sq & 7) > 0) {
-                WPawnBackwardMask[i] |= SetMask[sq-1];
+        for (sq = i; sq > 0; sq -= 8) {
+            if ((sq & 7) > 0) {
+                WPawnBackwardMask[i] |= SetMask[sq - 1];
             }
-            if((sq & 7) < 7) {
-                WPawnBackwardMask[i] |= SetMask[sq+1];
+            if ((sq & 7) < 7) {
+                WPawnBackwardMask[i] |= SetMask[sq + 1];
             }
         }
-        for(sq = i; sq < 64; sq += 8) {
-            if((sq & 7) > 0) {
-                BPawnBackwardMask[i] |= SetMask[sq-1];
+        for (sq = i; sq < 64; sq += 8) {
+            if ((sq & 7) > 0) {
+                BPawnBackwardMask[i] |= SetMask[sq - 1];
             }
-            if((sq & 7) < 7) {
-                BPawnBackwardMask[i] |= SetMask[sq+1];
+            if ((sq & 7) < 7) {
+                BPawnBackwardMask[i] |= SetMask[sq + 1];
             }
         }
 
@@ -264,77 +277,79 @@ void InitPawnMasks(void)
     printf("\n");
     */
 
-    PawnCenterMask = 
-        SetMask[d3] | SetMask[e3] | SetMask[d4] | SetMask[e4] |
-        SetMask[d5] | SetMask[e5] | SetMask[d6] | SetMask[e6];
+    PawnCenterMask = SetMask[d3] | SetMask[e3] | SetMask[d4] | SetMask[e4] |
+                     SetMask[d5] | SetMask[e5] | SetMask[d6] | SetMask[e6];
 
     /* PrintBitBoard(PawnCenterMask); */
 
-    for(i=0; i<64; i++) {
-	ConnectedMask[i] = 0;
+    for (i = 0; i < 64; i++) {
+        ConnectedMask[i] = 0;
 
-	if((i & 7) < 7) {
-	    SetBit(ConnectedMask[i], i+1);
-	    if((i >> 3) > 1) {
-		SetBit(ConnectedMask[i], i-7);
-	    }
-	    if((i >> 3) < 6) {
-		SetBit(ConnectedMask[i], i+9);
-	    }
-	}
+        if ((i & 7) < 7) {
+            SetBit(ConnectedMask[i], i + 1);
+            if ((i >> 3) > 1) {
+                SetBit(ConnectedMask[i], i - 7);
+            }
+            if ((i >> 3) < 6) {
+                SetBit(ConnectedMask[i], i + 9);
+            }
+        }
 
-	/*
+        /*
         printf("\n%c%c:\n", SQUARE(i));
         PrintBitBoard(ConnectedMask[i]);
-	*/
+        */
     }
 }
 
-void InitGeometry(void)
-{
+void InitGeometry(void) {
     int edge[100];
     int trto[100], trfr[64];
     int i, j, k, l;
-    int dirs[] = { 1, -1, 10, -10, 9, -9, 11, -11 };
-    int dirb[] = { 9, -9, 11, -11 };
-    int dirr[] = { 1, -1, 10, -10 };
-    int dirn[] = { 19, 21, -19, -21, 12, 8, -12, -8 };
-    int dirk[] = { -11, -10, -9, -1, 1, 9, 10, 11 };
+    int dirs[] = {1, -1, 10, -10, 9, -9, 11, -11};
+    int dirb[] = {9, -9, 11, -11};
+    int dirr[] = {1, -1, 10, -10};
+    int dirn[] = {19, 21, -19, -21, 12, 8, -12, -8};
+    int dirk[] = {-11, -10, -9, -1, 1, 9, 10, 11};
 
-    for(i=0; i<100; i++) edge[i] = trto[i] = 0;
-    for(i=0; i<64; i++)  trfr[i] = 0;
+    for (i = 0; i < 100; i++)
+        edge[i] = trto[i] = 0;
+    for (i = 0; i < 64; i++)
+        trfr[i] = 0;
 
-    for(i=0; i<10; i++) {
-        edge[i] = edge[90+i] = edge[10*i] = edge[10*i+9] = 1;
-        for(j=0; j<10; j++) {
-            int x = i-1;
-            int y = j-1;
-            if(x>=0 && y>=0 && x<8 && y<8) {
-                trto[i+10*j] = x+8*y;
-                trfr[x+8*y]  = i+10*j;
+    for (i = 0; i < 10; i++) {
+        edge[i] = edge[90 + i] = edge[10 * i] = edge[10 * i + 9] = 1;
+        for (j = 0; j < 10; j++) {
+            int x = i - 1;
+            int y = j - 1;
+            if (x >= 0 && y >= 0 && x < 8 && y < 8) {
+                trto[i + 10 * j] = x + 8 * y;
+                trfr[x + 8 * y] = i + 10 * j;
             }
         }
     }
 
-    for(i=0; i<64; i++) {
-        for(j=0; j<64; j++) {
+    for (i = 0; i < 64; i++) {
+        for (j = 0; j < 64; j++) {
             InterPath[i][j] = 0;
             Ray[i][j] = 0;
         }
-        WPawnEPM[i] = BPawnEPM[i] = 
-        KnightEPM[i] = BishopEPM[i] = 
-        RookEPM[i] = QueenEPM[i] = KingEPM[i] = 0;
+        WPawnEPM[i] = BPawnEPM[i] = KnightEPM[i] = BishopEPM[i] = RookEPM[i] =
+            QueenEPM[i] = KingEPM[i] = 0;
     }
 
-    for(j=0; j<100; j++) {
-        int x=trto[j];
-        if(edge[j]) continue;
-        for(i=0; i<8; i++) {
+    for (j = 0; j < 100; j++) {
+        int x = trto[j];
+        if (edge[j])
+            continue;
+        for (i = 0; i < 8; i++) {
             int d = dirs[i];
-            for(k=j+d; !edge[k]; k+=d) {
-                int y=trto[k]; 
-                for(l=j+d; l!=k; l+=d) InterPath[x][y] |= SetMask[trto[l]];
-                for(l=k+d; !edge[l]; l+=d) Ray[x][y] |= SetMask[trto[l]];
+            for (k = j + d; !edge[k]; k += d) {
+                int y = trto[k];
+                for (l = j + d; l != k; l += d)
+                    InterPath[x][y] |= SetMask[trto[l]];
+                for (l = k + d; !edge[l]; l += d)
+                    Ray[x][y] |= SetMask[trto[l]];
                 /*
                 if(InterPath[x][y]) {
                     printf("%c%c <-> %c%c\n", SQUARE(x), SQUARE(y));
@@ -347,28 +362,34 @@ void InitGeometry(void)
                 */
             }
         }
-        for(i=0; i<4; i++) {
+        for (i = 0; i < 4; i++) {
             int d = dirb[i];
-            for(k=j+d; !edge[k]; k+=d) {
+            for (k = j + d; !edge[k]; k += d) {
                 BishopEPM[x] |= SetMask[trto[k]];
-                QueenEPM[x]  |= SetMask[trto[k]];
+                QueenEPM[x] |= SetMask[trto[k]];
             }
             d = dirr[i];
-            for(k=j+d; !edge[k]; k+=d) {
+            for (k = j + d; !edge[k]; k += d) {
                 RookEPM[x] |= SetMask[trto[k]];
-                QueenEPM[x]  |= SetMask[trto[k]];
+                QueenEPM[x] |= SetMask[trto[k]];
             }
         }
-        for(i=0; i<8; i++) {
-            k=j+dirn[i];
-            if(k>=0 && k<100 && !edge[k]) KnightEPM[x] |= SetMask[trto[k]];
-            k=j+dirk[i];
-            if(k>=0 && k<100 && !edge[k]) KingEPM[x] |= SetMask[trto[k]];
+        for (i = 0; i < 8; i++) {
+            k = j + dirn[i];
+            if (k >= 0 && k < 100 && !edge[k])
+                KnightEPM[x] |= SetMask[trto[k]];
+            k = j + dirk[i];
+            if (k >= 0 && k < 100 && !edge[k])
+                KingEPM[x] |= SetMask[trto[k]];
         }
-        if(!edge[j+9])  WPawnEPM[x] |= SetMask[x+7];
-        if(!edge[j+11]) WPawnEPM[x] |= SetMask[x+9];
-        if(!edge[j-9])  BPawnEPM[x] |= SetMask[x-7];
-        if(!edge[j-11]) BPawnEPM[x] |= SetMask[x-9];
+        if (!edge[j + 9])
+            WPawnEPM[x] |= SetMask[x + 7];
+        if (!edge[j + 11])
+            WPawnEPM[x] |= SetMask[x + 9];
+        if (!edge[j - 9])
+            BPawnEPM[x] |= SetMask[x - 7];
+        if (!edge[j - 11])
+            BPawnEPM[x] |= SetMask[x - 9];
         /*
         printf("%c%c\n", SQUARE(x));
         PrintBitBoard(KingEPM[x]);
@@ -381,27 +402,26 @@ void InitGeometry(void)
         */
     }
 }
- 
-void InitMiscMasks(void)
-{
+
+void InitMiscMasks(void) {
     int i, j;
 
     SeventhRank[White] = SeventhRank[Black] = 0;
     EighthRank[White] = EighthRank[Black] = 0;
     ThirdRank[White] = ThirdRank[Black] = 0;
 
-    for(i=0; i<8; i++) {
-	RankMask[i] = 0;
-        SeventhRank[White] |= SetMask[a7+i];
-        SeventhRank[Black] |= SetMask[a2+i];
-        EighthRank[White]  |= SetMask[a8+i];
-        EighthRank[Black]  |= SetMask[a1+i];
-        ThirdRank[White]   |= SetMask[a3+i];
-        ThirdRank[Black]   |= SetMask[a6+i];
+    for (i = 0; i < 8; i++) {
+        RankMask[i] = 0;
+        SeventhRank[White] |= SetMask[a7 + i];
+        SeventhRank[Black] |= SetMask[a2 + i];
+        EighthRank[White] |= SetMask[a8 + i];
+        EighthRank[Black] |= SetMask[a1 + i];
+        ThirdRank[White] |= SetMask[a3 + i];
+        ThirdRank[Black] |= SetMask[a6 + i];
 
-	for(j=0; j<8; j++) {
-    	    RankMask[i] |= SetMask[8*i+j];
-	}
+        for (j = 0; j < 8; j++) {
+            RankMask[i] |= SetMask[8 * i + j];
+        }
     }
     /*
     PrintBitBoard(ThirdRank[White]); printf("\n");
@@ -410,12 +430,16 @@ void InitMiscMasks(void)
     PrintBitBoard(SeventhRank[Black]); printf("\n");
     */
 
-    for(i=0; i<8; i++) {
+    for (i = 0; i < 8; i++) {
         LeftOf[i] = RightOf[i] = FarLeftOf[i] = FarRightOf[i] = 0;
-        for(j=i-1; j>=0; j--) LeftOf[i] |= FileMask[j];
-        for(j=i-2; j>=0; j--) FarLeftOf[i] |= FileMask[j];
-        for(j=i+1; j<8; j++) RightOf[i] |= FileMask[j];
-        for(j=i+2; j<8; j++) FarRightOf[i] |= FileMask[j];
+        for (j = i - 1; j >= 0; j--)
+            LeftOf[i] |= FileMask[j];
+        for (j = i - 2; j >= 0; j--)
+            FarLeftOf[i] |= FileMask[j];
+        for (j = i + 1; j < 8; j++)
+            RightOf[i] |= FileMask[j];
+        for (j = i + 2; j < 8; j++)
+            FarRightOf[i] |= FileMask[j];
 
         /*
         printf("%d:\n", i);
@@ -427,25 +451,33 @@ void InitMiscMasks(void)
     }
 
     CenterMask = ExtCenterMask = 0;
-    SetBit(CenterMask, e4); SetBit(CenterMask, e5);
-    SetBit(CenterMask, d4); SetBit(CenterMask, d5);
+    SetBit(CenterMask, e4);
+    SetBit(CenterMask, e5);
+    SetBit(CenterMask, d4);
+    SetBit(CenterMask, d5);
 
-    SetBit(ExtCenterMask, c3); SetBit(ExtCenterMask, d3);
-    SetBit(ExtCenterMask, e3); SetBit(ExtCenterMask, f3);
-    SetBit(ExtCenterMask, c4); SetBit(ExtCenterMask, f4);
-    SetBit(ExtCenterMask, c5); SetBit(ExtCenterMask, f5);
-    SetBit(ExtCenterMask, c6); SetBit(ExtCenterMask, d6);
-    SetBit(ExtCenterMask, e6); SetBit(ExtCenterMask, f6);
+    SetBit(ExtCenterMask, c3);
+    SetBit(ExtCenterMask, d3);
+    SetBit(ExtCenterMask, e3);
+    SetBit(ExtCenterMask, f3);
+    SetBit(ExtCenterMask, c4);
+    SetBit(ExtCenterMask, f4);
+    SetBit(ExtCenterMask, c5);
+    SetBit(ExtCenterMask, f5);
+    SetBit(ExtCenterMask, c6);
+    SetBit(ExtCenterMask, d6);
+    SetBit(ExtCenterMask, e6);
+    SetBit(ExtCenterMask, f6);
 
     NoCenterMask = ~(CenterMask | ExtCenterMask);
 
     EdgeMask = 0;
 
-    for(i=0; i<8; i++) {
-	SetBit(EdgeMask, a1+i);
-	SetBit(EdgeMask, a8+i);
-	SetBit(EdgeMask, a1+8*i);
-	SetBit(EdgeMask, h1+8*i);
+    for (i = 0; i < 8; i++) {
+        SetBit(EdgeMask, a1 + i);
+        SetBit(EdgeMask, a8 + i);
+        SetBit(EdgeMask, a1 + 8 * i);
+        SetBit(EdgeMask, h1 + 8 * i);
     }
 
     /*
@@ -455,10 +487,12 @@ void InitMiscMasks(void)
     */
 
     WhiteSquaresMask = BlackSquaresMask = 0;
-    for(i=0; i<8; i++) {
-        for(j=0; j<8; j++) {
-            if(((i+j) & 1) == 0) SetBit(BlackSquaresMask, (i*8+j));
-            else                 SetBit(WhiteSquaresMask, (i*8+j));
+    for (i = 0; i < 8; i++) {
+        for (j = 0; j < 8; j++) {
+            if (((i + j) & 1) == 0)
+                SetBit(BlackSquaresMask, (i * 8 + j));
+            else
+                SetBit(WhiteSquaresMask, (i * 8 + j));
         }
     }
     /*
@@ -466,16 +500,18 @@ void InitMiscMasks(void)
     PrintBitBoard(BlackSquaresMask);
     */
 
-    for(i=0; i<64; i++) {
+    for (i = 0; i < 64; i++) {
         int bdist = (i >> 3);
-        int wdist = 7-bdist;
+        int wdist = 7 - bdist;
         int wtarget = (i & 7) + a8;
         int btarget = (i & 7) + a1;
 
         KingSquareW[i] = KingSquareB[i] = 0;
-        for(j=0; j<64; j++) {
-            if(KingDist(wtarget, j) <= wdist) SetBit(KingSquareW[i], j);
-            if(KingDist(btarget, j) <= bdist) SetBit(KingSquareB[i], j);
+        for (j = 0; j < 64; j++) {
+            if (KingDist(wtarget, j) <= wdist)
+                SetBit(KingSquareW[i], j);
+            if (KingDist(btarget, j) <= bdist)
+                SetBit(KingSquareB[i], j);
         }
         /*
         printf("%c%c:\n", SQUARE(i));
@@ -485,8 +521,8 @@ void InitMiscMasks(void)
     }
 
     NotAFileMask = NotHFileMask = 0;
-    for(i=0; i<7; i++) {
-        NotAFileMask |= FileMask[i+1];
+    for (i = 0; i < 7; i++) {
+        NotAFileMask |= FileMask[i + 1];
         NotHFileMask |= FileMask[i];
     }
     /*
@@ -498,7 +534,7 @@ void InitMiscMasks(void)
     CornerMaskA8 = SetMask[a8] | SetMask[a7] | SetMask[b8] | SetMask[b7];
     CornerMaskH1 = SetMask[h1] | SetMask[h2] | SetMask[g1] | SetMask[g2];
     CornerMaskH8 = SetMask[h8] | SetMask[h7] | SetMask[g8] | SetMask[g7];
-    
+
     /*
     PrintBitBoard(CornerMaskA1); printf("\n");
     PrintBitBoard(CornerMaskA8); printf("\n");
@@ -515,37 +551,43 @@ void InitMiscMasks(void)
     BKingTrapsRook2 = SetMask[c8] | SetMask[b8];
     BRookTrapped2 = SetMask[b8] | SetMask[a8] | SetMask[a7];
 
-    for(i=0; i<64; i++) {
-	    StrongSquareW[i] = StrongSquareB[i] = 0;
-	    for(j=i; j<64; j += 8) StrongSquareW[i] |= WPawnEPM[j];
-	    for(j=i; j>=0; j -= 8) StrongSquareB[i] |= BPawnEPM[j];
-	    /*
-	    printf("%d\n", i);
-	    PrintBitBoard(StrongSquareW[i]);
-	    PrintBitBoard(StrongSquareB[i]); 
-	    */
+    for (i = 0; i < 64; i++) {
+        StrongSquareW[i] = StrongSquareB[i] = 0;
+        for (j = i; j < 64; j += 8)
+            StrongSquareW[i] |= WPawnEPM[j];
+        for (j = i; j >= 0; j -= 8)
+            StrongSquareB[i] |= BPawnEPM[j];
+        /*
+        printf("%d\n", i);
+        PrintBitBoard(StrongSquareW[i]);
+        PrintBitBoard(StrongSquareB[i]);
+        */
     }
 
-    for(i=0; i<64; i++) {
-	    int rank = (i >> 3);
-	    int file = i & 7;
-	    int x,y;
+    for (i = 0; i < 64; i++) {
+        int rank = (i >> 3);
+        int file = i & 7;
+        int x, y;
 
-	    if(rank == 0) rank = 1;
-	    if(rank == 7) rank = 6;
-	    if(file == 0) file = 1;
-	    if(file == 7) file = 6;
+        if (rank == 0)
+            rank = 1;
+        if (rank == 7)
+            rank = 6;
+        if (file == 0)
+            file = 1;
+        if (file == 7)
+            file = 6;
 
-	    KingSafetyMask[i] = 0;
-	    for(x=rank-1; x <= rank+1; x++) {
-		    for(y=file-1; y <= file+1; y++) {
-			    KingSafetyMask[i] |= SetMask[x*8+y];
-		    }
-	    }
-	    /*
-	    printf("%c%c:\n", SQUARE(i));
-	    PrintBitBoard(KingSafetyMask[i]);
-	    */
+        KingSafetyMask[i] = 0;
+        for (x = rank - 1; x <= rank + 1; x++) {
+            for (y = file - 1; y <= file + 1; y++) {
+                KingSafetyMask[i] |= SetMask[x * 8 + y];
+            }
+        }
+        /*
+        printf("%c%c:\n", SQUARE(i));
+        PrintBitBoard(KingSafetyMask[i]);
+        */
     }
 
     WKingOpeningMask = SetMask[e1] | SetMask[d1];
@@ -556,7 +598,7 @@ void InitMiscMasks(void)
     Rook7thKingMask[White] = RankMask[7] | RankMask[6];
     Rook7thKingMask[Black] = RankMask[0] | RankMask[1];
 
-    KingSideMask  = FileMask[7] | FileMask[6] | FileMask[5] | FileMask[4];
+    KingSideMask = FileMask[7] | FileMask[6] | FileMask[5] | FileMask[4];
     QueenSideMask = FileMask[0] | FileMask[1] | FileMask[2] | FileMask[3];
 
     WhitesHalf = RankMask[0] | RankMask[1] | RankMask[2] | RankMask[3];
@@ -568,28 +610,15 @@ void InitMiscMasks(void)
     FianchettoMaskBlackQueenSide = SetMask[c7] | SetMask[b6] | SetMask[a7];
 }
 
-BitBoard ShiftUp(BitBoard x)
-{
-    return (x >> 8) & ShiftUpMask;
-}
+BitBoard ShiftUp(BitBoard x) { return (x >> 8) & ShiftUpMask; }
 
-BitBoard ShiftDown(BitBoard x)
-{
-    return (x << 8) & ShiftDownMask;
-}
+BitBoard ShiftDown(BitBoard x) { return (x << 8) & ShiftDownMask; }
 
-BitBoard ShiftLeft(BitBoard x)
-{
-    return (x << 1) & ShiftLeftMask;
-}
+BitBoard ShiftLeft(BitBoard x) { return (x << 1) & ShiftLeftMask; }
 
-BitBoard ShiftRight(BitBoard x)
-{
-    return (x >> 1) & ShiftRightMask;
-}
+BitBoard ShiftRight(BitBoard x) { return (x >> 1) & ShiftRightMask; }
 
-void InitAll(void)
-{
+void InitAll(void) {
     InitMasks();
     InitPawnMasks();
     InitGeometry();

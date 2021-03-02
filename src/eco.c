@@ -8,8 +8,8 @@
     Redistribution and use in source and binary forms, with or without
     modification, are permitted provided that the following conditions are met:
 
-    * Redistributions of source code must retain the above copyright notice, this
-      list of conditions and the following disclaimer.
+    * Redistributions of source code must retain the above copyright notice,
+   this list of conditions and the following disclaimer.
 
     * Redistributions in binary form must reproduce the above copyright notice,
       this list of conditions and the following disclaimer in the documentation
@@ -17,14 +17,15 @@
 
     THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
     AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-    FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-    DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-    SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-    CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-    OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+   ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+   LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+   CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+   SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+   INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+   POSSIBILITY OF SUCH DAMAGE.
 
 */
 
@@ -50,8 +51,7 @@
 
 #define DEFAULT_ECO_NAME ECODIR "/" ECO_NAME
 
-void ParseEcoPgn(char *fname)
-{
+void ParseEcoPgn(char *fname) {
 #if HAVE_LIBDB || HAVE_LIBDB2 || HAVE_LIBDB3 || HAVE_LIBDB_5
     FILE *fin = fopen(fname, "r");
     char buffer[1024];
@@ -62,37 +62,37 @@ void ParseEcoPgn(char *fname)
     DBT value;
     struct Position *p;
 
-    if(!fin) {
+    if (!fin) {
         Print(0, "Can�t open file %s\n", fname);
         return;
     }
 
 #if HAVE_LIBDB || HAVE_LIBDB2
-    result = db_open(ECO_NAME, DB_BTREE, DB_CREATE | DB_TRUNCATE,
-                      0644, NULL, NULL, &database);
+    result = db_open(ECO_NAME, DB_BTREE, DB_CREATE | DB_TRUNCATE, 0644, NULL,
+                     NULL, &database);
 #endif
 #if HAVE_LIBDB3
     result = db_create(&database, NULL, 0);
     if (result == 0) {
-	result = database->open(
-	    database, ECO_NAME, NULL, DB_BTREE, DB_CREATE | DB_TRUNCATE, 0644);
+        result = database->open(database, ECO_NAME, NULL, DB_BTREE,
+                                DB_CREATE | DB_TRUNCATE, 0644);
     }
 #endif
 #if HAVE_LIBDB_5
     result = db_create(&database, NULL, 0);
     if (result == 0) {
-	result = database->open(
-	    database, NULL, ECO_NAME, NULL, DB_BTREE, DB_CREATE | DB_TRUNCATE, 0644);
+        result = database->open(database, NULL, ECO_NAME, NULL, DB_BTREE,
+                                DB_CREATE | DB_TRUNCATE, 0644);
     }
 #endif
 
-    if(result != 0) {
+    if (result != 0) {
         Print(0, "Can't open database: %s\n", strerror(result));
         fclose(fin);
         return;
     }
 
-    while(fgets(buffer, 1023, fin) != NULL) {
+    while (fgets(buffer, 1023, fin) != NULL) {
         char *x;
         int len;
         strtok(buffer, " \t");
@@ -104,10 +104,11 @@ void ParseEcoPgn(char *fname)
 
         len = strlen(name);
 
-        if(fgets(buffer, 1024, fin) != NULL) {
-            for(x = strtok(buffer, " \n\r\t"); x; x=strtok(NULL, " \n\r\t")) {
+        if (fgets(buffer, 1024, fin) != NULL) {
+            for (x = strtok(buffer, " \n\r\t"); x;
+                 x = strtok(NULL, " \n\r\t")) {
                 int move = ParseSAN(p, x);
-                if(move != M_NONE) {
+                if (move != M_NONE) {
                     DoMove(p, move);
                 }
             }
@@ -118,9 +119,9 @@ void ParseEcoPgn(char *fname)
             key.data = &(p->hkey);
             key.size = sizeof(hash_t);
 
-            value.data = malloc(len+1);
-            value.size = len+1; /* store trailing null */
-            strncpy(value.data, name, len+1);
+            value.data = malloc(len + 1);
+            value.size = len + 1; /* store trailing null */
+            strncpy(value.data, name, len + 1);
 
             database->put(database, NULL, &key, &value, 0);
 
@@ -141,47 +142,44 @@ void ParseEcoPgn(char *fname)
 static DB *EcoDB = NULL;
 #endif
 
-char *GetEcoCode(hash_t hkey)
-{
+char *GetEcoCode(hash_t hkey) {
     char *retval = NULL;
 #if HAVE_LIBDB || HAVE_LIBDB2 || HAVE_LIBDB3 || HAVE_LIBDB_5
     int result;
     DBT key;
     DBT value;
 
-    if(EcoDB == NULL) {
+    if (EcoDB == NULL) {
 #if HAVE_LIBDB || HAVE_LIBDB2
-    	result = db_open(ECO_NAME, DB_BTREE, DB_RDONLY,
-      			 0, NULL, NULL, &EcoDB);
-	if(result != 0) {
-	    result = db_open(DEFAULT_ECO_NAME, DB_BTREE, DB_RDONLY,
-	 		     0, NULL, NULL, &EcoDB);
-	}
+        result = db_open(ECO_NAME, DB_BTREE, DB_RDONLY, 0, NULL, NULL, &EcoDB);
+        if (result != 0) {
+            result = db_open(DEFAULT_ECO_NAME, DB_BTREE, DB_RDONLY, 0, NULL,
+                             NULL, &EcoDB);
+        }
 #endif
 #if HAVE_LIBDB3
-	result = db_create(&EcoDB, NULL, 0);
-	if (result == 0) {
-	    result = EcoDB->open(
-		EcoDB, ECO_NAME, NULL, DB_BTREE, DB_RDONLY, 0);
-	    if(result != 0) {
-		result = EcoDB->open(
-	    	    EcoDB, DEFAULT_ECO_NAME, NULL, DB_BTREE, DB_RDONLY, 0);
-	    }
-	}
+        result = db_create(&EcoDB, NULL, 0);
+        if (result == 0) {
+            result = EcoDB->open(EcoDB, ECO_NAME, NULL, DB_BTREE, DB_RDONLY, 0);
+            if (result != 0) {
+                result = EcoDB->open(EcoDB, DEFAULT_ECO_NAME, NULL, DB_BTREE,
+                                     DB_RDONLY, 0);
+            }
+        }
 #endif
 #if HAVE_LIBDB_5
-	result = db_create(&EcoDB, NULL, 0);
-	if (result == 0) {
-	    result = EcoDB->open(
-		EcoDB, NULL, ECO_NAME, NULL, DB_BTREE, DB_RDONLY, 0);
-	    if(result != 0) {
-		result = EcoDB->open(
-	    	    EcoDB, NULL, DEFAULT_ECO_NAME, NULL, DB_BTREE, DB_RDONLY, 0);
-	    }
-	}
+        result = db_create(&EcoDB, NULL, 0);
+        if (result == 0) {
+            result = EcoDB->open(EcoDB, NULL, ECO_NAME, NULL, DB_BTREE,
+                                 DB_RDONLY, 0);
+            if (result != 0) {
+                result = EcoDB->open(EcoDB, NULL, DEFAULT_ECO_NAME, NULL,
+                                     DB_BTREE, DB_RDONLY, 0);
+            }
+        }
 #endif
     }
-    if(EcoDB != 0) {
+    if (EcoDB != 0) {
         memset(&key, 0, sizeof(key));
         memset(&value, 0, sizeof(value));
 
@@ -191,7 +189,7 @@ char *GetEcoCode(hash_t hkey)
         value.flags = DB_DBT_MALLOC;
 
         result = EcoDB->get(EcoDB, NULL, &key, &value, 0);
-        if(result == 0) {
+        if (result == 0) {
             static char code[128];
             strncpy(code, value.data, value.size);
             free(value.data);
@@ -210,13 +208,13 @@ int FindEcoCode(struct Position *p, char *result) {
     char *res;
     int found = FALSE;
 
-    while(ply <= CurrentPosition->ply) {
+    while (ply <= CurrentPosition->ply) {
         hash_t key = CurrentPosition->gameLog[ply].gl_HashKey;
-        if(ply == CurrentPosition->ply) {
+        if (ply == CurrentPosition->ply) {
             key = CurrentPosition->hkey;
         }
         res = GetEcoCode(key);
-        if(res != 0) {
+        if (res != 0) {
             strcpy(result, res);
             found = TRUE;
         }
