@@ -12,7 +12,7 @@ AC_ARG_WITH(dbpath,
   [  --with-dbpath           specify path to Berkeley DB libraries])
 AC_ARG_ENABLE(mt,
   [  --enable-mt             enable multithreaded search])
-AM_INIT_AUTOMAKE(amy, 0.9.1)
+AM_INIT_AUTOMAKE(amy, 0.9.2)
 AM_CONFIG_HEADER(config.h)
 
 AC_PROG_CC()
@@ -47,7 +47,7 @@ AC_DEFINE_UNQUOTED(MP, $mp_val, Enable multithreaded search)
 
 dnl Check for header files
 AC_HEADER_STDC
-AC_CHECK_HEADERS(fcntl.h sys/time.h unistd.h)
+AC_CHECK_HEADERS(fcntl.h sys/time.h unistd.h stdint.h)
 
 dnl Check for typedefs, structures and compiler characteristics
 AC_TYPE_SIZE_T
@@ -56,8 +56,6 @@ AC_STRUCT_TM
 
 AC_C_BIGENDIAN
 AC_C_CONST
-AC_CHECK_SIZEOF(long)
-AC_CHECK_SIZEOF(long long)
 
 AC_FUNC_MEMCMP
 AC_TYPE_SIGNAL

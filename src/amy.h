@@ -84,6 +84,7 @@
 
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <stdint.h>
 
 #define SQUARE(x) 'a' + ((x)&7), '1' + ((x) >> 3)
 
@@ -270,24 +271,9 @@ enum { ExactScore, LowerBound, UpperBound, Useful, Useless, OnEvaluation };
 
 typedef void (*COMMAND)(char *args);
 
-#if SIZEOF_LONG == 8
-typedef unsigned long BitBoard;
-typedef unsigned long ran_t;
-typedef long hash_t;
-#else
-#if SIZEOF_LONG_LONG == 8
-typedef unsigned long long BitBoard;
-typedef unsigned long long ran_t;
-typedef long long hash_t;
-#else
-#if defined(NT_i386) || defined(NT_AXP) || defined(_WIN32)
-typedef unsigned __int64 BitBoard;
-typedef unsigned __int64 ran_t;
-#else
-#error "Need 64 bit datatype!"
-#endif
-#endif
-#endif
+typedef uint64_t BitBoard;
+typedef uint64_t ran_t;
+typedef int64_t hash_t;
 
 struct Position {
     BitBoard atkTo[64];

@@ -39,7 +39,7 @@ extern char RcsId_score_c[];
 extern char RcsId_search_c[];
 
 static char CopyrightNotice[] =
-    "    Amy version " VERSION ", Copyright (C) 2002-2016 Thorsten Greiner\n"
+    "    Amy version " VERSION ", Copyright (C) 2002-2021 Thorsten Greiner\n"
     "    Amy comes with ABSOLUTELY NO WARRANTY; for details type 'warranty'.\n"
     "    This is free software, and you are welcome to redistribute it\n"
     "    under certain conditions; type 'distribution' for details.\n\n"
