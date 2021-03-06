@@ -499,7 +499,8 @@ extern int PawnStructure;
 extern long SHit, STry;
 extern long HHit, HTry;
 
-extern int FHTime, GUIMode;
+extern unsigned int FHTime;
+extern int GUIMode;
 extern int ComputerSide;
 extern int VerboseMode;
 extern int MoveHist[64];

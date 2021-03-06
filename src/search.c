@@ -107,7 +107,7 @@ long RCExt, ChkExt, DiscExt, DblExt, SingExt, PPExt, ZZExt;
 unsigned int HardLimit, SoftLimit, SoftLimit2;
 unsigned int StartTime, WallTimeStart;
 unsigned int CurTime;
-int FHTime;
+unsigned int FHTime;
 int AbortSearch;
 int NeedTime = FALSE;
 int PrintOK;
@@ -1666,9 +1666,9 @@ int Iterate(struct Position *p) {
         return mvs[0];
     }
 
-    SoftLimit = StartTime + soft * ONE_SECOND;
-    SoftLimit2 = StartTime + 85 * soft;
-    HardLimit = StartTime + hard * ONE_SECOND;
+    SoftLimit = StartTime + (int) (soft * ONE_SECOND);
+    SoftLimit2 = StartTime + (int) (85 * soft);
+    HardLimit = StartTime + (int) (hard * ONE_SECOND);
 
     InitScore(p);
     AgeHashTable();
