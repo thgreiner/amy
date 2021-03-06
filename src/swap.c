@@ -59,10 +59,11 @@ static void SwapReRay(struct Position *p, int side, BitBoard atks[2], int from,
         if (tmp) {
             i = FindSetBit(tmp);
             if (TYPE(p->piece[i]) == Bishop || TYPE(p->piece[i]) == Queen) {
-                if (p->piece[i] > 0)
+                if (p->piece[i] > 0) {
                     SetBit(atks[White], i);
-                else
+                } else {
                     SetBit(atks[Black], i);
+                }
             }
         }
     }
@@ -72,10 +73,11 @@ static void SwapReRay(struct Position *p, int side, BitBoard atks[2], int from,
         if (tmp) {
             i = FindSetBit(tmp);
             if (TYPE(p->piece[i]) == Rook || TYPE(p->piece[i]) == Queen) {
-                if (p->piece[i] > 0)
+                if (p->piece[i] > 0) {
                     SetBit(atks[White], i);
-                else
+                } else {
                     SetBit(atks[Black], i);
+                }
             }
         }
     }

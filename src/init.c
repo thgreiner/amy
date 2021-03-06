@@ -78,38 +78,13 @@ BitBoard FianchettoMaskWhiteKingSide, FianchettoMaskBlackKingSide;
 BitBoard FianchettoMaskWhiteQueenSide, FianchettoMaskBlackQueenSide;
 BitBoard ConnectedMask[64];
 
-unsigned char FirstBit8[256];
-unsigned char FirstBit16[65536];
-
 void InitMasks(void) {
-    BitBoard mask = -1;
     int i;
 
-    mask = (mask << 63);
     for (i = 0; i < 64; i++) {
+        BitBoard mask = 1ULL << i;
         SetMask[i] = mask;
         ClrMask[i] = ~mask;
-        mask >>= 1;
-    }
-
-    for (i = 0; i < 256; i++) {
-        int j;
-        for (j = 0; j < 8; j++) {
-            if (i & (1 << (7 - j))) {
-                FirstBit8[i] = j;
-                break;
-            }
-        }
-    }
-
-    for (i = 0; i < 65536; i++) {
-        int j;
-        for (j = 0; j < 16; j++) {
-            if (i & (1 << (15 - j))) {
-                FirstBit16[i] = j;
-                break;
-            }
-        }
     }
 
     ShiftUpMask = ShiftDownMask = ShiftLeftMask = ShiftRightMask = -1;
@@ -489,10 +464,11 @@ void InitMiscMasks(void) {
     WhiteSquaresMask = BlackSquaresMask = 0;
     for (i = 0; i < 8; i++) {
         for (j = 0; j < 8; j++) {
-            if (((i + j) & 1) == 0)
+            if (((i + j) & 1) == 0) {
                 SetBit(BlackSquaresMask, (i * 8 + j));
-            else
+            } else {
                 SetBit(WhiteSquaresMask, (i * 8 + j));
+            }
         }
     }
     /*
@@ -508,10 +484,12 @@ void InitMiscMasks(void) {
 
         KingSquareW[i] = KingSquareB[i] = 0;
         for (j = 0; j < 64; j++) {
-            if (KingDist(wtarget, j) <= wdist)
+            if (KingDist(wtarget, j) <= wdist) {
                 SetBit(KingSquareW[i], j);
-            if (KingDist(btarget, j) <= bdist)
+            }
+            if (KingDist(btarget, j) <= bdist) {
                 SetBit(KingSquareB[i], j);
+            }
         }
         /*
         printf("%c%c:\n", SQUARE(i));
@@ -610,9 +588,9 @@ void InitMiscMasks(void) {
     FianchettoMaskBlackQueenSide = SetMask[c7] | SetMask[b6] | SetMask[a7];
 }
 
-BitBoard ShiftUp(BitBoard x) { return (x >> 8) & ShiftUpMask; }
+BitBoard ShiftUp(BitBoard x) { return (x << 8) & ShiftUpMask; }
 
-BitBoard ShiftDown(BitBoard x) { return (x << 8) & ShiftDownMask; }
+BitBoard ShiftDown(BitBoard x) { return (x >> 8) & ShiftDownMask; }
 
 BitBoard ShiftLeft(BitBoard x) { return (x << 1) & ShiftLeftMask; }
 

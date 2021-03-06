@@ -82,15 +82,15 @@
 #include <pthread.h>
 #endif
 
+#include <stdint.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <stdint.h>
 
 #define SQUARE(x) 'a' + ((x)&7), '1' + ((x) >> 3)
 
-#define SetBit(b, i) ((b) |= SetMask[i])
-#define ClrBit(b, i) ((b) &= ClrMask[i])
-#define TstBit(b, i) ((b)&SetMask[i])
+#define SetBit(b, i) ((b) |= (1ULL << (i)))
+#define ClrBit(b, i) ((b) &= ~(1ULL << (i)))
+#define TstBit(b, i) ((b) & (1ULL << (i)))
 
 #define OPP(x) (1 ^ (x))
 
@@ -537,8 +537,8 @@ extern int L_HT_Bits, L_HT_Size, L_HT_Mask;
 int CountBits(BitBoard);
 #endif
 
-#if HAVE___BUILTIN_CLZLL
-#define FindSetBit(x) __builtin_clzll(x)
+#if HAVE___BUILTIN_CTZLL
+#define FindSetBit(x) __builtin_ctzll(x)
 #else
 int FindSetBit(BitBoard);
 #endif

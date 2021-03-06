@@ -61,7 +61,7 @@ AC_FUNC_MEMCMP
 AC_TYPE_SIGNAL
 AC_CHECK_FUNCS(gettimeofday select strerror strstr setbuf gethostname ffsll)
 
-AX_GCC_BUILTIN(__builtin_clzll)
+AX_GCC_BUILTIN(__builtin_ctzll)
 AX_GCC_BUILTIN(__builtin_popcountll)
 
 AC_OUTPUT(Makefile EPD/Makefile PGN/Makefile src/Makefile doc/Makefile)
