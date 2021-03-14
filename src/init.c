@@ -51,19 +51,12 @@ BitBoard KingEPM[64];
 BitBoard SeventhRank[2], EighthRank[2];
 BitBoard ThirdRank[2];
 BitBoard LeftOf[8], RightOf[8], FarLeftOf[8], FarRightOf[8];
-BitBoard CenterMask, ExtCenterMask, NoCenterMask;
 BitBoard EdgeMask;
 BitBoard BlackSquaresMask, WhiteSquaresMask;
 BitBoard KingSquareW[64], KingSquareB[64];
 BitBoard NotAFileMask, NotHFileMask;
 BitBoard CornerMaskA1, CornerMaskA8, CornerMaskH1, CornerMaskH8;
-BitBoard WKingTrapsRook1, WKingTrapsRook2;
-BitBoard WRookTrapped1, WRookTrapped2;
-BitBoard BKingTrapsRook1, BKingTrapsRook2;
-BitBoard BRookTrapped1, BRookTrapped2;
 BitBoard KingSafetyMask[64];
-BitBoard WKingOpeningMask, BKingOpeningMask;
-BitBoard WPawnOpeningMask, BPawnOpeningMask;
 BitBoard WPawnBackwardMask[64], BPawnBackwardMask[64];
 BitBoard Rook7thKingMask[2];
 BitBoard KingSideMask, QueenSideMask;
@@ -326,27 +319,6 @@ void InitMiscMasks(void) {
             FarRightOf[i] |= FileMask[j];
     }
 
-    CenterMask = ExtCenterMask = 0;
-    SetBit(CenterMask, e4);
-    SetBit(CenterMask, e5);
-    SetBit(CenterMask, d4);
-    SetBit(CenterMask, d5);
-
-    SetBit(ExtCenterMask, c3);
-    SetBit(ExtCenterMask, d3);
-    SetBit(ExtCenterMask, e3);
-    SetBit(ExtCenterMask, f3);
-    SetBit(ExtCenterMask, c4);
-    SetBit(ExtCenterMask, f4);
-    SetBit(ExtCenterMask, c5);
-    SetBit(ExtCenterMask, f5);
-    SetBit(ExtCenterMask, c6);
-    SetBit(ExtCenterMask, d6);
-    SetBit(ExtCenterMask, e6);
-    SetBit(ExtCenterMask, f6);
-
-    NoCenterMask = ~(CenterMask | ExtCenterMask);
-
     EdgeMask = 0;
 
     for (i = 0; i < 8; i++) {
@@ -395,15 +367,6 @@ void InitMiscMasks(void) {
     CornerMaskH1 = SetMask(h1) | SetMask(h2) | SetMask(g1) | SetMask(g2);
     CornerMaskH8 = SetMask(h8) | SetMask(h7) | SetMask(g8) | SetMask(g7);
 
-    WKingTrapsRook1 = SetMask(f1) | SetMask(g1);
-    WRookTrapped1 = SetMask(g1) | SetMask(h1) | SetMask(h2);
-    WKingTrapsRook2 = SetMask(c1) | SetMask(b1);
-    WRookTrapped2 = SetMask(b1) | SetMask(a1) | SetMask(a2);
-    BKingTrapsRook1 = SetMask(f8) | SetMask(g8);
-    BRookTrapped1 = SetMask(g8) | SetMask(h8) | SetMask(h7);
-    BKingTrapsRook2 = SetMask(c8) | SetMask(b8);
-    BRookTrapped2 = SetMask(b8) | SetMask(a8) | SetMask(a7);
-
     for (i = 0; i < 64; i++) {
         int rank = (i >> 3);
         int file = i & 7;
@@ -425,11 +388,6 @@ void InitMiscMasks(void) {
             }
         }
     }
-
-    WKingOpeningMask = SetMask(e1) | SetMask(d1);
-    BKingOpeningMask = SetMask(e8) | SetMask(d8);
-    WPawnOpeningMask = SetMask(e2) | SetMask(d2);
-    BPawnOpeningMask = SetMask(e7) | SetMask(d7);
 
     Rook7thKingMask[White] = RankMask[7] | RankMask[6];
     Rook7thKingMask[Black] = RankMask[0] | RankMask[1];

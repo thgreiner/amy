@@ -278,10 +278,25 @@ static int RootGamePhase;
  * Masks used in ScorePawns.
  */
 
-static BitBoard FianchettoMaskWhiteKingSide = SetMask(f2) | SetMask(g3) | SetMask(h2);
-static BitBoard FianchettoMaskBlackKingSide = SetMask(f7) | SetMask(g6) | SetMask(h7);
-static BitBoard FianchettoMaskWhiteQueenSide = SetMask(c2) | SetMask(b3) | SetMask(a2);
-static BitBoard FianchettoMaskBlackQueenSide = SetMask(c7) | SetMask(b6) | SetMask(a7);
+const static BitBoard FianchettoMaskWhiteKingSide = SetMask(f2) | SetMask(g3) | SetMask(h2);
+const static BitBoard FianchettoMaskBlackKingSide = SetMask(f7) | SetMask(g6) | SetMask(h7);
+const static BitBoard FianchettoMaskWhiteQueenSide = SetMask(c2) | SetMask(b3) | SetMask(a2);
+const static BitBoard FianchettoMaskBlackQueenSide = SetMask(c7) | SetMask(b6) | SetMask(a7);
+
+/**
+ * Masks used in ScoreDevelopment.
+ */
+const static BitBoard WKingOpeningMask = SetMask(e1) | SetMask(d1);
+const static BitBoard BKingOpeningMask = SetMask(e8) | SetMask(d8);
+
+const static BitBoard WKingTrapsRook1 = SetMask(f1) | SetMask(g1);
+const static BitBoard WRookTrapped1 = SetMask(g1) | SetMask(h1) | SetMask(h2);
+const static BitBoard WKingTrapsRook2 = SetMask(c1) | SetMask(b1);
+const static BitBoard WRookTrapped2 = SetMask(b1) | SetMask(a1) | SetMask(a2);
+const static BitBoard BKingTrapsRook1 = SetMask(f8) | SetMask(g8);
+const static BitBoard BRookTrapped1 = SetMask(g8) | SetMask(h8) | SetMask(h7);
+const static BitBoard BKingTrapsRook2 = SetMask(c8) | SetMask(b8);
+const static BitBoard BRookTrapped2 = SetMask(b8) | SetMask(a8) | SetMask(a7);
 
 /**
  * Score the pawn structure.
