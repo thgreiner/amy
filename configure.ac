@@ -4,7 +4,9 @@ dnl This file is part of Amy, a chess program by Thorsten Greiner
 dnl
 dnl Amy is copyrighted by Thorsten Greiner
 
-AC_INIT(src/dbase.c)
+AC_INIT(amy, 0.9.3)
+AC_CONFIG_SRCDIR(src/dbase.c)
+AM_INIT_AUTOMAKE
 
 m4_include([m4/ax_gcc_builtin.m4])
 
@@ -12,7 +14,6 @@ AC_ARG_WITH(dbpath,
   [  --with-dbpath           specify path to Berkeley DB libraries])
 AC_ARG_ENABLE(mt,
   [  --enable-mt             enable multithreaded search])
-AM_INIT_AUTOMAKE(amy, 0.9.2)
 AM_CONFIG_HEADER(config.h)
 
 AC_PROG_CC()
