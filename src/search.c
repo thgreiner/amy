@@ -312,13 +312,13 @@ static int CheckExtend(struct Position *p) {
 
         while (att) {
             i = FindSetBit(att);
-            ClrBit(att, i);
+            att &= att - 1;
             ff &= ~Ray[i][kp];
         }
 
         while (ff) {
             i = FindSetBit(ff);
-            ClrBit(ff, i);
+            ff &= ff - 1;
             if (!(p->atkFr[i] & p->mask[OPP(p->turn)][0]))
                 cnt++;
             if (cnt > 1)
@@ -349,7 +349,7 @@ static int CheckExtend(struct Position *p) {
         /* check for king flight squares */
         while (ff) {
             i = FindSetBit(ff);
-            ClrBit(ff, i);
+            ff &= ff - 1;
             if (!(p->atkFr[i] & p->mask[OPP(p->turn)][0]))
                 cnt++;
             if (cnt > 1)
@@ -364,7 +364,7 @@ static int CheckExtend(struct Position *p) {
         while (tmp) {
             BitBoard tmp2;
             i = FindSetBit(tmp);
-            ClrBit(tmp, i);
+            tmp &= tmp - 1;
             tmp2 = InterPath[i][kp];
             if (tmp2 && !(p->mask[OPP(p->turn)][0] & tmp2)) {
                 tmp2 &= p->mask[p->turn][0];
@@ -379,7 +379,7 @@ static int CheckExtend(struct Position *p) {
         while (tmp) {
             BitBoard tmp2;
             i = FindSetBit(tmp);
-            ClrBit(tmp, i);
+            tmp &= tmp - 1;
             tmp2 = InterPath[i][kp];
             if (tmp2 && !(p->mask[OPP(p->turn)][0] & tmp2)) {
                 tmp2 &= p->mask[p->turn][0];
@@ -402,7 +402,7 @@ static int CheckExtend(struct Position *p) {
             while (tmp) {
                 BitBoard tmp2;
                 i = FindSetBit(tmp);
-                ClrBit(tmp, i);
+                tmp &= tmp - 1;
                 if ((tmp2 = p->atkFr[i] & def)) {
                     cnt += CountBits(tmp2);
                 }
@@ -1666,9 +1666,9 @@ int Iterate(struct Position *p) {
         return mvs[0];
     }
 
-    SoftLimit = StartTime + (int) (soft * ONE_SECOND);
-    SoftLimit2 = StartTime + (int) (85 * soft);
-    HardLimit = StartTime + (int) (hard * ONE_SECOND);
+    SoftLimit = StartTime + (int)(soft * ONE_SECOND);
+    SoftLimit2 = StartTime + (int)(85 * soft);
+    HardLimit = StartTime + (int)(hard * ONE_SECOND);
 
     InitScore(p);
     AgeHashTable();

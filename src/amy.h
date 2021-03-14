@@ -88,9 +88,12 @@
 
 #define SQUARE(x) 'a' + ((x)&7), '1' + ((x) >> 3)
 
-#define SetBit(b, i) ((b) |= (1ULL << (i)))
-#define ClrBit(b, i) ((b) &= ~(1ULL << (i)))
-#define TstBit(b, i) ((b) & (1ULL << (i)))
+#define SetMask(i) (1ULL << (i))
+#define ClrMask(i) (~SetMask(i))
+
+#define SetBit(b, i) ((b) |= SetMask(i))
+#define ClrBit(b, i) ((b) &= ClrMask(i))
+#define TstBit(b, i) ((b)&SetMask(i))
 
 #define OPP(x) (1 ^ (x))
 
@@ -415,7 +418,6 @@ extern int AutoSave;
 extern char AutoSaveFileName[64];
 extern struct Position *CurrentPosition;
 
-extern BitBoard SetMask[64], ClrMask[64];
 extern int goodmove[256];
 extern int badmove[256];
 extern const int EPTranslate[];
@@ -430,7 +432,6 @@ extern hash_t STMKey;
 
 extern int HT_Bits;
 
-extern BitBoard SetMask[64], ClrMask[64];
 extern BitBoard FileMask[8], IsoMask[8];
 extern BitBoard RankMask[8];
 extern BitBoard ForwardRayW[64], ForwardRayB[64];

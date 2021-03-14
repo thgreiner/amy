@@ -121,7 +121,7 @@ static void DebugEngine(int move) {
         temp = p->atkTo[i];
         while (temp) {
             int sq = FindSetBit(temp);
-            ClrBit(temp, sq);
+            temp &= temp - 1;
             if (!TstBit(p->atkFr[sq], i)) {
                 Print(0, "AtkFr or AtkTo is bad on %c%c or %c%c\n", SQUARE(i),
                       SQUARE(sq));
@@ -277,7 +277,7 @@ static void GainAttacks(struct Position *p, int to) {
 
     while (tmp) {
         i = FindSetBit(tmp);
-        ClrBit(tmp, i);
+        tmp &= tmp - 1;
         GainAttack(p, i, to);
     }
 }
@@ -293,7 +293,7 @@ static void LooseAttacks(struct Position *p, int to) {
 
     while (tmp) {
         i = FindSetBit(tmp);
-        ClrBit(tmp, i);
+        tmp &= tmp - 1;
         LooseAttack(p, i, to);
     }
 }
@@ -814,7 +814,7 @@ void RecalcAttacks(struct Position *p) {
     while (tmp) {
         int i = FindSetBit(tmp);
         int pc = p->piece[i];
-        ClrBit(tmp, i);
+        tmp &= tmp - 1;
         SetBit(p->mask[White][pc], i);
         if (Sliding[pc])
             SetBit(p->slidingPieces, i);
@@ -835,7 +835,7 @@ void RecalcAttacks(struct Position *p) {
     while (tmp) {
         int i = FindSetBit(tmp);
         int pc = -p->piece[i];
-        ClrBit(tmp, i);
+        tmp &= tmp - 1;
         SetBit(p->mask[Black][pc], i);
         if (Sliding[pc])
             SetBit(p->slidingPieces, i);
@@ -855,14 +855,14 @@ void RecalcAttacks(struct Position *p) {
     tmp = p->mask[White][0];
     while (tmp) {
         int i = FindSetBit(tmp);
-        ClrBit(tmp, i);
+        tmp &= tmp - 1;
         AtkSet(p, p->piece[i], White, i);
     }
 
     tmp = p->mask[Black][0];
     while (tmp) {
         int i = FindSetBit(tmp);
-        ClrBit(tmp, i);
+        tmp &= tmp - 1;
         AtkSet(p, -p->piece[i], Black, i);
     }
 
@@ -883,15 +883,15 @@ void RecalcAttacks(struct Position *p) {
  */
 
 int GenTo(struct Position *p, int square, int *moves) {
-    int cnt = 0, i;
+    int cnt = 0;
     int tm = (square << 6) | M_CAPTURE;
     BitBoard tmp;
 
     tmp = p->atkFr[square] & p->mask[p->turn][0];
 
     while (tmp) {
-        i = FindSetBit(tmp);
-        ClrBit(tmp, i);
+        int i = FindSetBit(tmp);
+        tmp &= tmp - 1;
         if (TYPE(p->piece[i]) == Pawn && PromoSquare[square]) {
             *(moves++) = i | tm | M_PQUEEN;
             *(moves++) = i | tm | M_PKNIGHT;
@@ -907,7 +907,7 @@ int GenTo(struct Position *p, int square, int *moves) {
 }
 
 int GenEnpas(struct Position *p, int *moves) {
-    int cnt = 0, i;
+    int cnt = 0;
     BitBoard tmp;
 
     if (!p->enPassant)
@@ -915,8 +915,8 @@ int GenEnpas(struct Position *p, int *moves) {
 
     tmp = p->atkFr[p->enPassant] & p->mask[p->turn][Pawn];
     while (tmp) {
-        i = FindSetBit(tmp);
-        ClrBit(tmp, i);
+        int i = FindSetBit(tmp);
+        tmp &= tmp - 1;
         *(moves++) = i | (p->enPassant << 6) | M_ENPASSANT;
         cnt++;
     }
@@ -929,14 +929,14 @@ int GenEnpas(struct Position *p, int *moves) {
 
 int GenFrom(struct Position *p, int square, int *moves) {
     if (TYPE(p->piece[square]) != Pawn) {
-        int cnt = 0, i;
+        int cnt = 0;
         BitBoard tmp;
 
         tmp = p->atkTo[square] & ~(p->mask[White][0] | p->mask[Black][0]);
 
         while (tmp) {
-            i = FindSetBit(tmp);
-            ClrBit(tmp, i);
+            int i = FindSetBit(tmp);
+            tmp &= tmp - 1;
             *(moves++) = square | (i << 6);
             cnt++;
         }
@@ -1182,7 +1182,7 @@ int IsCheckingMove(struct Position *p, int move) {
         int i = FindSetBit(tmp);
         BitBoard tmp2;
 
-        ClrBit(tmp, i);
+        tmp &= tmp - 1;
         if (TYPE(p->piece[i]) == Bishop && !TstBit(BishopEPM[kp], i))
             continue;
         if (TYPE(p->piece[i]) == Rook && !TstBit(RookEPM[kp], i))
@@ -1211,7 +1211,6 @@ int GenChecks(struct Position *p, int *moves) {
     BitBoard *ip = InterPath[kp];
     BitBoard fsq = p->mask[p->turn][0];
     BitBoard all = (p->mask[White][0] | p->mask[Black][0]);
-    int i;
 
     /* First find all blockers, i.e. pieces that give check when they move
      * from their current square
@@ -1220,8 +1219,8 @@ int GenChecks(struct Position *p, int *moves) {
     tmp = (p->mask[p->turn][Bishop] | p->mask[p->turn][Queen]) & BishopEPM[kp];
 
     while (tmp) {
-        i = FindSetBit(tmp);
-        ClrBit(tmp, i);
+        int i = FindSetBit(tmp);
+        tmp &= tmp - 1;
         if (ip[i] && !(ip[i] & p->mask[OPP(p->turn)][0])) {
             BitBoard tmp2 = p->mask[p->turn][0] & ip[i];
 
@@ -1243,8 +1242,8 @@ int GenChecks(struct Position *p, int *moves) {
     tmp = (p->mask[p->turn][Rook] | p->mask[p->turn][Queen]) & RookEPM[kp];
 
     while (tmp) {
-        i = FindSetBit(tmp);
-        ClrBit(tmp, i);
+        int i = FindSetBit(tmp);
+        tmp &= tmp - 1;
         if (ip[i] && !(ip[i] & p->mask[OPP(p->turn)][0])) {
             BitBoard tmp2 = p->mask[p->turn][0] & ip[i];
 
@@ -1273,11 +1272,11 @@ int GenChecks(struct Position *p, int *moves) {
     while (fr) {
         int sq = FindSetBit(fr);
         BitBoard tmp2 = p->atkTo[sq] & tmp;
-        ClrBit(fr, sq);
+        fr &= fr - 1;
 
         while (tmp2) {
             int sq2 = FindSetBit(tmp2);
-            ClrBit(tmp2, sq2);
+            tmp2 &= tmp2 - 1;
             if (InterPath[kp][sq2] & all)
                 continue;
             *(m++) = sq | (sq2 << 6);
@@ -1295,11 +1294,11 @@ int GenChecks(struct Position *p, int *moves) {
     while (fr) {
         int sq = FindSetBit(fr);
         BitBoard tmp2 = p->atkTo[sq] & tmp;
-        ClrBit(fr, sq);
+        fr &= fr - 1;
 
         while (tmp2) {
             int sq2 = FindSetBit(tmp2);
-            ClrBit(tmp2, sq2);
+            tmp2 &= tmp2 - 1;
             if (InterPath[kp][sq2] & all)
                 continue;
             *(m++) = sq | (sq2 << 6);
@@ -1318,12 +1317,12 @@ int GenChecks(struct Position *p, int *moves) {
         int sq = FindSetBit(fr);
         BitBoard tmp2;
 
-        ClrBit(fr, sq);
+        fr &= fr - 1;
         tmp2 = p->atkTo[sq] & tmp;
 
         while (tmp2) {
             int sq2 = FindSetBit(tmp2);
-            ClrBit(tmp2, sq2);
+            tmp2 &= tmp2 - 1;
             *(m++) = sq | (sq2 << 6);
             cnt++;
         }
@@ -1338,8 +1337,7 @@ int GenChecks(struct Position *p, int *moves) {
 
     while (tmp) {
         int sq = FindSetBit(tmp);
-
-        ClrBit(tmp, sq);
+        tmp &= tmp - 1;
 
         if (p->turn == White) {
             if (p->piece[sq - 8] == Pawn) {
@@ -1443,7 +1441,7 @@ char *SAN(struct Position *p, int move) {
         /* check for ambigous move */
         while (tmp) {
             i = FindSetBit(tmp);
-            ClrBit(tmp, i);
+            tmp &= tmp - 1;
             if (i != fr) {
                 int incheck;
                 int tmove = i | (to << 6);
@@ -1967,7 +1965,7 @@ int PLegalMoves(struct Position *p, int *mvs) {
     while (tmp) {
         int j = FindSetBit(tmp);
         int t = GenTo(p, j, mvs);
-        ClrBit(tmp, j);
+        tmp &= tmp - 1;
 
         cnt += t;
         mvs += t;
@@ -1977,7 +1975,7 @@ int PLegalMoves(struct Position *p, int *mvs) {
     while (tmp) {
         int j = FindSetBit(tmp);
         int t = GenFrom(p, j, mvs);
-        ClrBit(tmp, j);
+        tmp &= tmp - 1;
 
         cnt += t;
         mvs += t;
@@ -2001,7 +1999,7 @@ int LegalMoves(struct Position *p, int *mvs) {
     while (tmp) {
         int j = FindSetBit(tmp);
         int i;
-        ClrBit(tmp, j);
+        tmp &= tmp - 1;
         t = GenTo(p, j, m);
 
         for (i = 0; i < t; i++) {
@@ -2023,7 +2021,7 @@ int LegalMoves(struct Position *p, int *mvs) {
     while (tmp) {
         int j = FindSetBit(tmp);
         int i;
-        ClrBit(tmp, j);
+        tmp &= tmp - 1;
 
         t = GenFrom(p, j, m);
         for (i = 0; i < t; i++) {

@@ -306,8 +306,8 @@ static int ScorePawns(struct Position *p, struct PawnFacts *pawnFacts) {
     pcs = p->mask[White][Pawn];
     while (pcs) {
         int sq = FindSetBit(pcs);
+        pcs &= pcs - 1;
 
-        ClrBit(pcs, sq);
         score += WPawnPos[sq];
 
         /*
@@ -363,7 +363,7 @@ static int ScorePawns(struct Position *p, struct PawnFacts *pawnFacts) {
     while (pcs) {
         int sq = FindSetBit(pcs);
 
-        ClrBit(pcs, sq);
+        pcs &= pcs - 1;
         score -= BPawnPos[sq];
 
         /*
@@ -653,7 +653,7 @@ static int ScorePassedPawns(struct Position *p, int wphase, int bphase,
         int rank = sq >> 3;
         int file = sq & 7;
 
-        ClrBit(pcs, sq);
+        pcs &= pcs - 1;
 
         /* Basic score */
 
@@ -738,7 +738,7 @@ static int ScorePassedPawns(struct Position *p, int wphase, int bphase,
         int rank = 7 - (sq >> 3);
         int file = sq & 7;
 
-        ClrBit(pcs, sq);
+        pcs &= pcs - 1; //(pcs, sq);
 
         /* Basic score */
 
@@ -837,7 +837,7 @@ static int ScorePassedPawns(struct Position *p, int wphase, int bphase,
             while (wrunner) {
                 int sq = FindSetBit(wrunner);
                 int dist = 7 - (sq >> 3);
-                ClrBit(wrunner, sq);
+                wrunner &= wrunner - 1;
 
                 if (dist < wdist) {
                     wdist = dist;
@@ -847,7 +847,7 @@ static int ScorePassedPawns(struct Position *p, int wphase, int bphase,
             while (brunner) {
                 int sq = FindSetBit(brunner);
                 int dist = (sq >> 3);
-                ClrBit(brunner, sq);
+                brunner &= brunner - 1;
 
                 if (dist < bdist) {
                     bdist = dist;
@@ -1059,14 +1059,14 @@ static int ScoreDevelopment(struct Position *p) {
     pcs = p->mask[White][Queen];
     while (pcs) {
         int sq = FindSetBit(pcs);
-        ClrBit(pcs, sq);
+        pcs &= pcs - 1;
         score += QueenPosDevelopment[sq];
     }
 
     pcs = p->mask[Black][Queen];
     while (pcs) {
         int sq = FindSetBit(pcs);
-        ClrBit(pcs, sq);
+        pcs &= pcs - 1;
         score -= QueenPosDevelopment[REFLECT_X(sq)];
     }
 
@@ -1240,7 +1240,7 @@ static int ScorePositionForWhite(struct Position *p, int alpha, int beta) {
     pcs = p->mask[White][Knight];
     while (pcs) {
         sq = FindSetBit(pcs);
-        ClrBit(pcs, sq);
+        pcs &= pcs - 1;
 
         score += KnightPos[sq];
 
@@ -1265,7 +1265,7 @@ static int ScorePositionForWhite(struct Position *p, int alpha, int beta) {
     pcs = p->mask[Black][Knight];
     while (pcs) {
         sq = FindSetBit(pcs);
-        ClrBit(pcs, sq);
+        pcs &= pcs - 1;
 
         score -= KnightPos[REFLECT_X(sq)];
 
@@ -1303,7 +1303,7 @@ static int ScorePositionForWhite(struct Position *p, int alpha, int beta) {
 
     while (pcs) {
         sq = FindSetBit(pcs);
-        ClrBit(pcs, sq);
+        pcs &= pcs - 1;
 
         score += (ScaleUp[wphase] * BishopPos[sq]) >> 4;
 
@@ -1327,7 +1327,7 @@ static int ScorePositionForWhite(struct Position *p, int alpha, int beta) {
 
     while (pcs) {
         sq = FindSetBit(pcs);
-        ClrBit(pcs, sq);
+        pcs &= pcs - 1;
 
         score -= (ScaleUp[bphase] * BishopPos[REFLECT_X(sq)]) >> 4;
 
@@ -1354,7 +1354,7 @@ static int ScorePositionForWhite(struct Position *p, int alpha, int beta) {
         int file;
 
         sq = FindSetBit(pcs);
-        ClrBit(pcs, sq);
+        pcs &= pcs - 1;
         file = sq & 7;
 
         score += (ScaleUp[wphase] * RookPos[sq]) >> 4;
@@ -1392,7 +1392,7 @@ static int ScorePositionForWhite(struct Position *p, int alpha, int beta) {
     while (pcs) {
         int file;
         sq = FindSetBit(pcs);
-        ClrBit(pcs, sq);
+        pcs &= pcs - 1;
         file = sq & 7;
 
         score -= (ScaleUp[bphase] * RookPos[REFLECT_X(sq)]) >> 4;
@@ -1435,7 +1435,7 @@ static int ScorePositionForWhite(struct Position *p, int alpha, int beta) {
     pcs = p->mask[White][Queen];
     while (pcs) {
         sq = FindSetBit(pcs);
-        ClrBit(pcs, sq);
+        pcs &= pcs - 1;
 
         score += QueenPos[sq];
 
@@ -1451,7 +1451,7 @@ static int ScorePositionForWhite(struct Position *p, int alpha, int beta) {
     pcs = p->mask[Black][Queen];
     while (pcs) {
         sq = FindSetBit(pcs);
-        ClrBit(pcs, sq);
+        pcs &= pcs - 1;
 
         score -= QueenPos[REFLECT_X(sq)];
 

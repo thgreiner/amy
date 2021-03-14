@@ -173,7 +173,7 @@ int NextMove(struct SearchData *sd) {
             int j;
 
             i = FindSetBit(targets);
-            ClrBit(targets, i);
+            targets &= targets - 1;
             cnt = GenTo(p, i, sd->moveHeap + st->st_last);
             for (j = 0; j < cnt; j++) {
                 sd->dataHeap[st->st_last] =
@@ -186,7 +186,7 @@ int NextMove(struct SearchData *sd) {
         while (targets) {
             int j;
             i = FindSetBit(targets);
-            ClrBit(targets, i);
+            targets &= targets - 1;
             cnt = GenFrom(p, i, sd->moveHeap + st->st_last);
 
             for (j = 0; j < cnt; j++) {
@@ -354,11 +354,11 @@ int NextMove(struct SearchData *sd) {
 
         while (tmp) {
             i = FindSetBit(tmp);
-            ClrBit(tmp, i);
+            tmp &= tmp - 1;
             tmp2 = p->atkTo[i] & ~excl;
             while (tmp2) {
                 j = FindSetBit(tmp2);
-                ClrBit(tmp2, j);
+                tmp2 &= tmp2 - 1;
                 sd->moveHeap[st->st_last++] = i | (j << 6);
             }
         }
@@ -375,7 +375,7 @@ int NextMove(struct SearchData *sd) {
         while (tmp2) {
             int fr;
             i = FindSetBit(tmp2);
-            ClrBit(tmp2, i);
+            tmp2 &= tmp2 - 1;
             fr = (p->turn == White) ? i - 8 : i + 8;
             if (PromoSquare[i]) {
                 sd->moveHeap[st->st_last++] = fr | (i << 6) | M_PQUEEN;
@@ -398,7 +398,7 @@ int NextMove(struct SearchData *sd) {
         while (tmp) {
             int fr;
             i = FindSetBit(tmp);
-            ClrBit(tmp, i);
+            tmp &= tmp - 1;
             fr = (p->turn == White) ? i - 16 : i + 16;
             sd->moveHeap[st->st_last++] = fr | (i << 6) | M_PAWND;
         }
@@ -475,7 +475,7 @@ int NextEvasion(struct SearchData *sd) {
         while (targets) {
             int j;
             i = FindSetBit(targets);
-            ClrBit(targets, i);
+            targets &= targets - 1;
             cnt = GenTo(p, i, sd->moveHeap + st->st_last);
             for (j = 0; j < cnt; j++) {
                 sd->dataHeap[st->st_last] =
@@ -628,7 +628,7 @@ int NextEvasion(struct SearchData *sd) {
 
         while (tmp) {
             i = FindSetBit(tmp);
-            ClrBit(tmp, i);
+            tmp &= tmp - 1;
             if (!(p->atkFr[i] & p->mask[OPP(p->turn)][0]))
                 sd->moveHeap[st->st_last++] = kp | (i << 6);
         }
@@ -640,7 +640,7 @@ int NextEvasion(struct SearchData *sd) {
 
         while (att) {
             i = FindSetBit(att);
-            ClrBit(att, i);
+            att &= att - 1;
             des = InterPath[kp][i];
         }
 
@@ -652,12 +652,12 @@ int NextEvasion(struct SearchData *sd) {
             BitBoard mto;
 
             i = FindSetBit(tmp);
-            ClrBit(tmp, i);
+            tmp &= tmp - 1;
             mto = (p->atkTo[i] & ~excl) & des;
 
             while (mto) {
                 j = FindSetBit(mto);
-                ClrBit(mto, j);
+                mto &= mto - 1;
                 sd->moveHeap[st->st_last++] = i | (j << 6);
             }
         }
@@ -674,7 +674,7 @@ int NextEvasion(struct SearchData *sd) {
         while (tmp2) {
             int fr;
             i = FindSetBit(tmp2);
-            ClrBit(tmp2, i);
+            tmp2 &= tmp2 - 1;
             fr = (p->turn == White) ? i - 8 : i + 8;
 
             if (PromoSquare[i]) {
@@ -698,7 +698,7 @@ int NextEvasion(struct SearchData *sd) {
         while (tmp) {
             int fr;
             i = FindSetBit(tmp);
-            ClrBit(tmp, i);
+            tmp &= tmp - 1;
             fr = (p->turn == White) ? i - 16 : i + 16;
             sd->moveHeap[st->st_last++] = fr | (i << 6) | M_PAWND;
         }
@@ -754,7 +754,7 @@ static void GenerateQCaptures(struct SearchData *sd, int alpha) {
         BitBoard tmp;
 
         i = FindSetBit(pwn7th);
-        ClrBit(pwn7th, i);
+        pwn7th &= pwn7th - 1;
         next = (p->turn == White) ? i + 8 : i - 8;
 
         if (p->piece[next] == Neutral) {
@@ -771,7 +771,7 @@ static void GenerateQCaptures(struct SearchData *sd, int alpha) {
         while (tmp) {
             int move, sw;
             j = FindSetBit(tmp);
-            ClrBit(tmp, j);
+            tmp &= tmp - 1;
             move = i | (j << 6) | M_CAPTURE;
             if ((sw = SwapOff(p, move | M_PQUEEN)) >= 0) {
                 sd->moveHeap[st->st_last] = move | M_PQUEEN;
@@ -794,12 +794,12 @@ static void GenerateQCaptures(struct SearchData *sd, int alpha) {
         BitBoard tmp2;
         int j;
         i = FindSetBit(def);
-        ClrBit(def, i);
+        def &= def - 1;
         tmp2 = p->atkFr[i] & att;
         while (tmp2) {
             int move, sw;
             j = FindSetBit(tmp2);
-            ClrBit(tmp2, j);
+            tmp2 &= tmp2 - 1;
             move = j | i << 6 | M_CAPTURE;
             sw = SwapOff(p, move);
             if (sw >= 0) {
@@ -816,12 +816,12 @@ static void GenerateQCaptures(struct SearchData *sd, int alpha) {
         BitBoard tmp2;
         int j;
         i = FindSetBit(def);
-        ClrBit(def, i);
+        def &= def - 1;
         tmp2 = p->atkFr[i] & att;
         while (tmp2) {
             int move, sw;
             j = FindSetBit(tmp2);
-            ClrBit(tmp2, j);
+            tmp2 &= tmp2 - 1;
             move = j | i << 6 | M_CAPTURE;
             sw = SwapOff(p, move);
             if (sw >= 0) {
@@ -838,12 +838,12 @@ static void GenerateQCaptures(struct SearchData *sd, int alpha) {
         BitBoard tmp2;
         int j;
         i = FindSetBit(def);
-        ClrBit(def, i);
+        def &= def - 1;
         tmp2 = p->atkFr[i] & att;
         while (tmp2) {
             int move, sw;
             j = FindSetBit(tmp2);
-            ClrBit(tmp2, j);
+            tmp2 &= tmp2 - 1;
             move = j | i << 6 | M_CAPTURE;
             sw = SwapOff(p, move);
             if (sw >= 0) {
@@ -860,12 +860,12 @@ static void GenerateQCaptures(struct SearchData *sd, int alpha) {
         BitBoard tmp2;
         int j;
         i = FindSetBit(def);
-        ClrBit(def, i);
+        def &= def - 1;
         tmp2 = p->atkFr[i] & att;
         while (tmp2) {
             int move, sw;
             j = FindSetBit(tmp2);
-            ClrBit(tmp2, j);
+            tmp2 &= tmp2 - 1;
             move = j | i << 6 | M_CAPTURE;
             sw = SwapOff(p, move);
             if (sw >= 0) {

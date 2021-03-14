@@ -74,7 +74,7 @@ void InitializeCounters(int *pieceCounter, int *squares, int type,
     int count = 0;
     while (mask) {
         int index = FindSetBit(mask);
-        mask &= ClrMask[index];
+        mask &= mask - 1;
         squares[type * C_PIECES + count] = index;
         count++;
     }
