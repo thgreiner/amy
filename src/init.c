@@ -42,7 +42,6 @@ BitBoard FileMask[8], IsoMask[8];
 BitBoard RankMask[8];
 BitBoard ForwardRayW[64], ForwardRayB[64];
 BitBoard PassedMaskW[64], PassedMaskB[64];
-BitBoard ArtIsoMaskW[64], ArtIsoMaskB[64];
 BitBoard OutpostMaskW[64], OutpostMaskB[64];
 BitBoard InterPath[64][64];
 BitBoard Ray[64][64];
@@ -62,7 +61,6 @@ BitBoard WKingTrapsRook1, WKingTrapsRook2;
 BitBoard WRookTrapped1, WRookTrapped2;
 BitBoard BKingTrapsRook1, BKingTrapsRook2;
 BitBoard BRookTrapped1, BRookTrapped2;
-BitBoard StrongSquareW[64], StrongSquareB[64];
 BitBoard KingSafetyMask[64];
 BitBoard WKingOpeningMask, BKingOpeningMask;
 BitBoard WPawnOpeningMask, BPawnOpeningMask;
@@ -72,7 +70,6 @@ BitBoard BPawnKingAttacks[4];
 BitBoard PawnCenterMask;
 BitBoard Rook7thKingMask[2];
 BitBoard KingSideMask, QueenSideMask;
-BitBoard WhitesHalf, BlacksHalf;
 BitBoard FianchettoMaskWhiteKingSide, FianchettoMaskBlackKingSide;
 BitBoard FianchettoMaskWhiteQueenSide, FianchettoMaskBlackQueenSide;
 BitBoard ConnectedMask[64];
@@ -176,21 +173,6 @@ void InitPawnMasks(void) {
         if ((i & 7) < 7) {
             OutpostMaskW[i] |= ForwardRayW[i + 1];
             OutpostMaskB[i] |= ForwardRayB[i + 1];
-        }
-        /* PrintBitBoard(OutpostMaskW[i]); */
-        /* PrintBitBoard(OutpostMaskB[i]); */
-        ArtIsoMaskW[i] = ArtIsoMaskB[i] = IsoMask[i & 7];
-        for (j = i - 3 * 8; j > 0; j -= 8) {
-            if ((i & 7) > 0)
-                ClrBit(ArtIsoMaskW[i], j - 1);
-            if ((i & 7) < 7)
-                ClrBit(ArtIsoMaskW[i], j + 1);
-        }
-        for (j = i + 3 * 8; j < 64; j += 8) {
-            if ((i & 7) > 0)
-                ClrBit(ArtIsoMaskB[i], j - 1);
-            if ((i & 7) < 7)
-                ClrBit(ArtIsoMaskB[i], j + 1);
         }
         /*
         printf("\n%c%c:\n", SQUARE(i));
@@ -440,14 +422,6 @@ void InitMiscMasks(void) {
     BRookTrapped2 = SetMask(b8) | SetMask(a8) | SetMask(a7);
 
     for (i = 0; i < 64; i++) {
-        StrongSquareW[i] = StrongSquareB[i] = 0;
-        for (j = i; j < 64; j += 8)
-            StrongSquareW[i] |= WPawnEPM[j];
-        for (j = i; j >= 0; j -= 8)
-            StrongSquareB[i] |= BPawnEPM[j];
-    }
-
-    for (i = 0; i < 64; i++) {
         int rank = (i >> 3);
         int file = i & 7;
         int x, y;
@@ -479,9 +453,6 @@ void InitMiscMasks(void) {
 
     KingSideMask = FileMask[7] | FileMask[6] | FileMask[5] | FileMask[4];
     QueenSideMask = FileMask[0] | FileMask[1] | FileMask[2] | FileMask[3];
-
-    WhitesHalf = RankMask[0] | RankMask[1] | RankMask[2] | RankMask[3];
-    BlacksHalf = RankMask[4] | RankMask[5] | RankMask[6] | RankMask[7];
 
     FianchettoMaskWhiteKingSide = SetMask(f2) | SetMask(g3) | SetMask(h2);
     FianchettoMaskBlackKingSide = SetMask(f7) | SetMask(g6) | SetMask(h7);
