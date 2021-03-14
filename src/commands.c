@@ -541,6 +541,7 @@ static void RunAnnotate(char *fname, int side) {
             }
             FreePosition(p);
         }
+        fclose(fin);
     } else
         Print(0, "Couldn't open %s\n", fname);
 }

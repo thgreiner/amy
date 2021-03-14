@@ -1317,8 +1317,6 @@ static int ScorePositionForWhite(struct Position *p, int alpha, int beta) {
      *
      *************************************************************/
 
-    pawns = p->mask[White][Pawn] | p->mask[Black][Pawn];
-
     /*
      * Score white bishops
      */

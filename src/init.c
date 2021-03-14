@@ -213,10 +213,13 @@ void InitGeometry(void) {
     int dirn[] = {19, 21, -19, -21, 12, 8, -12, -8};
     int dirk[] = {-11, -10, -9, -1, 1, 9, 10, 11};
 
-    for (i = 0; i < 100; i++)
-        edge[i] = trto[i] = 0;
-    for (i = 0; i < 64; i++)
-        trfr[i] = 0;
+    for (i = 0; i < 100; i++) {
+        edge[i] = 0;
+        trto[i] = 0;
+    }
+    for (i = 0; i < 64; i++) {
+        trfr[i] = 0;      
+    }
 
     for (i = 0; i < 10; i++) {
         edge[i] = edge[90 + i] = edge[10 * i] = edge[10 * i + 9] = 1;
