@@ -79,6 +79,7 @@ enum { Opening, Middlegame, Endgame };
 
 char *GamePhaseName[] = {"Opening", "Middlegame", "Endgame"};
 
+
 /**
  * General scoring paramters
  */
@@ -271,6 +272,16 @@ const static int MaxPosInit = 2000;
  */
 
 static int RootGamePhase;
+
+
+/**
+ * Masks used in ScorePawns.
+ */
+
+static BitBoard FianchettoMaskWhiteKingSide = SetMask(f2) | SetMask(g3) | SetMask(h2);
+static BitBoard FianchettoMaskBlackKingSide = SetMask(f7) | SetMask(g6) | SetMask(h7);
+static BitBoard FianchettoMaskWhiteQueenSide = SetMask(c2) | SetMask(b3) | SetMask(a2);
+static BitBoard FianchettoMaskBlackQueenSide = SetMask(c7) | SetMask(b6) | SetMask(a7);
 
 /**
  * Score the pawn structure.

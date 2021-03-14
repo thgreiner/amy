@@ -65,13 +65,8 @@ BitBoard KingSafetyMask[64];
 BitBoard WKingOpeningMask, BKingOpeningMask;
 BitBoard WPawnOpeningMask, BPawnOpeningMask;
 BitBoard WPawnBackwardMask[64], BPawnBackwardMask[64];
-BitBoard WPawnKingAttacks[4];
-BitBoard BPawnKingAttacks[4];
-BitBoard PawnCenterMask;
 BitBoard Rook7thKingMask[2];
 BitBoard KingSideMask, QueenSideMask;
-BitBoard FianchettoMaskWhiteKingSide, FianchettoMaskBlackKingSide;
-BitBoard FianchettoMaskWhiteQueenSide, FianchettoMaskBlackQueenSide;
 BitBoard ConnectedMask[64];
 
 void InitMasks(void) {
@@ -201,18 +196,6 @@ void InitPawnMasks(void) {
             }
         }
     }
-
-    WPawnKingAttacks[0] = SetMask(f6) | SetMask(g6) | SetMask(h6);
-    WPawnKingAttacks[1] = SetMask(f7) | SetMask(g7) | SetMask(h7);
-    WPawnKingAttacks[2] = SetMask(c6) | SetMask(b6) | SetMask(a6);
-    WPawnKingAttacks[3] = SetMask(c7) | SetMask(b7) | SetMask(a7);
-    BPawnKingAttacks[0] = SetMask(f3) | SetMask(g3) | SetMask(h3);
-    BPawnKingAttacks[1] = SetMask(f2) | SetMask(g2) | SetMask(h2);
-    BPawnKingAttacks[2] = SetMask(c3) | SetMask(b3) | SetMask(a3);
-    BPawnKingAttacks[3] = SetMask(c2) | SetMask(b2) | SetMask(a2);
-
-    PawnCenterMask = SetMask(d3) | SetMask(e3) | SetMask(d4) | SetMask(e4) |
-                     SetMask(d5) | SetMask(e5) | SetMask(d6) | SetMask(e6);
 
     for (i = 0; i < 64; i++) {
         ConnectedMask[i] = 0;
@@ -453,11 +436,6 @@ void InitMiscMasks(void) {
 
     KingSideMask = FileMask[7] | FileMask[6] | FileMask[5] | FileMask[4];
     QueenSideMask = FileMask[0] | FileMask[1] | FileMask[2] | FileMask[3];
-
-    FianchettoMaskWhiteKingSide = SetMask(f2) | SetMask(g3) | SetMask(h2);
-    FianchettoMaskBlackKingSide = SetMask(f7) | SetMask(g6) | SetMask(h7);
-    FianchettoMaskWhiteQueenSide = SetMask(c2) | SetMask(b3) | SetMask(a2);
-    FianchettoMaskBlackQueenSide = SetMask(c7) | SetMask(b6) | SetMask(a7);
 }
 
 BitBoard ShiftUp(BitBoard x) { return (x << 8) & ShiftUpMask; }

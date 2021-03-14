@@ -460,13 +460,8 @@ extern BitBoard KingSafetyMask[64];
 extern BitBoard WKingOpeningMask, BKingOpeningMask;
 extern BitBoard WPawnOpeningMask, BPawnOpeningMask;
 extern BitBoard WPawnBackwardMask[64], BPawnBackwardMask[64];
-extern BitBoard WPawnKingAttacks[4];
-extern BitBoard BPawnKingAttacks[4];
-extern BitBoard PawnCenterMask;
 extern BitBoard Rook7thKingMask[2];
 extern BitBoard KingSideMask, QueenSideMask;
-extern BitBoard FianchettoMaskWhiteKingSide, FianchettoMaskBlackKingSide;
-extern BitBoard FianchettoMaskWhiteQueenSide, FianchettoMaskBlackQueenSide;
 extern BitBoard ConnectedMask[64];
 
 extern unsigned char FirstBit8[256];
