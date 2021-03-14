@@ -37,8 +37,6 @@
 
 #define REFLECT_X(a) ((a) ^ 0x38)
 
-char RcsId_score_c[] = "$Id: score.c 456 2004-03-04 21:11:26Z thorsten $";
-
 /**
  * Debugging stuff
  */

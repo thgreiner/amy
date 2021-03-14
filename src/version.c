@@ -35,9 +35,6 @@
 
 #include "amy.h"
 
-extern char RcsId_score_c[];
-extern char RcsId_search_c[];
-
 static char CopyrightNotice[] =
     "    Amy version " VERSION ", Copyright (C) 2002-2021 Thorsten Greiner\n"
     "    Amy comes with ABSOLUTELY NO WARRANTY; for details type 'warranty'.\n"
@@ -57,6 +54,4 @@ void ShowVersion(void) {
 #else
     Print(0, "    No multiprocessor support.\n\n");
 #endif
-    Print(0, "    %s\n", RcsId_score_c);
-    Print(0, "    %s\n\n", RcsId_search_c);
 }

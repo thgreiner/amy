@@ -92,12 +92,6 @@ static const int ResearchWindow = 1500;
 static const int MateDepth = 3;
 
 /**
- * Version info
- */
-
-char RcsId_search_c[] = "$Id: search.c 456 2004-03-04 21:11:26Z thorsten $";
-
-/**
  * search tree data
  */
 
