@@ -449,17 +449,9 @@ extern BitBoard BlackSquaresMask, WhiteSquaresMask;
 extern BitBoard KingSquareW[64], KingSquareB[64];
 extern BitBoard NotAFileMask, NotHFileMask;
 extern BitBoard CornerMaskA1, CornerMaskA8, CornerMaskH1, CornerMaskH8;
-extern BitBoard KingSafetyMask[64];
 extern BitBoard WPawnBackwardMask[64], BPawnBackwardMask[64];
-extern BitBoard Rook7thKingMask[2];
 extern BitBoard KingSideMask, QueenSideMask;
 extern BitBoard ConnectedMask[64];
-
-extern unsigned char FirstBit8[256];
-extern unsigned char FirstBit16[65536];
-
-extern int w_kingside_score, w_queenside_score;
-extern int b_kingside_score, b_queenside_score;
 
 extern int XBoard;
 extern int XPost;

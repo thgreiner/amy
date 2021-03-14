@@ -56,9 +56,7 @@ BitBoard BlackSquaresMask, WhiteSquaresMask;
 BitBoard KingSquareW[64], KingSquareB[64];
 BitBoard NotAFileMask, NotHFileMask;
 BitBoard CornerMaskA1, CornerMaskA8, CornerMaskH1, CornerMaskH8;
-BitBoard KingSafetyMask[64];
 BitBoard WPawnBackwardMask[64], BPawnBackwardMask[64];
-BitBoard Rook7thKingMask[2];
 BitBoard KingSideMask, QueenSideMask;
 BitBoard ConnectedMask[64];
 
@@ -366,31 +364,6 @@ void InitMiscMasks(void) {
     CornerMaskA8 = SetMask(a8) | SetMask(a7) | SetMask(b8) | SetMask(b7);
     CornerMaskH1 = SetMask(h1) | SetMask(h2) | SetMask(g1) | SetMask(g2);
     CornerMaskH8 = SetMask(h8) | SetMask(h7) | SetMask(g8) | SetMask(g7);
-
-    for (i = 0; i < 64; i++) {
-        int rank = (i >> 3);
-        int file = i & 7;
-        int x, y;
-
-        if (rank == 0)
-            rank = 1;
-        if (rank == 7)
-            rank = 6;
-        if (file == 0)
-            file = 1;
-        if (file == 7)
-            file = 6;
-
-        KingSafetyMask[i] = 0;
-        for (x = rank - 1; x <= rank + 1; x++) {
-            for (y = file - 1; y <= file + 1; y++) {
-                KingSafetyMask[i] |= SetMask(x * 8 + y);
-            }
-        }
-    }
-
-    Rook7thKingMask[White] = RankMask[7] | RankMask[6];
-    Rook7thKingMask[Black] = RankMask[0] | RankMask[1];
 
     KingSideMask = FileMask[7] | FileMask[6] | FileMask[5] | FileMask[4];
     QueenSideMask = FileMask[0] | FileMask[1] | FileMask[2] | FileMask[3];
