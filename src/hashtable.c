@@ -58,20 +58,18 @@ int HT_Bits = 17;
 static int PT_Bits = 15;
 static int ST_Bits = 15;
 
-static int HT_Size, HT_Mask;
+static unsigned int HT_Size, HT_Mask;
+static unsigned int PT_Size, PT_Mask;
+static unsigned int ST_Size, ST_Mask;
 
-static int PT_Size, PT_Mask;
-
-static int ST_Size, ST_Mask;
-
-int L_HT_Bits = 14, L_HT_Size, L_HT_Mask;
+int L_HT_Bits = 16, L_HT_Size, L_HT_Mask;
 
 static struct HTEntry *TranspositionTable = NULL;
 static struct PTEntry *PawnTable = NULL;
 static struct STEntry *ScoreTable = NULL;
 static int HTGeneration = 0;
 
-static int HTStoreFailed = 0;
+static unsigned int HTStoreFailed = 0;
 
 #if MP && HAVE_LIBPTHREAD
 
@@ -360,7 +358,7 @@ void StoreST(hash_t key, int score) {
  */
 
 void ClearHashTable(void) {
-    int i;
+    unsigned int i;
     struct HTEntry *h = TranspositionTable;
 
     for (i = 0; i < HT_Size; i++, h++) {
@@ -377,7 +375,7 @@ void AgeHashTable(void) {
 }
 
 void ClearPawnHashTable(void) {
-    int i;
+    unsigned int i;
     struct PTEntry *ph;
     struct STEntry *sh;
 
@@ -411,7 +409,6 @@ static void FreeHT(void) {
 
 void AllocateHT(void) {
     static int registered_free_ht = FALSE;
-    int i;
 
     /*
      * Register atexit() handler to free hashtable memory automatically
@@ -447,7 +444,7 @@ void AllocateHT(void) {
           ((1 << ST_Bits) * sizeof(struct STEntry)) / 1024);
 
 #if MP && HAVE_LIBPTHREAD
-    for (i = 0; i < MUTEX_COUNT; i++) {
+    for (int i = 0; i < MUTEX_COUNT; i++) {
         pthread_mutex_init(TranspositionMutex + i, NULL);
         pthread_mutex_init(PawnMutex + i, NULL);
         pthread_mutex_init(ScoreMutex + i, NULL);
@@ -456,8 +453,8 @@ void AllocateHT(void) {
 }
 
 void ShowHashStatistics(void) {
-    int i;
-    int cnt = 0;
+    unsigned int i;
+    unsigned int cnt = 0;
     struct HTEntry *h = TranspositionTable;
 
     for (i = 0; i < HT_Size; i++, h++) {
@@ -466,7 +463,7 @@ void ShowHashStatistics(void) {
     }
 
     Print(1,
-          "Hashtable 1:  entries = %d, use = %d (%d %%), store failed = %d\n",
+          "Hashtable 1:  entries = %u, use = %d (%d %%), store failed = %u\n",
           i, cnt, (cnt / (i / 100)), HTStoreFailed);
 }
 
