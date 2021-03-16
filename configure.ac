@@ -48,7 +48,7 @@ AC_DEFINE_UNQUOTED(MP, $mp_val, Enable multithreaded search)
 
 dnl Check for header files
 AC_HEADER_STDC
-AC_CHECK_HEADERS(fcntl.h sys/time.h unistd.h stdint.h)
+AC_CHECK_HEADERS(fcntl.h sys/time.h unistd.h stdint.h stdatomic.h)
 
 dnl Check for typedefs, structures and compiler characteristics
 AC_TYPE_SIZE_T

@@ -53,6 +53,10 @@
 #include <string.h>
 #endif
 
+#if HAVE_STDATOMIC_H && MP
+#include <stdatomic.h>
+#endif
+
 #ifdef _WIN32
 #include <conio.h>
 #include <io.h>
@@ -470,10 +474,11 @@ extern int EGTBProbe, EGTBProbeSucc;
 
 extern int Value[];
 extern int MaxPos;
-extern long PHit, PTry;
-extern int PawnStructure;
-extern long SHit, STry;
-extern long HHit, HTry;
+
+#if HAVE_STDATOMIC_H && MP
+_Atomic
+#endif
+extern unsigned long PHit, PTry, SHit, STry, HHit, HTry;
 
 extern unsigned int FHTime;
 extern int GUIMode;

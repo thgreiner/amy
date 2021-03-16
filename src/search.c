@@ -96,7 +96,12 @@ static const int MateDepth = 3;
  */
 
 int MaxDepth;
-long Nodes, QNodes, ChkNodes;
+
+#if HAVE_STDATOMIC_H && MP
+_Atomic
+#endif
+unsigned long Nodes, QNodes, ChkNodes;
+
 long RCExt, ChkExt, DiscExt, DblExt, SingExt, PPExt, ZZExt;
 unsigned int HardLimit, SoftLimit, SoftLimit2;
 unsigned int StartTime, WallTimeStart;
@@ -136,9 +141,10 @@ char BestLine[2048];
 char ShortBestLine[2048];
 char AnalysisLine[2048];
 
-long HTry, HHit;
-long PTry, PHit;
-long STry, SHit;
+#if HAVE_STDATOMIC_H && MP
+_Atomic
+#endif
+unsigned long HTry, HHit, PTry, PHit, STry, SHit;
 
 /* prototypes for search routines */
 
@@ -1521,7 +1527,7 @@ final:
 
     if (sd->master) {
         Print(2,
-              "Nodes = %d, QPerc: %d %%, time = %g secs, "
+              "Nodes = %lu, QPerc: %d %%, time = %g secs, "
               "%.1f kN/s\n",
               Nodes + QNodes, QNodes / ((Nodes + QNodes) / 100 + 1), elapsed,
               (Nodes + QNodes) / 1000.0 / elapsed);
