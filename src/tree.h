@@ -29,29 +29,28 @@
 
 */
 
-/*
- * version.c - version information
- */
+#ifndef TREE_H
+#define TREE_H
 
-#include "amy.h"
+struct TreeNode {
+    char *key_data;
+    size_t key_len;
+    char *value_data;
+    size_t value_len;
+    struct TreeNode *left_child;
+    struct TreeNode *right_child;
+    unsigned int depth;
+};
 
-static char CopyrightNotice[] =
-    "    Amy version " VERSION ", Copyright (c) 2002-2024, Thorsten Greiner\n"
-    "    Amy comes with ABSOLUTELY NO WARRANTY; for details type 'warranty'.\n"
-    "    This is free software, and you are welcome to redistribute it\n"
-    "    under certain conditions; type 'distribution' for details.\n\n"
-    "    Amy contains table base access code which is copyrighted\n"
-    "    by Eugene Nalimov and not free software.\n\n";
+typedef struct TreeNode tree_node_t;
 
-/**
- * Show the version of Amy.
- */
-void ShowVersion(void) {
-    Print(0, "\n");
-    Print(0, CopyrightNotice);
-#if MP
-    Print(0, "    Multiprocessor support (%d CPUs).\n\n", NumberOfCPUs);
-#else
-    Print(0, "    No multiprocessor support.\n\n");
+tree_node_t *add_node(tree_node_t *node, char *key_data, size_t key_len,
+                      char *value_data, size_t value_len);
+char *lookup_value(tree_node_t *node, char *key_data, size_t key_len,
+                   size_t *value_len);
+void free_node(tree_node_t *node);
+
+void save_tree(tree_node_t *node, FILE *fout);
+tree_node_t *load_tree(FILE *fin);
+
 #endif
-}

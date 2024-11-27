@@ -2,22 +2,22 @@
 
     Amy - a chess playing program
 
-    Copyright (c) 2014, Thorsten Greiner
+    Copyright (c) 2002-2024, Thorsten Greiner
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
     modification, are permitted provided that the following conditions are met:
 
     * Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
+      this list of conditions and the following disclaimer.
 
     * Redistributions in binary form must reproduce the above copyright notice,
       this list of conditions and the following disclaimer in the documentation
       and/or other materials provided with the distribution.
 
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
    ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
    LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
    CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
@@ -34,63 +34,23 @@
  */
 
 #include "amy.h"
-
-#if HAVE_LIBDB || HAVE_LIBDB2
-#include <db.h>
-#endif
-
-#if HAVE_LIBDB3
-#include <db3/db.h>
-#endif
-
-#if HAVE_LIBDB_5
-#include <db.h>
-#endif
+#include "tree.h"
 
 #define ECO_NAME "Eco.db"
 
 #define DEFAULT_ECO_NAME ECODIR "/" ECO_NAME
 
 void ParseEcoPgn(char *fname) {
-#if HAVE_LIBDB || HAVE_LIBDB2 || HAVE_LIBDB3 || HAVE_LIBDB_5
     FILE *fin = fopen(fname, "r");
     char buffer[1024];
     char name[128];
-    DB *database;
-    int result;
-    DBT key;
-    DBT value;
-    struct Position *p;
 
     if (!fin) {
-        Print(0, "Can�t open file %s\n", fname);
+        Print(0, "Cannot open file %s\n", fname);
         return;
     }
 
-#if HAVE_LIBDB || HAVE_LIBDB2
-    result = db_open(ECO_NAME, DB_BTREE, DB_CREATE | DB_TRUNCATE, 0644, NULL,
-                     NULL, &database);
-#endif
-#if HAVE_LIBDB3
-    result = db_create(&database, NULL, 0);
-    if (result == 0) {
-        result = database->open(database, ECO_NAME, NULL, DB_BTREE,
-                                DB_CREATE | DB_TRUNCATE, 0644);
-    }
-#endif
-#if HAVE_LIBDB_5
-    result = db_create(&database, NULL, 0);
-    if (result == 0) {
-        result = database->open(database, NULL, ECO_NAME, NULL, DB_BTREE,
-                                DB_CREATE | DB_TRUNCATE, 0644);
-    }
-#endif
-
-    if (result != 0) {
-        Print(0, "Can't open database: %s\n", strerror(result));
-        fclose(fin);
-        return;
-    }
+    tree_node_t *node = NULL;
 
     while (fgets(buffer, 1023, fin) != NULL) {
         char *x;
@@ -100,7 +60,8 @@ void ParseEcoPgn(char *fname) {
         strncpy(name, x, 128);
 
         Print(0, ".");
-        p = InitialPosition();
+
+        struct Position *p = InitialPosition();
 
         len = strlen(name);
 
@@ -113,92 +74,46 @@ void ParseEcoPgn(char *fname) {
                 }
             }
 
-            memset(&key, 0, sizeof(key));
-            memset(&value, 0, sizeof(value));
-
-            key.data = &(p->hkey);
-            key.size = sizeof(hash_t);
-
-            value.data = malloc(len + 1);
-            value.size = len + 1; /* store trailing null */
-            strncpy(value.data, name, len + 1);
-
-            database->put(database, NULL, &key, &value, 0);
-
-            free(value.data);
+            node = add_node(node, (char *)&(p->hkey), sizeof(p->hkey), name,
+                            strlen(name) + 1);
         }
 
         FreePosition(p);
     }
 
-    Print(0, "\nECO database created.\n");
-
-    database->close(database, 0);
     fclose(fin);
-#endif
+
+    FILE *fout = fopen(ECO_NAME, "w");
+    if (fout == NULL) {
+        Print(0, "\nCannot save ECO database to %s: %s\n", ECO_NAME,
+              strerror(errno));
+        return;
+    }
+
+    save_tree(node, fout);
+    fclose(fout);
+
+    Print(0, "\nECO database created.\n");
 }
 
-#if HAVE_LIBDB || HAVE_LIBDB2 || HAVE_LIBDB3 || HAVE_LIBDB_5
-static DB *EcoDB = NULL;
-#endif
+static tree_node_t *EcoDB = NULL;
 
 char *GetEcoCode(hash_t hkey) {
     char *retval = NULL;
-#if HAVE_LIBDB || HAVE_LIBDB2 || HAVE_LIBDB3 || HAVE_LIBDB_5
-    int result;
-    DBT key;
-    DBT value;
 
     if (EcoDB == NULL) {
-#if HAVE_LIBDB || HAVE_LIBDB2
-        result = db_open(ECO_NAME, DB_BTREE, DB_RDONLY, 0, NULL, NULL, &EcoDB);
-        if (result != 0) {
-            result = db_open(DEFAULT_ECO_NAME, DB_BTREE, DB_RDONLY, 0, NULL,
-                             NULL, &EcoDB);
+        FILE *fin = fopen(ECO_NAME, "r");
+        if (fin == NULL) {
+            Print(0, "Can't open database: %s\n", strerror(errno));
+            return NULL;
         }
-#endif
-#if HAVE_LIBDB3
-        result = db_create(&EcoDB, NULL, 0);
-        if (result == 0) {
-            result = EcoDB->open(EcoDB, ECO_NAME, NULL, DB_BTREE, DB_RDONLY, 0);
-            if (result != 0) {
-                result = EcoDB->open(EcoDB, DEFAULT_ECO_NAME, NULL, DB_BTREE,
-                                     DB_RDONLY, 0);
-            }
-        }
-#endif
-#if HAVE_LIBDB_5
-        result = db_create(&EcoDB, NULL, 0);
-        if (result == 0) {
-            result = EcoDB->open(EcoDB, NULL, ECO_NAME, NULL, DB_BTREE,
-                                 DB_RDONLY, 0);
-            if (result != 0) {
-                result = EcoDB->open(EcoDB, NULL, DEFAULT_ECO_NAME, NULL,
-                                     DB_BTREE, DB_RDONLY, 0);
-            }
-        }
-#endif
+        EcoDB = load_tree(fin);
+        fclose(fin);
     }
-    if (EcoDB != 0) {
-        memset(&key, 0, sizeof(key));
-        memset(&value, 0, sizeof(value));
 
-        key.data = &hkey;
-        key.size = sizeof(hkey);
-
-        value.flags = DB_DBT_MALLOC;
-
-        result = EcoDB->get(EcoDB, NULL, &key, &value, 0);
-        if (result == 0) {
-            static char code[128];
-            strncpy(code, value.data, value.size);
-            free(value.data);
-            retval = code;
-        }
-
-        /* database->close(database, 0); */
+    if (EcoDB != NULL) {
+        retval = lookup_value(EcoDB, (char *)&hkey, sizeof(hkey), NULL);
     }
-#endif
 
     return retval;
 }
@@ -214,9 +129,10 @@ int FindEcoCode(struct Position *p, char *result) {
             key = CurrentPosition->hkey;
         }
         res = GetEcoCode(key);
-        if (res != 0) {
+        if (res != NULL) {
             strcpy(result, res);
             found = TRUE;
+            free(res);
         }
         ply++;
     }

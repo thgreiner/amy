@@ -2,9 +2,8 @@
 What is Amy?
 ============
 
-Amy is a chess playing program like crafty or gnuchess. It probably is a bit
-stronger than gnuchess and not quite as strong as crafty. It is compatible
-with xboard, uses endgame table bases and an opening book.
+Amy is a chess playing program.  It is compatible with xboard, uses endgame
+table bases and an opening book.
 
 Copyright
 =========
@@ -26,15 +25,10 @@ On Un*x or Linux systems this is very simple:
 should do it. Make sure to specify compiler options with good optimization, I
 typically use something like (assuming a bash or ksh shell):
 
-	export CFLAGS='-O2 -mpentium -fomit-frame-pointer'
+	export CFLAGS='-O2 -march=native'
 	export CXXFLAGS=$CFLAGS
 	./configure
 	make
-
-Note that the '-mpentium' option only works with newer versions of gcc/egcs. If
-you are using an older version, chances are that this option wont work - use
-'-m486' instead.
-
 
 On Windows systems:
 
@@ -69,13 +63,6 @@ Note that you can specify these options via an '.amyrc' file, too. See below.
 
 Creating and using opening books
 ================================
-
-You will need Berkeley DB (see http://www.sleepycat.com). I am using version
-2.7.3 - older version might give you trouble. If the Berkeley DB Files are
-installed in standard locations './configure' will detect Berkeley DB 
-automatically. If it does not, use
-
-	./configure --with-tbpath=<path to Berkeley DB>
 
 To create a book from a PGN file, first create the ECO database. At Amy's
 prompt, type 'eco PGN/eco.pgn'. Verify that it works: Type 
