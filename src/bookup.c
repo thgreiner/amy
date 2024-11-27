@@ -109,9 +109,11 @@ static void OpenBookFile(tree_node_t **db) {
     static bool error_printed = false;
 
     FILE *fin = fopen(BOOK_NAME, "r");
-    if (fin == NULL && !error_printed) {
-        Print(0, "Can't open database: %s\n", strerror(errno));
-        error_printed = true;
+    if (fin == NULL) {
+        if (!error_printed) {
+            Print(0, "Can't open database: %s\n", strerror(errno));
+            error_printed = true;
+        }
         return;
     }
 
