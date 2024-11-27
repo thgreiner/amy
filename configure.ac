@@ -6,7 +6,7 @@ dnl Amy is copyrighted by Thorsten Greiner
 
 AC_INIT([amy],[0.9.4])
 AC_CONFIG_SRCDIR(src/dbase.c)
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([foreign])
 
 m4_include([m4/ax_gcc_builtin.m4])
 
