@@ -2,22 +2,22 @@
 
     Amy - a chess playing program
 
-    Copyright (c) 2014, Thorsten Greiner
+    Copyright (c) 2002-2024, Thorsten Greiner
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
     modification, are permitted provided that the following conditions are met:
 
     * Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
+      this list of conditions and the following disclaimer.
 
     * Redistributions in binary form must reproduce the above copyright notice,
       this list of conditions and the following disclaimer in the documentation
       and/or other materials provided with the distribution.
 
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
    ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
    LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
    CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
@@ -34,10 +34,7 @@
  */
 
 #include "amy.h"
-
-#if HAVE_LIBDB_5
-#include <db.h>
-#endif
+#include "tree.h"
 
 #include <math.h>
 
@@ -70,255 +67,100 @@ struct BookQuery {
     struct LearnEntry le;
 };
 
-#if HAVE_LIBDB_5
-static DB *BookDB = NULL;
-static DB *LearnDB = NULL;
-#endif
+static tree_node_t *BookDB = NULL;
+static tree_node_t *LearnDB = NULL;
 
-#if HAVE_LIBDB_5
-static void PutBookEntry(DB *database, hash_t hk, int result, int elo) {
-    Print(9, "storing position");
+static tree_node_t *PutBookEntry(tree_node_t *database, hash_t hk, int result,
+                                 int elo) {
+    Print(9, "storing position\n");
+    struct BookEntry *entry = NULL;
+
     if (database != NULL) {
-        DBT key;
-        DBT value;
-        struct BookEntry *entry;
-        int res;
+        entry = (struct BookEntry *)lookup_value(database, (char *)&hk,
+                                                 sizeof(hk), NULL);
+    }
 
-        memset(&key, 0, sizeof(key));
-        memset(&value, 0, sizeof(value));
-        memset(&entry, 0, sizeof(entry));
+    if (entry == NULL) {
+        entry = calloc(1, sizeof(struct BookEntry));
+    }
 
-        key.data = &hk;
-        key.size = sizeof(hk);
-
-        value.flags = DB_DBT_MALLOC;
-
-        res = database->get(database, NULL, &key, &value, 0);
-
-        if (res == 0 || res == DB_NOTFOUND) {
-
-            if (res == 0) {
-                entry = value.data;
-            } else {
-                entry = calloc(1, sizeof(struct BookEntry));
-            }
-
-            if (result == 1) {
-                entry->win += 1;
-            } else if (result == 0) {
-                entry->draw += 1;
-            } else if (result == -1) {
-                entry->loss += 1;
-            }
+    if (result == 1) {
+        entry->win += 1;
+    } else if (result == 0) {
+        entry->draw += 1;
+    } else if (result == -1) {
+        entry->loss += 1;
+    }
 #if WITH_ELO
-            if (elo != 0) {
-                entry->sumElo += elo;
-                entry->nElo += 1;
-            }
+    if (elo != 0) {
+        entry->sumElo += elo;
+        entry->nElo += 1;
+    }
 #endif
 
-            memset(&key, 0, sizeof(key));
-            memset(&value, 0, sizeof(value));
+    database = add_node(database, (char *)&hk, sizeof(hk), (char *)entry,
+                        sizeof(struct BookEntry));
+    free(entry);
 
-            key.data = &hk;
-            key.size = sizeof(hk);
-
-            value.data = entry;
-            value.size = sizeof(struct BookEntry);
-
-            res = database->put(database, NULL, &key, &value, 0);
-            if (res != 0) {
-                Print(0, "Problem storing data: %s\n", strerror(res));
-            }
-
-            free(entry);
-        } else {
-            Print(0, "Problem retrieving data: %s\n", strerror(res));
-            Print(0, "%d < %d\n", sizeof(struct BookEntry), value.size);
-        }
-    }
+    return database;
 }
-#endif
 
-#if HAVE_LIBDB_5
-static int OpenBookFile(DB **db) {
-    int result;
+static void OpenBookFile(tree_node_t **db) {
+    static bool error_printed = false;
 
-    result = db_create(db, NULL, 0);
-    if (result != 0) {
-        return result;
-    }
-    result = (*db)->open(*db, NULL, BOOK_NAME, NULL, DB_BTREE, DB_RDONLY, 0);
-
-    if (result == 0) {
-        Print(0, "Book file " BOOK_NAME " opened successfully.\n");
-    }
-    if (result != 0) {
-        result = (*db)->open(*db, NULL, DEFAULT_BOOK_NAME, NULL, DB_BTREE,
-                             DB_RDONLY, 0);
+    FILE *fin = fopen(BOOK_NAME, "r");
+    if (fin == NULL && !error_printed) {
+        Print(0, "Can't open database: %s\n", strerror(errno));
+        error_printed = true;
+        return;
     }
 
-    return result;
+    *db = load_tree(fin);
+    fclose(fin);
 }
-#endif
 
 static struct BookEntry *GetBookEntry(hash_t hk) {
     struct BookEntry *retval = NULL;
-#if HAVE_LIBDB_5
-    int result;
-    DBT key;
-    DBT value;
-
     if (BookDB == NULL) {
-        result = OpenBookFile(&BookDB);
+        OpenBookFile(&BookDB);
     }
     if (BookDB != NULL) {
-        memset(&key, 0, sizeof(key));
-        memset(&value, 0, sizeof(value));
-
-        key.data = &hk;
-        key.size = sizeof(hk);
-
-        value.flags = DB_DBT_MALLOC;
-
-        result = BookDB->get(BookDB, NULL, &key, &value, 0);
-        if (result == 0) {
-            retval = value.data;
-        }
+        retval = (struct BookEntry *)lookup_value(BookDB, (char *)&hk,
+                                                  sizeof(hk), NULL);
     }
 
-#endif
     return retval;
 }
 
 static struct LearnEntry *GetLearnEntry(hash_t hk) {
     struct LearnEntry *retval = NULL;
-#if HAVE_LIBDB_5
-    int result;
-    DBT key;
-    DBT value;
 
     if (LearnDB == NULL) {
-        result = db_create(&LearnDB, NULL, 0);
-        if (result != 0) {
-            LearnDB = NULL;
-            return NULL;
-        }
-        result = LearnDB->open(LearnDB, NULL, LEARN_NAME, NULL, DB_BTREE,
-                               DB_RDONLY, 0);
-        if (result != 0) {
-            LearnDB = NULL;
-            return NULL;
+        FILE *fin = fopen(LEARN_NAME, "r");
+        if (fin != NULL) {
+            LearnDB = load_tree(fin);
+            fclose(fin);
         }
     }
     if (LearnDB != NULL) {
-        memset(&key, 0, sizeof(key));
-        memset(&value, 0, sizeof(value));
-
-        key.data = &hk;
-        key.size = sizeof(hk);
-
-        value.flags = DB_DBT_MALLOC;
-
-        result = LearnDB->get(LearnDB, NULL, &key, &value, 0);
-        if (result == 0) {
-            retval = value.data;
-        }
+        retval = (struct LearnEntry *)lookup_value(LearnDB, (char *)&hk,
+                                                   sizeof(hk), NULL);
     }
 
-#endif
     return retval;
 }
 
-#if HAVE_LIBDB_5
-
-/**
- * Merge the contents from 'from' (usually an in memory database)
- * with 'to'.
- */
-
-static void DBMerge(DB *from, DB *to) {
-    DBC *cursor;
-    int result;
-
-    if ((result = from->cursor(from, NULL, &cursor, 0)) == 0) {
-
-        DBT key, value;
-        DBT key2, value2;
-        u_int32_t flags = DB_FIRST;
-
-        for (;;) {
-            memset(&key, 0, sizeof(key));
-            memset(&value, 0, sizeof(value));
-            result = cursor->c_get(cursor, &key, &value, flags);
-
-            if (result != 0)
-                break;
-
-            memset(&key2, 0, sizeof(key2));
-            memset(&value2, 0, sizeof(value2));
-            key2.data = key.data;
-            value2.flags = DB_DBT_MALLOC;
-
-            result = to->get(to, NULL, &key2, &value2, 0);
-            if (result == 0) {
-                struct BookEntry *b1 = (struct BookEntry *)value.data;
-                struct BookEntry *b2 = (struct BookEntry *)value2.data;
-
-                b1->win += b2->win;
-                b1->loss += b2->loss;
-                b1->draw += b2->draw;
-#if WITH_ELO
-                b1->sumElo += b2->sumElo;
-                b1->nElo += b2->nElo;
-#endif
-            }
-            to->put(to, NULL, &key, &value, 0);
-            flags = DB_NEXT;
-        }
-
-        cursor->c_close(cursor);
-    } else {
-        Print(0, "Error creating cursor: %s\n", strerror(result));
-    }
-}
-
-static DB *OpenTemporaryDB(void) {
-    DB *tempdb;
-    int result;
-
-    result = db_create(&tempdb, NULL, 00);
-    if (result == 0) {
-        result =
-            tempdb->open(tempdb, NULL, NULL, NULL, DB_BTREE, DB_CREATE, 0644);
-    }
-
-    if (result) {
-        Print(0, "Cannot create temporary database: %s\n", strerror(result));
-        return NULL;
-    }
-
-    return tempdb;
-}
-#endif
-
-void CloseBook() {
-#if HAVE_LIBDB_5
-    if (BookDB) {
-        BookDB->close(BookDB, 0);
-        BookDB = NULL;
-    }
-#endif
+void CloseBook(void) {
+    free_node(BookDB);
+    BookDB = NULL;
 }
 
 static void BookupInternal(char *file_name, int verbosity) {
-#if HAVE_LIBDB_5
     struct Position *p;
     FILE *fin;
     int result;
     int afterEco = 0;
-    DB *tmpbase;
-    DB *database;
+    tree_node_t *database = NULL;
     int lines = 0;
 
     struct PGNHeader header;
@@ -333,30 +175,6 @@ static void BookupInternal(char *file_name, int verbosity) {
     }
 
     CloseBook();
-
-#if HAVE_LIBDB_5
-    result = db_create(&database, NULL, 00);
-    if (result == 0) {
-        result = database->open(database, NULL, BOOK_NAME, NULL, DB_BTREE,
-                                DB_CREATE, 0644);
-    }
-#endif
-
-    if (result != 0) {
-        Print(0, "Can't open database: %s\n", strerror(result));
-        fclose(fin);
-        return;
-    }
-
-    /*
-    tmpbase = OpenTemporaryDB();
-
-    if(tmpbase == NULL) {
-    database->close(database, 0);
-        fclose(fin);
-        return;
-    }
-    */
 
     while (!scanHeader(fin, &header)) {
         int result;
@@ -389,12 +207,12 @@ static void BookupInternal(char *file_name, int verbosity) {
                 if (afterEco <= 20) {
                     if (p->turn == Black) {
                         /* white played the move */
-                        PutBookEntry(database, p->hkey, result,
-                                     header.white_elo);
+                        database = PutBookEntry(database, p->hkey, result,
+                                                header.white_elo);
                     } else {
                         /* black played the move */
-                        PutBookEntry(database, p->hkey, -result,
-                                     header.black_elo);
+                        database = PutBookEntry(database, p->hkey, -result,
+                                                header.black_elo);
                     }
                 }
             }
@@ -405,30 +223,26 @@ static void BookupInternal(char *file_name, int verbosity) {
         lines++;
         if ((lines % 100) == 0) {
             Print(0, ".");
+
             if ((lines % 7000) == 0) {
                 Print(0, "(%d)\n", lines);
-                /*
-                        DBMerge(tmpbase, database);
-                        tmpbase->close(tmpbase, 0);
-                        tmpbase = OpenTemporaryDB();
-                        if(tmpbase == NULL) {
-                            database->close(database, 0);
-                            fclose(fin);
-                            return;
-                        }
-                */
             }
         }
     }
 
     Print(verbosity, "(%d)\n", lines);
-    /*
-    DBMerge(tmpbase, database);
-    tmpbase->close(tmpbase, 0);
-    */
-    database->close(database, 0);
     fclose(fin);
-#endif
+
+    FILE *fout = fopen(BOOK_NAME, "w");
+    if (fout == NULL) {
+        Print(0, "Can't write database: %s\n", strerror(errno));
+        return;
+    }
+
+    save_tree(database, fout);
+    fclose(fout);
+
+    free_node(database);
 }
 
 void Bookup(char *file_name) { BookupInternal(file_name, 0); }
@@ -621,41 +435,21 @@ void QueryBook(struct Position *p) {
 }
 
 static void PutLearnEntry(hash_t hk, int learn_value, int flags) {
-#if HAVE_LIBDB_5
     if (LearnDB == NULL) {
-        int result = db_create(&LearnDB, NULL, 0);
-        if (result != 0) {
-            return;
-        }
-        LearnDB->open(LearnDB, NULL, LEARN_NAME, NULL, DB_BTREE, DB_CREATE,
-                      0644);
-    }
-
-    if (LearnDB != NULL) {
-        DBT key;
-        DBT value;
-        struct LearnEntry entry;
-        int res;
-
-        entry.learn_value = learn_value;
-        entry.flags = flags;
-
-        memset(&key, 0, sizeof(key));
-        memset(&value, 0, sizeof(value));
-
-        key.data = &hk;
-        key.size = sizeof(hk);
-
-        value.data = &entry;
-        value.size = sizeof(entry);
-
-        res = LearnDB->put(LearnDB, NULL, &key, &value, 0);
-
-        if (res != 0) {
-            Print(0, "PutLearnEntry failed: %s\n", strerror(res));
+        FILE *fin = fopen(LEARN_NAME, "r");
+        if (fin != NULL) {
+            LearnDB = load_tree(fin);
+            fclose(fin);
         }
     }
-#endif /* HAVE_LIBDB || HAVE_LIBDB2 */
+
+    struct LearnEntry entry;
+
+    entry.learn_value = learn_value;
+    entry.flags = flags;
+
+    LearnDB = add_node(LearnDB, (char *)&hk, sizeof(hk), (char *)&entry,
+                       sizeof(entry));
 }
 
 void CreateLearnDB(char *file_name) {
@@ -711,74 +505,59 @@ void CreateLearnDB(char *file_name) {
 
     fclose(fin);
 
-#if HAVE_LIBDB_5
     if (LearnDB != NULL) {
-        LearnDB->close(LearnDB, 0);
-        LearnDB = NULL;
+        FILE *fout = fopen(LEARN_NAME, "w");
+        if (fout != NULL) {
+            save_tree(LearnDB, fout);
+            fclose(fout);
+        } else {
+            Print(0, "Failed to save learn file: %s\n", strerror(errno));
+        }
     }
-#endif
+}
+
+static tree_node_t *flatten_internal(tree_node_t *source, tree_node_t *target,
+                                     int threshold, int *read, int *written) {
+    if (source == NULL) {
+        return target;
+    }
+    struct BookEntry *entry = (struct BookEntry *)source->value_data;
+    (*read)++;
+    if ((entry->win + entry->draw + entry->loss) > threshold) {
+        target = add_node(target, source->key_data, source->key_len,
+                          source->value_data, source->value_len);
+        (*written)++;
+    }
+
+    target =
+        flatten_internal(source->left_child, target, threshold, read, written);
+    target =
+        flatten_internal(source->right_child, target, threshold, read, written);
+
+    return target;
 }
 
 void FlattenBook(int threshold) {
-#if HAVE_LIBDB_5
-    int result;
     int read = 0;
-    int wrote = 0;
+    int written = 0;
 
     if (BookDB == NULL) {
-        result = OpenBookFile(&BookDB);
+        OpenBookFile(&BookDB);
     }
     if (BookDB != NULL) {
-        DB *tmpdb;
-        DBC *cursor;
+        tree_node_t *flattened =
+            flatten_internal(BookDB, NULL, threshold, &read, &written);
 
-        int result = db_create(&tmpdb, NULL, 0);
-        if (result == 0) {
-            result = tmpdb->open(tmpdb, NULL, "Book2.db", NULL, DB_BTREE,
-                                 DB_CREATE, 0644);
-        }
+        PrintNoLog(0, "Read %d entries, wrote %d entries\n", read, written);
 
-        if (result != 0) {
-            Print(0, "Error creating database: %s\n", strerror(result));
-            return;
-        }
-
-        if ((result = BookDB->cursor(BookDB, NULL, &cursor, 0)) == 0) {
-
-            DBT key, value;
-            u_int32_t flags = DB_FIRST;
-
-            Print(0, "Flattening book with threshold %d\n", threshold);
-
-            for (;;) {
-                struct BookEntry *b;
-                memset(&key, 0, sizeof(key));
-                memset(&value, 0, sizeof(key));
-                result = cursor->c_get(cursor, &key, &value, flags);
-
-                if (result != 0)
-                    break;
-                read++;
-
-                b = (struct BookEntry *)value.data;
-                if ((b->win + b->draw + b->loss) > threshold) {
-                    tmpdb->put(tmpdb, NULL, &key, &value, 0);
-                    wrote++;
-                }
-
-                if ((read % 10000) == 0) {
-                    PrintNoLog(0, "Read %d entries, wrote %d entries\r", read,
-                               wrote);
-                }
-                flags = DB_NEXT;
-            }
-            Print(0, "Read %d entries, wrote %d entries\n", read, wrote);
-
-            cursor->c_close(cursor);
-            tmpdb->close(tmpdb, 0);
+        FILE *fout = fopen("Book2.db", "w");
+        if (fout != NULL) {
+            save_tree(flattened, fout);
+            fclose(fout);
         } else {
-            Print(0, "Error creating cursor: %s\n", strerror(result));
+            Print(0, "Can't write database: %s\n", strerror(errno));
         }
+
+        free_node(flattened);
     }
-#endif
 }

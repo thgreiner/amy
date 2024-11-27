@@ -8,7 +8,10 @@ EXTRA_DIST = $(man_MANS) Handbook.xml amy.css *.html
 index.html: Handbook.xml
 	test -x ./style.sh && ./style.sh
 
+.PHONY: all-local
 all-local: html
+
+.PHONY: html
 html: index.html
 
 install-data-local: install-html

@@ -4,33 +4,20 @@ dnl This file is part of Amy, a chess program by Thorsten Greiner
 dnl
 dnl Amy is copyrighted by Thorsten Greiner
 
-AC_INIT(amy, 0.9.3)
+AC_INIT([amy],[0.9.4])
 AC_CONFIG_SRCDIR(src/dbase.c)
 AM_INIT_AUTOMAKE
 
 m4_include([m4/ax_gcc_builtin.m4])
 
 AC_ARG_WITH(dbpath,
-  [  --with-dbpath           specify path to Berkeley DB libraries])
+  [  --with-dbpath           specify path to rocksdb libraries])
 AC_ARG_ENABLE(mt,
   [  --enable-mt             enable multithreaded search])
-AM_CONFIG_HEADER(config.h)
+AC_CONFIG_HEADERS([config.h])
 
 AC_PROG_CC()
 AC_PROG_CXX()
-
-dnl Check for Berkeley DB5
-
-cflags_save=$CFLAGS
-ldflags_save=$LDFLAGS
-if test "X$with_dbpath" != "X" ; then
-    CFLAGS="$CFLAGS -I$with_dbpath/include"
-    LDFLAGS="$LDFLAGS -L$with_dbpath/lib"
-fi
-
-AC_CHECK_LIB(db-5, db_create, ,
-    CFLAGS=$cflags_save
-    LDFLAGS=$ldflags_save)
 
 mp_val="0"
 if test "X$enable_mt" = "Xyes" ; then
@@ -46,23 +33,24 @@ fi
 fi
 AC_DEFINE_UNQUOTED(MP, $mp_val, Enable multithreaded search)
 
-dnl Check for header files
-AC_HEADER_STDC
+AC_CHECK_INCLUDES_DEFAULT
+AC_PROG_EGREP
+
 AC_CHECK_HEADERS(fcntl.h sys/time.h unistd.h stdint.h stdatomic.h)
 
 dnl Check for typedefs, structures and compiler characteristics
 AC_TYPE_SIZE_T
-AC_HEADER_TIME
+
 AC_STRUCT_TM
 
 AC_C_BIGENDIAN
 AC_C_CONST
 
 AC_FUNC_MEMCMP
-AC_TYPE_SIGNAL
 AC_CHECK_FUNCS(gettimeofday select strerror strstr setbuf gethostname ffsll)
 
 AX_GCC_BUILTIN(__builtin_ctzll)
 AX_GCC_BUILTIN(__builtin_popcountll)
 
-AC_OUTPUT(Makefile EPD/Makefile PGN/Makefile src/Makefile doc/Makefile)
+AC_CONFIG_FILES([Makefile EPD/Makefile PGN/Makefile src/Makefile doc/Makefile])
+AC_OUTPUT

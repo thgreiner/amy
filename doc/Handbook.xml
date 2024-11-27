@@ -251,15 +251,15 @@ Read 183189 entries, wrote 5272 entries</computeroutput></literallayout>
           <literallayout><prompt>White(1): </prompt><userinput>level fixed/5</userinput>
 <prompt>White(1): </prompt><userinput>test EPD/WAC.epd</userinput> 
 <computeroutput>&hellip;
-solved 289 out of 300  (BT2630 = 2597, LCT2 = 10570, BS2830 = 2749)
+solved 293 out of 300  (BT2630 = 2609, LCT2 = 10690, BS2830 = 2794)
 -----------------------------------------------
 </computeroutput></literallayout>
         </example>
       </para>
       <para>
-        The output reproduced above is from a real test run on a Dell Inspiron 8200
-        laptop. Out of the 300 test positions included in the "Win At Chess" test
-        suite Amy solved 289 at 5 seconds per test.
+        The output reproduced above is from a real test run on a Intel(R) Core(TM)
+        i7-1165G7 @ 2.80GHz laptop. Out of the 300 test positions included in
+        the "Win At Chess" test suite Amy solved 293 at 1 second per test.
       </para>
       <para>
         To simplify the evaluation of several standard test suites Amy outputs
