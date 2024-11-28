@@ -73,7 +73,9 @@ void SearchHeader(void) {
 }
 
 void SearchOutput(int depth, int time, int score, char *line, int nodes) {
-    Print(1, "%2d  %s %7s  ", depth, TimeToText(time), ScoreToText(score));
+    char score_as_text[16];
+    ScoreToText(score, score_as_text, 16);
+    Print(1, "%2d  %s %7s  ", depth, TimeToText(time), score_as_text);
     PrintPV(line);
     if (PostMode) {
         char *short_line = strdup(line);

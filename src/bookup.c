@@ -160,7 +160,6 @@ void CloseBook(void) {
 static void BookupInternal(char *file_name, int verbosity) {
     struct Position *p;
     FILE *fin;
-    int result;
     int afterEco = 0;
     tree_node_t *database = NULL;
     int lines = 0;

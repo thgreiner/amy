@@ -622,7 +622,7 @@ static void Help(char *args) {
              "following commands:\n\n");
     while (entry->name) {
         char template[] = ". . . . . . . . ";
-        strncpy(template, entry->name, strlen(entry->name));
+        memcpy(template, entry->name, strlen(entry->name));
         Print(2, template);
         if (entry->short_help) {
             Print(2, "%s", entry->short_help);
@@ -762,7 +762,7 @@ static void StopAnalyze(char *args) { State = STATE_WAITING; }
 
 static void Name(char *args) {
     if (args) {
-        strncpy(OpponentName, args, OPP_NAME_LENGTH);
+        strncpy(OpponentName, args, OPP_NAME_LENGTH - 1);
         Print(2, "Your name is %s\n", OpponentName);
     }
 }

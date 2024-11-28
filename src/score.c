@@ -1125,7 +1125,6 @@ static int ScorePositionForWhite(struct Position *p, int alpha, int beta) {
     int tmp, sq;
     BitBoard pcs;
     BitBoard tmpboard;
-    BitBoard pawns;
     struct PawnFacts pawnFacts;
 
     /*

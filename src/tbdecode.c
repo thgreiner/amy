@@ -72,7 +72,9 @@ static void _local_assert(int lineno) {
 #define dprintf(x) ((void)0)
 #endif
 
-extern "C" int cbEGTBCompBytes = 0;
+extern "C" int cbEGTBCompBytes;
+
+int cbEGTBCompBytes = 0;
 
 /* --------------------- Constants, types, etc. ----------------------- */
 /*                       ----------------------                         */
@@ -550,7 +552,7 @@ typedef struct {
 
 static void do_decode(decode_info *info, decode_block *block, uchar *e) {
     BITIO_LOCALS;
-    uchar *p, *s;
+    uchar *p, *s = NULL;
     int ch;
 
     if ((p = block->emit.ptr) >= e)
@@ -799,12 +801,6 @@ static int comp_open_file(decode_info **res, FILE *fd, int check_crc) {
     *res = info;
 
     return (COMP_ERR_NONE);
-}
-
-static int comp_tell_blocks(decode_info *info) {
-    if (info == 0 || info->magic != DECODE_MAGIC)
-        return (-1);
-    return (info->n_blk);
 }
 
 static int comp_init_block(decode_block *block, int block_size, uchar *orig) {

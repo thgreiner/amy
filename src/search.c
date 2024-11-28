@@ -100,7 +100,7 @@ int MaxDepth;
 #if HAVE_STDATOMIC_H && MP
 _Atomic
 #endif
-    unsigned long Nodes,
+    volatile unsigned long Nodes,
     QNodes, ChkNodes;
 
 long RCExt, ChkExt, DiscExt, DblExt, SingExt, PPExt, ZZExt;
@@ -243,20 +243,6 @@ static int TerminateSearch(struct SearchData *sd) {
                 return TRUE;
         }
     }
-    return FALSE;
-}
-
-/*
- * Check for draw because of insufficient material
- */
-
-static int InsufMat(struct Position *p) {
-    if (p->material[White] == 0 && p->material[Black] == p->nonPawn[Black] &&
-        p->material[Black] < Value[Rook])
-        return TRUE;
-    if (p->material[Black] == 0 && p->material[White] == p->nonPawn[White] &&
-        p->material[White] < Value[Rook])
-        return TRUE;
     return FALSE;
 }
 
@@ -804,11 +790,10 @@ static int negascout(struct SearchData *sd, int alpha, int beta,
 
     if (depth > 2 * OnePly && ((alpha + 1) != beta) &&
         !LegalMove(p, st->st_hashmove)) {
-        int useless;
 #if MP
-        useless = negascout(sd, alpha, beta, depth - 2 * OnePly, PVNode, 0);
+        negascout(sd, alpha, beta, depth - 2 * OnePly, PVNode, 0);
 #else
-        useless = negascout(sd, alpha, beta, depth - 2 * OnePly, PVNode);
+        negascout(sd, alpha, beta, depth - 2 * OnePly, PVNode);
 #endif
         st->st_hashmove = sd->pv_save[sd->ply + 1];
     }
@@ -1135,7 +1120,7 @@ static void AnaLoop(struct Position *p, int depth) {
         UndoMove(p, move);
 
         if (p->turn == White) {
-            char tmp[8];
+            char tmp[16];
             sprintf(tmp, "%d. ", 1 + (p->ply + 1) / 2);
             strcat(BestLine, tmp);
         }
@@ -1421,10 +1406,13 @@ static void *IterateInt(void *x) {
                 best = tmp;
 
                 if (sd->master) {
+                    char score_as_text[16];
                     AnalyzeHT(p, mvs[0]);
 
+                    ScoreToText(best, score_as_text, 16);
+
                     sprintf(AnalysisLine, "%2d: (%7s) %s", sd->depth,
-                            ScoreToText(best), BestLine);
+                            score_as_text, BestLine);
 
                     if (PrintOK) {
                         SearchOutput(sd->depth, CurTime - StartTime,
@@ -1842,11 +1830,10 @@ int PermanentBrain(struct Position *p) {
  */
 void AnalysisMode(struct Position *p) {
     struct Position *q;
-    int move;
 
     SearchMode = Analyzing;
 
     q = ClonePosition(p);
-    move = Iterate(q);
+    Iterate(q);
     FreePosition(q);
 }

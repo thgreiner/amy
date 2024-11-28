@@ -670,7 +670,7 @@ void PrintNoLog(int, char *, ...);
 int InputReady(void);
 int ReadLine(char *buffer, int cnt);
 char *TimeToText(unsigned int);
-char *ScoreToText(int);
+void ScoreToText(int, char *, size_t);
 unsigned int GetTime(void);
 char *GetTmpFileName(void);
 int KingDist(int, int);

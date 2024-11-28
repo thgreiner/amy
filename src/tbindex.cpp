@@ -216,7 +216,7 @@ static void *PvMalloc(size_t cb) {
 
     pv = malloc(cb);
     if (NULL == pv) {
-        printf("*** Cannot allocate %d bytes of memory\n", cb);
+        printf("*** Cannot allocate %zu bytes of memory\n", cb);
         exit(1);
     }
     cbAllocated += cb;
@@ -923,8 +923,8 @@ static const bool rgfInLargeTriangle[64] = {
 static BYTE *rgprgsqPiece[6]; // Enumeration for each piece (0 - black pawn)
                               // For each position of the King, all legal
                               // squares of the opposite piece enumerated
-static BYTE rgcLegal[6][64]; // # of enumerated positions for each piece and
-                             // each location of enemy king
+static BYTE rgcLegal[6][64];  // # of enumerated positions for each piece and
+                              // each location of enemy king
 
 // Enumerations - indexed by [piece] and [kings enumeration].
 // In each table for each [piece] and [king enumeration] we store # of
@@ -982,44 +982,49 @@ static void VInitSquaresTable(piece pi, BYTE *prgsqPiece, BYTE *prgcLegal) {
                 continue;
             switch (pi) {
             case x_piecePawn:
-                if (0 != TbColumn(sq) && sqKing == sq + 7 ||
-                    7 != TbColumn(sq) && sqKing == sq + 9)
+                if ((0 != TbColumn(sq) && sqKing == sq + 7) ||
+                    (7 != TbColumn(sq) && sqKing == sq + 9))
                     continue;
                 break;
             case x_pieceKnight:
-                if (TbRow(sq) >= 2 && TbColumn(sq) >= 1 && sqKing == sq - 17 ||
-                    TbRow(sq) >= 2 && TbColumn(sq) <= 6 && sqKing == sq - 15 ||
-                    TbRow(sq) >= 1 && TbColumn(sq) >= 2 && sqKing == sq - 10 ||
-                    TbRow(sq) >= 1 && TbColumn(sq) <= 5 && sqKing == sq - 6 ||
-                    TbRow(sq) <= 6 && TbColumn(sq) >= 2 && sqKing == sq + 6 ||
-                    TbRow(sq) <= 6 && TbColumn(sq) <= 5 && sqKing == sq + 10 ||
-                    TbRow(sq) <= 5 && TbColumn(sq) >= 1 && sqKing == sq + 15 ||
-                    TbRow(sq) <= 5 && TbColumn(sq) <= 6 && sqKing == sq + 17)
+                if ((TbRow(sq) >= 2 && TbColumn(sq) >= 1 &&
+                     sqKing == sq - 17) ||
+                    (TbRow(sq) >= 2 && TbColumn(sq) <= 6 &&
+                     sqKing == sq - 15) ||
+                    (TbRow(sq) >= 1 && TbColumn(sq) >= 2 &&
+                     sqKing == sq - 10) ||
+                    (TbRow(sq) >= 1 && TbColumn(sq) <= 5 && sqKing == sq - 6) ||
+                    (TbRow(sq) <= 6 && TbColumn(sq) >= 2 && sqKing == sq + 6) ||
+                    (TbRow(sq) <= 6 && TbColumn(sq) <= 5 &&
+                     sqKing == sq + 10) ||
+                    (TbRow(sq) <= 5 && TbColumn(sq) >= 1 &&
+                     sqKing == sq + 15) ||
+                    (TbRow(sq) <= 5 && TbColumn(sq) <= 6 && sqKing == sq + 17))
                     continue;
                 break;
             case x_pieceBishop:
-                if (0 != TbRow(sq) && 0 != TbColumn(sq) && sqKing == sq - 9 ||
-                    0 != TbRow(sq) && 7 != TbColumn(sq) && sqKing == sq - 7 ||
-                    7 != TbRow(sq) && 0 != TbColumn(sq) && sqKing == sq + 7 ||
-                    7 != TbRow(sq) && 7 != TbColumn(sq) && sqKing == sq + 9)
+                if ((0 != TbRow(sq) && 0 != TbColumn(sq) && sqKing == sq - 9) ||
+                    (0 != TbRow(sq) && 7 != TbColumn(sq) && sqKing == sq - 7) ||
+                    (7 != TbRow(sq) && 0 != TbColumn(sq) && sqKing == sq + 7) ||
+                    (7 != TbRow(sq) && 7 != TbColumn(sq) && sqKing == sq + 9))
                     continue;
                 break;
             case x_pieceRook:
-                if (0 != TbColumn(sq) && sqKing == sq - 1 ||
-                    7 != TbColumn(sq) && sqKing == sq + 1 ||
-                    0 != TbRow(sq) && sqKing == sq - 8 ||
-                    7 != TbRow(sq) && sqKing == sq + 8)
+                if ((0 != TbColumn(sq) && sqKing == sq - 1) ||
+                    (7 != TbColumn(sq) && sqKing == sq + 1) ||
+                    (0 != TbRow(sq) && sqKing == sq - 8) ||
+                    (7 != TbRow(sq) && sqKing == sq + 8))
                     continue;
                 break;
             case x_pieceQueen:
-                if (0 != TbColumn(sq) && sqKing == sq - 1 ||
-                    7 != TbColumn(sq) && sqKing == sq + 1 ||
-                    0 != TbRow(sq) && sqKing == sq - 8 ||
-                    7 != TbRow(sq) && sqKing == sq + 8 ||
-                    0 != TbRow(sq) && 0 != TbColumn(sq) && sqKing == sq - 9 ||
-                    0 != TbRow(sq) && 7 != TbColumn(sq) && sqKing == sq - 7 ||
-                    7 != TbRow(sq) && 0 != TbColumn(sq) && sqKing == sq + 7 ||
-                    7 != TbRow(sq) && 7 != TbColumn(sq) && sqKing == sq + 9)
+                if ((0 != TbColumn(sq) && sqKing == sq - 1) ||
+                    (7 != TbColumn(sq) && sqKing == sq + 1) ||
+                    (0 != TbRow(sq) && sqKing == sq - 8) ||
+                    (7 != TbRow(sq) && sqKing == sq + 8) ||
+                    (0 != TbRow(sq) && 0 != TbColumn(sq) && sqKing == sq - 9) ||
+                    (0 != TbRow(sq) && 7 != TbColumn(sq) && sqKing == sq - 7) ||
+                    (7 != TbRow(sq) && 0 != TbColumn(sq) && sqKing == sq + 7) ||
+                    (7 != TbRow(sq) && 7 != TbColumn(sq) && sqKing == sq + 9))
                     continue;
                 break;
             }
@@ -1201,23 +1206,23 @@ static void VInitEnumerations(void) {
     // All done!
     if (fPrint) {
         for (pi1 = x_pieceNone; pi1 <= x_pieceQueen; pi1 = (piece)(pi1 + 1))
-            printf("%c - %d enumerated positions\n", "pPNBRQ"[pi1],
+            printf("%c - %lu enumerated positions\n", "pPNBRQ"[pi1],
                    rgcSinglePawnPresent[pi1]);
         for (pi1 = x_pieceNone; pi1 <= x_pieceQueen; pi1 = (piece)(pi1 + 1)) {
             if (0 != rgcSinglePawnless[pi1])
-                printf("pawnless %c - %d enumerated positions\n", "pPNBRQ"[pi1],
-                       rgcSinglePawnless[pi1]);
+                printf("pawnless %c - %lu enumerated positions\n",
+                       "pPNBRQ"[pi1], rgcSinglePawnless[pi1]);
         }
         for (pi1 = x_pieceNone; pi1 <= x_pieceQueen; pi1 = (piece)(pi1 + 1))
             for (pi2 = x_pieceNone; pi2 <= pi1; pi2 = (piece)(pi2 + 1)) {
                 if (0 != rgcPairPawnPresent[pi1][pi2])
-                    printf("%c%c - %d enumerated positions\n", "pPNBRQ"[pi1],
+                    printf("%c%c - %lu enumerated positions\n", "pPNBRQ"[pi1],
                            "pPNBRQ"[pi2], rgcPairPawnPresent[pi1][pi2]);
             }
         for (pi1 = x_pieceNone; pi1 <= x_pieceQueen; pi1 = (piece)(pi1 + 1))
             for (pi2 = x_pieceNone; pi2 <= pi1; pi2 = (piece)(pi2 + 1)) {
                 if (0 != rgcPairPawnless[pi1][pi2])
-                    printf("pawnless %c%c - %d enumerated positions\n",
+                    printf("pawnless %c%c - %lu enumerated positions\n",
                            "pPNBRQ"[pi1], "pPNBRQ"[pi2],
                            rgcPairPawnless[pi1][pi2]);
             }
@@ -1239,7 +1244,7 @@ static void VInitEnumerations(void) {
                                rgcTriplePawnless[pi1][pi2][pi3]);
                 }
 #endif
-        printf("\nAllocated %dk\n\n", (cbAllocated + 1023) / 1024);
+        printf("\nAllocated %zuk\n\n", (cbAllocated + 1023) / 1024);
     }
 }
 
@@ -2714,7 +2719,8 @@ template <int pi1, int pi2, int pi3> class T41 {
 #if defined(SMP)
 static lock_t LockDecode;
 #endif
-extern "C" int TB_CRC_CHECK = 0;
+extern "C" int TB_CRC_CHECK;
+int TB_CRC_CHECK = 0;
 static int cCompressed = 0;
 static decode_block *rgpdbDecodeBlocks[CPUS];
 
@@ -3759,11 +3765,12 @@ extern "C" int FReadTableToMemory(int iTb,    // IN | Tablebase
             printf("*** Seek in %s failed\n", pszName);
             exit(1);
         }
-        cb = ftell(fp);
-        if (-1 == cb) {
+        long fpi = ftell(fp);
+        if (-1 == fpi) {
             printf("*** Cannot find length of %s\n", pszName);
             exit(1);
         }
+        cb = (INDEX)fpi;
         if (0 != fseek(fp, 0L, SEEK_SET)) {
             printf("*** Seek in %s failed\n", pszName);
             exit(1);

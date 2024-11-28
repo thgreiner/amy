@@ -123,24 +123,20 @@ char *TimeToText(unsigned int secs) {
  * Convert a score to a string.
  */
 
-char *ScoreToText(int score) {
-    static char buffer[10];
-
+void ScoreToText(int score, char *buffer, size_t len) {
     if (score > CMLIMIT) {
-        sprintf(buffer, "+M%d", (INF - score) / 2 + 1);
+        snprintf(buffer, len, "+M%d", (INF - score) / 2 + 1);
     } else if (score < -CMLIMIT) {
-        sprintf(buffer, "-M%d", (score + INF) / 2);
+        snprintf(buffer, len, "-M%d", (score + INF) / 2);
     } else if (score == CMLIMIT) {
-        sprintf(buffer, "+Mate");
+        snprintf(buffer, len, "+Mate");
     } else if (score == -CMLIMIT) {
-        sprintf(buffer, "-Mate");
+        snprintf(buffer, len, "-Mate");
     } else if (score >= 0) {
-        sprintf(buffer, "+%d.%03d", score / 1000, score % 1000);
+        snprintf(buffer, len, "+%d.%03d", score / 1000, score % 1000);
     } else {
-        sprintf(buffer, "-%d.%03d", (-score) / 1000, (-score) % 1000);
+        snprintf(buffer, len, "-%d.%03d", (-score) / 1000, (-score) % 1000);
     }
-
-    return buffer;
 }
 
 /**

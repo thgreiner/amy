@@ -205,7 +205,7 @@ void InitPawnMasks(void) {
 
 void InitGeometry(void) {
     int edge[100];
-    int trto[100], trfr[64];
+    int trto[100];
     int i, j, k, l;
     int dirs[] = {1, -1, 10, -10, 9, -9, 11, -11};
     int dirb[] = {9, -9, 11, -11};
@@ -217,9 +217,6 @@ void InitGeometry(void) {
         edge[i] = 0;
         trto[i] = 0;
     }
-    for (i = 0; i < 64; i++) {
-        trfr[i] = 0;
-    }
 
     for (i = 0; i < 10; i++) {
         edge[i] = edge[90 + i] = edge[10 * i] = edge[10 * i + 9] = 1;
@@ -228,7 +225,6 @@ void InitGeometry(void) {
             int y = j - 1;
             if (x >= 0 && y >= 0 && x < 8 && y < 8) {
                 trto[i + 10 * j] = x + 8 * y;
-                trfr[x + 8 * y] = i + 10 * j;
             }
         }
     }

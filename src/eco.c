@@ -54,16 +54,13 @@ void ParseEcoPgn(char *fname) {
 
     while (fgets(buffer, 1023, fin) != NULL) {
         char *x;
-        int len;
         strtok(buffer, " \t");
         x = strtok(NULL, "]\n\r");
-        strncpy(name, x, 128);
+        strncpy(name, x, 127);
 
         Print(0, ".");
 
         struct Position *p = InitialPosition();
-
-        len = strlen(name);
 
         if (fgets(buffer, 1024, fin) != NULL) {
             for (x = strtok(buffer, " \n\r\t"); x;

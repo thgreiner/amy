@@ -169,25 +169,25 @@ int scanHeader(FILE *fin, struct PGNHeader *header) {
             char *value = nextToken(&x, "\"");
 
             if (!strcmp("Event", key)) {
-                strncpy(header->event, value, 64);
+                strncpy(header->event, value, 63);
             }
             if (!strcmp("Site", key)) {
-                strncpy(header->site, value, 64);
+                strncpy(header->site, value, 63);
             }
             if (!strcmp("Date", key)) {
-                strncpy(header->date, value, 64);
+                strncpy(header->date, value, 63);
             }
             if (!strcmp("Round", key)) {
-                strncpy(header->round, value, 64);
+                strncpy(header->round, value, 63);
             }
             if (!strcmp("White", key)) {
-                strncpy(header->white, value, 64);
+                strncpy(header->white, value, 63);
             }
             if (!strcmp("Black", key)) {
-                strncpy(header->black, value, 64);
+                strncpy(header->black, value, 63);
             }
             if (!strcmp("Result", key)) {
-                strncpy(header->result, value, 8);
+                strncpy(header->result, value, 7);
             }
             if (!strcmp("WhiteElo", key)) {
                 header->white_elo = atoi(value);
