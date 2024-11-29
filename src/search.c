@@ -97,12 +97,6 @@ static const int MateDepth = 3;
 
 int MaxDepth;
 
-#if HAVE_STDATOMIC_H && MP
-_Atomic
-#endif
-    volatile unsigned long Nodes,
-    QNodes, ChkNodes;
-
 long RCExt, ChkExt, DiscExt, DblExt, SingExt, PPExt, ZZExt;
 unsigned int HardLimit, SoftLimit, SoftLimit2;
 unsigned int StartTime, WallTimeStart;
@@ -143,10 +137,9 @@ char ShortBestLine[2048];
 char AnalysisLine[2048];
 
 #if HAVE_STDATOMIC_H && MP
-_Atomic
+// _Atomic
 #endif
-    unsigned long HTry,
-    HHit, PTry, PHit, STry, SHit;
+unsigned long HTry, HHit, PTry, PHit, STry, SHit;
 
 /* prototypes for search routines */
 
@@ -167,10 +160,10 @@ static int negascout(struct SearchData *, int, int, int, int);
  *
  */
 static bool TerminateSearch(struct SearchData *sd) {
-    if ((Nodes + QNodes) > ChkNodes) {
+    if ((sd->nodes_cnt + sd->qnodes_cnt) > sd->check_nodes_cnt) {
         unsigned int now = GetTime();
 
-        ChkNodes = Nodes + QNodes + NodesPerCheck;
+        sd->check_nodes_cnt = sd->nodes_cnt + sd->qnodes_cnt + NodesPerCheck;
         if (AbortSearch)
             return true;
 
@@ -178,7 +171,7 @@ static bool TerminateSearch(struct SearchData *sd) {
         if (CurTime > (StartTime + ONE_SECOND))
             PrintOK = true;
 
-        if (InputReady()) {
+        if (sd->master && InputReady()) {
             char buffer[64];
             struct Command *theCommand;
 
@@ -190,7 +183,8 @@ static bool TerminateSearch(struct SearchData *sd) {
 
             if (buffer[0] == '.') {
                 PrintNoLog(0, "stat01: %d %ld %d %d %d\n",
-                           (CurTime - StartTime), Nodes + QNodes, sd->depth,
+                           (CurTime - StartTime),
+                           sd->nodes_cnt + sd->qnodes_cnt, sd->depth,
                            sd->nrootmoves - sd->movenum - 1, sd->nrootmoves);
             }
 
@@ -472,7 +466,7 @@ static int quies(struct SearchData *sd, int alpha, int beta, int depth) {
     int move;
     int talpha;
     int tmp;
-    QNodes++;
+    sd->qnodes_cnt++;
 
     EnterNode(sd);
 
@@ -588,7 +582,7 @@ static int negascout(struct SearchData *sd, int alpha, int beta,
 
     EnterNode(sd);
 
-    Nodes++;
+    sd->nodes_cnt++;
 
     /* check for search termination */
     if (sd->master && TerminateSearch(sd)) {
@@ -1167,7 +1161,7 @@ static void AnalyzeHT(struct Position *p, int move) {
  */
 static void InitSearch(struct SearchData *sd) {
     sd->ply = 0;
-    Nodes = QNodes = ChkNodes = 0;
+    sd->nodes_cnt = sd->qnodes_cnt = sd->check_nodes_cnt = 0;
     RCExt = ChkExt = DiscExt = DblExt = SingExt = PPExt = ZZExt = 0;
     PrintOK = (SearchMode == Analyzing) ? true : false;
     DoneAtRoot = false;
@@ -1181,11 +1175,10 @@ static void InitSearch(struct SearchData *sd) {
 /**
  * Resort the root move list.
  */
-static void ResortMovesList(int cnt, int *mvs, int *nodes) {
-    int i;
-    for (i = 1; i < cnt - 1; i++) {
+static void ResortMovesList(int cnt, int *mvs, unsigned long *nodes) {
+    for (int i = 1; i < cnt - 1; i++) {
         int besti = i;
-        int bestn = nodes[i];
+        unsigned long bestn = nodes[i];
         int j;
         for (j = i + 1; j < cnt; j++) {
             if (nodes[j] > bestn) {
@@ -1198,7 +1191,9 @@ static void ResortMovesList(int cnt, int *mvs, int *nodes) {
             int tmp = mvs[i];
             mvs[i] = mvs[besti];
             mvs[besti] = tmp;
-            nodes[besti] = nodes[i];
+            unsigned long nodes_tmp = nodes[i];
+            nodes[i] = nodes[besti];
+            nodes[besti] = nodes_tmp;
         }
     }
 }
@@ -1211,14 +1206,14 @@ static void ResortMovesList(int cnt, int *mvs, int *nodes) {
 static void *IterateInt(void *x) {
     int best;
     int mvs[256];
-    int nodes[256];
+    unsigned long nodes[256];
     int last = 0;
     double elapsed;
     struct SearchData *sd = x;
     struct Position *p;
 
     if (!sd->master) {
-        usleep(5 * 1000);
+        usleep(100);
     }
     p = sd->position;
 
@@ -1242,15 +1237,17 @@ static void *IterateInt(void *x) {
             int tmp;
             int next_depth = (sd->depth - 2) * OnePly;
 
-            nodes[sd->movenum] = Nodes;
-
-            char time_buffer[16];
-            TimeToText(CurTime - StartTime, time_buffer, sizeof(time_buffer));
-
-            char san_buffer[32];
-            NumberedSAN(p, mvs[sd->movenum], san_buffer, sizeof(san_buffer));
+            nodes[sd->movenum] = sd->nodes_cnt;
 
             if (sd->master && PrintOK) {
+                char time_buffer[16];
+                TimeToText(CurTime - StartTime, time_buffer,
+                           sizeof(time_buffer));
+
+                char san_buffer[32];
+                NumberedSAN(p, mvs[sd->movenum], san_buffer,
+                            sizeof(san_buffer));
+
                 PrintNoLog(2, "%2d  %s   %2d/%2d  %s      \r", sd->depth,
                            time_buffer, sd->movenum + 1, sd->nrootmoves,
                            san_buffer);
@@ -1288,7 +1285,8 @@ static void *IterateInt(void *x) {
                     char san_buffer[32];
                     NumberedSAN(p, mvs[0], san_buffer, sizeof(san_buffer));
                     SearchOutputFailHighLow(sd->depth, CurTime - StartTime,
-                                            false, san_buffer, Nodes + QNodes);
+                                            false, san_buffer,
+                                            sd->nodes_cnt + sd->qnodes_cnt);
                 }
 
                 NeedTime = true;
@@ -1329,7 +1327,7 @@ static void *IterateInt(void *x) {
                     if (AbortSearch)
                         goto final;
                 }
-                nodes[sd->movenum] = Nodes - nodes[sd->movenum];
+                nodes[sd->movenum] = sd->nodes_cnt - nodes[sd->movenum];
             } else if (tmp >= beta) {
 
                 /*
@@ -1363,7 +1361,8 @@ static void *IterateInt(void *x) {
                     char san_buffer[32];
                     NumberedSAN(p, mvs[0], san_buffer, sizeof(san_buffer));
                     SearchOutputFailHighLow(sd->depth, CurTime - StartTime,
-                                            true, san_buffer, Nodes + QNodes);
+                                            true, san_buffer,
+                                            sd->nodes_cnt + sd->qnodes_cnt);
                 }
 
                 alpha = tmp;
@@ -1402,9 +1401,9 @@ static void *IterateInt(void *x) {
                     if (AbortSearch)
                         goto final;
                 }
-                nodes[0] = Nodes - nodes[0];
+                nodes[0] = sd->nodes_cnt - nodes[0];
             } else {
-                nodes[sd->movenum] = Nodes - nodes[sd->movenum];
+                nodes[sd->movenum] = sd->nodes_cnt - nodes[sd->movenum];
             }
 
             if (AbortSearch)
@@ -1426,7 +1425,7 @@ static void *IterateInt(void *x) {
                     if (PrintOK) {
                         SearchOutput(sd->depth, CurTime - StartTime,
                                      (p->turn) ? -best : best, BestLine,
-                                     Nodes + QNodes);
+                                     sd->nodes_cnt + sd->qnodes_cnt);
                     }
                 }
 
@@ -1449,7 +1448,8 @@ static void *IterateInt(void *x) {
         if (sd->master && (PrintOK || (sd->depth > MateDepth &&
                                        (best < -CMLIMIT || best > CMLIMIT)))) {
             SearchOutput(sd->depth, CurTime - StartTime,
-                         (p->turn) ? -best : best, BestLine, Nodes + QNodes);
+                         (p->turn) ? -best : best, BestLine,
+                         sd->nodes_cnt + sd->qnodes_cnt);
         }
 
         if (best < -CMLIMIT || best > CMLIMIT) {
@@ -1499,9 +1499,10 @@ static void *IterateInt(void *x) {
 
             elapsed = (double)(CurTime - StartTime) / (double)ONE_SECOND;
 
-            NodesPerCheck = (elapsed == 0.0)
-                                ? 1000
-                                : (int)((Nodes + QNodes) / elapsed / 10);
+            NodesPerCheck =
+                (elapsed == 0.0)
+                    ? 1000
+                    : (int)((sd->nodes_cnt + sd->qnodes_cnt) / elapsed / 10);
         }
 
         if (SearchMode == Puzzling && sd->depth > 4)
@@ -1528,8 +1529,9 @@ final:
         Print(2,
               "Nodes = %lu, QPerc: %d %%, time = %g secs, "
               "%.1f kN/s\n",
-              Nodes + QNodes, QNodes / ((Nodes + QNodes) / 100 + 1), elapsed,
-              (Nodes + QNodes) / 1000.0 / elapsed);
+              sd->nodes_cnt + sd->qnodes_cnt,
+              sd->qnodes_cnt / ((sd->nodes_cnt + sd->qnodes_cnt) / 100 + 1),
+              elapsed, (sd->nodes_cnt + sd->qnodes_cnt) / 1000.0 / elapsed);
 
         Print(2,
               "Extensions: Check: %d  DblChk: %d  DiscChk: %d  SingReply: %d\n"

@@ -359,7 +359,8 @@ struct SearchData {
 
     int ply;
 
-    int master; /* true if a master process */
+    bool master; /* true if a master process */
+    unsigned long nodes_cnt, qnodes_cnt, check_nodes_cnt;
 
     int best_move;
     int depth;
@@ -482,10 +483,9 @@ extern int Value[];
 extern int MaxPos;
 
 #if HAVE_STDATOMIC_H && MP
-_Atomic
+// _Atomic
 #endif
-    extern unsigned long PHit,
-    PTry, SHit, STry, HHit, HTry;
+extern unsigned long PHit, PTry, SHit, STry, HHit, HTry;
 
 extern unsigned int FHTime;
 extern int GUIMode;
