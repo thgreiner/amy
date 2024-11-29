@@ -2165,13 +2165,16 @@ void ShowMoves(struct Position *p) {
  * EPD stuff
  */
 
-int goodmove[256];
-int badmove[256];
+int goodmove[MAX_EPD_MOVES];
+int badmove[MAX_EPD_MOVES];
 
+/**
+ * Read a position from an EPD string.
+ */
 static void ReadEPD(struct Position *p, char *x) {
     int rk = 7, fl = 0;
     int i;
-    char *ops[15];
+    char *ops[MAX_EPD_OPS];
     char *line;
 
     /* Make a copy of the input string, since it will be destroyed
@@ -2322,14 +2325,19 @@ static void ReadEPD(struct Position *p, char *x) {
     RecalcAttacks(p);
     p->ply = 0;
 
-    for (i = 0, ops[i] = strtok(x, ";"); ops[i];
-         i++, ops[i] = strtok(NULL, ";"))
-        ;
+    i = 0;
+    ops[i] = strtok(x, ";");
+    while (ops[i]) {
+        i++;
+        if (i >= MAX_EPD_OPS)
+            break;
+        ops[i] = strtok(NULL, ";");
+    }
 
     goodmove[0] = M_NONE;
     badmove[0] = M_NONE;
 
-    for (i = 0; ops[i]; i++) {
+    for (i = 0; ops[i] && i < (MAX_EPD_OPS - 1); i++) {
         char *op = strtok(ops[i], " ");
 
         if (op) {
@@ -2342,6 +2350,8 @@ static void ReadEPD(struct Position *p, char *x) {
                         goodmove[cnt] = mv;
                         Print(0, "best move is %s\n", SAN(p, goodmove[cnt]));
                         cnt++;
+                        if (cnt >= MAX_EPD_MOVES - 1)
+                            break;
                     }
                 }
                 goodmove[cnt] = M_NONE;
@@ -2354,6 +2364,8 @@ static void ReadEPD(struct Position *p, char *x) {
                         badmove[cnt] = mv;
                         Print(0, "bad move is %s\n", SAN(p, badmove[cnt]));
                         cnt++;
+                        if (cnt >= MAX_EPD_MOVES - 1)
+                            break;
                     }
                 }
                 badmove[cnt] = M_NONE;

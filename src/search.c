@@ -1121,7 +1121,7 @@ static void AnaLoop(struct Position *p, int depth) {
 
         if (p->turn == White) {
             char tmp[16];
-            sprintf(tmp, "%d. ", 1 + (p->ply + 1) / 2);
+            snprintf(tmp, sizeof(tmp), "%d. ", 1 + (p->ply + 1) / 2);
             strcat(BestLine, tmp);
         }
 
@@ -1419,8 +1419,9 @@ static void *IterateInt(void *x) {
 
                     ScoreToText(best, score_as_text, sizeof(score_as_text));
 
-                    sprintf(AnalysisLine, "%2d: (%7s) %s", sd->depth,
-                            score_as_text, BestLine);
+                    snprintf(AnalysisLine, sizeof(AnalysisLine),
+                             "%2d: (%7s) %s", sd->depth, score_as_text,
+                             BestLine);
 
                     if (PrintOK) {
                         SearchOutput(sd->depth, CurTime - StartTime,

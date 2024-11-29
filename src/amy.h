@@ -183,7 +183,16 @@
 
 #define BOOK_MOVE -1
 
+/* Maximum length of the opponent name set by the
+ * 'name' command.
+ */
 #define OPP_NAME_LENGTH 1024
+
+/* Maximum number of EPD ops we attempt to parse */
+#define MAX_EPD_OPS 15
+
+/* Maximum number of good/bad moves we attempt to parse */
+#define MAX_EPD_MOVES 64
 
 #ifdef __cplusplus
 extern "C" {
@@ -419,8 +428,8 @@ extern bool AutoSave;
 extern char AutoSaveFileName[64];
 extern struct Position *CurrentPosition;
 
-extern int goodmove[256];
-extern int badmove[256];
+extern int goodmove[MAX_EPD_MOVES];
+extern int badmove[MAX_EPD_MOVES];
 extern const int EPTranslate[];
 extern const bool Sliding[];
 extern char PieceName[];
