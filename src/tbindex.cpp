@@ -83,11 +83,11 @@ typedef int piece;
 #define bev_broken (tbbe_ssL + 1) /* illegal or busted */
 
 #define bev_mi1 tbbe_ssL /* mate in 1 move */
-#define bev_mimin 1 /* mate in 126 moves */
+#define bev_mimin 1      /* mate in 126 moves */
 
 #define bev_draw 0 /* draw */
 
-#define bev_limax (-1) /* mated in 125 moves */
+#define bev_limax (-1)      /* mated in 125 moves */
 #define bev_li0 (-tbbe_ssL) /* mated in 0 moves */
 
 #define bev_limaxx (-tbbe_ssL - 1) /* mated in 126 moves */
@@ -106,11 +106,11 @@ typedef int piece;
 #define L_bev_broken (L_tbbe_ssL + 1) /* illegal or busted */
 
 #define L_bev_mi1 L_tbbe_ssL /* mate in 1 move */
-#define L_bev_mimin 1 /* mate in 32766 moves */
+#define L_bev_mimin 1        /* mate in 32766 moves */
 
 #define L_bev_draw 0 /* draw */
 
-#define L_bev_limax (-1) /* mated in 32765 moves */
+#define L_bev_limax (-1)        /* mated in 32765 moves */
 #define L_bev_li0 (-L_tbbe_ssL) /* mated in 0 moves */
 
 #define L_bev_limaxx (-L_tbbe_ssL - 1) /* mated in 32766 moves */
@@ -194,7 +194,7 @@ static const square rgsqReflectInvertMask[] = {0, 0x38};
 /* useful macros */
 
 #define TbRow(sq) ((sq) >> 3)
-#define TbColumn(sq) ((sq)&7)
+#define TbColumn(sq) ((sq) & 7)
 
 #if defined(NEW)
 #define PchExt(side) ((x_colorWhite == side) ? ".nbw" : ".nbb")

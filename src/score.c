@@ -1611,14 +1611,14 @@ void InitScore(struct Position *p) {
 
     RootGamePhase = Middlegame;
     if (npmat >= 38) {
-        int devel = (p->castle != 0);
+        bool devel = (p->castle != 0);
         int backrank =
             CountBits((p->mask[White][Knight] | p->mask[White][Bishop]) &
                       RankMask[0]) +
             CountBits((p->mask[Black][Knight] | p->mask[Black][Bishop]) &
                       RankMask[7]);
         if (backrank > 0)
-            devel = TRUE;
+            devel = true;
 
         if (devel)
             RootGamePhase = Opening;

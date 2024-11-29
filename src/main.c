@@ -100,7 +100,7 @@ static void ProcessRCFile(void) {
         if (!strcmp(key, "ht")) {
             GuessHTSizes(value);
         } else if (!strcmp(key, "tbpath")) {
-            strncpy(EGTBPath, value, 1023);
+            strncpy(EGTBPath, value, sizeof(EGTBPath) - 1);
         } else if (!strcmp(key, "cpu")) {
 #if MP
             NumberOfCPUs = atoi(value);
@@ -143,7 +143,7 @@ int main(int argc, char *argv[]) {
 
     Print(0, "\n");
 
-    strcpy(AutoSaveFileName, GetTmpFileName());
+    GetTmpFileName(AutoSaveFileName, sizeof(AutoSaveFileName));
 
     /* Ensure true random behavior. */
     InitRandom(GetTime());

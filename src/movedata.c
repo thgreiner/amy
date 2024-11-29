@@ -178,7 +178,7 @@ void InitMoves(void) {
     for (sq = 0; sq < 128; sq++) {
         int dir, nextdir;
         int next;
-        int start = TRUE;
+        bool start = true;
 
         if (sq & 0x88)
             continue;
@@ -204,7 +204,7 @@ void InitMoves(void) {
 
             if (start) {
                 NextSquare[Bishop][conv[sq]][conv[sq]].nextPos = conv[next];
-                start = FALSE;
+                start = false;
             }
 
             for (;;) {
@@ -239,7 +239,7 @@ void InitMoves(void) {
     for (sq = 0; sq < 128; sq++) {
         int dir, nextdir;
         int next;
-        int start = TRUE;
+        bool start = true;
 
         if (sq & 0x88)
             continue;
@@ -265,7 +265,7 @@ void InitMoves(void) {
 
             if (start) {
                 NextSquare[Rook][conv[sq]][conv[sq]].nextPos = conv[next];
-                start = FALSE;
+                start = false;
             }
 
             for (;;) {
@@ -300,7 +300,7 @@ void InitMoves(void) {
     for (sq = 0; sq < 128; sq++) {
         int dir, nextdir;
         int next;
-        int start = TRUE;
+        bool start = true;
 
         if (sq & 0x88)
             continue;
@@ -326,7 +326,7 @@ void InitMoves(void) {
 
             if (start) {
                 NextSquare[Queen][conv[sq]][conv[sq]].nextPos = conv[next];
-                start = FALSE;
+                start = false;
             }
 
             for (;;) {

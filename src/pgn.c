@@ -78,7 +78,7 @@ void SaveGame(struct Position *p, char *file_name) {
             int i;
             int ply = p->ply;
             int width = 0;
-            char *gameend;
+            const char *gameend;
             char shortgameend[8] = "1/2-1/2";
             char eco[128] = "";
 
@@ -169,25 +169,25 @@ int scanHeader(FILE *fin, struct PGNHeader *header) {
             char *value = nextToken(&x, "\"");
 
             if (!strcmp("Event", key)) {
-                strncpy(header->event, value, 63);
+                strncpy(header->event, value, sizeof(header->event) - 1);
             }
             if (!strcmp("Site", key)) {
-                strncpy(header->site, value, 63);
+                strncpy(header->site, value, sizeof(header->site) - 1);
             }
             if (!strcmp("Date", key)) {
-                strncpy(header->date, value, 63);
+                strncpy(header->date, value, sizeof(header->date) - 1);
             }
             if (!strcmp("Round", key)) {
-                strncpy(header->round, value, 63);
+                strncpy(header->round, value, sizeof(header->round) - 1);
             }
             if (!strcmp("White", key)) {
-                strncpy(header->white, value, 63);
+                strncpy(header->white, value, sizeof(header->white) - 1);
             }
             if (!strcmp("Black", key)) {
-                strncpy(header->black, value, 63);
+                strncpy(header->black, value, sizeof(header->black) - 1);
             }
             if (!strcmp("Result", key)) {
-                strncpy(header->result, value, 7);
+                strncpy(header->result, value, sizeof(header->result) - 1);
             }
             if (!strcmp("WhiteElo", key)) {
                 header->white_elo = atoi(value);

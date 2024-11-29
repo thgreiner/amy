@@ -51,7 +51,7 @@ int Value[] = {0,           PAWN_Value, KNIGHT_Value, BISHOP_Value, ROOK_Value,
  * Does a piece slide? True for Bishop, Rook and Queen
  */
 
-const int Sliding[] = {FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, FALSE};
+const bool Sliding[] = {false, false, false, true, true, true, false};
 
 /*
  * Does a pawn promote on a square? True for ranks 1 and 8
@@ -992,14 +992,14 @@ int GenFrom(struct Position *p, int square, int *moves) {
  * Test if castling is legal
  */
 
-int MayCastle(struct Position *p, int move) {
+bool MayCastle(struct Position *p, int move) {
     /* Sometimes there might be a legal castling move, but for the
        wrong p->turn, probably from the Countermove table */
     if (M_FROM(move) != ((p->turn == White) ? e1 : e8))
-        return FALSE;
+        return false;
 
     if (InCheck(p, p->turn))
-        return FALSE;
+        return false;
 
     /* king p->turn castling */
     if ((move & M_SCASTLE) && (p->castle & CastleMask[p->turn][0])) {
@@ -1010,9 +1010,9 @@ int MayCastle(struct Position *p, int move) {
         if (p->piece[fs] == Neutral && p->piece[gs] == Neutral) {
             /* Check if f and g square are not attacked by opponent */
             if ((p->atkFr[fs] | p->atkFr[gs]) & p->mask[OPP(p->turn)][0])
-                return FALSE;
+                return false;
             else
-                return TRUE;
+                return true;
         }
     }
 
@@ -1027,33 +1027,33 @@ int MayCastle(struct Position *p, int move) {
             p->piece[ds] == Neutral) {
             /* Check if c and d square are not attacked by opponent */
             if ((p->atkFr[cs] | p->atkFr[ds]) & p->mask[OPP(p->turn)][0])
-                return FALSE;
+                return false;
             else
-                return TRUE;
+                return true;
         }
     }
 
-    return FALSE;
+    return false;
 }
 
 /*
  * Test if a move is legal
  */
 
-int LegalMove(struct Position *p, int move) {
+bool LegalMove(struct Position *p, int move) {
     int fr = M_FROM(move);
     int to = M_TO(move);
 
     if (move == M_NONE || move == M_NULL)
-        return FALSE;
+        return false;
 
     /* There must be a piece on the square */
     if (!SAME_COLOR(p->piece[fr], p->turn))
-        return FALSE;
+        return false;
 
     /* if a promotion, moving piece must be a pawn */
     if (move & M_PANY && TYPE(p->piece[fr]) != Pawn)
-        return FALSE;
+        return false;
 
     if (move & M_CAPTURE) {
         /* There must be an enemy piece on the target square, and we
@@ -1062,64 +1062,64 @@ int LegalMove(struct Position *p, int move) {
 
         if (!SAME_COLOR(p->piece[to], OPP(p->turn)) ||
             !TstBit(p->atkTo[fr], to)) {
-            return FALSE;
+            return false;
         }
-        return TRUE;
+        return true;
     } else if (move & M_ENPASSANT) {
         /* The moving piece must be a pawn, and the target square must be
          * the enpassant square
          */
 
         if (!p->enPassant)
-            return FALSE;
+            return false;
         if (TYPE(p->piece[fr]) != Pawn || to != p->enPassant)
-            return FALSE;
+            return false;
         if (!TstBit(p->atkTo[fr], to))
-            return FALSE;
+            return false;
 
-        return TRUE;
+        return true;
     } else if (move & M_CANY) {
         /* Call the castling test routine */
         return MayCastle(p, move);
     } else {
         /* target sqaure must be empty */
         if (p->piece[to] != Neutral)
-            return FALSE;
+            return false;
 
         if (TYPE(p->piece[fr]) != Pawn) {
             /* if no pawn, we must attack to square */
             if (!TstBit(p->atkTo[fr], to))
-                return FALSE;
+                return false;
             if (move & M_PAWND)
-                return FALSE;
-            return TRUE;
+                return false;
+            return true;
         } else {
             /* use NextPos array to check if legal move */
             int tt = (p->turn == White ? fr + 8 : fr - 8);
             if (move & M_PAWND) {
                 if (p->piece[tt] != Neutral)
-                    return FALSE;
+                    return false;
                 tt = (p->turn == White ? tt + 8 : tt - 8);
             }
             if (tt != to)
-                return FALSE;
+                return false;
 
             if (p->turn == White && to >= a8 && !(move & M_PANY))
-                return FALSE;
+                return false;
             if (p->turn == Black && to <= h1 && !(move & M_PANY))
-                return FALSE;
+                return false;
 
-            return TRUE;
+            return true;
         }
     }
-    /* return FALSE; */ /* never reached */
+    /* return false; */ /* never reached */
 }
 
 /*
  * Test wether a move will give check
  */
 
-int IsCheckingMove(struct Position *p, int move) {
+bool IsCheckingMove(struct Position *p, int move) {
     int fr = M_FROM(move);
     int to = M_TO(move);
     int tp = TYPE(p->piece[fr]);
@@ -1134,37 +1134,37 @@ int IsCheckingMove(struct Position *p, int move) {
     switch (tp) {
     case Knight:
         if (TstBit(KnightEPM[kp], to))
-            return TRUE;
+            return true;
         break;
     case Bishop:
         if (TstBit(BishopEPM[kp], to)) {
             if (!((p->mask[White][0] | p->mask[Black][0]) & InterPath[kp][to]))
-                return TRUE;
+                return true;
         }
         break;
     case Rook:
         if (TstBit(RookEPM[kp], to)) {
             if (!((p->mask[White][0] | p->mask[Black][0]) & InterPath[kp][to]))
-                return TRUE;
+                return true;
         }
         break;
     case Queen:
         if (TstBit(QueenEPM[kp], to)) {
             if (!((p->mask[White][0] | p->mask[Black][0]) & InterPath[kp][to]))
-                return TRUE;
+                return true;
         }
         break;
     case Pawn:
         if (p->turn == White) {
             if ((to & 7) < 7 && (to + 9) == kp)
-                return TRUE;
+                return true;
             if ((to & 7) > 0 && (to + 7) == kp)
-                return TRUE;
+                return true;
         } else {
             if ((to & 7) < 7 && (to - 9) == kp)
-                return TRUE;
+                return true;
             if ((to & 7) > 0 && (to - 7) == kp)
-                return TRUE;
+                return true;
         }
         break;
     }
@@ -1190,10 +1190,10 @@ int IsCheckingMove(struct Position *p, int move) {
 
         tmp2 = (p->mask[White][0] | p->mask[Black][0]) & InterPath[kp][i];
         if (CountBits(tmp2) == 1 && FindSetBit(tmp2) == fr)
-            return TRUE;
+            return true;
     }
 
-    return FALSE;
+    return false;
 }
 
 /*
@@ -1359,19 +1359,19 @@ int GenChecks(struct Position *p, int *moves) {
  * Test wether a p->turn is in check
  */
 
-int InCheck(struct Position *p, int side) {
+bool InCheck(struct Position *p, int side) {
     int sq = p->kingSq[side];
 
     if (p->atkFr[sq] & p->mask[!side][0])
-        return TRUE;
+        return true;
     else
-        return FALSE;
+        return false;
 }
 
 /*
  * Repetition check
- * if mode = TRUE, count the number of repetitions of current position
- * if mode = FALSE, only check if current position is repeated
+ * if mode = true, count the number of repetitions of current position
+ * if mode = false, only check if current position is repeated
  */
 
 int Repeated(struct Position *p, int mode) {
@@ -1390,7 +1390,7 @@ int Repeated(struct Position *p, int mode) {
             if (mode)
                 cnt++;
             else
-                return TRUE;
+                return true;
         }
     }
 
@@ -1431,9 +1431,9 @@ char *SAN(struct Position *p, int move) {
         }
     } else {
         BitBoard tmp;
-        int aamb = FALSE, /* set for ambigous moves */
-            ramb = FALSE, /* set means ambigous rank */
-            famb = FALSE; /* set means ambigous file */
+        bool aamb = false, /* set for ambigous moves */
+            ramb = false,  /* set means ambigous rank */
+            famb = false;  /* set means ambigous file */
         int i;
 
         tmp = p->atkFr[to] & p->mask[p->turn][tp];
@@ -1461,11 +1461,11 @@ char *SAN(struct Position *p, int move) {
                 if (incheck)
                     continue;
 
-                aamb = TRUE;
+                aamb = true;
                 if ((i & 7) == (fr & 7))
-                    famb = TRUE;
+                    famb = true;
                 if ((i >> 3) == (fr >> 3))
-                    ramb = TRUE;
+                    ramb = true;
             }
         }
 
@@ -1668,7 +1668,7 @@ int ParseGSANList(char *san, int side, int *mvs, int cnt) {
  * Test a pseudolegal move for legality
  */
 
-static int TryMove(struct Position *p, int move) {
+static bool TryMove(struct Position *p, int move) {
     int tmp;
     DoMove(p, move);
     tmp = InCheck(p, OPP(p->turn));
@@ -2009,7 +2009,7 @@ int LegalMoves(struct Position *p, int *mvs) {
                     *(mvs++) = m[i];
                 else {
                     UndoMove(p, m[i]);
-                    return TRUE;
+                    return true;
                 }
                 cnt++;
             }
@@ -2034,7 +2034,7 @@ int LegalMoves(struct Position *p, int *mvs) {
                     *(mvs++) = m[i];
                 else {
                     UndoMove(p, m[i]);
-                    return TRUE;
+                    return true;
                 }
                 cnt++;
             }
@@ -2052,7 +2052,7 @@ int LegalMoves(struct Position *p, int *mvs) {
                     *(mvs++) = m[i];
                 else {
                     UndoMove(p, m[i]);
-                    return TRUE;
+                    return true;
                 }
                 cnt++;
             }
@@ -2455,12 +2455,12 @@ char *MakeEPD(struct Position *p) {
  *
  */
 
-char *GameEnd(struct Position *p) {
+const char *GameEnd(struct Position *p) {
     if (p->actLog->gl_IrrevCount >= 100) {
         return "1/2-1/2 {50 move rule}";
     }
 
-    if (Repeated(p, TRUE) >= 2) {
+    if (Repeated(p, true) >= 2) {
         return "1/2-1/2 {Draw by repetition}";
     }
 
@@ -2487,28 +2487,28 @@ char *GameEnd(struct Position *p) {
  * Check if this is a theoretical draw
  */
 
-int CheckDraw(struct Position *p) {
+bool CheckDraw(struct Position *p) {
     if (p->material[Black] == 0) {
         if (p->nonPawn[White] == 0) {
             if (!(p->mask[White][Pawn] & NotAFileMask)) {
                 if (p->mask[Black][King] & CornerMaskA8)
-                    return TRUE;
+                    return true;
             }
             if (!(p->mask[White][Pawn] & NotHFileMask)) {
                 if (p->mask[Black][King] & CornerMaskH8)
-                    return TRUE;
+                    return true;
             }
         } else if (p->nonPawn[White] == BISHOP_Value &&
                    p->mask[White][Bishop]) {
             if (!(p->mask[White][Pawn] & NotAFileMask) &&
                 (p->mask[Black][King] & CornerMaskA8)) {
                 if (p->mask[White][Bishop] & BlackSquaresMask)
-                    return TRUE;
+                    return true;
             }
             if (!(p->mask[White][Pawn] & NotHFileMask) &&
                 (p->mask[Black][King] & CornerMaskH8)) {
                 if (p->mask[White][Bishop] & WhiteSquaresMask)
-                    return TRUE;
+                    return true;
             }
         }
     }
@@ -2516,34 +2516,34 @@ int CheckDraw(struct Position *p) {
         if (p->nonPawn[Black] == 0) {
             if (!(p->mask[Black][Pawn] & NotAFileMask)) {
                 if (p->mask[White][King] & CornerMaskA1)
-                    return TRUE;
+                    return true;
             }
             if (!(p->mask[Black][Pawn] & NotHFileMask)) {
                 if (p->mask[White][King] & CornerMaskH1)
-                    return TRUE;
+                    return true;
             }
         } else if (p->nonPawn[Black] == BISHOP_Value &&
                    p->mask[Black][Bishop]) {
             if (!(p->mask[Black][Pawn] & NotAFileMask) &&
                 (p->mask[White][King] & CornerMaskA1)) {
                 if (p->mask[Black][Bishop] & WhiteSquaresMask)
-                    return TRUE;
+                    return true;
             }
             if (!(p->mask[Black][Pawn] & NotHFileMask) &&
                 (p->mask[White][King] & CornerMaskH1)) {
                 if (p->mask[Black][Bishop] & BlackSquaresMask)
-                    return TRUE;
+                    return true;
             }
         }
     }
-    return FALSE;
+    return false;
 }
 
 /*
  * Check if the pawn is passed
  */
 
-int IsPassed(struct Position *p, int sq, int side) {
+bool IsPassed(struct Position *p, int sq, int side) {
     if (side == White)
         return !(p->mask[Black][Pawn] & PassedMaskW[sq]);
     else

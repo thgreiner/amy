@@ -262,7 +262,7 @@ static void GetAllBookMoves(struct Position *p, int *cnt, int *book_moves,
 
         DoMove(p, mvs[i]);
         /* If the move leads to a repetition, do not accept it. */
-        if (!Repeated(p, FALSE)) {
+        if (!Repeated(p, false)) {
             be = GetBookEntry(p->hkey);
             le = GetLearnEntry(p->hkey);
         }
@@ -283,12 +283,12 @@ static void GetAllBookMoves(struct Position *p, int *cnt, int *book_moves,
 }
 
 static void SortBook(int cnt, int *mvs, struct BookQuery *entries) {
-    int done = FALSE;
+    bool done = false;
 
     while (!done) {
         int i;
 
-        done = TRUE;
+        done = true;
 
         for (i = 1; i < cnt; i++) {
             int f1 = entries[i - 1].be.win + entries[i - 1].be.loss +
@@ -304,7 +304,7 @@ static void SortBook(int cnt, int *mvs, struct BookQuery *entries) {
                 mvs[i] = mvs[i - 1];
                 mvs[i - 1] = move;
 
-                done = FALSE;
+                done = false;
             }
         }
     }

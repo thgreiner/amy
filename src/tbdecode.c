@@ -79,7 +79,7 @@ int cbEGTBCompBytes = 0;
 /* --------------------- Constants, types, etc. ----------------------- */
 /*                       ----------------------                         */
 
-#define MIN_BLOCK_BITS 8 /* LOG2 (min size of block to compress)	*/
+#define MIN_BLOCK_BITS 8  /* LOG2 (min size of block to compress)	*/
 #define MAX_BLOCK_BITS 16 /* LOG2 (max size of block to compress) */
 
 /* max. integer we can take LOG2 by table	*/
@@ -95,7 +95,7 @@ int cbEGTBCompBytes = 0;
 #define uchar unsigned char
 #endif
 
-#define HEADER_SIZE 80 /* number of reserved bytes	*/
+#define HEADER_SIZE 80         /* number of reserved bytes	*/
 #define STOP_SEARCH_LENGTH 256 /* terminate search if match	*/
 /* length exceeds that value	*/
 
@@ -316,7 +316,7 @@ typedef struct {
     do {                                                                       \
         (ch) = table[BIORD(start_bits)];                                       \
         if (((int)(ch)) >= 0) {                                                \
-            BIORD_MORE((ch)&31);                                               \
+            BIORD_MORE((ch) & 31);                                             \
             (ch) >>= 5;                                                        \
             break;                                                             \
         }                                                                      \

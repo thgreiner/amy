@@ -112,10 +112,11 @@ static struct HTEntry *SelectHTEntry(hash_t key, int depth) {
 }
 
 #if MP
-int ProbeHT(hash_t key, int *score, int depth, int *bestm, int *threat, int ply,
-            int exclusiveP, struct HTEntry *localHT)
+int ProbeHT(hash_t key, int *score, int depth, int *bestm, bool *threat,
+            int ply, int exclusiveP, struct HTEntry *localHT)
 #else
-int ProbeHT(hash_t key, int *score, int depth, int *bestm, int *threat, int ply)
+int ProbeHT(hash_t key, int *score, int depth, int *bestm, bool *threat,
+            int ply)
 #endif
 {
     struct HTEntry *h1 = TranspositionTable + ((key >> 32) & HT_Mask);
@@ -408,14 +409,14 @@ static void FreeHT(void) {
 }
 
 void AllocateHT(void) {
-    static int registered_free_ht = FALSE;
+    static bool registered_free_ht = false;
 
     /*
      * Register atexit() handler to free hashtable memory automatically
      */
 
     if (!registered_free_ht) {
-        registered_free_ht = TRUE;
+        registered_free_ht = true;
         atexit(FreeHT);
     }
 

@@ -40,7 +40,7 @@
 #define MT_SIZE (1 << MT_BITS)
 #define MT_MASK (MT_SIZE - 1)
 
-int MateThreat(struct Position *p, int side) {
+bool MateThreat(struct Position *p, int side) {
     int oside = !side;
     int ekp = p->kingSq[oside];
     BitBoard pcs;
@@ -104,13 +104,13 @@ int MateThreat(struct Position *p, int side) {
                     continue;
                 /* If supported by a friendly piece, its mate! */
                 if (p->mask[side][0] & tmp) {
-                    return TRUE;
+                    return true;
                 }
                 /* check for supporters 'from behind' */
                 if ((p->mask[side][Bishop] & ray) ||
                     (p->mask[side][Rook] & ray) ||
                     (p->mask[side][Queen] & ray)) {
-                    return TRUE;
+                    return true;
                 }
             } else {
                 /* distant check */
@@ -133,7 +133,7 @@ int MateThreat(struct Position *p, int side) {
                     break;
                 }
                 if (!def) {
-                    return TRUE;
+                    return true;
                 }
             }
         }
@@ -194,13 +194,13 @@ int MateThreat(struct Position *p, int side) {
                     continue;
                 /* If supported by a friendly piece, its mate! */
                 if (p->mask[side][0] & tmp) {
-                    return TRUE;
+                    return true;
                 }
                 /* check for supporters 'from behind' */
                 if ((p->mask[side][Bishop] & ray) ||
                     (p->mask[side][Rook] & ray) ||
                     (p->mask[side][Queen] & ray)) {
-                    return TRUE;
+                    return true;
                 }
             } else {
                 /* distant check */
@@ -223,7 +223,7 @@ int MateThreat(struct Position *p, int side) {
                     break;
                 }
                 if (!def) {
-                    return TRUE;
+                    return true;
                 }
             }
         }
@@ -284,13 +284,13 @@ int MateThreat(struct Position *p, int side) {
                     continue;
                 /* If supported by a friendly piece, its mate! */
                 if (p->mask[side][0] & tmp) {
-                    return TRUE;
+                    return true;
                 }
                 /* check for supporters 'from behind' */
                 if ((p->mask[side][Bishop] & ray) ||
                     (p->mask[side][Rook] & ray) ||
                     (p->mask[side][Queen] & ray)) {
-                    return TRUE;
+                    return true;
                 }
             } else {
                 /* distant check */
@@ -313,7 +313,7 @@ int MateThreat(struct Position *p, int side) {
                     break;
                 }
                 if (!def) {
-                    return TRUE;
+                    return true;
                 }
             }
         }
@@ -374,9 +374,9 @@ int MateThreat(struct Position *p, int side) {
                 if (free)
                     continue;
             }
-            return TRUE;
+            return true;
         }
     }
 
-    return FALSE;
+    return false;
 }

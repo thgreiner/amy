@@ -40,7 +40,7 @@
 int TMoves = 60, TTime = 5 * 60;
 int Moves[3] = {60, 60}, Time[3] = {5 * 60, 5 * 60};
 int TMoves2, TTime2;
-int TwoTimeControls = FALSE;
+int TwoTimeControls = false;
 
 int Increment = 0;
 
@@ -54,7 +54,7 @@ void DoTC(struct Position *p, int mtime) {
                 Print(0, "Switching to second time control.\n");
                 TMoves = TMoves2;
                 TTime = TTime2;
-                TwoTimeControls = FALSE;
+                TwoTimeControls = false;
             }
             Moves[p->turn] = TMoves;
             Time[p->turn] += TTime;
@@ -63,13 +63,16 @@ void DoTC(struct Position *p, int mtime) {
 }
 
 void CalcTime(struct Position *p, float *soft, float *hard) {
+    char time_as_text[16];
     if (TMoves >= 0) {
         if (Moves[p->turn] > 0) {
             /*  int limit = (13*TTime/TMoves)/8 + (3*Increment)/4;  */
             float limit = (1.625 * TTime / TMoves) + (0.85 * Increment);
 
-            Print(1, "TC: %d moves in %s\n", Moves[p->turn],
-                  TimeToText((unsigned int)(Time[p->turn]) * ONE_SECOND));
+            TimeToText((unsigned int)(Time[p->turn]) * ONE_SECOND, time_as_text,
+                       sizeof(time_as_text));
+
+            Print(1, "TC: %d moves in %s\n", Moves[p->turn], time_as_text);
 
             /*  *soft = (7*Time[p->turn]/Moves[p->turn])/8 + (3*Increment)/4; */
             *soft =
@@ -96,8 +99,9 @@ void CalcTime(struct Position *p, float *soft, float *hard) {
             /*  1.625 / 60 = 0.0271  */
             float limit = 0.0271 * ((float)Time[p->turn] + 60 * Increment);
 
-            Print(1, "TC: all moves in %s\n",
-                  TimeToText((unsigned int)(Time[p->turn]) * ONE_SECOND));
+            TimeToText((unsigned int)(Time[p->turn]) * ONE_SECOND, time_as_text,
+                       sizeof(time_as_text));
+            Print(1, "TC: all moves in %s\n", time_as_text);
 
             /*  0.875 / 60.0 = 0.0146  */
             *soft = 0.0146 * (float)Time[p->turn] + (0.85 * Increment);
