@@ -34,3 +34,7 @@ bookup.o: bookup.c
 eco.o: eco.c
 	$(CC) $(CFLAGS) $(DEFAULT_INCLUDES) -DECODIR=\"${pkgdatadir}\" \
         eco.c -c -o eco.o
+
+.PHONY: format
+format:
+	clang-format -i ${Amy_SOURCES} ${EXTRA_Amy_SOURCES} ${noinst_HEADERS}
