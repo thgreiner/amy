@@ -1177,28 +1177,36 @@ static void InitSearch(struct SearchData *sd) {
     HTry = HHit = PTry = PHit = STry = SHit = 0;
 }
 
+// Marcin Ciura's gap sequence for shell sort
+static int gaps[] = {57, 23, 10, 4, 1};
+
 /**
- * Resort the root move list.
+ * Resort the root move list. Keeps the first element unchanged,
+ * and sorts the remaining moves by number of nodes searched
+ * in decreasing order.
  */
 static void ResortMovesList(int cnt, int *mvs, unsigned long *nodes) {
-    for (int i = 1; i < cnt - 1; i++) {
-        int besti = i;
-        unsigned long bestn = nodes[i];
-        int j;
-        for (j = i + 1; j < cnt; j++) {
-            if (nodes[j] > bestn) {
-                bestn = nodes[j];
-                besti = j;
-            }
-        }
+    if (cnt <= 0)
+        return;
 
-        if (besti != i) {
-            int tmp = mvs[i];
-            mvs[i] = mvs[besti];
-            mvs[besti] = tmp;
+    // Skip over the first element
+    cnt -= 1;
+    mvs++;
+    nodes++;
+
+    for (int gap_index = 0; gap_index < 5; gap_index++) {
+        int gap = gaps[gap_index];
+        for (int i = gap; i < cnt; i++) {
+            int j;
+            int mvs_tmp = mvs[i];
             unsigned long nodes_tmp = nodes[i];
-            nodes[i] = nodes[besti];
-            nodes[besti] = nodes_tmp;
+
+            for (j = i; (j >= gap) && (nodes[j - gap] < nodes_tmp); j -= gap) {
+                nodes[j] = nodes[j - gap];
+                mvs[j] = mvs[j - gap];
+            }
+            nodes[j] = nodes_tmp;
+            mvs[j] = mvs_tmp;
         }
     }
 }

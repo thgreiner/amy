@@ -1,6 +1,17 @@
 #ifndef INLINE_H
 #define INLINE_H
 
+extern BitBoard ShiftUpMask, ShiftDownMask;
+extern BitBoard ShiftLeftMask, ShiftRightMask;
+
+static inline BitBoard ShiftUp(BitBoard x) { return (x << 8) & ShiftUpMask; }
+
+static inline BitBoard ShiftDown(BitBoard x) { return (x >> 8) & ShiftDownMask; }
+
+static inline BitBoard ShiftLeft(BitBoard x) { return (x << 1) & ShiftLeftMask; }
+
+static inline BitBoard ShiftRight(BitBoard x) { return (x >> 1) & ShiftRightMask; }
+
 /**
  * Calculate the 'king distance' between two squares.
  * This the number of king moves to go from sq1 to sq2.

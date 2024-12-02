@@ -603,11 +603,6 @@ int ProbeST(hash_t, int *);
 void ShowHashStatistics(void);
 void GuessHTSizes(char *);
 
-extern BitBoard ShiftUp(BitBoard);
-extern BitBoard ShiftDown(BitBoard);
-extern BitBoard ShiftLeft(BitBoard);
-extern BitBoard ShiftRight(BitBoard);
-
 void InitAll(void);
 
 void PrintBitBoard(BitBoard);

@@ -368,14 +368,6 @@ void InitMiscMasks(void) {
     QueenSideMask = FileMask[0] | FileMask[1] | FileMask[2] | FileMask[3];
 }
 
-BitBoard ShiftUp(BitBoard x) { return (x << 8) & ShiftUpMask; }
-
-BitBoard ShiftDown(BitBoard x) { return (x >> 8) & ShiftDownMask; }
-
-BitBoard ShiftLeft(BitBoard x) { return (x << 1) & ShiftLeftMask; }
-
-BitBoard ShiftRight(BitBoard x) { return (x >> 1) & ShiftRightMask; }
-
 void InitAll(void) {
     InitMasks();
     InitPawnMasks();
