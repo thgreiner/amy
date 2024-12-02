@@ -166,50 +166,6 @@ void GetTmpFileName(char *file_name, size_t len) {
     }
 }
 /**
- * Calculate the 'king distance' between two squares.
- * This the number of king moves to go from sq1 to sq2.
- */
-int KingDist(int sq1, int sq2) {
-    int file_dist = ABS((sq1 & 7) - (sq2 & 7));
-    int rank_dist = ABS((sq1 >> 3) - (sq2 >> 3));
-
-    return MAX(file_dist, rank_dist);
-}
-
-/**
- * Calculate the 'minimum distance' between two squares.
- * This the minimum of the file and rank distances.
- */
-int MinDist(int sq1, int sq2) {
-    int file_dist = ABS((sq1 & 7) - (sq2 & 7));
-    int rank_dist = ABS((sq1 >> 3) - (sq2 >> 3));
-
-    return MIN(file_dist, rank_dist);
-}
-
-/**
- * Calculate the 'Manhattan distance' between two squares.
- */
-int ManhattanDist(int sq1, int sq2) {
-    int file_dist = ABS((sq1 & 7) - (sq2 & 7));
-    int rank_dist = ABS((sq1 >> 3) - (sq2 >> 3));
-
-    return file_dist + rank_dist;
-}
-
-int FileDist(int sq1, int sq2) { return ABS((sq1 & 7) - (sq2 & 7)); }
-
-/**
- * Calculate the distance of 'sq' to any edge on the chessboard
- */
-int EdgeDist(int sq) {
-    int filedist = MIN(sq & 7, 7 - (sq & 7));
-    int rankdist = MIN(sq >> 3, 7 - (sq >> 3));
-
-    return MAX(filedist, rankdist);
-}
-
-/**
  * Check if we can read from stdin without blocking.
  */
 int InputReady(void) {

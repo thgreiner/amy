@@ -2499,7 +2499,7 @@ const char *GameEnd(struct Position *p) {
  * Check if this is a theoretical draw
  */
 
-bool CheckDraw(struct Position *p) {
+bool CheckDraw(const struct Position *p) {
     if (p->material[Black] == 0) {
         if (p->nonPawn[White] == 0) {
             if (!(p->mask[White][Pawn] & NotAFileMask)) {
@@ -2555,7 +2555,7 @@ bool CheckDraw(struct Position *p) {
  * Check if the pawn is passed
  */
 
-bool IsPassed(struct Position *p, int sq, int side) {
+bool IsPassed(const struct Position *p, int sq, int side) {
     if (side == White)
         return !(p->mask[Black][Pawn] & PassedMaskW[sq]);
     else

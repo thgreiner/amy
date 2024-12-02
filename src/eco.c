@@ -115,7 +115,7 @@ char *GetEcoCode(hash_t hkey) {
     return retval;
 }
 
-int FindEcoCode(struct Position *p, char *result) {
+bool FindEcoCode(const struct Position *p, char *result) {
     int ply = 0;
     char *res;
     bool found = false;

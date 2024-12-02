@@ -111,6 +111,8 @@ static int EGTBDepth = 0;
 
 static int NodesPerCheck;
 
+static unsigned long TotalNodes;
+
 /*
  * Search stati
  */
@@ -466,9 +468,12 @@ static int quies(struct SearchData *sd, int alpha, int beta, int depth) {
     int move;
     int talpha;
     int tmp;
-    sd->qnodes_cnt++;
+
 
     EnterNode(sd);
+
+    sd->qnodes_cnt++;
+    TotalNodes++;
 
     /* max search depth reached */
     if (sd->ply >= MaxDepth || Repeated(p, false)) {
@@ -583,6 +588,7 @@ static int negascout(struct SearchData *sd, int alpha, int beta,
     EnterNode(sd);
 
     sd->nodes_cnt++;
+    TotalNodes++;
 
     /* check for search termination */
     if (sd->master && TerminateSearch(sd)) {
@@ -1531,7 +1537,7 @@ final:
               "%.1f kN/s\n",
               sd->nodes_cnt + sd->qnodes_cnt,
               sd->qnodes_cnt / ((sd->nodes_cnt + sd->qnodes_cnt) / 100 + 1),
-              elapsed, (sd->nodes_cnt + sd->qnodes_cnt) / 1000.0 / elapsed);
+              elapsed, TotalNodes / 1000.0 / elapsed);
 
         Print(2,
               "Extensions: Check: %d  DblChk: %d  DiscChk: %d  SingReply: %d\n"
@@ -1651,6 +1657,8 @@ int Iterate(struct Position *p) {
 
     AbortSearch = false;
     NeedTime = false;
+
+    TotalNodes = 0;
 
     /*
      * Check if we need to start searching at all

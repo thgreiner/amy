@@ -309,7 +309,7 @@ const static BitBoard BRookTrapped2 = SetMask(b8) | SetMask(a8) | SetMask(a7);
  *
  */
 
-static int ScorePawns(struct Position *p, struct PawnFacts *pawnFacts) {
+static int ScorePawns(const struct Position *p, struct PawnFacts *pawnFacts) {
     BitBoard pcs = 0;
     int score = 0;
     int file = 0;
@@ -641,7 +641,7 @@ static int ScorePawns(struct Position *p, struct PawnFacts *pawnFacts) {
  *
  */
 
-static int ScorePawnsHashed(struct Position *p, struct PawnFacts *pawnFacts) {
+static int ScorePawnsHashed(const struct Position *p, struct PawnFacts *pawnFacts) {
     int score;
 
     PTry++;
@@ -659,7 +659,7 @@ static int ScorePawnsHashed(struct Position *p, struct PawnFacts *pawnFacts) {
  * Score passed pawns
  */
 
-static int ScorePassedPawns(struct Position *p, int wphase, int bphase,
+static int ScorePassedPawns(const struct Position *p, int wphase, int bphase,
                             struct PawnFacts *pawnFacts) {
     int score = 0;
     int wdistant = 0;
@@ -931,7 +931,7 @@ static int ScorePassedPawns(struct Position *p, int wphase, int bphase,
  * Score the king safety
  */
 
-static int ScoreKingSafety(struct Position *p, int wphase, int bphase,
+static int ScoreKingSafety(const struct Position *p, int wphase, int bphase,
                            struct PawnFacts *pawnFacts) {
     int score = 0;
 
@@ -1040,7 +1040,7 @@ static int ScoreKingSafety(struct Position *p, int wphase, int bphase,
  * Score the development status
  */
 
-static int ScoreDevelopment(struct Position *p) {
+static int ScoreDevelopment(const struct Position *p) {
     int score = 0;
     BitBoard pcs;
 
@@ -1103,7 +1103,7 @@ static int ScoreDevelopment(struct Position *p) {
  * Score the material balance.
  */
 
-int MaterialBalance(struct Position *p) {
+int MaterialBalance(const struct Position *p) {
     int score = p->material[White] - p->material[Black];
 
     return score;
@@ -1113,7 +1113,7 @@ int MaterialBalance(struct Position *p) {
  * Score the position from white points of view.
  */
 
-static int ScorePositionForWhite(struct Position *p, int alpha, int beta) {
+static int ScorePositionForWhite(const struct Position *p, int alpha, int beta) {
     int score;
 
     int wphase;
@@ -1522,7 +1522,7 @@ static int ScorePositionForWhite(struct Position *p, int alpha, int beta) {
  * if it is not white to move.
  */
 
-int ScorePosition(struct Position *p, int alpha, int beta) {
+int ScorePosition(const struct Position *p, int alpha, int beta) {
     if (p->turn == White)
         return ScorePositionForWhite(p, alpha, beta);
     else
@@ -1533,7 +1533,7 @@ int ScorePosition(struct Position *p, int alpha, int beta) {
  * Do the pre-search initialization of scoring.
  */
 
-void InitScore(struct Position *p) {
+void InitScore(const struct Position *p) {
     int sq;
 
     int eg_threshold = Value[Queen] + Value[Bishop];

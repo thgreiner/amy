@@ -578,7 +578,7 @@ void RecalcAttacks(struct Position *);
 const char *GameEnd(struct Position *);
 void ParseEcoPgn(char *);
 char *GetEcoCode(hash_t);
-int FindEcoCode(struct Position *, char *);
+bool FindEcoCode(const struct Position *, char *);
 
 void HashInit(void);
 
@@ -637,13 +637,13 @@ int scanHeader(FILE *, struct PGNHeader *);
 int scanMove(FILE *fin, char *nextMove);
 
 void InitEGTB(char *);
-int ProbeEGTB(struct Position *, int *, int);
+int ProbeEGTB(const struct Position *, int *, int);
 
-int MaterialBalance(struct Position *);
-int ScorePosition(struct Position *, int, int);
-bool CheckDraw(struct Position *);
-bool IsPassed(struct Position *, int, int);
-void InitScore(struct Position *);
+int MaterialBalance(const struct Position *);
+int ScorePosition(const struct Position *, int, int);
+bool CheckDraw(const struct Position *);
+bool IsPassed(const struct Position *, int, int);
+void InitScore(const struct Position *);
 int OptimisticBound(void);
 
 int Iterate(struct Position *);
@@ -673,11 +673,6 @@ void TimeToText(unsigned int, char *, size_t);
 void ScoreToText(int, char *, size_t);
 unsigned int GetTime(void);
 void GetTmpFileName(char *, size_t);
-int KingDist(int, int);
-int MinDist(int, int);
-int FileDist(int, int);
-int EdgeDist(int);
-int ManhattanDist(int, int);
 char *nextToken(char **, const char *);
 
 void ShowVersion(void);
@@ -687,9 +682,11 @@ double Random(void);
 void InitRandom(ran_t seed);
 
 void RecogInit(void);
-int ProbeRecognizer(struct Position *p, int *score);
+int ProbeRecognizer(const struct Position *p, int *score);
 
 void DoBookLearning(void);
+
+#include "inline.h"
 
 #ifdef __cplusplus
 }
