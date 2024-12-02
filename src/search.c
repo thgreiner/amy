@@ -469,7 +469,6 @@ static int quies(struct SearchData *sd, int alpha, int beta, int depth) {
     int talpha;
     int tmp;
 
-
     EnterNode(sd);
 
     sd->qnodes_cnt++;

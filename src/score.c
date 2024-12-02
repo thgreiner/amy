@@ -641,7 +641,8 @@ static int ScorePawns(const struct Position *p, struct PawnFacts *pawnFacts) {
  *
  */
 
-static int ScorePawnsHashed(const struct Position *p, struct PawnFacts *pawnFacts) {
+static int ScorePawnsHashed(const struct Position *p,
+                            struct PawnFacts *pawnFacts) {
     int score;
 
     PTry++;
@@ -1113,7 +1114,8 @@ int MaterialBalance(const struct Position *p) {
  * Score the position from white points of view.
  */
 
-static int ScorePositionForWhite(const struct Position *p, int alpha, int beta) {
+static int ScorePositionForWhite(const struct Position *p, int alpha,
+                                 int beta) {
     int score;
 
     int wphase;
