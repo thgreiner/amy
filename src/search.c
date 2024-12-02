@@ -186,7 +186,7 @@ static bool TerminateSearch(struct SearchData *sd) {
             if (buffer[0] == '.') {
                 PrintNoLog(0, "stat01: %d %ld %d %d %d\n",
                            (CurTime - StartTime),
-                           sd->nodes_cnt + sd->qnodes_cnt, sd->depth,
+                           TotalNodes, sd->depth,
                            sd->nrootmoves - sd->movenum - 1, sd->nrootmoves);
             }
 
