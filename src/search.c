@@ -1229,7 +1229,7 @@ static void *IterateInt(void *x) {
     struct Position *p;
 
     if (!sd->master) {
-        usleep(100);
+        usleep(50 + 100 * Random());
     }
     p = sd->position;
 
