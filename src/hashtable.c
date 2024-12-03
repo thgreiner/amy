@@ -72,7 +72,8 @@ static int HTGeneration = 0;
 #if HAVE_STDATOMIC_H && MP
 _Atomic
 #endif
-    static unsigned int HTStoreFailed = 0;
+    static unsigned int HTStoreFailed = 0,
+                        HTStoreTried = 0;
 
 #if MP && HAVE_LIBPTHREAD
 
@@ -265,10 +266,12 @@ void StoreHT(hash_t key, int best, int alpha, int beta, int bestm, int depth,
     pthread_mutex_lock(TranspositionMutex + ((key >> 32) & MUTEX_MASK));
 #endif /* MP && HAVE_LIBPTHREAD */
 
+    HTStoreTried++;
     if ((h = SelectHTEntry(key, depth)) == NULL) {
 #if MP
         h = localHT + ((key >> 32) & L_HT_Mask);
 #endif
+        HTStoreFailed++;
     }
 
     if (h != NULL) {
@@ -322,8 +325,6 @@ void StoreHT(hash_t key, int best, int alpha, int beta, int bestm, int depth,
 #endif /* MP */
         if (threat)
             h->ht_Flags |= HT_THREAT;
-    } else {
-        HTStoreFailed++;
     }
 
 #if MP && HAVE_LIBPTHREAD
@@ -374,6 +375,7 @@ void AgeHashTable(void) {
     HTGeneration++;
     HTGeneration &= HT_AGE;
 
+    HTStoreTried = 0;
     HTStoreFailed = 0;
 }
 
@@ -466,9 +468,10 @@ void ShowHashStatistics(void) {
             cnt++;
     }
 
-    Print(1,
-          "Hashtable 1:  entries = %u, use = %u (%u %%), store failed = %u\n",
-          i, cnt, (cnt / (i / 100)), HTStoreFailed);
+    Print(1, "Hashtable 1:  entries = %u, use = %u (%u %%)\n", i, cnt,
+          (cnt / (i / 100)));
+    Print(1, "              store failed = %u (%d %%)\n", HTStoreFailed,
+          HTStoreFailed / (HTStoreTried / 100));
 }
 
 void GuessHTSizes(char *size) {
