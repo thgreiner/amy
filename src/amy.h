@@ -483,9 +483,10 @@ extern int Value[];
 extern int MaxPos;
 
 #if HAVE_STDATOMIC_H && MP
-// _Atomic
+_Atomic
 #endif
-extern unsigned long PHit, PTry, SHit, STry, HHit, HTry;
+    extern unsigned long PHit,
+    PTry, SHit, STry, HHit, HTry;
 
 extern unsigned int FHTime;
 extern int GUIMode;

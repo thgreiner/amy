@@ -69,7 +69,10 @@ static struct PTEntry *PawnTable = NULL;
 static struct STEntry *ScoreTable = NULL;
 static int HTGeneration = 0;
 
-static unsigned int HTStoreFailed = 0;
+#if HAVE_STDATOMIC_H && MP
+_Atomic
+#endif
+    static unsigned int HTStoreFailed = 0;
 
 #if MP && HAVE_LIBPTHREAD
 
@@ -438,10 +441,11 @@ void AllocateHT(void) {
 
     ScoreTable = calloc(ST_Size, sizeof(struct STEntry));
 
-    Print(0, "Hashtable sizes: %d k, %d k, %d k\n",
+    Print(0, "Hashtable sizes: %d k, %d k, %d k (%d, %d, %d bits)\n",
           ((1 << HT_Bits) * sizeof(struct HTEntry)) / 1024,
           ((1 << PT_Bits) * sizeof(struct PTEntry)) / 1024,
-          ((1 << ST_Bits) * sizeof(struct STEntry)) / 1024);
+          ((1 << ST_Bits) * sizeof(struct STEntry)) / 1024, HT_Bits, PT_Bits,
+          ST_Bits);
 
 #if MP && HAVE_LIBPTHREAD
     for (int i = 0; i < MUTEX_COUNT; i++) {
@@ -463,7 +467,7 @@ void ShowHashStatistics(void) {
     }
 
     Print(1,
-          "Hashtable 1:  entries = %u, use = %d (%d %%), store failed = %u\n",
+          "Hashtable 1:  entries = %u, use = %u (%u %%), store failed = %u\n",
           i, cnt, (cnt / (i / 100)), HTStoreFailed);
 }
 
@@ -495,18 +499,18 @@ void GuessHTSizes(char *size) {
 
     total_size -= (1 << HT_Bits) * sizeof(struct HTEntry);
 
-    tmp = total_size / 2;
+    tmp = 3 * total_size / 4;
 
-    for (PT_Bits = 1; PT_Bits < 32; PT_Bits++) {
-        long tmp2 = (1 << (PT_Bits + 1)) * sizeof(struct PTEntry);
+    for (ST_Bits = 1; ST_Bits < 32; ST_Bits++) {
+        long tmp2 = (1 << (ST_Bits + 1)) * sizeof(struct STEntry);
         if (tmp2 > tmp)
             break;
     }
 
-    total_size -= (1 << PT_Bits) * sizeof(struct PTEntry);
+    total_size -= (1 << ST_Bits) * sizeof(struct STEntry);
 
-    for (ST_Bits = 1; ST_Bits < 32; ST_Bits++) {
-        long tmp2 = (1 << (ST_Bits + 1)) * sizeof(struct STEntry);
+    for (PT_Bits = 1; PT_Bits < 32; PT_Bits++) {
+        long tmp2 = (1 << (PT_Bits + 1)) * sizeof(struct PTEntry);
         if (tmp2 > total_size)
             break;
     }

@@ -97,7 +97,7 @@ static const int MateDepth = 3;
 
 int MaxDepth;
 
-long RCExt, ChkExt, DiscExt, DblExt, SingExt, PPExt, ZZExt;
+unsigned long RCExt, ChkExt, DiscExt, DblExt, SingExt, PPExt, ZZExt;
 unsigned int HardLimit, SoftLimit, SoftLimit2;
 unsigned int StartTime, WallTimeStart;
 unsigned int CurTime;
@@ -111,7 +111,10 @@ static int EGTBDepth = 0;
 
 static int NodesPerCheck;
 
-static unsigned long TotalNodes;
+#if HAVE_STDATOMIC_H && MP
+_Atomic
+#endif
+    static unsigned long TotalNodes;
 
 /*
  * Search stati
@@ -139,9 +142,10 @@ char ShortBestLine[2048];
 char AnalysisLine[2048];
 
 #if HAVE_STDATOMIC_H && MP
-// _Atomic
+_Atomic
 #endif
-unsigned long HTry, HHit, PTry, PHit, STry, SHit;
+    unsigned long HTry,
+    HHit, PTry, PHit, STry, SHit;
 
 /* prototypes for search routines */
 
@@ -185,8 +189,7 @@ static bool TerminateSearch(struct SearchData *sd) {
 
             if (buffer[0] == '.') {
                 PrintNoLog(0, "stat01: %d %ld %d %d %d\n",
-                           (CurTime - StartTime),
-                           TotalNodes, sd->depth,
+                           (CurTime - StartTime), TotalNodes, sd->depth,
                            sd->nrootmoves - sd->movenum - 1, sd->nrootmoves);
             }
 
@@ -1547,13 +1550,14 @@ final:
               elapsed, TotalNodes / 1000.0 / elapsed);
 
         Print(2,
-              "Extensions: Check: %d  DblChk: %d  DiscChk: %d  SingReply: %d\n"
-              "            Recapture: %d   Passed Pawn: %d   Zugzwang: %d\n",
+              "Extensions: Check: %lu  DblChk: %lu  DiscChk: %lu  SingReply: "
+              "%lu\n"
+              "            Recapture: %lu   Passed Pawn: %lu   Zugzwang: %lu\n",
               ChkExt, DblExt, DiscExt, SingExt, RCExt, PPExt, ZZExt);
 
         Print(2,
-              "Hashing: Trans: %d/%d = %d %%   Pawn: %d/%d = %d %%\n"
-              "         Eval: %d/%d = %d %%\n",
+              "Hashing: Trans: %lu/%lu = %lu %%   Pawn: %lu/%lu = %lu %%\n"
+              "         Eval: %lu/%lu = %lu %%\n",
               HHit, HTry, (HTry) ? (100 * HHit / HTry) : 0, PHit, PTry,
               (PTry) ? (100 * PHit / PTry) : 0, SHit, STry,
               (STry) ? (100 * SHit / STry) : 0);
