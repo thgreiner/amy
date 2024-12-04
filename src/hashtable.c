@@ -69,11 +69,15 @@ static struct PTEntry *PawnTable = NULL;
 static struct STEntry *ScoreTable = NULL;
 static int HTGeneration = 0;
 
-static unsigned int HTStoreFailed = 0;
+#if HAVE_STDATOMIC_H && MP
+_Atomic
+#endif
+    static unsigned int HTStoreFailed = 0,
+                        HTStoreTried = 0;
 
 #if MP && HAVE_LIBPTHREAD
 
-#define MUTEX_BITS 5
+#define MUTEX_BITS 8
 #define MUTEX_COUNT (1 << MUTEX_BITS)
 #define MUTEX_MASK (MUTEX_COUNT - 1)
 static pthread_mutex_t TranspositionMutex[MUTEX_COUNT];
@@ -81,82 +85,137 @@ static pthread_mutex_t PawnMutex[MUTEX_COUNT];
 static pthread_mutex_t ScoreMutex[MUTEX_COUNT];
 #endif
 
-static struct HTEntry *SelectHTEntry(hash_t key, int depth) {
-    struct HTEntry *h1, *h2;
+/**
+ * Gets an entry from the global transposition table.
+ */
+static inline struct HTEntry GetHTEntry(hash_t key) {
+#if MP && HAVE_LIBPTHREAD
+    pthread_mutex_t *mutex = TranspositionMutex + ((key >> 32) & MUTEX_MASK);
+    pthread_mutex_lock(mutex);
+#endif /* MP && HAVE_LIBPTHREAD */
 
-    h1 = TranspositionTable + ((key >> 32) & HT_Mask);
-    if (h1->ht_Signature == (int)key)
-        return h1;
-    h2 = TranspositionTable + (((key >> 32) + 1) & HT_Mask);
-    if (h2->ht_Signature == (int)key)
-        return h2;
+    struct HTEntry entry = TranspositionTable[(key >> 32) & HT_Mask];
 
-    if (h1->ht_Depth <= h2->ht_Depth) {
-        if (h1->ht_Depth <= depth)
-            return h1;
-        if (h2->ht_Depth <= depth)
-            return h2;
-    } else {
-        if (h2->ht_Depth <= depth)
-            return h2;
-        if (h1->ht_Depth <= depth)
-            return h1;
+#if MP && HAVE_LIBPTHREAD
+    pthread_mutex_unlock(mutex);
+#endif /* MP && HAVE_LIBPTHREAD */
+
+    return entry;
+}
+
+/**
+ * Puts an entry to the global transposition table.
+ */
+static inline void PutHTEntry(hash_t key, struct HTEntry entry) {
+#if MP && HAVE_LIBPTHREAD
+    pthread_mutex_t *mutex = TranspositionMutex + ((key >> 32) & MUTEX_MASK);
+    pthread_mutex_lock(mutex);
+#endif /* MP && HAVE_LIBPTHREAD */
+
+    TranspositionTable[(key >> 32) & HT_Mask] = entry;
+
+#if MP && HAVE_LIBPTHREAD
+    pthread_mutex_unlock(mutex);
+#endif /* MP && HAVE_LIBPTHREAD */
+}
+
+/**
+ *
+ */
+static inline bool PutHTEntryBestEffort(hash_t key, struct HTEntry entry,
+                                        int depth) {
+    const hash_t key1 = key;
+    const hash_t key2 = key + 1;
+
+    struct HTEntry entry1 = GetHTEntry(key1);
+    struct HTEntry entry2 = GetHTEntry(key2);
+
+    /* Overwrite any matching entry. */
+    if (entry1.ht_Signature == (int)key) {
+        PutHTEntry(key1, entry);
+        return true;
+    }
+    if (entry2.ht_Signature == (int)key) {
+        PutHTEntry(key2, entry);
+        return true;
     }
 
-    if ((h1->ht_Flags & HT_AGE) != HTGeneration)
-        return h1;
-    if ((h2->ht_Flags & HT_AGE) != HTGeneration)
-        return h2;
+    /* Overwrite entries with lower depth. */
+    if (entry1.ht_Depth <= entry2.ht_Depth) {
+        if (entry1.ht_Depth <= depth) {
+            PutHTEntry(key1, entry);
+            return true;
+        }
+        if (entry2.ht_Depth <= depth) {
+            PutHTEntry(key2, entry);
+            return true;
+        }
+    } else {
+        if (entry2.ht_Depth <= depth) {
+            PutHTEntry(key2, entry);
+            return true;
+        }
+        if (entry1.ht_Depth <= depth) {
+            PutHTEntry(key1, entry);
+            return true;
+        }
+    }
 
-    return NULL;
+    /* Overwrite entries from older generation. */
+    if ((entry1.ht_Flags & HT_AGE) != HTGeneration) {
+        PutHTEntry(key1, entry);
+        return true;
+    }
+    if ((entry2.ht_Flags & HT_AGE) != HTGeneration) {
+        PutHTEntry(key2, entry);
+        return true;
+    }
+
+    return false;
 }
 
 #if MP
-int ProbeHT(hash_t key, int *score, int depth, int *bestm, int *threat, int ply,
-            int exclusiveP, struct HTEntry *localHT)
+int ProbeHT(hash_t key, int *score, int depth, int *bestm, bool *threat,
+            int ply, int exclusiveP, struct HTEntry *localHT)
 #else
-int ProbeHT(hash_t key, int *score, int depth, int *bestm, int *threat, int ply)
+int ProbeHT(hash_t key, int *score, int depth, int *bestm, bool *threat,
+            int ply)
 #endif
 {
-    struct HTEntry *h1 = TranspositionTable + ((key >> 32) & HT_Mask);
-    struct HTEntry *h = NULL;
-    int result = Useless;
+    hash_t effective_key = key;
+    struct HTEntry h = GetHTEntry(effective_key);
+    bool found = h.ht_Signature == (int)key;
 
-#if MP && HAVE_LIBPTHREAD
-    pthread_mutex_lock(TranspositionMutex + ((key >> 32) & MUTEX_MASK));
-#endif /* MP && HAVE_LIBPTHREAD */
-
-    if (h1->ht_Signature == (int)key)
-        h = h1;
-    else {
-        h1 = TranspositionTable + (((key >> 32) + 1) & HT_Mask);
-        if (h1->ht_Signature == (int)key)
-            h = h1;
+    if (!found) {
+        effective_key++;
+        h = GetHTEntry(effective_key);
+        found = h.ht_Signature == (int)key;
     }
 
+    int result = Useless;
+
 #if MP
-    if (localHT != NULL && h == NULL) {
-        h1 = localHT + ((key >> 32) & L_HT_Mask);
-        if (h1->ht_Signature == (int)key)
-            h = h1;
+    if (localHT != NULL && !found) {
+        h = localHT[(key >> 32) & L_HT_Mask];
+        found = h.ht_Signature == (int)key;
     }
 #endif
 
-    if (h != NULL) {
-        *bestm = h->ht_Move;
-        *threat = (h->ht_Flags & HT_THREAT);
+    if (found) {
+        *bestm = h.ht_Move;
+        *threat = (h.ht_Flags & HT_THREAT);
 
 #if MP
-        if ((int)h->ht_Depth == depth && exclusiveP &&
-            (h->ht_Flags & HT_NCPU) > 0) {
+        if ((int)h.ht_Depth == depth && exclusiveP &&
+            (h.ht_Flags & HT_NCPU) > 0) {
 
             result = OnEvaluation;
 
         } else
 #endif
 
-            if ((int)h->ht_Depth >= depth) {
-            *score = h->ht_Score;
+            if ((int)h.ht_Depth >= depth) {
+            *score = h.ht_Score;
 
             /*
              * Correct a mate score. See comment in 'StoreHT'.
@@ -168,22 +227,23 @@ int ProbeHT(hash_t key, int *score, int depth, int *bestm, int *threat, int ply)
                 *score += ply;
             }
 
-            if (h->ht_Flags & HT_EXACT) {
+            if (h.ht_Flags & HT_EXACT) {
                 result = ExactScore;
-            } else if (h->ht_Flags & HT_LBOUND) {
+            } else if (h.ht_Flags & HT_LBOUND) {
                 result = LowerBound;
-            } else if (h->ht_Flags & HT_UBOUND) {
+            } else if (h.ht_Flags & HT_UBOUND) {
                 result = UpperBound;
             }
 
 #if MP
-            if ((int)h->ht_Depth == depth) {
+            if ((int)h.ht_Depth == depth) {
 
                 /*
                  * increment processor count
                  */
 
-                h->ht_Flags += HT_NCPU_INCREMENT;
+                h.ht_Flags += HT_NCPU_INCREMENT;
+                PutHTEntry(effective_key, h);
             }
 #endif /* MP */
 
@@ -193,29 +253,22 @@ int ProbeHT(hash_t key, int *score, int depth, int *bestm, int *threat, int ply)
     }
 #if MP
     else {
-        h = SelectHTEntry(key, depth);
-        if (h) {
-            h->ht_Depth = depth;
-            h->ht_Flags = HT_NCPU_INCREMENT;
-            h->ht_Signature = (int)key;
-        }
+        h.ht_Depth = depth;
+        h.ht_Flags = HT_NCPU_INCREMENT;
+        h.ht_Signature = (int)key;
+        PutHTEntryBestEffort(key, h, depth);
     }
 #endif /* MP */
-
-#if MP && HAVE_LIBPTHREAD
-    pthread_mutex_unlock(TranspositionMutex + ((key >> 32) & MUTEX_MASK));
-#endif /* MP && HAVE_LIBPTHREAD */
 
     return result;
 }
 
 int ProbePT(hash_t key, int *score, struct PawnFacts *pf) {
-    struct PTEntry *h = PawnTable + ((key >> 32) & PT_Mask);
-    int result = Useless;
-
 #if MP && HAVE_LIBPTHREAD
     pthread_mutex_lock(PawnMutex + ((key >> 32) & MUTEX_MASK));
 #endif /* MP && HAVE_LIBPTHREAD */
+    struct PTEntry *h = PawnTable + ((key >> 32) & PT_Mask);
+    int result = Useless;
 
     if (h->pt_Signature == (int)key && h->pt_Score != PT_INVALID) {
         *score = h->pt_Score;
@@ -231,12 +284,12 @@ int ProbePT(hash_t key, int *score, struct PawnFacts *pf) {
 }
 
 int ProbeST(hash_t key, int *score) {
-    struct STEntry *h = ScoreTable + ((key >> 32) & ST_Mask);
-    int result = Useless;
-
 #if MP && HAVE_LIBPTHREAD
     pthread_mutex_lock(ScoreMutex + ((key >> 32) & MUTEX_MASK));
 #endif /* MP && HAVE_LIBPTHREAD */
+    struct STEntry *h = ScoreTable + ((key >> 32) & ST_Mask);
+    int result = Useless;
+
     if (h->st_Signature == (int)key && h->st_Score != PT_INVALID) {
         *score = h->st_Score;
         result = Useful;
@@ -255,84 +308,84 @@ void StoreHT(hash_t key, int best, int alpha, int beta, int bestm, int depth,
              struct HTEntry *localHT
 #endif
 ) {
+    hash_t effective_key = key;
+    struct HTEntry entry = GetHTEntry(effective_key);
+    bool found = entry.ht_Signature == (int)key;
 
-    struct HTEntry *h;
+    if (!found) {
+        effective_key++;
+        entry = GetHTEntry(effective_key);
+        found = entry.ht_Signature == (int)key;
+    }
 
-#if MP && HAVE_LIBPTHREAD
-    pthread_mutex_lock(TranspositionMutex + ((key >> 32) & MUTEX_MASK));
-#endif /* MP && HAVE_LIBPTHREAD */
+    HTStoreTried++;
 
-    if ((h = SelectHTEntry(key, depth)) == NULL) {
 #if MP
-        h = localHT + ((key >> 32) & L_HT_Mask);
+    if (!found) {
+        entry = localHT[(key >> 32) & L_HT_Mask];
+    }
+#endif
+
+    int reduced = best;
+
+    /*
+     * Handling of mate scores is a bit tricky.
+     * Upon storing we correct it to mean 'mate in n from this position'
+     * instead of 'mate in n from root position'. Upon retrieval this has
+     * to be corrected.
+     */
+
+    if (best > CMLIMIT) {
+        reduced += ply;
+    } else if (best < -CMLIMIT) {
+        reduced -= ply;
+    }
+
+#if MP
+    if (entry.ht_Signature == (int)key && depth == entry.ht_Depth) {
+        if ((entry.ht_Flags & HT_NCPU) > 0) {
+            entry.ht_Flags = (entry.ht_Flags & HT_NCPU) - HT_NCPU_INCREMENT;
+        }
+    } else {
+        entry.ht_Signature = (int)key;
+        entry.ht_Flags = 0;
+    }
+#else
+    entry.ht_Signature = (int)key;
+#endif /* MP */
+
+    entry.ht_Move = bestm;
+    entry.ht_Depth = depth;
+    entry.ht_Score = reduced;
+#if MP
+    entry.ht_Flags |= HTGeneration;
+#else
+    entry.ht_Flags = HTGeneration;
+#endif /* MP */
+    if (best <= alpha)
+        entry.ht_Flags |= HT_UBOUND;
+    else if (best >= beta)
+        entry.ht_Flags |= HT_LBOUND;
+    else
+        entry.ht_Flags |= HT_EXACT;
+
+    if (threat)
+        entry.ht_Flags |= HT_THREAT;
+
+    bool success = PutHTEntryBestEffort(key, entry, depth);
+    if (!success) {
+        HTStoreFailed++;
+#if MP
+        localHT[(key >> 32) & L_HT_Mask] = entry;
 #endif
     }
-
-    if (h != NULL) {
-        int reduced = best;
-
-        /*
-         * Handling of mate scores is a bit tricky.
-         * Upon storing we correct it to mean 'mate in n from this position'
-         * instead of 'mate in n from root position'. Upon retrieval this has
-         * to be corrected.
-         */
-
-        if (best > CMLIMIT) {
-            reduced += ply;
-        } else if (best < -CMLIMIT) {
-            reduced -= ply;
-        }
-
-#if MP
-        if (h->ht_Signature == (int)key && depth == h->ht_Depth) {
-            if ((h->ht_Flags & HT_NCPU) > 0) {
-                h->ht_Flags = (h->ht_Flags & HT_NCPU) - HT_NCPU_INCREMENT;
-            }
-        } else {
-            h->ht_Signature = (int)key;
-            h->ht_Flags = 0;
-        }
-#else
-        h->ht_Signature = (int)key;
-#endif /* MP */
-
-        h->ht_Move = bestm;
-        h->ht_Depth = depth;
-        h->ht_Score = reduced;
-#if MP
-        h->ht_Flags |= HTGeneration;
-        if (best <= alpha)
-            h->ht_Flags |= HT_UBOUND;
-        else if (best >= beta)
-            h->ht_Flags |= HT_LBOUND;
-        else
-            h->ht_Flags |= HT_EXACT;
-#else
-        h->ht_Flags = HTGeneration;
-        if (best <= alpha)
-            h->ht_Flags |= HT_UBOUND;
-        else if (best >= beta)
-            h->ht_Flags |= HT_LBOUND;
-        else
-            h->ht_Flags |= HT_EXACT;
-#endif /* MP */
-        if (threat)
-            h->ht_Flags |= HT_THREAT;
-    } else {
-        HTStoreFailed++;
-    }
-
-#if MP && HAVE_LIBPTHREAD
-    pthread_mutex_unlock(TranspositionMutex + ((key >> 32) & MUTEX_MASK));
-#endif /* MP && HAVE_LIBPTHREAD */
 }
 
 void StorePT(hash_t key, int score, struct PawnFacts *pf) {
-    struct PTEntry *h = PawnTable + ((key >> 32) & PT_Mask);
 #if MP && HAVE_LIBPTHREAD
     pthread_mutex_lock(PawnMutex + ((key >> 32) & MUTEX_MASK));
 #endif /* MP && HAVE_LIBPTHREAD */
+    struct PTEntry *h = PawnTable + ((key >> 32) & PT_Mask);
     h->pt_Signature = (int)key;
     h->pt_Score = score;
     h->pt_PawnFacts = *pf;
@@ -342,10 +395,10 @@ void StorePT(hash_t key, int score, struct PawnFacts *pf) {
 }
 
 void StoreST(hash_t key, int score) {
-    struct STEntry *h = ScoreTable + ((key >> 32) & ST_Mask);
 #if MP && HAVE_LIBPTHREAD
     pthread_mutex_lock(ScoreMutex + ((key >> 32) & MUTEX_MASK));
 #endif /* MP && HAVE_LIBPTHREAD */
+    struct STEntry *h = ScoreTable + ((key >> 32) & ST_Mask);
     h->st_Signature = (int)key;
     h->st_Score = score;
 #if MP && HAVE_LIBPTHREAD
@@ -371,6 +424,7 @@ void AgeHashTable(void) {
     HTGeneration++;
     HTGeneration &= HT_AGE;
 
+    HTStoreTried = 0;
     HTStoreFailed = 0;
 }
 
@@ -408,14 +462,14 @@ static void FreeHT(void) {
 }
 
 void AllocateHT(void) {
-    static int registered_free_ht = FALSE;
+    static bool registered_free_ht = false;
 
     /*
      * Register atexit() handler to free hashtable memory automatically
      */
 
     if (!registered_free_ht) {
-        registered_free_ht = TRUE;
+        registered_free_ht = true;
         atexit(FreeHT);
     }
 
@@ -438,10 +492,11 @@ void AllocateHT(void) {
 
     ScoreTable = calloc(ST_Size, sizeof(struct STEntry));
 
-    Print(0, "Hashtable sizes: %d k, %d k, %d k\n",
+    Print(0, "Hashtable sizes: %d k, %d k, %d k (%d, %d, %d bits)\n",
           ((1 << HT_Bits) * sizeof(struct HTEntry)) / 1024,
           ((1 << PT_Bits) * sizeof(struct PTEntry)) / 1024,
-          ((1 << ST_Bits) * sizeof(struct STEntry)) / 1024);
+          ((1 << ST_Bits) * sizeof(struct STEntry)) / 1024, HT_Bits, PT_Bits,
+          ST_Bits);
 
 #if MP && HAVE_LIBPTHREAD
     for (int i = 0; i < MUTEX_COUNT; i++) {
@@ -462,9 +517,10 @@ void ShowHashStatistics(void) {
             cnt++;
     }
 
-    Print(1,
-          "Hashtable 1:  entries = %u, use = %d (%d %%), store failed = %u\n",
-          i, cnt, (cnt / (i / 100)), HTStoreFailed);
+    Print(1, "Hashtable 1:  entries = %u, use = %u (%d %%)\n", i, cnt,
+          Percentage(cnt, i));
+    Print(1, "              store failed = %u (%d %%)\n", HTStoreFailed,
+          Percentage(HTStoreFailed, HTStoreTried));
 }
 
 void GuessHTSizes(char *size) {
@@ -495,18 +551,18 @@ void GuessHTSizes(char *size) {
 
     total_size -= (1 << HT_Bits) * sizeof(struct HTEntry);
 
-    tmp = total_size / 2;
+    tmp = 3 * total_size / 4;
 
-    for (PT_Bits = 1; PT_Bits < 32; PT_Bits++) {
-        long tmp2 = (1 << (PT_Bits + 1)) * sizeof(struct PTEntry);
+    for (ST_Bits = 1; ST_Bits < 32; ST_Bits++) {
+        long tmp2 = (1 << (ST_Bits + 1)) * sizeof(struct STEntry);
         if (tmp2 > tmp)
             break;
     }
 
-    total_size -= (1 << PT_Bits) * sizeof(struct PTEntry);
+    total_size -= (1 << ST_Bits) * sizeof(struct STEntry);
 
-    for (ST_Bits = 1; ST_Bits < 32; ST_Bits++) {
-        long tmp2 = (1 << (ST_Bits + 1)) * sizeof(struct STEntry);
+    for (PT_Bits = 1; PT_Bits < 32; PT_Bits++) {
+        long tmp2 = (1 << (PT_Bits + 1)) * sizeof(struct PTEntry);
         if (tmp2 > total_size)
             break;
     }

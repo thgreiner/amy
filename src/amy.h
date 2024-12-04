@@ -32,8 +32,6 @@
 /*
  * amy.h - Amy headerfile
  *
- * $Id: amy.h 90 2003-06-22 08:55:34Z thorsten $
- *
  */
 
 #ifndef AMY_H
@@ -57,6 +55,7 @@
 
 #if STDC_HEADERS
 #include <errno.h>
+#include <limits.h>
 #include <math.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -96,14 +95,14 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#define SQUARE(x) 'a' + ((x)&7), '1' + ((x) >> 3)
+#define SQUARE(x) 'a' + ((x) & 7), '1' + ((x) >> 3)
 
 #define SetMask(i) (1ULL << (i))
 #define ClrMask(i) (~SetMask(i))
 
 #define SetBit(b, i) ((b) |= SetMask(i))
 #define ClrBit(b, i) ((b) &= ClrMask(i))
-#define TstBit(b, i) ((b)&SetMask(i))
+#define TstBit(b, i) ((b) & SetMask(i))
 
 #define OPP(x) (1 ^ (x))
 
@@ -113,7 +112,7 @@
     (((c) == White && (p) > 0) || ((c) == Black && (p) < 0))
 #define PIECEID(p, c) (((c) == White) ? (p) : -(p))
 
-#define M_FROM(m) ((m)&63)
+#define M_FROM(m) ((m) & 63)
 #define M_TO(m) (((m) >> 6) & 63)
 
 #define M_CAPTURE (1 << 13)
@@ -170,21 +169,12 @@
 #define STATE_ANALYZING 3
 #define STATE_END 4
 
-#ifndef TRUE
-#define TRUE 1
-#define FALSE 0
-#endif
-
-#ifndef NULL
-#define NULL ((void *)0)
-#endif
-
 #define ONE_SECOND 100u
 #define ABS(x) ((x) < 0 ? -(x) : (x))
 #define MAX(x, y) ((x) > (y) ? (x) : (y))
 #define MIN(x, y) ((x) < (y) ? (x) : (y))
 
-#define SIGNATURE_BIT(x) (1 << ((x)-1))
+#define SIGNATURE_BIT(x) (1 << ((x) - 1))
 #define CALCULATE_INDEX(a, b) (((a) | (b)) + 32 * ((a) != 0 && (b) != 0))
 #define RECOGNIZER_INDEX(p)                                                    \
     CALCULATE_INDEX((p)->material_signature[White],                            \
@@ -192,7 +182,16 @@
 
 #define BOOK_MOVE -1
 
+/* Maximum length of the opponent name set by the
+ * 'name' command.
+ */
 #define OPP_NAME_LENGTH 1024
+
+/* Maximum number of EPD ops we attempt to parse */
+#define MAX_EPD_OPS 15
+
+/* Maximum number of good/bad moves we attempt to parse */
+#define MAX_EPD_MOVES 64
 
 #ifdef __cplusplus
 extern "C" {
@@ -359,7 +358,8 @@ struct SearchData {
 
     int ply;
 
-    int master; /* true if a master process */
+    bool master; /* true if a master process */
+    unsigned long nodes_cnt, qnodes_cnt, check_nodes_cnt;
 
     int best_move;
     int depth;
@@ -424,14 +424,14 @@ struct PGNHeader {
     int black_elo;
 };
 
-extern int AutoSave;
+extern bool AutoSave;
 extern char AutoSaveFileName[64];
 extern struct Position *CurrentPosition;
 
-extern int goodmove[256];
-extern int badmove[256];
+extern int goodmove[MAX_EPD_MOVES];
+extern int badmove[MAX_EPD_MOVES];
 extern const int EPTranslate[];
-extern const int Sliding[];
+extern const bool Sliding[];
 extern char PieceName[];
 
 extern const int CastleMask[2][2];
@@ -499,12 +499,12 @@ extern char AnalysisLine[];
 extern int MaxSearchDepth;
 extern int WatchMode;
 
-extern int XBoardMode;
+extern bool XBoardMode;
 extern int State;
-extern int ForceMode;
-extern int EasyMode;
-extern int PostMode;
-extern int SelfPlayMode;
+extern bool ForceMode;
+extern bool EasyMode;
+extern bool PostMode;
+extern bool SelfPlayMode;
 
 extern int TMoves, TTime;
 extern int Moves[3], Time[3];
@@ -551,9 +551,9 @@ void GenRest(int *moves);
 int GenCaps(int *moves, int good);
 int GenChecks(struct Position *, int *moves);
 int GenContactChecks(int *moves);
-int MayCastle(struct Position *, int move);
-int LegalMove(struct Position *, int move);
-int IsCheckingMove(struct Position *, int move);
+bool MayCastle(struct Position *, int move);
+bool LegalMove(struct Position *, int move);
+bool IsCheckingMove(struct Position *, int move);
 int LegalMoves(struct Position *, int *mvs);
 int PLegalMoves(struct Position *, int *mvs);
 int Repeated(struct Position *, int mode);
@@ -573,12 +573,12 @@ void ShowMoves(struct Position *);
 int ParseGSAN(struct Position *, char *san);
 int ParseGSANList(char *san, int side, int *mvs, int cnt);
 char *ICS_SAN(int move);
-int InCheck(struct Position *, int);
+bool InCheck(struct Position *, int);
 void RecalcAttacks(struct Position *);
-char *GameEnd(struct Position *);
+const char *GameEnd(struct Position *);
 void ParseEcoPgn(char *);
 char *GetEcoCode(hash_t);
-int FindEcoCode(struct Position *, char *);
+bool FindEcoCode(const struct Position *, char *);
 
 void HashInit(void);
 
@@ -594,19 +594,14 @@ void StoreHT(hash_t, int, int, int, int, int, int, int);
 void StorePT(hash_t, int, struct PawnFacts *);
 void StoreST(hash_t, int);
 #if MP
-int ProbeHT(hash_t, int *, int, int *, int *, int, int, struct HTEntry *);
+int ProbeHT(hash_t, int *, int, int *, bool *, int, int, struct HTEntry *);
 #else
-int ProbeHT(hash_t, int *, int, int *, int *, int);
+int ProbeHT(hash_t, int *, int, int *, bool *, int);
 #endif
 int ProbePT(hash_t, int *, struct PawnFacts *);
 int ProbeST(hash_t, int *);
 void ShowHashStatistics(void);
 void GuessHTSizes(char *);
-
-extern BitBoard ShiftUp(BitBoard);
-extern BitBoard ShiftDown(BitBoard);
-extern BitBoard ShiftLeft(BitBoard);
-extern BitBoard ShiftRight(BitBoard);
 
 void InitAll(void);
 
@@ -617,7 +612,7 @@ void KingPawnStructure(void);
 
 int InterpretCommandPB(char *string);
 
-int MateThreat(struct Position *, int);
+bool MateThreat(struct Position *, int);
 int GenMates(struct Position *, int *mvs);
 
 void InitMoves(void);
@@ -637,13 +632,13 @@ int scanHeader(FILE *, struct PGNHeader *);
 int scanMove(FILE *fin, char *nextMove);
 
 void InitEGTB(char *);
-int ProbeEGTB(struct Position *, int *, int);
+int ProbeEGTB(const struct Position *, int *, int);
 
-int MaterialBalance(struct Position *);
-int ScorePosition(struct Position *, int, int);
-int CheckDraw(struct Position *);
-int IsPassed(struct Position *, int, int);
-void InitScore(struct Position *);
+int MaterialBalance(const struct Position *);
+int ScorePosition(const struct Position *, int, int);
+bool CheckDraw(const struct Position *);
+bool IsPassed(const struct Position *, int, int);
+void InitScore(const struct Position *);
 int OptimisticBound(void);
 
 int Iterate(struct Position *);
@@ -669,16 +664,12 @@ void Print(int, char *, ...);
 void PrintNoLog(int, char *, ...);
 int InputReady(void);
 int ReadLine(char *buffer, int cnt);
-char *TimeToText(unsigned int);
-char *ScoreToText(int);
+void TimeToText(unsigned int, char *, size_t);
+void ScoreToText(int, char *, size_t);
 unsigned int GetTime(void);
-char *GetTmpFileName(void);
-int KingDist(int, int);
-int MinDist(int, int);
-int FileDist(int, int);
-int EdgeDist(int);
-int ManhattanDist(int, int);
+void GetTmpFileName(char *, size_t);
 char *nextToken(char **, const char *);
+int Percentage(unsigned long, unsigned long);
 
 void ShowVersion(void);
 
@@ -687,9 +678,11 @@ double Random(void);
 void InitRandom(ran_t seed);
 
 void RecogInit(void);
-int ProbeRecognizer(struct Position *p, int *score);
+int ProbeRecognizer(const struct Position *p, int *score);
 
 void DoBookLearning(void);
+
+#include "inline.h"
 
 #ifdef __cplusplus
 }

@@ -37,20 +37,20 @@
 
 void DoBookLearning(void) {
     int cnt = 0;
-    char buf[128];
+    char save_file_name[32];
 
     for (cnt = 0;; cnt++) {
         int result;
         struct stat dummy;
 
-        sprintf(buf, "save_%03d.pgn", cnt);
-        result = stat(buf, &dummy);
+        snprintf(save_file_name, sizeof(save_file_name), "save_%03d.pgn", cnt);
+        result = stat(save_file_name, &dummy);
 
         if (result < 0) {
             break;
         }
-        Print(2, "Book learning with save file %s\n", buf);
-        BookupQuiet(buf);
-        remove(buf);
+        Print(2, "Book learning with save file %s\n", save_file_name);
+        BookupQuiet(save_file_name);
+        remove(save_file_name);
     }
 }

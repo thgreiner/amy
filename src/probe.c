@@ -81,7 +81,7 @@ void InitializeCounters(int *pieceCounter, int *squares, int type,
     *pieceCounter = count;
 }
 
-int ProbeEGTB(struct Position *p, int *score, int ply) {
+int ProbeEGTB(const struct Position *p, int *score, int ply) {
     int pcCount[10];
     int wSquares[16], bSquares[16];
     int iTB;

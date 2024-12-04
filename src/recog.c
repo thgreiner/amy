@@ -40,7 +40,7 @@
 
 #include "amy.h"
 
-typedef int RECOGNIZER(struct Position *, int *score);
+typedef int RECOGNIZER(const struct Position *, int *score);
 
 static RECOGNIZER *Recognizers[64];
 static int RecognizerAvailable[32];
@@ -92,8 +92,9 @@ void RecogInit(void) {
     RegisterRecognizer(RecognizerKNKP, sig(0, 1, 0, 0, 0), sig(1, 0, 0, 0, 0));
 }
 
-int ProbeRecognizer(struct Position *p, int *score) {
-    RECOGNIZER *rec = Recognizers[RECOGNIZER_INDEX(p)];
+int ProbeRecognizer(const struct Position *p, int *score) {
+    int index = RECOGNIZER_INDEX(p);
+    RECOGNIZER *rec = Recognizers[index];
     if (rec != NULL) {
         if (RecognizerAvailable[p->material_signature[White]] &
             (1 << p->material_signature[Black])) {
@@ -104,13 +105,13 @@ int ProbeRecognizer(struct Position *p, int *score) {
     return Useless;
 }
 
-static int RecognizerKK(struct Position *p, int *score) {
+static int RecognizerKK(const struct Position *p, int *score) {
     *score = 0;
 
     return ExactScore;
 }
 
-static int RecognizerKBK(struct Position *p, int *score) {
+static int RecognizerKBK(const struct Position *p, int *score) {
     BitBoard pcs;
     int color = White;
 
@@ -179,7 +180,7 @@ static int KBNKTab[] = {500, 450, 425, 400, 375, 350, 325, 300, 450, 300, 300,
                         100, 100, 300, 425, 325, 300, 300, 300, 300, 300, 300,
                         450, 300, 325, 350, 375, 400, 425, 450, 500};
 
-static int RecognizerKBNK(struct Position *p, int *score) {
+static int RecognizerKBNK(const struct Position *p, int *score) {
     if (p->material_signature[White] && p->material_signature[Black]) {
 
         /*
@@ -255,7 +256,7 @@ static int RecognizerKBNK(struct Position *p, int *score) {
     }
 }
 
-static int RecognizerKNK(struct Position *p, int *score) {
+static int RecognizerKNK(const struct Position *p, int *score) {
     if (p->material_signature[White] && p->material_signature[Black]) {
         return Useless;
     } else {
@@ -276,7 +277,7 @@ static int RecognizerKNK(struct Position *p, int *score) {
     }
 }
 
-static int RecognizerKBKP(struct Position *p, int *score) {
+static int RecognizerKBKP(const struct Position *p, int *score) {
     if (p->material_signature[White] && p->material_signature[Black]) {
 
         /*
@@ -373,7 +374,7 @@ static int RecognizerKBKP(struct Position *p, int *score) {
     }
 }
 
-static int RecognizerKNKP(struct Position *p, int *score) {
+static int RecognizerKNKP(const struct Position *p, int *score) {
     int color = White;
 
     if (p->material_signature[Black] & SIGNATURE_BIT(Knight)) {

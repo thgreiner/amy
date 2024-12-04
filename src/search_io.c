@@ -39,12 +39,11 @@
 #define PV_BUFFER_SIZE 512
 
 static void PrintPV(char *pv) {
-    static char PVBuffer[PV_BUFFER_SIZE];
+    char PVBuffer[512];
     char *x;
     int len = 21;
 
-    strncpy(PVBuffer, pv, PV_BUFFER_SIZE);
-    PVBuffer[PV_BUFFER_SIZE - 1] = '\0';
+    strncpy(PVBuffer, pv, sizeof(PVBuffer) - 1);
 
     for (x = PVBuffer; *x;) {
         char *y = x;
@@ -73,8 +72,15 @@ void SearchHeader(void) {
 }
 
 void SearchOutput(int depth, int time, int score, char *line, int nodes) {
-    Print(1, "%2d  %s %7s  ", depth, TimeToText(time), ScoreToText(score));
+    char time_as_text[16];
+    char score_as_text[16];
+
+    TimeToText(time, time_as_text, sizeof(time_as_text));
+    ScoreToText(score, score_as_text, sizeof(score_as_text));
+
+    Print(1, "%2d  %s %7s  ", depth, time_as_text, score_as_text);
     PrintPV(line);
+
     if (PostMode) {
         char *short_line = strdup(line);
         int s = score / 10;
@@ -104,13 +110,16 @@ void SearchOutput(int depth, int time, int score, char *line, int nodes) {
 
 void SearchOutputFailHighLow(int depth, int time, int isfailhigh, char *move,
                              int nodes) {
+    char time_as_text[16];
+    TimeToText(time, time_as_text, sizeof(time_as_text));
+
     if (isfailhigh) {
-        Print(1, "%2d  %s     +++  %s\n", depth, TimeToText(time), move);
+        Print(1, "%2d  %s     +++  %s\n", depth, time_as_text, move);
         if (PostMode) {
             PrintNoLog(0, "%d 0 %d %d %s!\n", depth, time, nodes, move);
         }
     } else {
-        Print(1, "%2d  %s     ---  %s\n", depth, TimeToText(time), move);
+        Print(1, "%2d  %s     ---  %s\n", depth, time_as_text, move);
         if (PostMode) {
             PrintNoLog(0, "%d 0 %d %d %s?\n", depth, time, nodes, move);
         }

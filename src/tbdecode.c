@@ -72,12 +72,14 @@ static void _local_assert(int lineno) {
 #define dprintf(x) ((void)0)
 #endif
 
-extern "C" int cbEGTBCompBytes = 0;
+extern "C" int cbEGTBCompBytes;
+
+int cbEGTBCompBytes = 0;
 
 /* --------------------- Constants, types, etc. ----------------------- */
 /*                       ----------------------                         */
 
-#define MIN_BLOCK_BITS 8 /* LOG2 (min size of block to compress)	*/
+#define MIN_BLOCK_BITS 8  /* LOG2 (min size of block to compress)	*/
 #define MAX_BLOCK_BITS 16 /* LOG2 (max size of block to compress) */
 
 /* max. integer we can take LOG2 by table	*/
@@ -93,7 +95,7 @@ extern "C" int cbEGTBCompBytes = 0;
 #define uchar unsigned char
 #endif
 
-#define HEADER_SIZE 80 /* number of reserved bytes	*/
+#define HEADER_SIZE 80         /* number of reserved bytes	*/
 #define STOP_SEARCH_LENGTH 256 /* terminate search if match	*/
 /* length exceeds that value	*/
 
@@ -314,7 +316,7 @@ typedef struct {
     do {                                                                       \
         (ch) = table[BIORD(start_bits)];                                       \
         if (((int)(ch)) >= 0) {                                                \
-            BIORD_MORE((ch)&31);                                               \
+            BIORD_MORE((ch) & 31);                                             \
             (ch) >>= 5;                                                        \
             break;                                                             \
         }                                                                      \
@@ -550,7 +552,7 @@ typedef struct {
 
 static void do_decode(decode_info *info, decode_block *block, uchar *e) {
     BITIO_LOCALS;
-    uchar *p, *s;
+    uchar *p, *s = NULL;
     int ch;
 
     if ((p = block->emit.ptr) >= e)
@@ -799,12 +801,6 @@ static int comp_open_file(decode_info **res, FILE *fd, int check_crc) {
     *res = info;
 
     return (COMP_ERR_NONE);
-}
-
-static int comp_tell_blocks(decode_info *info) {
-    if (info == 0 || info->magic != DECODE_MAGIC)
-        return (-1);
-    return (info->n_blk);
 }
 
 static int comp_init_block(decode_block *block, int block_size, uchar *orig) {

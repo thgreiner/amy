@@ -38,12 +38,12 @@
 static char InputBuffer[1024];
 
 int State;
-int XBoardMode = FALSE;
-int ForceMode = FALSE;
-int EasyMode = FALSE;
-int PostMode = FALSE;
-int AutoSave = FALSE;
-int SelfPlayMode = FALSE;
+bool XBoardMode = false;
+bool ForceMode = false;
+bool EasyMode = false;
+bool PostMode = false;
+bool AutoSave = false;
+bool SelfPlayMode = false;
 
 struct Position *CurrentPosition;
 int ComputerSide;
@@ -52,7 +52,7 @@ int ComputerSide;
  * Implements the state machine.
  */
 void StateMachine(void) {
-    char *gameend;
+    const char *gameend;
 
     State = STATE_WAITING;
 
@@ -125,7 +125,7 @@ void StateMachine(void) {
             if (State == STATE_ANALYZING) {
                 State = STATE_WAITING;
             }
-            SelfPlayMode = FALSE;
+            SelfPlayMode = false;
         }
     }
 

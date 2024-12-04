@@ -75,46 +75,46 @@ static void StopAnalyze(char *args);
 static void SelfPlay(char *args);
 
 static struct CommandEntry Commands[] = {
-    {"analyze", &Analyze, FALSE, FALSE, "enter analyze mode (xboard)", NULL},
-    {"anno", &Anno, FALSE, FALSE, "annotate a game", NULL},
-    {"bench", &Benchmark, FALSE, FALSE, "run a benchmark", NULL},
-    {"book", &Book, FALSE, FALSE, "display book moves", NULL},
-    {"bk", &Book, FALSE, FALSE, "display book moves (xboard)", NULL},
-    {"bookup", &Bookup, FALSE, FALSE, "create a book", NULL},
-    {"d", &Show, TRUE, FALSE, "display current position", NULL},
-    {"distribution", &ShowDistribution, TRUE, FALSE,
+    {"analyze", &Analyze, false, false, "enter analyze mode (xboard)", NULL},
+    {"anno", &Anno, false, false, "annotate a game", NULL},
+    {"bench", &Benchmark, false, false, "run a benchmark", NULL},
+    {"book", &Book, false, false, "display book moves", NULL},
+    {"bk", &Book, false, false, "display book moves (xboard)", NULL},
+    {"bookup", &Bookup, false, false, "create a book", NULL},
+    {"d", &Show, true, false, "display current position", NULL},
+    {"distribution", &ShowDistribution, true, false,
      "show terms of distribution", NULL},
-    {"e", &ShowEco, FALSE, FALSE, "show ECO code", NULL},
-    {"eco", &ParseEcoPgn, FALSE, FALSE, "create ECO database", NULL},
-    {"easy", &Easy, TRUE, FALSE, "switch off permanent brain", NULL},
-    {"epd", &SetEPD, FALSE, FALSE, "set position in EPD", NULL},
-    {"edit", &Edit, FALSE, FALSE, "edit position (xboard!)", NULL},
-    {"exit", &StopAnalyze, TRUE, TRUE, "exit analyze mode (xboard)", NULL},
-    {"flatten", &Flatten, TRUE, FALSE, "flatten book", NULL},
-    {"force", &Force, TRUE, FALSE, "switch force mode (xboard)", NULL},
-    {"go", &Go, FALSE, FALSE, "start searching", NULL},
-    {"hard", &Hard, TRUE, FALSE, "switch on permanent brain", NULL},
-    {"help", &Help, TRUE, FALSE, "show help", NULL},
-    {"level", &SetTime, FALSE, FALSE, "set time control", NULL},
-    {"load", &Load, FALSE, FALSE, "load game from PGN file", NULL},
-    {"moves", &MovesCmd, FALSE, FALSE, "show legal moves", NULL},
-    {"name", &Name, TRUE, FALSE, "set the opponents name", NULL},
-    {"new", &New, TRUE, TRUE, "start new game", NULL},
-    {"nopost", &NoPost, TRUE, FALSE, "switch off post mode (xboard)", NULL},
-    {"perft", &Perft, FALSE, FALSE, "Run the perft benchmark", NULL},
-    {"post", &Post, TRUE, FALSE, "switch on post mode (xboard)", NULL},
-    {"prefs", &Prefs, FALSE, FALSE, "read opening book preferences", NULL},
-    {"quit", &Quit, TRUE, FALSE, "quit Amy", NULL},
-    {"save", &Save, FALSE, FALSE, "save game to PGN file", NULL},
-    {"self", &SelfPlay, FALSE, FALSE, "start self play", NULL},
-    {"show", &Show, TRUE, FALSE, "display current position", NULL},
-    {"test", &Test, FALSE, FALSE, "run EPD test suite", NULL},
-    {"time", &XboardTime, TRUE, FALSE, "set time (xboard)", NULL},
-    {"undo", &Undo, TRUE, TRUE, "undo last move", NULL},
-    {"warranty", &ShowWarranty, TRUE, FALSE, "show terms of warranty", NULL},
-    {"xboard", &SetXBoard, FALSE, FALSE, "switch to xboard compatibility",
+    {"e", &ShowEco, false, false, "show ECO code", NULL},
+    {"eco", &ParseEcoPgn, false, false, "create ECO database", NULL},
+    {"easy", &Easy, true, false, "switch off permanent brain", NULL},
+    {"epd", &SetEPD, false, false, "set position in EPD", NULL},
+    {"edit", &Edit, false, false, "edit position (xboard!)", NULL},
+    {"exit", &StopAnalyze, true, true, "exit analyze mode (xboard)", NULL},
+    {"flatten", &Flatten, true, false, "flatten book", NULL},
+    {"force", &Force, true, false, "switch force mode (xboard)", NULL},
+    {"go", &Go, false, false, "start searching", NULL},
+    {"hard", &Hard, true, false, "switch on permanent brain", NULL},
+    {"help", &Help, true, false, "show help", NULL},
+    {"level", &SetTime, false, false, "set time control", NULL},
+    {"load", &Load, false, false, "load game from PGN file", NULL},
+    {"moves", &MovesCmd, false, false, "show legal moves", NULL},
+    {"name", &Name, true, false, "set the opponents name", NULL},
+    {"new", &New, true, true, "start new game", NULL},
+    {"nopost", &NoPost, true, false, "switch off post mode (xboard)", NULL},
+    {"perft", &Perft, false, false, "Run the perft benchmark", NULL},
+    {"post", &Post, true, false, "switch on post mode (xboard)", NULL},
+    {"prefs", &Prefs, false, false, "read opening book preferences", NULL},
+    {"quit", &Quit, true, false, "quit Amy", NULL},
+    {"save", &Save, false, false, "save game to PGN file", NULL},
+    {"self", &SelfPlay, false, false, "start self play", NULL},
+    {"show", &Show, true, false, "display current position", NULL},
+    {"test", &Test, false, false, "run EPD test suite", NULL},
+    {"time", &XboardTime, true, false, "set time (xboard)", NULL},
+    {"undo", &Undo, true, true, "undo last move", NULL},
+    {"warranty", &ShowWarranty, true, false, "show terms of warranty", NULL},
+    {"xboard", &SetXBoard, false, false, "switch to xboard compatibility",
      NULL},
-    {"?", &MoveNow, TRUE, FALSE, "move now", NULL},
+    {"?", &MoveNow, true, false, "move now", NULL},
     {NULL, NULL, 0}};
 
 struct Command *ParseInput(char *line) {
@@ -212,7 +212,7 @@ static void Test(char *fname) {
 
     for (i = 1;; i++) {
         int move, j;
-        int correct = FALSE;
+        bool correct = false;
 
         if (fgets(line, 256, fin) == NULL)
             break;
@@ -225,14 +225,14 @@ static void Test(char *fname) {
         move = Iterate(p);
         for (j = 0; goodmove[j] != M_NONE; j++)
             if (move == goodmove[j])
-                correct = TRUE;
+                correct = true;
 
         if (!correct && badmove[0] != M_NONE) {
-            correct = TRUE;
+            correct = true;
 
             for (j = 0; badmove[j] != M_NONE; j++)
                 if (move == badmove[j])
-                    correct = FALSE;
+                    correct = false;
         }
 
         total++;
@@ -299,7 +299,7 @@ static void SetTime(char *arg) {
         }
         sscanf(args[2], "%d", &inc);
 
-        TwoTimeControls = FALSE;
+        TwoTimeControls = false;
         TMoves = ttmoves;
         TTime = ttime;
         Increment = inc;
@@ -336,7 +336,7 @@ static void SetTime(char *arg) {
                         TTime2 = -1;
                         sscanf(x, "%d", &TTime2);
                         if (TMoves2 >= 0 && TTime2 > 0)
-                            TwoTimeControls = TRUE;
+                            TwoTimeControls = true;
                     }
                 }
                 Print(0, "Timecontrol is ");
@@ -377,7 +377,7 @@ static void SetTime(char *arg) {
 }
 
 static void SetXBoard(char *args) {
-    XBoardMode = TRUE;
+    XBoardMode = true;
     Verbosity = 1;
 
     Print(0, "\n");
@@ -391,23 +391,22 @@ static void SetXBoard(char *args) {
 }
 
 static void Go(char *args) {
-    ForceMode = FALSE;
+    ForceMode = false;
     State = STATE_CALCULATING;
 }
 
 static void Force(char *args) {
-    ForceMode = TRUE;
-    AbortSearch = TRUE;
+    ForceMode = true;
+    AbortSearch = true;
 }
 
 static void New(char *args) {
     /*
      * Create a new save file.
      */
+    GetTmpFileName(AutoSaveFileName, sizeof(AutoSaveFileName));
 
-    strcpy(AutoSaveFileName, GetTmpFileName());
-
-    ForceMode = FALSE;
+    ForceMode = false;
     FreePosition(CurrentPosition);
     CurrentPosition = InitialPosition();
     if (State != STATE_ANALYZING) {
@@ -415,10 +414,10 @@ static void New(char *args) {
     }
 }
 
-static void MoveNow(char *args) { AbortSearch = TRUE; }
+static void MoveNow(char *args) { AbortSearch = true; }
 
 void Edit(char *args) {
-    int editing = TRUE;
+    bool editing = true;
     int i;
     int side = White;
     char buffer[16];
@@ -438,7 +437,7 @@ void Edit(char *args) {
 
         switch (buffer[0]) {
         case '.':
-            editing = FALSE;
+            editing = false;
             break;
         case 'c':
             side = OPP(side);
@@ -497,13 +496,13 @@ static void Undo(char *args) {
 
 static void Book(char *args) { QueryBook(CurrentPosition); }
 
-static void Post(char *args) { PostMode = TRUE; }
+static void Post(char *args) { PostMode = true; }
 
-static void NoPost(char *args) { PostMode = FALSE; }
+static void NoPost(char *args) { PostMode = false; }
 
-static void Easy(char *args) { EasyMode = TRUE; }
+static void Easy(char *args) { EasyMode = true; }
 
-static void Hard(char *args) { EasyMode = FALSE; }
+static void Hard(char *args) { EasyMode = false; }
 
 static void MovesCmd(char *args) { ShowMoves(CurrentPosition); }
 
@@ -622,7 +621,7 @@ static void Help(char *args) {
              "following commands:\n\n");
     while (entry->name) {
         char template[] = ". . . . . . . . ";
-        strncpy(template, entry->name, strlen(entry->name));
+        memcpy(template, entry->name, strlen(entry->name));
         Print(2, template);
         if (entry->short_help) {
             Print(2, "%s", entry->short_help);
@@ -762,12 +761,12 @@ static void StopAnalyze(char *args) { State = STATE_WAITING; }
 
 static void Name(char *args) {
     if (args) {
-        strncpy(OpponentName, args, OPP_NAME_LENGTH);
+        strncpy(OpponentName, args, OPP_NAME_LENGTH - 1);
         Print(2, "Your name is %s\n", OpponentName);
     }
 }
 
 static void SelfPlay(char *args) {
-    SelfPlayMode = TRUE;
+    SelfPlayMode = true;
     State = STATE_CALCULATING;
 }

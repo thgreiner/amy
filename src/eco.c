@@ -52,18 +52,15 @@ void ParseEcoPgn(char *fname) {
 
     tree_node_t *node = NULL;
 
-    while (fgets(buffer, 1023, fin) != NULL) {
+    while (fgets(buffer, sizeof(buffer) - 1, fin) != NULL) {
         char *x;
-        int len;
         strtok(buffer, " \t");
         x = strtok(NULL, "]\n\r");
-        strncpy(name, x, 128);
+        strncpy(name, x, sizeof(name) - 1);
 
         Print(0, ".");
 
         struct Position *p = InitialPosition();
-
-        len = strlen(name);
 
         if (fgets(buffer, 1024, fin) != NULL) {
             for (x = strtok(buffer, " \n\r\t"); x;
@@ -118,10 +115,10 @@ char *GetEcoCode(hash_t hkey) {
     return retval;
 }
 
-int FindEcoCode(struct Position *p, char *result) {
+bool FindEcoCode(const struct Position *p, char *result) {
     int ply = 0;
     char *res;
-    int found = FALSE;
+    bool found = false;
 
     while (ply <= CurrentPosition->ply) {
         hash_t key = CurrentPosition->gameLog[ply].gl_HashKey;
@@ -131,7 +128,7 @@ int FindEcoCode(struct Position *p, char *result) {
         res = GetEcoCode(key);
         if (res != NULL) {
             strcpy(result, res);
-            found = TRUE;
+            found = true;
             free(res);
         }
         ply++;

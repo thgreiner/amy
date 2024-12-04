@@ -40,7 +40,6 @@ int Verbosity = 9;
 /**
  * Open a log file, remember fp in global variable LogFile
  */
-
 void OpenLogFile(char *name) {
     if (LogFile) {
         fclose(LogFile);
@@ -51,7 +50,6 @@ void OpenLogFile(char *name) {
 /**
  * Print something to stdout and to the logfile.
  */
-
 void CDECL Print(int vb, char *fmt, ...) {
     if (vb < Verbosity) {
         va_list va;
@@ -72,7 +70,6 @@ void CDECL Print(int vb, char *fmt, ...) {
 /**
  * Print to stdout only.
  */
-
 void CDECL PrintNoLog(int vb, char *fmt, ...) {
     va_list va;
     va_start(va, fmt);
@@ -86,7 +83,6 @@ void CDECL PrintNoLog(int vb, char *fmt, ...) {
 /**
  * Read a line from stdin.
  */
-
 int ReadLine(char *buffer, int cnt) {
     return fgets(buffer, cnt, stdin) != NULL;
 }
@@ -94,10 +90,7 @@ int ReadLine(char *buffer, int cnt) {
 /**
  * Convert an int representing a time in seconds to a string.
  */
-
-char *TimeToText(unsigned int secs) {
-    static char buffer[15];
-
+void TimeToText(unsigned int secs, char *buffer, size_t len) {
     if (secs >= 60 * ONE_SECOND) {
         int mins;
         secs = secs / ONE_SECOND;
@@ -105,48 +98,41 @@ char *TimeToText(unsigned int secs) {
         secs -= mins * 60;
 
         if (mins >= 100)
-            sprintf(buffer, "%d:%02d", mins, secs);
+            snprintf(buffer, len, "%d:%02d", mins, secs);
         else if (mins >= 10)
-            sprintf(buffer, " %d:%02d", mins, secs);
+            snprintf(buffer, len, " %d:%02d", mins, secs);
         else
-            sprintf(buffer, "  %d:%02d", mins, secs);
+            snprintf(buffer, len, "  %d:%02d", mins, secs);
     } else {
         int tsecs = (secs % ONE_SECOND) / 10;
         secs = secs / ONE_SECOND;
 
-        sprintf(buffer, "  %2d.%d", secs, tsecs);
+        snprintf(buffer, len, "  %2d.%d", secs, tsecs);
     }
-    return buffer;
 }
 
 /**
  * Convert a score to a string.
  */
-
-char *ScoreToText(int score) {
-    static char buffer[10];
-
+void ScoreToText(int score, char *buffer, size_t len) {
     if (score > CMLIMIT) {
-        sprintf(buffer, "+M%d", (INF - score) / 2 + 1);
+        snprintf(buffer, len, "+M%d", (INF - score) / 2 + 1);
     } else if (score < -CMLIMIT) {
-        sprintf(buffer, "-M%d", (score + INF) / 2);
+        snprintf(buffer, len, "-M%d", (score + INF) / 2);
     } else if (score == CMLIMIT) {
-        sprintf(buffer, "+Mate");
+        snprintf(buffer, len, "+Mate");
     } else if (score == -CMLIMIT) {
-        sprintf(buffer, "-Mate");
+        snprintf(buffer, len, "-Mate");
     } else if (score >= 0) {
-        sprintf(buffer, "+%d.%03d", score / 1000, score % 1000);
+        snprintf(buffer, len, "+%d.%03d", score / 1000, score % 1000);
     } else {
-        sprintf(buffer, "-%d.%03d", (-score) / 1000, (-score) % 1000);
+        snprintf(buffer, len, "-%d.%03d", (-score) / 1000, (-score) % 1000);
     }
-
-    return buffer;
 }
 
 /**
  * Get the current time.
  */
-
 unsigned int GetTime(void) {
 #if HAVE_GETTIMEOFDAY
     static struct timeval timeval;
@@ -167,77 +153,21 @@ unsigned int GetTime(void) {
 /**
  * Create a filename for a temporary file
  */
-
-char *GetTmpFileName(void) {
-    int cnt = 0;
-    static char buf[128];
-
-    for (cnt = 0;; cnt++) {
+void GetTmpFileName(char *file_name, size_t len) {
+    for (int cnt = 0;; cnt++) {
         int result;
         struct stat dummy;
 
-        sprintf(buf, "save_%03d.pgn", cnt);
-        result = stat(buf, &dummy);
+        snprintf(file_name, len, "save_%03d.pgn", cnt);
+        result = stat(file_name, &dummy);
 
         if (result < 0)
-            break;
+            return;
     }
-
-    return buf;
 }
-
-/**
- * Calculate the 'king distance' between two squares.
- * This the number of king moves to go from sq1 to sq2.
- */
-
-int KingDist(int sq1, int sq2) {
-    int file_dist = ABS((sq1 & 7) - (sq2 & 7));
-    int rank_dist = ABS((sq1 >> 3) - (sq2 >> 3));
-
-    return MAX(file_dist, rank_dist);
-}
-
-/**
- * Calculate the 'minimum distance' between two squares.
- * This the minimum of the file and rank distances.
- */
-
-int MinDist(int sq1, int sq2) {
-    int file_dist = ABS((sq1 & 7) - (sq2 & 7));
-    int rank_dist = ABS((sq1 >> 3) - (sq2 >> 3));
-
-    return MIN(file_dist, rank_dist);
-}
-
-/**
- * Calculate the 'Manhattan distance' between two squares.
- */
-
-int ManhattanDist(int sq1, int sq2) {
-    int file_dist = ABS((sq1 & 7) - (sq2 & 7));
-    int rank_dist = ABS((sq1 >> 3) - (sq2 >> 3));
-
-    return file_dist + rank_dist;
-}
-
-int FileDist(int sq1, int sq2) { return ABS((sq1 & 7) - (sq2 & 7)); }
-
-/**
- * Calculate the distance of 'sq' to any edge on the chessboard
- */
-
-int EdgeDist(int sq) {
-    int filedist = MIN(sq & 7, 7 - (sq & 7));
-    int rankdist = MIN(sq >> 3, 7 - (sq >> 3));
-
-    return MAX(filedist, rankdist);
-}
-
 /**
  * Check if we can read from stdin without blocking.
  */
-
 int InputReady(void) {
 #if HAVE_SELECT
     fd_set rfd;
@@ -293,23 +223,22 @@ int InputReady(void) {
 /**
  * Tokenize a string.
  */
-
 char *nextToken(char **string, const char *delim) {
     char *start = *string;
     char *end;
     const char *t;
-    int flag = TRUE;
+    bool flag = true;
 
     if (start == NULL)
         return NULL;
 
     while (flag) {
-        flag = FALSE;
+        flag = false;
         if (*start == '\0')
             return NULL;
         for (t = delim; *t; t++) {
             if (*t == *start) {
-                flag = TRUE;
+                flag = true;
                 start++;
                 break;
             }
@@ -335,4 +264,21 @@ char *nextToken(char **string, const char *delim) {
     }
 
     /* NEVER REACHED */
+}
+
+/**
+ * Returns the ratio of dividend / divisor as percentage.
+ * Handles some edge cases for convenience.
+ */
+int Percentage(unsigned long dividend, unsigned long divisor) {
+    if (dividend == 0) {
+        return 0;
+    }
+
+    if (divisor == 0) {
+        return INT_MAX;
+    }
+
+    double ratio = (double)dividend / (double)divisor;
+    return (int)(ratio * 100.0 + 0.5);
 }
