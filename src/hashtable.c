@@ -517,10 +517,10 @@ void ShowHashStatistics(void) {
             cnt++;
     }
 
-    Print(1, "Hashtable 1:  entries = %u, use = %u (%u %%)\n", i, cnt,
-          (cnt / (i / 100)));
+    Print(1, "Hashtable 1:  entries = %u, use = %u (%d %%)\n", i, cnt,
+          Percentage(cnt, i));
     Print(1, "              store failed = %u (%d %%)\n", HTStoreFailed,
-          HTStoreFailed != 0 ? HTStoreFailed / (HTStoreTried / 100) : 0);
+          Percentage(HTStoreFailed, HTStoreTried));
 }
 
 void GuessHTSizes(char *size) {

@@ -32,8 +32,6 @@
 /*
  * amy.h - Amy headerfile
  *
- * $Id: amy.h 90 2003-06-22 08:55:34Z thorsten $
- *
  */
 
 #ifndef AMY_H
@@ -57,6 +55,7 @@
 
 #if STDC_HEADERS
 #include <errno.h>
+#include <limits.h>
 #include <math.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -670,6 +669,7 @@ void ScoreToText(int, char *, size_t);
 unsigned int GetTime(void);
 void GetTmpFileName(char *, size_t);
 char *nextToken(char **, const char *);
+int Percentage(unsigned long, unsigned long);
 
 void ShowVersion(void);
 

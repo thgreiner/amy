@@ -265,3 +265,20 @@ char *nextToken(char **string, const char *delim) {
 
     /* NEVER REACHED */
 }
+
+/**
+ * Returns the ratio of dividend / divisor as percentage.
+ * Handles some edge cases for convenience.
+ */
+int Percentage(unsigned long dividend, unsigned long divisor) {
+    if (dividend == 0) {
+        return 0;
+    }
+
+    if (divisor == 0) {
+        return INT_MAX;
+    }
+
+    double ratio = (double)dividend / (double)divisor;
+    return (int)(ratio * 100.0 + 0.5);
+}

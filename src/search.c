@@ -1546,7 +1546,7 @@ final:
               "Nodes = %lu, QPerc: %d %%, time = %g secs, "
               "%.1f kN/s\n",
               sd->nodes_cnt + sd->qnodes_cnt,
-              sd->qnodes_cnt / ((sd->nodes_cnt + sd->qnodes_cnt) / 100 + 1),
+	      Percentage(sd->qnodes_cnt, sd->nodes_cnt + sd->qnodes_cnt),
               elapsed, TotalNodes / 1000.0 / elapsed);
 
         Print(2,
@@ -1558,9 +1558,9 @@ final:
         Print(2,
               "Hashing: Trans: %lu/%lu = %lu %%   Pawn: %lu/%lu = %lu %%\n"
               "         Eval: %lu/%lu = %lu %%\n",
-              HHit, HTry, (HTry) ? (100 * HHit / HTry) : 0, PHit, PTry,
-              (PTry) ? (100 * PHit / PTry) : 0, SHit, STry,
-              (STry) ? (100 * SHit / STry) : 0);
+              HHit, HTry, Percentage(HHit, HTry), PHit, PTry,
+              Percentage(PHit, PTry), SHit, STry,
+              Percentage(SHit, STry));
 
         if (EGTBProbe != 0) {
             Print(2, "EGTB Hits/Probes = %d/%d\n", EGTBProbeSucc, EGTBProbe);
