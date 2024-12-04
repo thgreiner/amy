@@ -320,71 +320,63 @@ void StoreHT(hash_t key, int best, int alpha, int beta, int bestm, int depth,
 
     HTStoreTried++;
 
-    if (!found) {
-        HTStoreFailed++;
 #if MP
+    if (!found) {
         entry = localHT[(key >> 32) & L_HT_Mask];
-        found = true;
+    }
 #endif
+
+    int reduced = best;
+
+    /*
+     * Handling of mate scores is a bit tricky.
+     * Upon storing we correct it to mean 'mate in n from this position'
+     * instead of 'mate in n from root position'. Upon retrieval this has
+     * to be corrected.
+     */
+
+    if (best > CMLIMIT) {
+        reduced += ply;
+    } else if (best < -CMLIMIT) {
+        reduced -= ply;
     }
 
-    if (found) {
-        int reduced = best;
-
-        /*
-         * Handling of mate scores is a bit tricky.
-         * Upon storing we correct it to mean 'mate in n from this position'
-         * instead of 'mate in n from root position'. Upon retrieval this has
-         * to be corrected.
-         */
-
-        if (best > CMLIMIT) {
-            reduced += ply;
-        } else if (best < -CMLIMIT) {
-            reduced -= ply;
-        }
-
 #if MP
-        if (entry.ht_Signature == (int)key && depth == entry.ht_Depth) {
-            if ((entry.ht_Flags & HT_NCPU) > 0) {
-                entry.ht_Flags = (entry.ht_Flags & HT_NCPU) - HT_NCPU_INCREMENT;
-            }
-        } else {
-            entry.ht_Signature = (int)key;
-            entry.ht_Flags = 0;
+    if (entry.ht_Signature == (int)key && depth == entry.ht_Depth) {
+        if ((entry.ht_Flags & HT_NCPU) > 0) {
+            entry.ht_Flags = (entry.ht_Flags & HT_NCPU) - HT_NCPU_INCREMENT;
         }
-#else
+    } else {
         entry.ht_Signature = (int)key;
-#endif /* MP */
-
-        entry.ht_Move = bestm;
-        entry.ht_Depth = depth;
-        entry.ht_Score = reduced;
-#if MP
-        entry.ht_Flags |= HTGeneration;
-        if (best <= alpha)
-            entry.ht_Flags |= HT_UBOUND;
-        else if (best >= beta)
-            entry.ht_Flags |= HT_LBOUND;
-        else
-            entry.ht_Flags |= HT_EXACT;
+        entry.ht_Flags = 0;
+    }
 #else
-        entry.ht_Flags = HTGeneration;
-        if (best <= alpha)
-            entry.ht_Flags |= HT_UBOUND;
-        else if (best >= beta)
-            entry.ht_Flags |= HT_LBOUND;
-        else
-            entry.ht_Flags |= HT_EXACT;
+    entry.ht_Signature = (int)key;
 #endif /* MP */
-        if (threat)
-            entry.ht_Flags |= HT_THREAT;
 
-        bool success = PutHTEntryBestEffort(key, entry, depth);
+    entry.ht_Move = bestm;
+    entry.ht_Depth = depth;
+    entry.ht_Score = reduced;
 #if MP
-        if (!success) {
-            localHT[(key >> 32) & L_HT_Mask] = entry;
-        }
+    entry.ht_Flags |= HTGeneration;
+#else
+    entry.ht_Flags = HTGeneration;
+#endif /* MP */
+    if (best <= alpha)
+        entry.ht_Flags |= HT_UBOUND;
+    else if (best >= beta)
+        entry.ht_Flags |= HT_LBOUND;
+    else
+        entry.ht_Flags |= HT_EXACT;
+
+    if (threat)
+        entry.ht_Flags |= HT_THREAT;
+
+    bool success = PutHTEntryBestEffort(key, entry, depth);
+    if (!success) {
+        HTStoreFailed++;
+#if MP
+        localHT[(key >> 32) & L_HT_Mask] = entry;
 #endif
     }
 }
@@ -528,7 +520,7 @@ void ShowHashStatistics(void) {
     Print(1, "Hashtable 1:  entries = %u, use = %u (%u %%)\n", i, cnt,
           (cnt / (i / 100)));
     Print(1, "              store failed = %u (%d %%)\n", HTStoreFailed,
-          HTStoreFailed / (HTStoreTried / 100));
+          HTStoreFailed != 0 ? HTStoreFailed / (HTStoreTried / 100) : 0);
 }
 
 void GuessHTSizes(char *size) {
