@@ -517,9 +517,13 @@ void ShowHashStatistics(void) {
             cnt++;
     }
 
-    Print(1, "Hashtable 1:  entries = %u, use = %u (%d %%)\n", i, cnt,
-          Percentage(cnt, i));
-    Print(1, "              store failed = %u (%d %%)\n", HTStoreFailed,
+    char buf1[16], buf2[16];
+
+    Print(1, "Hashtable 1:  entries = %s, use = %s (%d %%)\n",
+          FormatCount(i, buf1, sizeof(buf1)),
+          FormatCount(cnt, buf2, sizeof(buf2)), Percentage(cnt, i));
+    Print(1, "              store failed = %s (%d %%)\n",
+          FormatCount(HTStoreFailed, buf1, sizeof(buf1)),
           Percentage(HTStoreFailed, HTStoreTried));
 }
 

@@ -90,7 +90,7 @@ int ReadLine(char *buffer, int cnt) {
 /**
  * Convert an int representing a time in seconds to a string.
  */
-void TimeToText(unsigned int secs, char *buffer, size_t len) {
+char *FormatTime(unsigned int secs, char *buffer, size_t len) {
     if (secs >= 60 * ONE_SECOND) {
         int mins;
         secs = secs / ONE_SECOND;
@@ -109,12 +109,13 @@ void TimeToText(unsigned int secs, char *buffer, size_t len) {
 
         snprintf(buffer, len, "  %2d.%d", secs, tsecs);
     }
+    return buffer;
 }
 
 /**
  * Convert a score to a string.
  */
-void ScoreToText(int score, char *buffer, size_t len) {
+char *FormatScore(int score, char *buffer, size_t len) {
     if (score > CMLIMIT) {
         snprintf(buffer, len, "+M%d", (INF - score) / 2 + 1);
     } else if (score < -CMLIMIT) {
@@ -128,8 +129,27 @@ void ScoreToText(int score, char *buffer, size_t len) {
     } else {
         snprintf(buffer, len, "-%d.%03d", (-score) / 1000, (-score) % 1000);
     }
+    return buffer;
 }
 
+/**
+ * Convert a count to a string.
+ */
+char *FormatCount(unsigned long count, char *buffer, size_t len) {
+    if (count < 1000) {
+        snprintf(buffer, len, "%lu", count);
+    } else if (count < 1000000ull) {
+        double scaled = count * 1e-3;
+        snprintf(buffer, len, "%.2fk", scaled);
+    } else if (count < 1000000000ull) {
+        double scaled = count * 1e-6;
+        snprintf(buffer, len, "%.2fM", scaled);
+    } else {
+        double scaled = count * 1e-6;
+        snprintf(buffer, len, "%.2fG", scaled);
+    }
+    return buffer;
+}
 /**
  * Get the current time.
  */

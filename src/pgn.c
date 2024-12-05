@@ -123,8 +123,11 @@ void SaveGame(struct Position *p, char *file_name) {
                     if (i > 98)
                         width++;
                 }
-                fprintf(fout, "%s ", SAN(p, move));
-                width += strlen(SAN(p, move)) + 1;
+
+                char san_buffer[16];
+                char *san = SAN(p, move, san_buffer);
+                fprintf(fout, "%s ", san);
+                width += strlen(san) + 1;
                 if (width > 67) {
                     width = 0;
                     fprintf(fout, "\n");

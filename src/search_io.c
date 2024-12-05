@@ -75,10 +75,9 @@ void SearchOutput(int depth, int time, int score, char *line, int nodes) {
     char time_as_text[16];
     char score_as_text[16];
 
-    TimeToText(time, time_as_text, sizeof(time_as_text));
-    ScoreToText(score, score_as_text, sizeof(score_as_text));
-
-    Print(1, "%2d  %s %7s  ", depth, time_as_text, score_as_text);
+    Print(1, "%2d  %s %7s  ", depth,
+          FormatTime(time, time_as_text, sizeof(time_as_text)),
+          FormatScore(score, score_as_text, sizeof(score_as_text)));
     PrintPV(line);
 
     if (PostMode) {
@@ -111,15 +110,16 @@ void SearchOutput(int depth, int time, int score, char *line, int nodes) {
 void SearchOutputFailHighLow(int depth, int time, int isfailhigh, char *move,
                              int nodes) {
     char time_as_text[16];
-    TimeToText(time, time_as_text, sizeof(time_as_text));
 
     if (isfailhigh) {
-        Print(1, "%2d  %s     +++  %s\n", depth, time_as_text, move);
+        Print(1, "%2d  %s     +++  %s\n", depth,
+              FormatTime(time, time_as_text, sizeof(time_as_text)), move);
         if (PostMode) {
             PrintNoLog(0, "%d 0 %d %d %s!\n", depth, time, nodes, move);
         }
     } else {
-        Print(1, "%2d  %s     ---  %s\n", depth, time_as_text, move);
+        Print(1, "%2d  %s     ---  %s\n", depth,
+              FormatTime(time, time_as_text, sizeof(time_as_text)), move);
         if (PostMode) {
             PrintNoLog(0, "%d 0 %d %d %s?\n", depth, time, nodes, move);
         }

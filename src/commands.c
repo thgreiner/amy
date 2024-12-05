@@ -528,10 +528,11 @@ static void RunAnnotate(char *fname, int side) {
             while (!scanMove(fin, move)) {
                 int themove = ParseSAN(p, move);
                 if (themove != M_NONE) {
+                    char san_buffer[16];
                     ShowPosition(p);
                     Print(0, "%s(%d): ", p->turn == White ? "White" : "Black",
                           (p->ply / 2) + 1);
-                    Print(0, "%s\n", SAN(p, themove));
+                    Print(0, "%s\n", SAN(p, themove, san_buffer));
                     if (side == -1 || (side == p->turn)) {
                         Iterate(p);
                     }
