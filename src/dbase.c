@@ -1398,11 +1398,19 @@ int Repeated(struct Position *p, int mode) {
 }
 
 /*
- * Generate the SAN (Standard Algebraic Notation) for a move
+ * Generate the SAN (Standard Algebraic Notation) for a move.
+ *
+ * Args:
+ *   p: pointer to the current position
+ *   move: the legal move in position to generate the SAN for
+ *   buffer: a pointer to a buffer to place the generated string in.
+ *           There is no bounds checking, so the buffer should be large
+ *           enough to hold the generated SAN.
+ *
+ * Returns:
+ *   the pointer to the generated string (buffer)
  */
-
-char *SAN(struct Position *p, int move) {
-    static char buffer[16];
+char *SAN(struct Position *p, int move, char *buffer) {
     char *x = buffer;
 
     int to = M_TO(move);
@@ -2135,11 +2143,12 @@ void ShowPosition(struct Position *p) {
 void ShowMoves(struct Position *p) {
     int cnt, mvs[256];
     int i;
+    char san_buffer[16];
 
     cnt = LegalMoves(p, mvs);
 
     for (i = 0; i < cnt; i++) {
-        Print(0, "%s ", SAN(p, mvs[i]));
+        Print(0, "%s ", SAN(p, mvs[i], san_buffer));
         if (IsCheckingMove(p, mvs[i]))
             Print(0, "(check) ");
         if (!LegalMove(p, mvs[i])) {
@@ -2155,7 +2164,7 @@ void ShowMoves(struct Position *p) {
     for (i = 0; i < cnt; i++) {
         if (i == 0)
             Print(0, "Checks: ");
-        Print(0, "%s ", SAN(p, mvs[i]));
+        Print(0, "%s ", SAN(p, mvs[i], san_buffer));
     }
     if (i != 0)
         Print(0, "\n");
@@ -2176,6 +2185,7 @@ static void ReadEPD(struct Position *p, char *x) {
     int i;
     char *ops[MAX_EPD_OPS];
     char *line;
+    char san_buffer[16];
 
     /* Make a copy of the input string, since it will be destroyed
      * due to the use of strtok, sorry :-)
@@ -2348,7 +2358,8 @@ static void ReadEPD(struct Position *p, char *x) {
                     int mv = ParseSAN(p, op);
                     if (mv != 0) {
                         goodmove[cnt] = mv;
-                        Print(0, "best move is %s\n", SAN(p, goodmove[cnt]));
+                        Print(0, "best move is %s\n",
+                              SAN(p, goodmove[cnt], san_buffer));
                         cnt++;
                         if (cnt >= MAX_EPD_MOVES - 1)
                             break;
@@ -2362,7 +2373,8 @@ static void ReadEPD(struct Position *p, char *x) {
                     int mv = ParseSAN(p, op);
                     if (mv != 0) {
                         badmove[cnt] = mv;
-                        Print(0, "bad move is %s\n", SAN(p, badmove[cnt]));
+                        Print(0, "bad move is %s\n",
+                              SAN(p, badmove[cnt], san_buffer));
                         cnt++;
                         if (cnt >= MAX_EPD_MOVES - 1)
                             break;
@@ -2387,6 +2399,7 @@ char *MakeEPD(struct Position *p) {
     static char epdbuffer[2048];
     char wname[] = " PNBRQK";
     char bname[] = " pnbrqk";
+    char san_buffer[16];
 
     char *x = epdbuffer;
     int i, j, cnt;
@@ -2443,7 +2456,7 @@ char *MakeEPD(struct Position *p) {
         strcat(epdbuffer, " bm");
         for (i = 0; goodmove[i] != M_NONE; i++) {
             strcat(epdbuffer, " ");
-            strcat(epdbuffer, SAN(p, goodmove[i]));
+            strcat(epdbuffer, SAN(p, goodmove[i], san_buffer));
         }
         strcat(epdbuffer, ";");
     }
@@ -2453,7 +2466,7 @@ char *MakeEPD(struct Position *p) {
         strcat(epdbuffer, " am");
         for (i = 0; badmove[i] != M_NONE; i++) {
             strcat(epdbuffer, " ");
-            strcat(epdbuffer, SAN(p, badmove[i]));
+            strcat(epdbuffer, SAN(p, badmove[i], san_buffer));
         }
         strcat(epdbuffer, ";");
     }

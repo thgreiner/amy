@@ -1086,12 +1086,17 @@ EXIT:
 /**
  * Print the SAN of a move prefixed by the move number.
  */
-static void NumberedSAN(struct Position *p, int move, char *buffer,
-                        size_t len) {
+static char *NumberedSAN(struct Position *p, int move, char *buffer,
+                         size_t len) {
+    char san_buffer[16];
     if (p->turn == White)
-        snprintf(buffer, len, "%d. %s", 1 + (p->ply + 1) / 2, SAN(p, move));
+        snprintf(buffer, len, "%d. %s", 1 + (p->ply + 1) / 2,
+                 SAN(p, move, san_buffer));
     else
-        snprintf(buffer, len, "%d. .. %s", 1 + p->ply / 2, SAN(p, move));
+        snprintf(buffer, len, "%d. .. %s", 1 + p->ply / 2,
+                 SAN(p, move, san_buffer));
+
+    return buffer;
 }
 
 /*
@@ -1116,15 +1121,15 @@ static void AnaLoop(struct Position *p, int depth) {
 
     if (LegalMove(p, move)) {
         int incheck;
+        char buffer[16];
 
         DoMove(p, move);
         incheck = InCheck(p, OPP(p->turn));
         UndoMove(p, move);
 
         if (p->turn == White) {
-            char tmp[16];
-            snprintf(tmp, sizeof(tmp), "%d. ", 1 + (p->ply + 1) / 2);
-            strcat(BestLine, tmp);
+            snprintf(buffer, sizeof(buffer), "%d. ", 1 + (p->ply + 1) / 2);
+            strcat(BestLine, buffer);
         }
 
         if (incheck) {
@@ -1133,9 +1138,10 @@ static void AnaLoop(struct Position *p, int depth) {
             return;
         }
 
-        strcat(BestLine, SAN(p, move));
+        char *san = SAN(p, move, buffer);
+        strcat(BestLine, san);
         strcat(BestLine, " ");
-        strcat(ShortBestLine, SAN(p, move));
+        strcat(ShortBestLine, san);
         strcat(ShortBestLine, " ");
 
         /* save move to ponder on ... */
@@ -1157,7 +1163,8 @@ static void AnaLoop(struct Position *p, int depth) {
 static void AnalyzeHT(struct Position *p, int move) {
     NumberedSAN(p, move, BestLine, sizeof(BestLine));
     strcat(BestLine, " ");
-    strcpy(ShortBestLine, SAN(p, move));
+    char san_buffer[16];
+    strcpy(ShortBestLine, SAN(p, move, san_buffer));
     strcat(ShortBestLine, " ");
     DoMove(p, move);
     AnaLoop(p, 1);
@@ -1257,16 +1264,14 @@ static void *IterateInt(void *x) {
 
             if (sd->master && PrintOK) {
                 char time_buffer[16];
-                TimeToText(CurTime - StartTime, time_buffer,
-                           sizeof(time_buffer));
-
                 char san_buffer[32];
-                NumberedSAN(p, mvs[sd->movenum], san_buffer,
-                            sizeof(san_buffer));
 
                 PrintNoLog(2, "%2d  %s   %2d/%2d  %s      \r", sd->depth,
-                           time_buffer, sd->movenum + 1, sd->nrootmoves,
-                           san_buffer);
+                           FormatTime(CurTime - StartTime, time_buffer,
+                                      sizeof(time_buffer)),
+                           sd->movenum + 1, sd->nrootmoves,
+                           NumberedSAN(p, mvs[sd->movenum], san_buffer,
+                                       sizeof(san_buffer)));
             }
 
             DoMove(p, mvs[sd->movenum]);
@@ -1299,10 +1304,10 @@ static void *IterateInt(void *x) {
 
                 if (sd->master && PrintOK) {
                     char san_buffer[32];
-                    NumberedSAN(p, mvs[0], san_buffer, sizeof(san_buffer));
-                    SearchOutputFailHighLow(sd->depth, CurTime - StartTime,
-                                            false, san_buffer,
-                                            sd->nodes_cnt + sd->qnodes_cnt);
+                    SearchOutputFailHighLow(
+                        sd->depth, CurTime - StartTime, false,
+                        NumberedSAN(p, mvs[0], san_buffer, sizeof(san_buffer)),
+                        sd->nodes_cnt + sd->qnodes_cnt);
                 }
 
                 NeedTime = true;
@@ -1375,10 +1380,10 @@ static void *IterateInt(void *x) {
 
                 if (sd->master && PrintOK) {
                     char san_buffer[32];
-                    NumberedSAN(p, mvs[0], san_buffer, sizeof(san_buffer));
-                    SearchOutputFailHighLow(sd->depth, CurTime - StartTime,
-                                            true, san_buffer,
-                                            sd->nodes_cnt + sd->qnodes_cnt);
+                    SearchOutputFailHighLow(
+                        sd->depth, CurTime - StartTime, true,
+                        NumberedSAN(p, mvs[0], san_buffer, sizeof(san_buffer)),
+                        sd->nodes_cnt + sd->qnodes_cnt);
                 }
 
                 alpha = tmp;
@@ -1432,11 +1437,11 @@ static void *IterateInt(void *x) {
                     char score_as_text[16];
                     AnalyzeHT(p, mvs[0]);
 
-                    ScoreToText(best, score_as_text, sizeof(score_as_text));
-
-                    snprintf(AnalysisLine, sizeof(AnalysisLine),
-                             "%2d: (%7s) %s", sd->depth, score_as_text,
-                             BestLine);
+                    snprintf(
+                        AnalysisLine, sizeof(AnalysisLine), "%2d: (%7s) %s",
+                        sd->depth,
+                        FormatScore(best, score_as_text, sizeof(score_as_text)),
+                        BestLine);
 
                     if (PrintOK) {
                         SearchOutput(sd->depth, CurTime - StartTime,
@@ -1542,28 +1547,41 @@ final:
     elapsed = (double)(CurTime - StartTime) / (double)ONE_SECOND;
 
     if (sd->master) {
-        Print(2,
-              "Nodes = %lu, QPerc: %d %%, time = %g secs, "
-              "%.1f kN/s\n",
-              sd->nodes_cnt + sd->qnodes_cnt,
-	      Percentage(sd->qnodes_cnt, sd->nodes_cnt + sd->qnodes_cnt),
-              elapsed, TotalNodes / 1000.0 / elapsed);
+        char buf1[16], buf2[16], buf3[16], buf4[16], buf5[16], buf6[16],
+            buf7[16];
+
+        unsigned long nps = (unsigned long)(TotalNodes / elapsed);
+
+        Print(2, "Nodes = %s, QPerc: %d %%, time = %g secs, %s nodes/s\n",
+              FormatCount(TotalNodes, buf1, sizeof(buf1)),
+              Percentage(sd->qnodes_cnt, sd->nodes_cnt + sd->qnodes_cnt),
+              elapsed, FormatCount(nps, buf2, sizeof(buf2)));
 
         Print(2,
-              "Extensions: Check: %lu  DblChk: %lu  DiscChk: %lu  SingReply: "
-              "%lu\n"
-              "            Recapture: %lu   Passed Pawn: %lu   Zugzwang: %lu\n",
-              ChkExt, DblExt, DiscExt, SingExt, RCExt, PPExt, ZZExt);
+              "Extensions: Check: %s  DblChk: %s  DiscChk: %s  SingReply: %s\n"
+              "            Recapture: %s   Passed Pawn: %s   Zugzwang: %s\n",
+              FormatCount(ChkExt, buf1, sizeof(buf1)),
+              FormatCount(DblExt, buf2, sizeof(buf2)),
+              FormatCount(DiscExt, buf3, sizeof(buf3)),
+              FormatCount(SingExt, buf4, sizeof(buf4)),
+              FormatCount(RCExt, buf5, sizeof(buf5)),
+              FormatCount(PPExt, buf6, sizeof(buf6)),
+              FormatCount(ZZExt, buf7, sizeof(buf7)));
 
         Print(2,
-              "Hashing: Trans: %lu/%lu = %lu %%   Pawn: %lu/%lu = %lu %%\n"
-              "         Eval: %lu/%lu = %lu %%\n",
-              HHit, HTry, Percentage(HHit, HTry), PHit, PTry,
-              Percentage(PHit, PTry), SHit, STry,
-              Percentage(SHit, STry));
+              "Hashing: Trans: %s/%s = %d %%   Pawn: %s/%s = %d %%\n"
+              "         Eval: %s/%s = %d %%\n",
+              FormatCount(HHit, buf1, sizeof(buf1)),
+              FormatCount(HTry, buf2, sizeof(buf2)), Percentage(HHit, HTry),
+              FormatCount(PHit, buf3, sizeof(buf3)),
+              FormatCount(PTry, buf4, sizeof(buf4)), Percentage(PHit, PTry),
+              FormatCount(SHit, buf5, sizeof(buf5)),
+              FormatCount(STry, buf6, sizeof(buf6)), Percentage(SHit, STry));
 
         if (EGTBProbe != 0) {
-            Print(2, "EGTB Hits/Probes = %d/%d\n", EGTBProbeSucc, EGTBProbe);
+            Print(2, "EGTB Hits/Probes = %s/%s\n",
+                  FormatCount(EGTBProbeSucc, buf1, sizeof(buf1)),
+                  FormatCount(EGTBProbe, buf2, sizeof(buf2)));
         }
 
         ShowHashStatistics();
@@ -1727,8 +1745,8 @@ void SearchRoot(struct Position *p) {
 
         if (move != M_NONE) {
             char san_buffer[32];
-            NumberedSAN(p, move, san_buffer, sizeof(san_buffer));
-            Print(1, "Book move found: %s\n", san_buffer);
+            Print(1, "Book move found: %s\n",
+                  NumberedSAN(p, move, san_buffer, sizeof(san_buffer)));
             p->outOfBookCnt[p->turn] = 0;
         } else {
             p->outOfBookCnt[p->turn] += 1;
@@ -1745,9 +1763,10 @@ void SearchRoot(struct Position *p) {
         double elapsed = (double)(CurTime - StartTime) / (double)ONE_SECOND;
         DoTC(p, (int)(elapsed + 0.5));
 
+        char san_buffer[16];
         Print(0, REVERSE "%s(%d): %s" NORMAL "\n",
               p->turn == White ? "White" : "Black", (p->ply / 2) + 1,
-              SAN(p, move));
+              SAN(p, move, san_buffer));
 
         if (XBoardMode)
             PrintNoLog(0, "move %s\n", ICS_SAN(move));
@@ -1790,6 +1809,7 @@ int PermanentBrain(struct Position *p) {
         int move = M_NONE;
         struct Position *q;
         bool inbook = false;
+        char san_buffer[16];
 
         q = ClonePosition(p);
 
@@ -1799,7 +1819,7 @@ int PermanentBrain(struct Position *p) {
 
         Print(0, "%s(%d): %s (in Permanent Brain)\n",
               p->turn == White ? "White" : "Black", (p->ply / 2) + 1,
-              SAN(p, PBActMove));
+              SAN(p, PBActMove, san_buffer));
 
         DoMove(q, PBActMove);
 
@@ -1828,15 +1848,16 @@ int PermanentBrain(struct Position *p) {
             double elapsed =
                 (double)(CurTime - WallTimeStart) / (double)ONE_SECOND;
             Print(2, "PB Hit! (elapsed %g secs)\n", elapsed);
+
             Print(0, "%s(%d): %s\n", p->turn == White ? "White" : "Black",
-                  (p->ply / 2) + 1, SAN(p, PBActMove));
+                  (p->ply / 2) + 1, SAN(p, PBActMove, san_buffer));
 
             DoMove(p, PBActMove);
             DoTC(p, (int)(elapsed + 0.5));
 
             Print(0, REVERSE "%s(%d): %s" NORMAL "\n",
                   p->turn == White ? "White" : "Black", (p->ply / 2) + 1,
-                  SAN(p, move));
+                  SAN(p, move, san_buffer));
 
             if (XBoardMode) {
                 PrintNoLog(0, "move %s\n", ICS_SAN(move));
@@ -1846,7 +1867,8 @@ int PermanentBrain(struct Position *p) {
 
             return PB_HIT;
         } else if (!PBHit && PBAltMove != M_NONE) {
-            Print(2, "PB not Hit! Alternate move is %s\n", SAN(p, PBAltMove));
+            Print(2, "PB not Hit! Alternate move is %s\n",
+                  SAN(p, PBAltMove, san_buffer));
 
             DoMove(p, PBAltMove);
 
