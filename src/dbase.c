@@ -92,7 +92,7 @@ const int CastleMask[2][2] = {
  */
 
 static void AtkSet(struct Position *, int, int, int);
-static void AtkClr(struct Position *, int, int, int);
+static void AtkClr(struct Position *, int);
 static void GainAttack(struct Position *, int, int);
 static void LooseAttack(struct Position *, int from, int to);
 static void GainAttacks(struct Position *, int to);
@@ -103,18 +103,25 @@ int PromoType(int move);
  * Routines to up/downdate the global database
  */
 
-#ifdef DEBUG
-static void ShowMoveList(void) {
+static void ShowMoveList(struct Position *p) {
     int ply;
-    for (ply = 0; ply < Ply; ply++) {
-        int move = GameLog[ply].gl_Move;
-        Print(0, "%c%c%c%c\n", SQUARE(M_FROM(move)), SQUARE(M_TO(move)));
+    for (ply = 0; ply < p->ply; ply++) {
+        int move = p->gameLog[ply].gl_Move;
+        Print(0, "%s\n", ICS_SAN(move));
     }
 }
 
-static void DebugEngine(int move) {
-    int kingsq = p->kingSq[White];
-    int i;
+static void Panic(struct Position *p) {
+    ShowPosition(p);
+    ShowMoveList(p);
+    fflush(stdout);
+    abort();
+}
+
+#ifdef DEBUG
+static void DebugEngine(struct Position *p) {
+    int kingSq = p->kingSq[White];
+    int i, color;
     BitBoard temp;
 
     for (i = 0; i < 64; i++) {
@@ -125,29 +132,48 @@ static void DebugEngine(int move) {
             if (!TstBit(p->atkFr[sq], i)) {
                 Print(0, "AtkFr or AtkTo is bad on %c%c or %c%c\n", SQUARE(i),
                       SQUARE(sq));
-                ShowMoveList();
-                ShowPosition();
+                ShowMoveList(p);
+                ShowPosition(p);
                 abort();
             }
         }
     }
-    if (p->atkTo[p->kingSq] != KingEPM[p->kingSq]) {
+
+    for (color = 0; color < 2; color++) {
+        for (i = Pawn; i <= King; i++) {
+            temp = p->mask[color][i];
+            while (temp) {
+                int sq = FindSetBit(temp);
+                temp &= temp - 1;
+                int pc = (1 - 2 * color) * i;
+                if (p->piece[sq] != pc) {
+                    Print(0, "Piece on %c%c is %d, expected %d!\n", SQUARE(sq),
+                          p->piece[sq], pc);
+                    ShowMoveList(p);
+                    ShowPosition(p);
+                    abort();
+                }
+            }
+        }
+    }
+
+    if (p->atkTo[kingSq] != KingEPM[kingSq]) {
         Print(0, "White king is bad:\n");
-        PrintBitBoard(p->atkTo[p->kingSq]);
+        PrintBitBoard(p->atkTo[kingSq]);
         Print(0, "should be:\n");
-        PrintBitBoard(KingEPM[p->kingSq]);
-        ShowMoveList();
-        ShowPosition();
+        PrintBitBoard(KingEPM[kingSq]);
+        ShowMoveList(p);
+        ShowPosition(p);
         abort();
     }
-    kingsq = p->kingSq[Black];
-    if (p->atkTo[p->kingSq] != KingEPM[p->kingSq]) {
+    kingSq = p->kingSq[Black];
+    if (p->atkTo[kingSq] != KingEPM[kingSq]) {
         Print(0, "Black king is bad:\n");
-        PrintBitBoard(p->atkTo[p->kingSq]);
+        PrintBitBoard(p->atkTo[kingSq]);
         Print(0, "should be:\n");
-        PrintBitBoard(KingEPM[p->kingSq]);
-        ShowMoveList();
-        ShowPosition();
+        PrintBitBoard(KingEPM[kingSq]);
+        ShowMoveList(p);
+        ShowPosition(p);
         abort();
     }
 }
@@ -182,45 +208,27 @@ static void AtkSet(struct Position *p, int type, int color, int square) {
     } else {
         md = NextSquare[type][square];
         nsq = md[square].nextPos;
-        while (nsq >= 0) {
+        for (int i = 0; nsq >= 0 && i < 64; i++) {
             SetBit(p->atkTo[square], nsq);
             SetBit(p->atkFr[nsq], square);
             nsq =
                 (p->piece[nsq] != Neutral) ? md[nsq].nextDir : md[nsq].nextPos;
         }
+        if (nsq >= 0) {
+            printf("AtkSet(%d, %d, %d): nsq=%d\n", type, color, square, nsq);
+            Panic(p);
+        }
     }
 }
 
-static void AtkClr(struct Position *p, int type, int color, int square) {
-    struct MoveData *md;
-    int nsq;
-
+static void AtkClr(struct Position *p, int square) {
+    BitBoard tmp = p->atkTo[square];
     p->atkTo[square] = 0;
 
-    if (type == Pawn) {
-        if (color == Black) {
-            if ((square & 7) > 0) {
-                ClrBit(p->atkFr[square - 9], square);
-            }
-            if ((square & 7) < 7) {
-                ClrBit(p->atkFr[square - 7], square);
-            }
-        } else {
-            if ((square & 7) > 0) {
-                ClrBit(p->atkFr[square + 7], square);
-            }
-            if ((square & 7) < 7) {
-                ClrBit(p->atkFr[square + 9], square);
-            }
-        }
-    } else {
-        md = NextSquare[type][square];
-        nsq = md[square].nextPos;
-        while (nsq >= 0) {
-            ClrBit(p->atkFr[nsq], square);
-            nsq =
-                (p->piece[nsq] != Neutral) ? md[nsq].nextDir : md[nsq].nextPos;
-        }
+    while (tmp) {
+        int i = FindSetBit(tmp);
+        tmp &= tmp - 1;
+        ClrBit(p->atkFr[i], square);
     }
 }
 
@@ -329,10 +337,10 @@ static void DoCastle(struct Position *p, int move) {
     int nr = (move & M_SCASTLE) ? from + 1 : from - 1;
 
     /* king looses its attacks */
-    AtkClr(p, King, p->turn, from);
+    AtkClr(p, from);
 
     /* rook looses its attacks */
-    AtkClr(p, Rook, p->turn, or);
+    AtkClr(p, or);
 
     /* move king on the board */
     p->piece[to] = p->piece[from];
@@ -385,10 +393,10 @@ static void UndoCastle(struct Position *p, int move) {
     int nr = (move & M_SCASTLE) ? from + 1 : from - 1;
 
     /* king looses its attacks */
-    AtkClr(p, King, p->turn, to);
+    AtkClr(p, to);
 
     /* rook looses its attacks */
-    AtkClr(p, Rook, p->turn, nr);
+    AtkClr(p, nr);
 
     /* re-calculate attacks through king-square
      * no need to do it for the rook, since it was on the edge of the board
@@ -434,9 +442,6 @@ void DoMove(struct Position *p, int move) {
     int tp = TYPE(p->piece[from]);
 
     /* save EnPassant and Castling */
-    /* muss ich das hier machen ??
-     * Sollte in einer init-node routine geschehen! */
-
     p->actLog->gl_EnPassant = p->enPassant;
     p->actLog->gl_Castle = p->castle;
     p->actLog->gl_HashKey = p->hkey;
@@ -447,7 +452,7 @@ void DoMove(struct Position *p, int move) {
         p->castle &= ~(CastleMask[p->turn][0] | CastleMask[p->turn][1]);
     } else {
         /* piece looses its attacks */
-        AtkClr(p, tp, p->turn, from);
+        AtkClr(p, from);
 
         if (tp == King) {
             p->kingSq[p->turn] = to;
@@ -480,7 +485,7 @@ void DoMove(struct Position *p, int move) {
             int sp = TYPE(p->piece[to]);
 
             /* piece looses its attacks */
-            AtkClr(p, sp, OPP(p->turn), to);
+            AtkClr(p, to);
 
             /* remember type of captured piece */
             p->actLog->gl_Piece = p->piece[to];
@@ -514,7 +519,7 @@ void DoMove(struct Position *p, int move) {
             int so = EPTranslate[to];
 
             /* piece looses its attacks */
-            AtkClr(p, Pawn, OPP(p->turn), so);
+            AtkClr(p, so);
 
             /* captured piece must be a pawn */
             p->actLog->gl_Piece = ((OPP(p->turn) == White) ? Pawn : -Pawn);
@@ -636,7 +641,7 @@ void UndoMove(struct Position *p, int move) {
         UndoCastle(p, move);
     } else {
         /* piece looses its attacks */
-        AtkClr(p, tp, p->turn, to);
+        AtkClr(p, to);
 
         if (tp == King) {
             p->kingSq[p->turn] = from;
@@ -1053,6 +1058,12 @@ bool LegalMove(struct Position *p, int move) {
 
     /* if a promotion, moving piece must be a pawn */
     if (move & M_PANY && TYPE(p->piece[fr]) != Pawn)
+        return false;
+
+    /* if the move is a pawn move to the 1st/8th rank, it must be
+     * be a promotion.
+     */
+    if ((to < 8 || to >= 56) && TYPE(p->piece[fr]) == Pawn && !(move & M_PANY))
         return false;
 
     if (move & M_CAPTURE) {
@@ -1524,6 +1535,9 @@ char *ICS_SAN(int move) {
 
     *(x++) = 'a' + (fr & 7);
     *(x++) = '1' + (fr >> 3);
+    if (move & (M_CAPTURE | M_ENPASSANT)) {
+        *(x++) = 'x';
+    }
     *(x++) = 'a' + (to & 7);
     *(x++) = '1' + (to >> 3);
     if (move & M_PANY) {

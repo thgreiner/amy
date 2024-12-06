@@ -120,10 +120,10 @@ bool FindEcoCode(const struct Position *p, char *result) {
     char *res;
     bool found = false;
 
-    while (ply <= CurrentPosition->ply) {
-        hash_t key = CurrentPosition->gameLog[ply].gl_HashKey;
-        if (ply == CurrentPosition->ply) {
-            key = CurrentPosition->hkey;
+    while (ply <= p->ply) {
+        hash_t key = p->gameLog[ply].gl_HashKey;
+        if (ply == p->ply) {
+            key = p->hkey;
         }
         res = GetEcoCode(key);
         if (res != NULL) {

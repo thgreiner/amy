@@ -115,7 +115,7 @@ static struct CommandEntry Commands[] = {
     {"xboard", &SetXBoard, false, false, "switch to xboard compatibility",
      NULL},
     {"?", &MoveNow, true, false, "move now", NULL},
-    {NULL, NULL, 0}};
+    {NULL, NULL, false, false, NULL, NULL}};
 
 struct Command *ParseInput(char *line) {
     static struct Command theCommand;
@@ -169,6 +169,7 @@ void ExecuteCommand(struct Command *theCommand) {
 }
 
 static void Quit(char *args) {
+    (void)args;
 #if MP
     StopHelpers();
 #endif
@@ -176,9 +177,13 @@ static void Quit(char *args) {
     exit(0);
 }
 
-static void Show(char *args) { ShowPosition(CurrentPosition); }
+static void Show(char *args) {
+    (void)args;
+    ShowPosition(CurrentPosition);
+}
 
 static void ShowEco(char *args) {
+    (void)args;
     char eco[128] = "";
 
     FindEcoCode(CurrentPosition, eco);
@@ -377,6 +382,7 @@ static void SetTime(char *arg) {
 }
 
 static void SetXBoard(char *args) {
+    (void)args;
     XBoardMode = true;
     Verbosity = 1;
 
@@ -391,16 +397,19 @@ static void SetXBoard(char *args) {
 }
 
 static void Go(char *args) {
+    (void)args;
     ForceMode = false;
     State = STATE_CALCULATING;
 }
 
 static void Force(char *args) {
+    (void)args;
     ForceMode = true;
     AbortSearch = true;
 }
 
 static void New(char *args) {
+    (void)args;
     /*
      * Create a new save file.
      */
@@ -414,9 +423,13 @@ static void New(char *args) {
     }
 }
 
-static void MoveNow(char *args) { AbortSearch = true; }
+static void MoveNow(char *args) {
+    (void)args;
+    AbortSearch = true;
+}
 
 void Edit(char *args) {
+    (void)args;
     bool editing = true;
     int i;
     int side = White;
@@ -489,22 +502,41 @@ void Edit(char *args) {
 }
 
 static void Undo(char *args) {
+    (void)args;
     if (CurrentPosition->ply > 0) {
         UndoMove(CurrentPosition, (CurrentPosition->actLog - 1)->gl_Move);
     }
 }
 
-static void Book(char *args) { QueryBook(CurrentPosition); }
+static void Book(char *args) {
+    (void)args;
+    QueryBook(CurrentPosition);
+}
 
-static void Post(char *args) { PostMode = true; }
+static void Post(char *args) {
+    (void)args;
+    PostMode = true;
+}
 
-static void NoPost(char *args) { PostMode = false; }
+static void NoPost(char *args) {
+    (void)args;
+    PostMode = false;
+}
 
-static void Easy(char *args) { EasyMode = true; }
+static void Easy(char *args) {
+    (void)args;
+    EasyMode = true;
+}
 
-static void Hard(char *args) { EasyMode = false; }
+static void Hard(char *args) {
+    (void)args;
+    EasyMode = false;
+}
 
-static void MovesCmd(char *args) { ShowMoves(CurrentPosition); }
+static void MovesCmd(char *args) {
+    (void)args;
+    ShowMoves(CurrentPosition);
+}
 
 static void SetEPD(char *args) {
     if (!args) {
@@ -608,9 +640,13 @@ static char *warranty =
     " OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n"
     "\n";
 
-static void ShowWarranty(char *args) { Print(0, warranty); }
+static void ShowWarranty(char *args) {
+    (void)args;
+    Print(0, warranty);
+}
 
 static void ShowDistribution(char *args) {
+    (void)args;
     Print(0, distribution);
     Print(0, warranty);
 }
@@ -618,6 +654,7 @@ static void ShowDistribution(char *args) {
 static void Help(char *args) {
     struct CommandEntry *entry = Commands;
 
+    (void)args;
     Print(2, "\nEnter a legal move (like e4, Nxd5, O-O, d1=Q+) or one of the\n"
              "following commands:\n\n");
     while (entry->name) {
@@ -636,6 +673,7 @@ static void Help(char *args) {
 }
 
 static void Benchmark(char *args) {
+    (void)args;
     int move = g1 | (f3 << 6);
     int i;
     const int cycles = 1000000;
@@ -756,9 +794,15 @@ static void XboardTime(char *args) {
     }
 }
 
-static void Analyze(char *args) { State = STATE_ANALYZING; }
+static void Analyze(char *args) {
+    (void)args;
+    State = STATE_ANALYZING;
+}
 
-static void StopAnalyze(char *args) { State = STATE_WAITING; }
+static void StopAnalyze(char *args) {
+    (void)args;
+    State = STATE_WAITING;
+}
 
 static void Name(char *args) {
     if (args) {
@@ -768,6 +812,7 @@ static void Name(char *args) {
 }
 
 static void SelfPlay(char *args) {
+    (void)args;
     SelfPlayMode = true;
     State = STATE_CALCULATING;
 }
