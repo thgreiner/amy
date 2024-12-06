@@ -153,6 +153,7 @@ int NextMove(struct SearchData *sd) {
 #endif
         if (LegalMove(p, st->st_hashmove)) {
             st->st_phase = GenerateCaptures;
+            st->st_move_generated_by = HashMove;
             return st->st_hashmove;
         } else {
             st->st_hashmove = M_NONE;
@@ -228,6 +229,7 @@ int NextMove(struct SearchData *sd) {
                 if (move == st->st_hashmove)
                     continue;
 
+                st->st_move_generated_by = GainingCapture;
                 return move;
             } else
                 break;
@@ -242,6 +244,7 @@ int NextMove(struct SearchData *sd) {
             st->st_phase = Killer2;
             st->st_k1 = move;
 
+            st->st_move_generated_by = Killer1;
             return move;
         }
     }
@@ -255,6 +258,7 @@ int NextMove(struct SearchData *sd) {
             st->st_phase = CounterMv;
             st->st_k2 = move;
 
+            st->st_move_generated_by = Killer2;
             return move;
         }
     }
@@ -273,6 +277,7 @@ int NextMove(struct SearchData *sd) {
                 st->st_phase = Killer3;
                 st->st_cm = move;
 
+                st->st_move_generated_by = CounterMv;
                 return move;
             }
         }
@@ -294,6 +299,7 @@ int NextMove(struct SearchData *sd) {
                 st->st_phase = /* GenerateRest */ LoosingCapture;
                 st->st_k3 = move;
 
+                st->st_move_generated_by = Killer3;
                 return move;
             }
         }
@@ -323,6 +329,7 @@ int NextMove(struct SearchData *sd) {
             if (move == st->st_hashmove)
                 continue;
 
+            st->st_move_generated_by = LoosingCapture;
             return move;
         }
 
@@ -430,6 +437,7 @@ int NextMove(struct SearchData *sd) {
                 move == st->st_k2 || move == st->st_k3 || move == st->st_cm)
                 continue;
 
+            st->st_move_generated_by = HistoryMoves;
             return move;
         }
     }
@@ -450,6 +458,7 @@ int NextEvasion(struct SearchData *sd) {
 #endif
         if (LegalMove(p, st->st_hashmove)) {
             st->st_phase = GenerateCaptures;
+            st->st_move_generated_by = HashMove;
             return st->st_hashmove;
         } else {
             st->st_hashmove = M_NONE;
@@ -513,6 +522,7 @@ int NextEvasion(struct SearchData *sd) {
                 if (move == st->st_hashmove)
                     continue;
 
+                st->st_move_generated_by = GainingCapture;
                 return move;
             } else
                 break;
@@ -527,6 +537,7 @@ int NextEvasion(struct SearchData *sd) {
             st->st_phase = Killer2;
             st->st_k1 = move;
 
+            st->st_move_generated_by = Killer1;
             return move;
         }
     }
@@ -540,6 +551,7 @@ int NextEvasion(struct SearchData *sd) {
             st->st_phase = CounterMv;
             st->st_k2 = move;
 
+            st->st_move_generated_by = Killer2;
             return move;
         }
     }
@@ -558,6 +570,7 @@ int NextEvasion(struct SearchData *sd) {
                 st->st_phase = Killer3;
                 st->st_cm = move;
 
+                st->st_move_generated_by = CounterMv;
                 return move;
             }
         }
@@ -579,6 +592,7 @@ int NextEvasion(struct SearchData *sd) {
                 st->st_phase = /* HistoryMoves; */ LoosingCapture;
                 st->st_k3 = move;
 
+                st->st_move_generated_by = Killer3;
                 return move;
             }
         }
@@ -607,6 +621,7 @@ int NextEvasion(struct SearchData *sd) {
             if (move == st->st_hashmove)
                 continue;
 
+            st->st_move_generated_by = LoosingCapture;
             return move;
         }
 
@@ -727,6 +742,7 @@ int NextEvasion(struct SearchData *sd) {
                 move == st->st_k2 || move == st->st_k3 || move == st->st_cm)
                 continue;
 
+            st->st_move_generated_by = HistoryMoves;
             return move;
         }
     }

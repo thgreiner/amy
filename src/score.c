@@ -81,43 +81,43 @@ char *GamePhaseName[] = {"Opening", "Middlegame", "Endgame"};
  * General scoring paramters
  */
 
-const static int Development = -100;
+static const int Development = -100;
 
 /**
  * Pawn scoring parameters
  */
 
-const static int DoubledPawn = -70;
-const static int BackwardPawn = -100;
-const static int HiddenBackwardPawn = -70;
-const static int PawnOutrunsKing = 6000;
-const static int PawnDevelopmentBlocked = -100;
-const static int PawnDuo = 15;
-const static int PawnStorm = 10;
-const static int CrampingPawn = -160;
-const static int PawnMajority = 100;
+static const int DoubledPawn = -70;
+static const int BackwardPawn = -100;
+static const int HiddenBackwardPawn = -70;
+static const int PawnOutrunsKing = 6000;
+static const int PawnDevelopmentBlocked = -100;
+static const int PawnDuo = 15;
+static const int PawnStorm = 10;
+static const int CrampingPawn = -160;
+static const int PawnMajority = 100;
 
-const static int CoveredPassedPawn6th = 200;
-const static int CoveredPassedPawn7th = 600;
+static const int CoveredPassedPawn6th = 200;
+static const int CoveredPassedPawn7th = 600;
 
-const static int PassedPawn[] = {0, 32, 64, 128, 256, 512, 1024, 0};
+static const int PassedPawn[] = {0, 32, 64, 128, 256, 512, 1024, 0};
 
-const static int PassedPawnBlocked[] = {0, 16, 48, 96, 192, 384, 768, 0};
+static const int PassedPawnBlocked[] = {0, 16, 48, 96, 192, 384, 768, 0};
 
-const static int PassedPawnConnected[] = {0, 4, 12, 24, 48, 96, 192, 0};
+static const int PassedPawnConnected[] = {0, 4, 12, 24, 48, 96, 192, 0};
 
-const static int IsolatedPawn[] = {-70, -80, -90, -100, -100, -90, -80, -70};
+static const int IsolatedPawn[] = {-70, -80, -90, -100, -100, -90, -80, -70};
 
-const static int PawnAdvanceOpening[] = {-10, -10, 5, 10, 10, -20, -50, -50};
+static const int PawnAdvanceOpening[] = {-10, -10, 5, 10, 10, -20, -50, -50};
 
-const static int PawnAdvanceMiddlegame[] = {0, 0, 10, 15, 15, 10, 0, 0};
+static const int PawnAdvanceMiddlegame[] = {0, 0, 10, 15, 15, 10, 0, 0};
 
-const static int PawnAdvanceEndgame[] = {10, 10, 10, 10, 10, 10, 10, 10};
+static const int PawnAdvanceEndgame[] = {10, 10, 10, 10, 10, 10, 10, 10};
 
 static int WPawnPos[64];
 static int BPawnPos[64];
 
-const static int DistantPassedPawn[] = {
+static const int DistantPassedPawn[] = {
     500, 300, 300, 300, 200, 200, 150, 150, 150, 100, 100, 50,
     50,  50,  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
     0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0};
@@ -126,17 +126,17 @@ const static int DistantPassedPawn[] = {
  * Knight scoring parameters
  */
 
-const static int KnightKingProximity = 7;
-const static int KnightBlocksCPawn = -100;
+static const int KnightKingProximity = 7;
+static const int KnightBlocksCPawn = -100;
 
-const static int KnightPos[] = {
+static const int KnightPos[] = {
     -160, -160, -160, -160, -160, -160, -160, -160, -160, -30,  60,   60,   60,
     60,   -30,  -160, -160, 60,   130,  130,  130,  130,  60,   -160, -160, 130,
     190,  190,  190,  190,  130,  -160, -130, 130,  190,  250,  250,  190,  130,
     -130, -130, 190,  250,  250,  250,  250,  190,  -130, -130, 90,   160,  160,
     160,  160,  90,   -130, -130, -130, -130, -130, -130, -130, -130, -130};
 
-const static int KnightOutpost[] = {
+static const int KnightOutpost[] = {
     0, 0, 0,  0,   0,   0,  0, 0, 0, 0, 0,  0,   0,   0,  0, 0,
     0, 0, 0,  0,   0,   0,  0, 0, 0, 0, 0,  40,  40,  0,  0, 0,
     0, 0, 80, 100, 100, 80, 0, 0, 0, 0, 80, 120, 120, 80, 0, 0,
@@ -149,13 +149,13 @@ const static int KnightOutpost[] = {
 /*
  * The value of the bishop pair depends on the number of white pawns.
  */
-const static int BishopPair[] = {200, 200, 200, 200, 200, 200, 200, 150, 100};
+static const int BishopPair[] = {200, 200, 200, 200, 200, 200, 200, 150, 100};
 
-const static int BishopMobility = 25;
-const static int BishopKingProximity = 7;
-const static int BishopTrapped = -1500;
+static const int BishopMobility = 25;
+static const int BishopKingProximity = 7;
+static const int BishopTrapped = -1500;
 
-const static int BishopPos[] = {
+static const int BishopPos[] = {
     60,  60,  60,  60,  60,  60,  60,  60,  60,  250, 60,  60,  60,
     60,  250, 60,  60,  160, 160, 160, 160, 160, 160, 60,  160, 250,
     280, 340, 340, 280, 250, 160, 160, 250, 280, 340, 340, 280, 250,
@@ -166,19 +166,19 @@ const static int BishopPos[] = {
  * Rook scoring parameters
  */
 
-const static int RookMobility = 10;
+static const int RookMobility = 10;
 
-const static int RookOnOpenFile = 100;
-const static int RookOnSemiOpenFile = 25;
+static const int RookOnOpenFile = 100;
+static const int RookOnSemiOpenFile = 25;
 
-const static int RookKingProximity = 5;
-const static int RookConnected = 60;
+static const int RookKingProximity = 5;
+static const int RookConnected = 60;
 
-const static int RookBehindPasser = 12; /* will be scaled by phase */
+static const int RookBehindPasser = 12; /* will be scaled by phase */
 
-const static int RookOn7thRank = 300;
+static const int RookOn7thRank = 300;
 
-const static int RookPos[] = {
+static const int RookPos[] = {
     0,   90,  130, 220, 220, 130, 90,  0,   0,   0,   0,   0,   0,
     0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
     0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
@@ -189,15 +189,15 @@ const static int RookPos[] = {
  * Queen scoring parameters
  */
 
-const static int QueenKingProximity = 8;
+static const int QueenKingProximity = 8;
 
-const static int QueenPos[] = {
+static const int QueenPos[] = {
     0, 0,  0,  0,  0,  0,  0,  0, 0, 30, 30, 30, 30, 30, 30, 0,
     0, 30, 60, 60, 60, 60, 30, 0, 0, 30, 60, 90, 90, 60, 30, 0,
     0, 30, 60, 90, 90, 60, 30, 0, 0, 30, 60, 60, 60, 60, 30, 0,
     0, 30, 30, 60, 60, 30, 30, 0, 0, 0,  0,  0,  0,  0,  0,  0};
 
-const static int QueenPosDevelopment[] = {
+static const int QueenPosDevelopment[] = {
     -200, -200, 0, 0, 0, 0, -200, -200, -200, -200, 30, 30, 30, 0, -200, -200,
     -200, -200, 0, 0, 0, 0, -200, -200, -200, -200, 0,  0,  0,  0, -200, -200,
     -200, -200, 0, 0, 0, 0, -200, -200, -200, -200, 0,  0,  0,  0, -200, -200,
@@ -208,51 +208,62 @@ const static int QueenPosDevelopment[] = {
  * King scoring parameters
  */
 
-const static int KingBlocksRook = -300;
+static const int KingBlocksRook = -300;
 
-const static int KingPosMiddlegame[] = {
-    -100, 0,    -200, -300, -300, -200, 0,    -100 - 100, -100, -200, -300,
-    -300, -200, -100, -100, -300, -300, -300, -300,       -300, -300, -300,
-    -300, -400, -400, -400, -400, -400, -400, -400,       -400, -500, -500,
-    -500, -500, -500, -500, -500, -500, -600, -600,       -600, -600, -600,
-    -600, -600, -600, -700, -700, -700, -700, -700,       -700, -700, -700,
+// clang-format off
+static const int KingPosMiddlegame[64] = {
+    -100, 0,    -200, -300, -300, -200,    0, -100,
+    -100, -100, -200, -300, -300, -200, -100, -100,
+    -300, -300, -300, -300, -300, -300, -300, -300,
+    -400, -400, -400, -400, -400, -400, -400, -400,
+    -500, -500, -500, -500, -500, -500, -500, -500,
+    -600, -600, -600, -600, -600, -600, -600, -600,
+    -700, -700, -700, -700, -700, -700, -700, -700,
     -800, -800, -800, -800, -800, -800, -800, -800};
 
-const static int KingPosEndgame[] = {
-    -300, -300, -300, -300, -300, -300, -300, -300, -300, -200, -100,
-    -100, -100, -100, -200, -300, -300, -100, 0,    100,  100,  0,
-    -100, -300, -300, -100, 100,  200,  200,  100,  -100, -300, -300,
-    -100, 200,  300,  300,  200,  -100, -300, -300, -100, 200,  300,
-    300,  200,  -100, -300, -300, -100, -100, -100, -100, -100, -100,
-    -300, -300, -300, -300, -300, -300, -300, -300, -300};
+static const int KingPosEndgame[64] = {
+    -300, -300, -300, -300, -300, -300, -300, -300,
+    -300, -200, -100, -100, -100, -100, -200, -300,
+    -300, -100,    0,  100,  100,    0, -100, -300,
+    -300, -100,  100,  200,  200,  100, -100, -300,
+    -300, -100,  200,  300,  300,  200, -100, -300,
+    -300, -100,  200,  300,  300,  200, -100, -300,
+    -300, -100, -100, -100, -100, -100, -100, -300,
+    -300, -300, -300, -300, -300, -300, -300, -300};
 
-const static int KingPosEndgameQueenSide[] = {
-    -300, -300, -300, -300, -300, -400, -500, -600, -100, -100, -100,
-    -100, -100, -200, -300, -600, 0,    100,  100,  0,    -100, -200,
-    -300, -600, 100,  200,  200,  100,  -100, -200, -300, -600, 200,
-    300,  300,  200,  -100, -200, -300, -600, 200,  300,  300,  200,
-    -100, -200, -300, -600, -100, -100, -100, -100, -100, -200, -300,
-    -600, -300, -300, -300, -300, -300, -400, -300, -600};
+static const int KingPosEndgameQueenSide[64] = {
+    -300, -300, -300, -300, -300, -400, -500, -600,
+    -100, -100, -100, -100, -100, -200, -300, -600,
+       0,  100,  100,    0, -100, -200, -300, -600,
+     100,  200,  200,  100, -100, -200, -300, -600,
+     200,  300,  300,  200, -100, -200, -300, -600,
+     200,  300,  300,  200, -100, -200, -300, -600,
+    -100, -100, -100, -100, -100, -200, -300, -600,
+    -300, -300, -300, -300, -300, -400, -300, -600};
 
-const static int KingPosEndgameKingSide[] = {
-    -600, -500, -400, -300, -300, -300, -300, -300, -600, -300, -200,
-    -100, -100, -100, -100, -100, -600, -300, -200, -100, 0,    100,
-    100,  0,    -600, -300, -200, -100, 100,  200,  200,  100,  -600,
-    -300, -200, -100, 200,  300,  300,  200,  -600, -300, -200, -100,
-    200,  300,  300,  200,  -600, -300, -200, -100, -100, -100, -100,
-    -100, -600, -500, -400, -300, -300, -300, -300, -300};
+static const int KingPosEndgameKingSide[64] = {
+    -600, -500, -400, -300, -300, -300, -300, -300,
+    -600, -300, -200, -100, -100, -100, -100, -100,
+    -600, -300, -200, -100,    0,  100, 100,     0,
+    -600, -300, -200, -100,  100,  200,  200,  100,
+    -600, -300, -200, -100,  200,  300,  300,  200,
+    -600, -300, -200, -100,  200,  300,  300,  200,
+    -600, -300, -200, -100, -100, -100, -100, -100,
+    -600, -500, -400, -300, -300, -300, -300, -300};
 
-const static int ScaleHalfOpenFilesMine[] = {0, 4, 7, 9, 11};
+// clang-format on
 
-const static int ScaleHalfOpenFilesYours[] = {0, 2, 3, 4, 5};
+static const int ScaleHalfOpenFilesMine[] = {0, 4, 7, 9, 11};
 
-const static int ScaleOpenFiles[] = {0, 8, 13, 16, 19};
+static const int ScaleHalfOpenFilesYours[] = {0, 2, 3, 4, 5};
 
-const static int ScaleUp[] = {0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+static const int ScaleOpenFiles[] = {0, 8, 13, 16, 19};
+
+static const int ScaleUp[] = {0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
                               0,  0,  0,  1,  2,  4,  6,  8,  10, 12, 14,
                               15, 16, 16, 16, 16, 16, 16, 16, 16, 16};
 
-const static int ScaleDown[] = {16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16,
+static const int ScaleDown[] = {16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16,
                                 16, 16, 16, 15, 14, 12, 10, 8,  6,  4,  2,
                                 1,  0,  0,  0,  0,  0,  0,  0,  0,  0};
 
@@ -262,7 +273,7 @@ const static int ScaleDown[] = {16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16,
  */
 
 int MaxPos;
-const static int MaxPosInit = 2000;
+static const int MaxPosInit = 2000;
 
 /*
  * These scoring parameters will be shared among function calls.
@@ -274,29 +285,29 @@ static int RootGamePhase;
  * Masks used in ScorePawns.
  */
 
-const static BitBoard FianchettoMaskWhiteKingSide =
+static const BitBoard FianchettoMaskWhiteKingSide =
     SetMask(f2) | SetMask(g3) | SetMask(h2);
-const static BitBoard FianchettoMaskBlackKingSide =
+static const BitBoard FianchettoMaskBlackKingSide =
     SetMask(f7) | SetMask(g6) | SetMask(h7);
-const static BitBoard FianchettoMaskWhiteQueenSide =
+static const BitBoard FianchettoMaskWhiteQueenSide =
     SetMask(c2) | SetMask(b3) | SetMask(a2);
-const static BitBoard FianchettoMaskBlackQueenSide =
+static const BitBoard FianchettoMaskBlackQueenSide =
     SetMask(c7) | SetMask(b6) | SetMask(a7);
 
 /**
  * Masks used in ScoreDevelopment.
  */
-const static BitBoard WKingOpeningMask = SetMask(e1) | SetMask(d1);
-const static BitBoard BKingOpeningMask = SetMask(e8) | SetMask(d8);
+static const BitBoard WKingOpeningMask = SetMask(e1) | SetMask(d1);
+static const BitBoard BKingOpeningMask = SetMask(e8) | SetMask(d8);
 
-const static BitBoard WKingTrapsRook1 = SetMask(f1) | SetMask(g1);
-const static BitBoard WRookTrapped1 = SetMask(g1) | SetMask(h1) | SetMask(h2);
-const static BitBoard WKingTrapsRook2 = SetMask(c1) | SetMask(b1);
-const static BitBoard WRookTrapped2 = SetMask(b1) | SetMask(a1) | SetMask(a2);
-const static BitBoard BKingTrapsRook1 = SetMask(f8) | SetMask(g8);
-const static BitBoard BRookTrapped1 = SetMask(g8) | SetMask(h8) | SetMask(h7);
-const static BitBoard BKingTrapsRook2 = SetMask(c8) | SetMask(b8);
-const static BitBoard BRookTrapped2 = SetMask(b8) | SetMask(a8) | SetMask(a7);
+static const BitBoard WKingTrapsRook1 = SetMask(f1) | SetMask(g1);
+static const BitBoard WRookTrapped1 = SetMask(g1) | SetMask(h1) | SetMask(h2);
+static const BitBoard WKingTrapsRook2 = SetMask(c1) | SetMask(b1);
+static const BitBoard WRookTrapped2 = SetMask(b1) | SetMask(a1) | SetMask(a2);
+static const BitBoard BKingTrapsRook1 = SetMask(f8) | SetMask(g8);
+static const BitBoard BRookTrapped1 = SetMask(g8) | SetMask(h8) | SetMask(h7);
+static const BitBoard BKingTrapsRook2 = SetMask(c8) | SetMask(b8);
+static const BitBoard BRookTrapped2 = SetMask(b8) | SetMask(a8) | SetMask(a7);
 
 /**
  * Score the pawn structure.
@@ -1114,8 +1125,7 @@ int MaterialBalance(const struct Position *p) {
  * Score the position from white points of view.
  */
 
-static int ScorePositionForWhite(const struct Position *p, int alpha,
-                                 int beta) {
+static int ScorePositionForWhite(const struct Position *p) {
     int score;
 
     int wphase;
@@ -1524,11 +1534,11 @@ static int ScorePositionForWhite(const struct Position *p, int alpha,
  * if it is not white to move.
  */
 
-int ScorePosition(const struct Position *p, int alpha, int beta) {
+int ScorePosition(const struct Position *p) {
     if (p->turn == White)
-        return ScorePositionForWhite(p, alpha, beta);
+        return ScorePositionForWhite(p);
     else
-        return -ScorePositionForWhite(p, -beta, -alpha);
+        return -ScorePositionForWhite(p);
 }
 
 /**

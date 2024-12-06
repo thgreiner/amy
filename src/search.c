@@ -111,10 +111,7 @@ static int EGTBDepth = 0;
 
 static int NodesPerCheck;
 
-#if HAVE_STDATOMIC_H && MP
-_Atomic
-#endif
-    static unsigned long TotalNodes;
+static OPTIONAL_ATOMIC unsigned long TotalNodes;
 
 /*
  * Search stati
@@ -141,11 +138,7 @@ char BestLine[2048];
 char ShortBestLine[2048];
 char AnalysisLine[2048];
 
-#if HAVE_STDATOMIC_H && MP
-_Atomic
-#endif
-    unsigned long HTry,
-    HHit, PTry, PHit, STry, SHit;
+OPTIONAL_ATOMIC unsigned long HTry, HHit, PTry, PHit, STry, SHit;
 
 /* prototypes for search routines */
 
@@ -507,7 +500,7 @@ static int quies(struct SearchData *sd, int alpha, int beta, int depth) {
         }
         break;
     default:
-        best = ScorePosition(p, alpha, beta);
+        best = ScorePosition(p);
         break;
     }
 

@@ -106,6 +106,7 @@ int ProbeRecognizer(const struct Position *p, int *score) {
 }
 
 static int RecognizerKK(const struct Position *p, int *score) {
+    (void)p;
     *score = 0;
 
     return ExactScore;

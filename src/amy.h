@@ -66,6 +66,9 @@
 
 #if HAVE_STDATOMIC_H && MP
 #include <stdatomic.h>
+#define OPTIONAL_ATOMIC _Atomic
+#else
+#define OPTIONAL_ATOMIC
 #endif
 
 #ifdef _WIN32
@@ -326,6 +329,7 @@ struct CommandEntry {
 
 struct SearchStatus {
     int st_phase;
+    int st_move_generated_by;
     int st_first;
     int st_nc_first;
     int st_last;
@@ -389,7 +393,7 @@ struct PawnFacts {
 };
 
 struct HTEntry {
-    int ht_Signature;
+    unsigned int ht_Signature;
     int ht_Move;
     int ht_Score;
     short ht_Flags;
@@ -474,18 +478,12 @@ extern signed char NextDir[8][64][64];
 extern signed char NextSQ[64][64];
 extern struct MoveData NextSquare[8][64][64];
 
-extern struct SearchStatus SStatus[64];
-
 extern int EGTBProbe, EGTBProbeSucc;
 
 extern int Value[];
 extern int MaxPos;
 
-#if HAVE_STDATOMIC_H && MP
-_Atomic
-#endif
-    extern unsigned long PHit,
-    PTry, SHit, STry, HHit, HTry;
+extern OPTIONAL_ATOMIC unsigned long PHit, PTry, SHit, STry, HHit, HTry;
 
 extern unsigned int FHTime;
 extern int GUIMode;
@@ -635,7 +633,7 @@ void InitEGTB(char *);
 int ProbeEGTB(const struct Position *, int *, int);
 
 int MaterialBalance(const struct Position *);
-int ScorePosition(const struct Position *, int, int);
+int ScorePosition(const struct Position *);
 bool CheckDraw(const struct Position *);
 bool IsPassed(const struct Position *, int, int);
 void InitScore(const struct Position *);

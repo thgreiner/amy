@@ -453,6 +453,15 @@ void DoMove(struct Position *p, int move) {
         abort();
     }
 
+    int sp = TYPE(p->piece[to]);
+    if (move & M_CAPTURE && (sp < Pawn || sp > Queen)) {
+        printf("Illegal captured piece type %d!\n", sp);
+        printf("Move was %s\n", ICS_SAN(move));
+        ShowPosition(p);
+        fflush(stdout);
+        abort();
+    }
+
     /* save EnPassant and Castling */
     /* muss ich das hier machen ??
      * Sollte in einer init-node routine geschehen! */
@@ -497,8 +506,6 @@ void DoMove(struct Position *p, int move) {
                 p->castle &= ~(CastleMask[p->turn][1]);
         }
         if (move & M_CAPTURE) {
-            int sp = TYPE(p->piece[to]);
-
             /* piece looses its attacks */
             AtkClr(p, sp, OPP(p->turn), to);
 
@@ -1544,6 +1551,9 @@ char *ICS_SAN(int move) {
 
     *(x++) = 'a' + (fr & 7);
     *(x++) = '1' + (fr >> 3);
+    if (move & (M_CAPTURE | M_ENPASSANT)) {
+        *(x++) = 'x';
+    }
     *(x++) = 'a' + (to & 7);
     *(x++) = '1' + (to >> 3);
     if (move & M_PANY) {
