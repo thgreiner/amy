@@ -182,11 +182,17 @@ static void AtkSet(struct Position *p, int type, int color, int square) {
     } else {
         md = NextSquare[type][square];
         nsq = md[square].nextPos;
-        while (nsq >= 0) {
+        for (int i = 0; nsq >= 0 && i < 64; i++) {
             SetBit(p->atkTo[square], nsq);
             SetBit(p->atkFr[nsq], square);
             nsq =
                 (p->piece[nsq] != Neutral) ? md[nsq].nextDir : md[nsq].nextPos;
+        }
+        if (nsq >= 0) {
+            printf("AtkSet(%d, %d, %d): nsq=%d\n", type, color, square, nsq);
+            ShowPosition(p);
+            fflush(stdout);
+            abort();
         }
     }
 }
@@ -216,10 +222,16 @@ static void AtkClr(struct Position *p, int type, int color, int square) {
     } else {
         md = NextSquare[type][square];
         nsq = md[square].nextPos;
-        while (nsq >= 0) {
+        for (int i = 0; nsq >= 0 && i < 64; i++) {
             ClrBit(p->atkFr[nsq], square);
             nsq =
                 (p->piece[nsq] != Neutral) ? md[nsq].nextDir : md[nsq].nextPos;
+        }
+        if (nsq >= 0) {
+            printf("AtkClr(%d, %d, %d): nsq=%d\n", type, color, square, nsq);
+            ShowPosition(p);
+            fflush(stdout);
+            abort();
         }
     }
 }
@@ -432,6 +444,14 @@ void DoMove(struct Position *p, int move) {
     int from = M_FROM(move);
     int to = M_TO(move);
     int tp = TYPE(p->piece[from]);
+
+    if (tp < Pawn || tp > King) {
+        printf("Illegal piece type %d!\n", tp);
+        printf("Move was %s\n", ICS_SAN(move));
+        ShowPosition(p);
+        fflush(stdout);
+        abort();
+    }
 
     /* save EnPassant and Castling */
     /* muss ich das hier machen ??
