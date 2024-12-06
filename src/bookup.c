@@ -421,9 +421,12 @@ void QueryBook(struct Position *p) {
         if (entry->le.flags & BadMove) {
             modifier = '?';
         }
-        Print(0, "\t%5s%c %6d %3d%% %3d%% %3d%% %5d %3.f\n", SAN(p, moves[i]),
-              modifier, freq, (100 * entry->be.win) / freq,
-              (100 * entry->be.loss) / freq, (100 * entry->be.draw) / freq,
+
+        char san_buffer[16];
+        Print(0, "\t%5s%c %6d %3d%% %3d%% %3d%% %5d %3.f\n",
+              SAN(p, moves[i], san_buffer), modifier, freq,
+              (100 * entry->be.win) / freq, (100 * entry->be.loss) / freq,
+              (100 * entry->be.draw) / freq,
 #if WITH_ELO
               entry->be.nElo ? entry->be.sumElo / entry->be.nElo : 0,
 #else
@@ -487,7 +490,8 @@ void CreateLearnDB(char *file_name) {
 
             themove = ParseSAN(p, move);
             if (themove != M_NONE) {
-                Print(0, "%s ", SAN(p, themove));
+                char san_buffer[16];
+                Print(0, "%s ", SAN(p, themove, san_buffer));
 
                 DoMove(p, themove);
 
