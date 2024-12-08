@@ -2079,8 +2079,8 @@ template <int piw1, int piw2, int piw3> class T41 {
                 sqbk = reflect_xy(sqbk);
             };
         }
-        return TEnumerate3<piw1, piw2, piw3, x_piecePawn == piw3, false>::Index(
-            sqwk, sqw1, sqw2, sqw3, sqbk);
+        return TEnumerate3 < piw1, piw2, piw3, x_piecePawn == piw3,
+               false > ::Index(sqwk, sqw1, sqw2, sqw3, sqbk);
     }
 
     static INDEX TB_FASTCALL IndCalcB(square *psqW, square *psqB, square sqEnP,
@@ -3756,7 +3756,7 @@ extern "C" int FReadTableToMemory(int iTb,    // IN | Tablebase
     if (NULL == fp)
         return false;
 
-        // Find database size
+    // Find database size
 #if defined(NEW)
     cb = rgtbdDesc[iTb].m_rgcbLength[side];
     if (0 != cb) {
@@ -4099,7 +4099,7 @@ static int TB_FASTCALL TbtProbeTable(int iTb, color side, INDEX indOffset) {
                 (0 != comp_decode_and_check_crc(block, info, block->orig.size,
                                                 TB_CRC_CHECK));
 
-            // Release block
+        // Release block
 #if defined(SMP)
         Lock(lockDecode);
         *pBlock = block;
