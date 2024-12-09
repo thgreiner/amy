@@ -34,6 +34,7 @@
  */
 
 #include "amy.h"
+#include "inline.h"
 
 BitBoard ShiftUpMask, ShiftDownMask;
 BitBoard ShiftLeftMask, ShiftRightMask;
@@ -66,8 +67,8 @@ void InitMasks(void) {
     for (i = 0; i < 8; i++) {
         ShiftUpMask &= ClrMask(i);
         ShiftDownMask &= ClrMask(56 + i);
-        ShiftLeftMask &= ClrMask(8 * i + 7);
-        ShiftRightMask &= ClrMask(8 * i);
+        ShiftRightMask &= ClrMask(8 * i + 7);
+        ShiftLeftMask &= ClrMask(8 * i);
     }
 }
 
@@ -362,4 +363,5 @@ void InitAll(void) {
     InitPawnMasks();
     InitGeometry();
     InitMiscMasks();
+    InitMagic();
 }

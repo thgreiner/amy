@@ -59,6 +59,7 @@
 #include <math.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -400,6 +401,7 @@ extern BitBoard InterPath[64][64];
 extern BitBoard Ray[64][64];
 extern BitBoard WPawnEPM[64], BPawnEPM[64];
 extern const BitBoard KnightEPM[64], KingEPM[64];
+extern const BitBoard PawnEPM[2][64];
 extern BitBoard BishopEPM[64], RookEPM[64], QueenEPM[64];
 extern BitBoard SeventhRank[2], ThirdRank[2], EighthRank[2];
 extern BitBoard LeftOf[8], RightOf[8], FarLeftOf[8], FarRightOf[8];
@@ -559,6 +561,7 @@ bool MateThreat(struct Position *, int);
 int GenMates(struct Position *, int *mvs);
 
 void InitMoves(void);
+void InitMagic(void);
 
 struct SearchData *CreateSearchData(struct Position *);
 void FreeSearchData(struct SearchData *);

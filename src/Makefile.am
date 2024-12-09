@@ -1,10 +1,10 @@
 bin_PROGRAMS = Amy
 
 Amy_SOURCES = bitboard.c bookup.c commands.c dbase.c eco.c hashtable.c \
-              init.c inline.h learn.c mates.c movedata.c mytb.cpp next.c \
-              pgn.c probe.c random.c recog.c score.c search.c search_io.c \
-	      state_machine.c swap.c time_ctl.c utils.c tree.c version.c \
-              main.c
+              init.c inline.h learn.c magic.c mates.c movedata.c mytb.cpp \
+              next.c pgn.c probe.c random.c recog.c score.c search.c \
+              search_io.c state_machine.c swap.c time_ctl.c utils.c tree.c \
+              version.c main.c
 
 Amy_DEPENDENCIES = bitboard.c bookup.o commands.o dbase.o eco.o \
               hashtable.o init.o learn.o mates.o movedata.o mytb.o next.o \

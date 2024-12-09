@@ -34,7 +34,6 @@
  */
 
 #include "amy.h"
-#include <stdio.h>
 
 #define MAX_TREE_SIZE 64 /* maximum depth we will search to */
 

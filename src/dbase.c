@@ -34,6 +34,7 @@
  */
 
 #include "amy.h"
+#include "magic.h"
 
 /*
  * Names of pieces (language dependent)
@@ -184,52 +185,41 @@ static void DebugEngine(struct Position *p) {
  */
 
 static void AtkSet(struct Position *p, int type, int color, int square) {
-    struct MoveData *md;
-    int nsq;
+    BitBoard attacks;
 
     switch (type) {
-    case Pawn: {
-        BitBoard attacks;
-        if (color == Black) {
-            attacks = p->atkTo[square] = BPawnEPM[square];
-        } else {
-            attacks = p->atkTo[square] = WPawnEPM[square];
-        }
-        while (attacks) {
-            int i = FindSetBit(attacks);
-            attacks &= attacks - 1;
-            SetBit(p->atkFr[i], square);
-        }
-    } break;
-    case Knight: {
-        BitBoard attacks = p->atkTo[square] = KnightEPM[square];
-        while (attacks) {
-            int i = FindSetBit(attacks);
-            attacks &= attacks - 1;
-            SetBit(p->atkFr[i], square);
-        }
-    } break;
-    case King: {
-        BitBoard attacks = p->atkTo[square] = KingEPM[square];
-        while (attacks) {
-            int i = FindSetBit(attacks);
-            attacks &= attacks - 1;
-            SetBit(p->atkFr[i], square);
-        }
-    } break;
+    case Pawn:
+        attacks = PawnEPM[color][square];
+        break;
+    case Knight:
+        attacks = KnightEPM[square];
+        break;
+    case Bishop:
+        attacks = bishop_attacks(square, p->mask[0][0] | p->mask[1][0]);
+        break;
+    case Rook:
+        attacks = rook_attacks(square, p->mask[0][0] | p->mask[1][0]);
+        break;
+    case Queen:
+        attacks = bishop_attacks(square, p->mask[0][0] | p->mask[1][0]) |
+                  rook_attacks(square, p->mask[0][0] | p->mask[1][0]);
+        break;
+    case King:
+        attacks = KingEPM[square];
+        break;
     default:
-        md = NextSquare[type][square];
-        nsq = md[square].nextPos;
-        for (int i = 0; nsq >= 0 && i < 64; i++) {
-            SetBit(p->atkTo[square], nsq);
-            SetBit(p->atkFr[nsq], square);
-            nsq =
-                (p->piece[nsq] != Neutral) ? md[nsq].nextDir : md[nsq].nextPos;
-        }
-        if (nsq >= 0) {
-            printf("AtkSet(%d, %d, %d): nsq=%d\n", type, color, square, nsq);
-            Panic(p);
-        }
+        printf("AtkSet(%d, %d, %d): nsq=%d\n", type, color, square);
+        Panic(p);
+    }
+
+    // ShowPosition(p);
+    // PrintBitBoard(attacks);
+
+    p->atkTo[square] = attacks;
+    while (attacks) {
+        int i = FindSetBit(attacks);
+        attacks &= attacks - 1;
+        SetBit(p->atkFr[i], square);
     }
 }
 
