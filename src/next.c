@@ -708,7 +708,7 @@ int NextEvasion(struct SearchData *sd) {
         while (st->st_last > st->st_nc_first) {
             int besti = st->st_nc_first;
             int m = sd->moveHeap[besti];
-            int best = sd->historyTab[p->turn][m & 4095];
+            unsigned int best = sd->historyTab[p->turn][m & 4095];
             for (i = st->st_nc_first + 1; i < st->st_last; i++) {
                 m = sd->moveHeap[i];
                 if (sd->historyTab[p->turn][m & 4095] > best) {

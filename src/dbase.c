@@ -187,25 +187,37 @@ static void AtkSet(struct Position *p, int type, int color, int square) {
     struct MoveData *md;
     int nsq;
 
-    if (type == Pawn) {
+    switch (type) {
+    case Pawn: {
+        BitBoard attacks;
         if (color == Black) {
-            p->atkTo[square] = BPawnEPM[square];
-            if ((square & 7) > 0) {
-                SetBit(p->atkFr[square - 9], square);
-            }
-            if ((square & 7) < 7) {
-                SetBit(p->atkFr[square - 7], square);
-            }
+            attacks = p->atkTo[square] = BPawnEPM[square];
         } else {
-            p->atkTo[square] = WPawnEPM[square];
-            if ((square & 7) > 0) {
-                SetBit(p->atkFr[square + 7], square);
-            }
-            if ((square & 7) < 7) {
-                SetBit(p->atkFr[square + 9], square);
-            }
+            attacks = p->atkTo[square] = WPawnEPM[square];
         }
-    } else {
+        while (attacks) {
+            int i = FindSetBit(attacks);
+            attacks &= attacks - 1;
+            SetBit(p->atkFr[i], square);
+        }
+    } break;
+    case Knight: {
+        BitBoard attacks = p->atkTo[square] = KnightEPM[square];
+        while (attacks) {
+            int i = FindSetBit(attacks);
+            attacks &= attacks - 1;
+            SetBit(p->atkFr[i], square);
+        }
+    } break;
+    case King: {
+        BitBoard attacks = p->atkTo[square] = KingEPM[square];
+        while (attacks) {
+            int i = FindSetBit(attacks);
+            attacks &= attacks - 1;
+            SetBit(p->atkFr[i], square);
+        }
+    } break;
+    default:
         md = NextSquare[type][square];
         nsq = md[square].nextPos;
         for (int i = 0; nsq >= 0 && i < 64; i++) {
@@ -1063,7 +1075,8 @@ bool LegalMove(struct Position *p, int move) {
     /* if the move is a pawn move to the 1st/8th rank, it must be
      * be a promotion.
      */
-    if ((to < 8 || to >= 56) && TYPE(p->piece[fr]) == Pawn && !(move & M_PANY))
+    if ((to <= h1 || to >= a8) && TYPE(p->piece[fr]) == Pawn &&
+        !(move & M_PANY))
         return false;
 
     if (move & M_CAPTURE) {
