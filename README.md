@@ -1,3 +1,4 @@
+![main branch](https://github.com/thgreiner/amy/actions/workflows/c-cpp.yml/badge.svg)
 
 What is Amy?
 ============
