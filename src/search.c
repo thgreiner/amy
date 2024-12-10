@@ -1227,6 +1227,8 @@ static void *IterateInt(void *x) {
     double elapsed;
     struct SearchData *sd = x;
     struct Position *p;
+    bool any_pv_printed = false;
+    bool pv_valid = false;
 
     if (!sd->master) {
         usleep(50 + 100 * Random());
@@ -1247,7 +1249,6 @@ static void *IterateInt(void *x) {
         int beta = best + PVWindow;
         bool is_pv = true;
         bool pv_stable = true;
-        /* int nodes_per_iteration = Nodes; */
 
         for (sd->movenum = 0; sd->movenum < sd->nrootmoves; sd->movenum++) {
             int tmp;
@@ -1429,6 +1430,7 @@ static void *IterateInt(void *x) {
                 if (sd->master) {
                     char score_as_text[16];
                     AnalyzeHT(p, mvs[0]);
+                    pv_valid = true;
 
                     snprintf(
                         AnalysisLine, sizeof(AnalysisLine), "%2d: (%7s) %s",
@@ -1440,6 +1442,8 @@ static void *IterateInt(void *x) {
                         SearchOutput(sd->depth, CurTime - StartTime,
                                      (p->turn) ? -best : best, BestLine,
                                      sd->nodes_cnt + sd->qnodes_cnt);
+
+                        any_pv_printed = true;
                     }
                 }
 
@@ -1464,6 +1468,8 @@ static void *IterateInt(void *x) {
             SearchOutput(sd->depth, CurTime - StartTime,
                          (p->turn) ? -best : best, BestLine,
                          sd->nodes_cnt + sd->qnodes_cnt);
+
+            any_pv_printed = true;
         }
 
         if (best < -CMLIMIT || best > CMLIMIT) {
@@ -1540,6 +1546,13 @@ final:
     elapsed = (double)(CurTime - StartTime) / (double)ONE_SECOND;
 
     if (sd->master) {
+        if (pv_valid && !any_pv_printed) {
+            // Make sure there is a PV printed
+            SearchOutput(sd->depth, CurTime - StartTime,
+                         (p->turn) ? -best : best, BestLine,
+                         sd->nodes_cnt + sd->qnodes_cnt);
+        }
+
         char buf1[16], buf2[16], buf3[16], buf4[16], buf5[16], buf6[16],
             buf7[16];
 
