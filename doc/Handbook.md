@@ -28,7 +28,6 @@ platform, compile and install it in `/usr/local`.
 
 | Option | Description |
 |----|----|
-| `--with-dbpath=path` | Allows you to specify the directory where the Berkeley DB software is installed. |
 | `--enable-mt` | Enable multithreaded search. |
 
 autoconf parameters
@@ -125,15 +124,15 @@ You can run a test suite in EPD format with the `test` command.
 Typically you will first set a time limit using the `level` as in the
 following example:
 
-    White(1): level fixed/5
+    White(1): level fixed/1
     White(1): test EPD/WAC.epd 
     …
-    solved 293 out of 300  (BT2630 = 2609, LCT2 = 10690, BS2830 = 2794)
+    solved 295 out of 300  (BT2630 = 2615, LCT2 = 10750, BS2830 = 2814)
     -----------------------------------------------
 
 The output reproduced above is from a real test run on a Intel(R)
 Core(TM) i7-1165G7 @ 2.80GHz laptop. Out of the 300 test positions
-included in the "Win At Chess" test suite Amy solved 293 at 1 second per
+included in the "Win At Chess" test suite Amy solved 295 at 1 second per
 test.
 
 To simplify the evaluation of several standard test suites Amy outputs
