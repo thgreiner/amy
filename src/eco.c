@@ -100,6 +100,11 @@ char *GetEcoCode(hash_t hkey) {
 
     if (EcoDB == NULL) {
         FILE *fin = fopen(ECO_NAME, "r");
+
+        if (fin == NULL) {
+            fin = fopen(DEFAULT_ECO_NAME, "r");
+        }
+
         if (fin == NULL) {
             Print(0, "Can't open database: %s\n", strerror(errno));
             return NULL;
