@@ -210,6 +210,7 @@ static void AtkSet(struct Position *p, int type, int color, int square) {
     default:
         printf("AtkSet(%d, %d, %d)\n", type, color, square);
         Panic(p);
+        return; // never reached
     }
 
     p->atkTo[square] = attacks;

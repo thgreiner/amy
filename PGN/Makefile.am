@@ -1,1 +1,1 @@
-EXTRA_DIST = eco.pgn
+EXTRA_DIST = eco.pgn ClassicGames.pgn
