@@ -6,6 +6,7 @@
 
 * Refactored MP hashtable code
 
+* Attack generation now uses magic bitboards
 
 ## [0.9.4] 2024-11-27
 

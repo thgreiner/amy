@@ -208,12 +208,9 @@ static void AtkSet(struct Position *p, int type, int color, int square) {
         attacks = KingEPM[square];
         break;
     default:
-        printf("AtkSet(%d, %d, %d): nsq=%d\n", type, color, square);
+        printf("AtkSet(%d, %d, %d)\n", type, color, square);
         Panic(p);
     }
-
-    // ShowPosition(p);
-    // PrintBitBoard(attacks);
 
     p->atkTo[square] = attacks;
     while (attacks) {

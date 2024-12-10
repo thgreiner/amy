@@ -418,12 +418,7 @@ extern int XBoard;
 extern int XPost;
 extern int PBCommand;
 
-extern int MVerbose;
-
-extern signed char NextPos[8][64][64];
-extern signed char NextDir[8][64][64];
 extern signed char NextSQ[64][64];
-extern struct MoveData NextSquare[8][64][64];
 
 extern int EGTBProbe, EGTBProbeSucc;
 
@@ -433,7 +428,6 @@ extern int MaxPos;
 extern OPTIONAL_ATOMIC unsigned long PHit, PTry, SHit, STry, HHit, HTry;
 
 extern unsigned int FHTime;
-extern int GUIMode;
 extern int ComputerSide;
 extern int VerboseMode;
 extern int MoveHist[64];
@@ -442,7 +436,6 @@ extern int AbortSearch;
 extern char AnalysisLine[];
 
 extern int MaxSearchDepth;
-extern int WatchMode;
 
 extern bool XBoardMode;
 extern int State;
