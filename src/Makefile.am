@@ -38,3 +38,7 @@ eco.o: ${srcdir}/eco.c
 .PHONY: format
 format:
 	clang-format -i ${Amy_SOURCES} ${EXTRA_Amy_SOURCES} ${noinst_HEADERS}
+
+.PHONY: distclean-local
+distclean-local:
+	rm -f Eco.db Book.db Amy.log
