@@ -6,6 +6,9 @@
 
 * Refactored MP hashtable code
 
+* Attack generation now uses magic bitboards
+
+* Replace the docbook version of the handbook with a markdown version
 
 ## [0.9.4] 2024-11-27
 

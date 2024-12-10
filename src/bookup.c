@@ -522,7 +522,8 @@ void CreateLearnDB(char *file_name) {
 }
 
 static tree_node_t *flatten_internal(tree_node_t *source, tree_node_t *target,
-                                     int threshold, int *read, int *written) {
+                                     unsigned int threshold, int *read,
+                                     int *written) {
     if (source == NULL) {
         return target;
     }
@@ -542,7 +543,7 @@ static tree_node_t *flatten_internal(tree_node_t *source, tree_node_t *target,
     return target;
 }
 
-void FlattenBook(int threshold) {
+void FlattenBook(unsigned int threshold) {
     int read = 0;
     int written = 0;
 

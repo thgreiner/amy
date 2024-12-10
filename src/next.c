@@ -34,7 +34,6 @@
  */
 
 #include "amy.h"
-#include <stdio.h>
 
 #define MAX_TREE_SIZE 64 /* maximum depth we will search to */
 
@@ -157,6 +156,7 @@ int NextMove(struct SearchData *sd) {
         } else {
             st->st_hashmove = M_NONE;
         }
+    /* fall through */
     case GenerateCaptures: {
         BitBoard targets;
         int cnt;
@@ -204,6 +204,7 @@ int NextMove(struct SearchData *sd) {
 
         st->st_phase = GainingCapture;
     }
+    /* fall through */
     case GainingCapture:
 #ifdef VERBOSE
         Print(9, "GainingCapture\n");
@@ -232,6 +233,7 @@ int NextMove(struct SearchData *sd) {
             } else
                 break;
         }
+    /* fall through */
     case Killer1: {
         move = sd->killer->killer1;
 #ifdef VERBOSE
@@ -245,6 +247,7 @@ int NextMove(struct SearchData *sd) {
             return move;
         }
     }
+    /* fall through */
     case Killer2: {
         move = sd->killer->killer2;
 #ifdef VERBOSE
@@ -258,6 +261,7 @@ int NextMove(struct SearchData *sd) {
             return move;
         }
     }
+    /* fall through */
     case CounterMv: {
         int lmove = (p->actLog - 1)->gl_Move;
 
@@ -277,6 +281,7 @@ int NextMove(struct SearchData *sd) {
             }
         }
     }
+    /* fallthrough */
     case Killer3:
 #ifdef VERBOSE
         Print(9, "Killer3\n");
@@ -297,6 +302,7 @@ int NextMove(struct SearchData *sd) {
                 return move;
             }
         }
+        /* fallthrough */
 
     case LoosingCapture:
 #ifdef VERBOSE
@@ -325,6 +331,7 @@ int NextMove(struct SearchData *sd) {
 
             return move;
         }
+        /* fallthrough */
 
     case GenerateRest: {
 #ifdef VERBOSE
@@ -454,6 +461,7 @@ int NextEvasion(struct SearchData *sd) {
         } else {
             st->st_hashmove = M_NONE;
         }
+        /* fall through */
     case GenerateCaptures: {
         BitBoard targets;
         int cnt;
@@ -490,6 +498,7 @@ int NextEvasion(struct SearchData *sd) {
             st->st_last++;
         }
     }
+        /* fall through */
     case GainingCapture:
         while (st->st_last > st->st_first) {
             int besti = st->st_first;
@@ -517,6 +526,7 @@ int NextEvasion(struct SearchData *sd) {
             } else
                 break;
         }
+        /* fall through */
     case Killer1: {
         move = sd->killer->killer1;
 #ifdef VERBOSE
@@ -530,6 +540,7 @@ int NextEvasion(struct SearchData *sd) {
             return move;
         }
     }
+        /* fall through */
     case Killer2: {
         move = sd->killer->killer2;
 #ifdef VERBOSE
@@ -543,6 +554,7 @@ int NextEvasion(struct SearchData *sd) {
             return move;
         }
     }
+        /* fall through */
     case CounterMv: {
         int lmove = (p->actLog - 1)->gl_Move;
 
@@ -562,6 +574,7 @@ int NextEvasion(struct SearchData *sd) {
             }
         }
     }
+        /* fall through */
     case Killer3:
 #ifdef VERBOSE
         Print(9, "Killer3\n");
@@ -582,6 +595,7 @@ int NextEvasion(struct SearchData *sd) {
                 return move;
             }
         }
+        /* fall through */
     case LoosingCapture:
 #ifdef VERBOSE
         Print(9, "LoosingCapture\n");
@@ -610,6 +624,7 @@ int NextEvasion(struct SearchData *sd) {
             return move;
         }
 
+        /* fall through */
     case GenerateRest: {
         BitBoard tmp, tmp2;
         BitBoard excl;
@@ -704,11 +719,12 @@ int NextEvasion(struct SearchData *sd) {
         }
     }
 
+        /* fall through */
     case HistoryMoves:
         while (st->st_last > st->st_nc_first) {
             int besti = st->st_nc_first;
             int m = sd->moveHeap[besti];
-            int best = sd->historyTab[p->turn][m & 4095];
+            unsigned int best = sd->historyTab[p->turn][m & 4095];
             for (i = st->st_nc_first + 1; i < st->st_last; i++) {
                 m = sd->moveHeap[i];
                 if (sd->historyTab[p->turn][m & 4095] > best) {
@@ -891,6 +907,7 @@ int NextMoveQ(struct SearchData *sd, int alpha) {
         GenerateQCaptures(sd, alpha);
         st->st_phase = GainingCapture;
 
+        /* fall through */
     case GainingCapture:
 #ifdef VERBOSE
         Print(9, "GainingCapture\n");

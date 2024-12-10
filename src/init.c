@@ -34,6 +34,7 @@
  */
 
 #include "amy.h"
+#include "inline.h"
 
 BitBoard ShiftUpMask, ShiftDownMask;
 BitBoard ShiftLeftMask, ShiftRightMask;
@@ -46,8 +47,7 @@ BitBoard OutpostMaskW[64], OutpostMaskB[64];
 BitBoard InterPath[64][64];
 BitBoard Ray[64][64];
 BitBoard WPawnEPM[64], BPawnEPM[64];
-BitBoard KnightEPM[64], BishopEPM[64], RookEPM[64], QueenEPM[64];
-BitBoard KingEPM[64];
+BitBoard BishopEPM[64], RookEPM[64], QueenEPM[64];
 BitBoard SeventhRank[2], EighthRank[2];
 BitBoard ThirdRank[2];
 BitBoard LeftOf[8], RightOf[8], FarLeftOf[8], FarRightOf[8];
@@ -67,8 +67,8 @@ void InitMasks(void) {
     for (i = 0; i < 8; i++) {
         ShiftUpMask &= ClrMask(i);
         ShiftDownMask &= ClrMask(56 + i);
-        ShiftLeftMask &= ClrMask(8 * i + 7);
-        ShiftRightMask &= ClrMask(8 * i);
+        ShiftRightMask &= ClrMask(8 * i + 7);
+        ShiftLeftMask &= ClrMask(8 * i);
     }
 }
 
@@ -210,8 +210,6 @@ void InitGeometry(void) {
     int dirs[] = {1, -1, 10, -10, 9, -9, 11, -11};
     int dirb[] = {9, -9, 11, -11};
     int dirr[] = {1, -1, 10, -10};
-    int dirn[] = {19, 21, -19, -21, 12, 8, -12, -8};
-    int dirk[] = {-11, -10, -9, -1, 1, 9, 10, 11};
 
     for (i = 0; i < 100; i++) {
         edge[i] = 0;
@@ -234,8 +232,8 @@ void InitGeometry(void) {
             InterPath[i][j] = 0;
             Ray[i][j] = 0;
         }
-        WPawnEPM[i] = BPawnEPM[i] = KnightEPM[i] = BishopEPM[i] = RookEPM[i] =
-            QueenEPM[i] = KingEPM[i] = 0;
+        WPawnEPM[i] = BPawnEPM[i] = BishopEPM[i] = RookEPM[i] = QueenEPM[i] =
+            0ULL;
     }
 
     for (j = 0; j < 100; j++) {
@@ -263,14 +261,6 @@ void InitGeometry(void) {
                 RookEPM[x] |= SetMask(trto[k]);
                 QueenEPM[x] |= SetMask(trto[k]);
             }
-        }
-        for (i = 0; i < 8; i++) {
-            k = j + dirn[i];
-            if (k >= 0 && k < 100 && !edge[k])
-                KnightEPM[x] |= SetMask(trto[k]);
-            k = j + dirk[i];
-            if (k >= 0 && k < 100 && !edge[k])
-                KingEPM[x] |= SetMask(trto[k]);
         }
         if (!edge[j + 9])
             WPawnEPM[x] |= SetMask(x + 7);
@@ -373,4 +363,5 @@ void InitAll(void) {
     InitPawnMasks();
     InitGeometry();
     InitMiscMasks();
+    InitMagic();
 }

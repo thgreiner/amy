@@ -39,21 +39,274 @@
 static int conv[128];
 
 signed char NextSQ[64][64];
-struct MoveData NextSquare[8][64][64];
-
-static int KnightDirs[] = {14, 31, 33, 18, -14, -31, -33, -18};
-
-static int KingDirs[] = {-1, 15, 16, 17, 1, -17, -16, -15};
-
-static int BishopDirs[] = {15, 17, -15, -17};
-
-static int RookDirs[] = {16, 1, -16, -1};
 
 static int QueenDirs[] = {16, 1, -16, -1, 15, 17, -15, -17};
 
+const BitBoard KnightEPM[64] = {
+    0x20400ULL,
+    0x50800ULL,
+    0xa1100ULL,
+    0x142200ULL,
+    0x284400ULL,
+    0x508800ULL,
+    0xa01000ULL,
+    0x402000ULL,
+    0x2040004ULL,
+    0x5080008ULL,
+    0xa110011ULL,
+    0x14220022ULL,
+    0x28440044ULL,
+    0x50880088ULL,
+    0xa0100010ULL,
+    0x40200020ULL,
+    0x204000402ULL,
+    0x508000805ULL,
+    0xa1100110aULL,
+    0x1422002214ULL,
+    0x2844004428ULL,
+    0x5088008850ULL,
+    0xa0100010a0ULL,
+    0x4020002040ULL,
+    0x20400040200ULL,
+    0x50800080500ULL,
+    0xa1100110a00ULL,
+    0x142200221400ULL,
+    0x284400442800ULL,
+    0x508800885000ULL,
+    0xa0100010a000ULL,
+    0x402000204000ULL,
+    0x2040004020000ULL,
+    0x5080008050000ULL,
+    0xa1100110a0000ULL,
+    0x14220022140000ULL,
+    0x28440044280000ULL,
+    0x50880088500000ULL,
+    0xa0100010a00000ULL,
+    0x40200020400000ULL,
+    0x204000402000000ULL,
+    0x508000805000000ULL,
+    0xa1100110a000000ULL,
+    0x1422002214000000ULL,
+    0x2844004428000000ULL,
+    0x5088008850000000ULL,
+    0xa0100010a0000000ULL,
+    0x4020002040000000ULL,
+    0x400040200000000ULL,
+    0x800080500000000ULL,
+    0x1100110a00000000ULL,
+    0x2200221400000000ULL,
+    0x4400442800000000ULL,
+    0x8800885000000000ULL,
+    0x100010a000000000ULL,
+    0x2000204000000000ULL,
+    0x4020000000000ULL,
+    0x8050000000000ULL,
+    0x110a0000000000ULL,
+    0x22140000000000ULL,
+    0x44280000000000ULL,
+    0x88500000000000ULL,
+    0x10a00000000000ULL,
+    0x20400000000000ULL,
+};
+
+const BitBoard KingEPM[64] = {
+    0x302ULL,
+    0x705ULL,
+    0xe0aULL,
+    0x1c14ULL,
+    0x3828ULL,
+    0x7050ULL,
+    0xe0a0ULL,
+    0xc040ULL,
+    0x30203ULL,
+    0x70507ULL,
+    0xe0a0eULL,
+    0x1c141cULL,
+    0x382838ULL,
+    0x705070ULL,
+    0xe0a0e0ULL,
+    0xc040c0ULL,
+    0x3020300ULL,
+    0x7050700ULL,
+    0xe0a0e00ULL,
+    0x1c141c00ULL,
+    0x38283800ULL,
+    0x70507000ULL,
+    0xe0a0e000ULL,
+    0xc040c000ULL,
+    0x302030000ULL,
+    0x705070000ULL,
+    0xe0a0e0000ULL,
+    0x1c141c0000ULL,
+    0x3828380000ULL,
+    0x7050700000ULL,
+    0xe0a0e00000ULL,
+    0xc040c00000ULL,
+    0x30203000000ULL,
+    0x70507000000ULL,
+    0xe0a0e000000ULL,
+    0x1c141c000000ULL,
+    0x382838000000ULL,
+    0x705070000000ULL,
+    0xe0a0e0000000ULL,
+    0xc040c0000000ULL,
+    0x3020300000000ULL,
+    0x7050700000000ULL,
+    0xe0a0e00000000ULL,
+    0x1c141c00000000ULL,
+    0x38283800000000ULL,
+    0x70507000000000ULL,
+    0xe0a0e000000000ULL,
+    0xc040c000000000ULL,
+    0x302030000000000ULL,
+    0x705070000000000ULL,
+    0xe0a0e0000000000ULL,
+    0x1c141c0000000000ULL,
+    0x3828380000000000ULL,
+    0x7050700000000000ULL,
+    0xe0a0e00000000000ULL,
+    0xc040c00000000000ULL,
+    0x203000000000000ULL,
+    0x507000000000000ULL,
+    0xa0e000000000000ULL,
+    0x141c000000000000ULL,
+    0x2838000000000000ULL,
+    0x5070000000000000ULL,
+    0xa0e0000000000000ULL,
+    0x40c0000000000000ULL,
+};
+
+const BitBoard PawnEPM[2][64] = {{0x200ULL,
+                                  0x500ULL,
+                                  0xa00ULL,
+                                  0x1400ULL,
+                                  0x2800ULL,
+                                  0x5000ULL,
+                                  0xa000ULL,
+                                  0x4000ULL,
+                                  0x20000ULL,
+                                  0x50000ULL,
+                                  0xa0000ULL,
+                                  0x140000ULL,
+                                  0x280000ULL,
+                                  0x500000ULL,
+                                  0xa00000ULL,
+                                  0x400000ULL,
+                                  0x2000000ULL,
+                                  0x5000000ULL,
+                                  0xa000000ULL,
+                                  0x14000000ULL,
+                                  0x28000000ULL,
+                                  0x50000000ULL,
+                                  0xa0000000ULL,
+                                  0x40000000ULL,
+                                  0x200000000ULL,
+                                  0x500000000ULL,
+                                  0xa00000000ULL,
+                                  0x1400000000ULL,
+                                  0x2800000000ULL,
+                                  0x5000000000ULL,
+                                  0xa000000000ULL,
+                                  0x4000000000ULL,
+                                  0x20000000000ULL,
+                                  0x50000000000ULL,
+                                  0xa0000000000ULL,
+                                  0x140000000000ULL,
+                                  0x280000000000ULL,
+                                  0x500000000000ULL,
+                                  0xa00000000000ULL,
+                                  0x400000000000ULL,
+                                  0x2000000000000ULL,
+                                  0x5000000000000ULL,
+                                  0xa000000000000ULL,
+                                  0x14000000000000ULL,
+                                  0x28000000000000ULL,
+                                  0x50000000000000ULL,
+                                  0xa0000000000000ULL,
+                                  0x40000000000000ULL,
+                                  0x200000000000000ULL,
+                                  0x500000000000000ULL,
+                                  0xa00000000000000ULL,
+                                  0x1400000000000000ULL,
+                                  0x2800000000000000ULL,
+                                  0x5000000000000000ULL,
+                                  0xa000000000000000ULL,
+                                  0x4000000000000000ULL,
+                                  0x0ULL,
+                                  0x0ULL,
+                                  0x0ULL,
+                                  0x0ULL,
+                                  0x0ULL,
+                                  0x0ULL,
+                                  0x0ULL,
+                                  0x0ULL},
+                                 {0x0ULL,
+                                  0x0ULL,
+                                  0x0ULL,
+                                  0x0ULL,
+                                  0x0ULL,
+                                  0x0ULL,
+                                  0x0ULL,
+                                  0x0ULL,
+                                  0x2ULL,
+                                  0x5ULL,
+                                  0xaULL,
+                                  0x14ULL,
+                                  0x28ULL,
+                                  0x50ULL,
+                                  0xa0ULL,
+                                  0x40ULL,
+                                  0x200ULL,
+                                  0x500ULL,
+                                  0xa00ULL,
+                                  0x1400ULL,
+                                  0x2800ULL,
+                                  0x5000ULL,
+                                  0xa000ULL,
+                                  0x4000ULL,
+                                  0x20000ULL,
+                                  0x50000ULL,
+                                  0xa0000ULL,
+                                  0x140000ULL,
+                                  0x280000ULL,
+                                  0x500000ULL,
+                                  0xa00000ULL,
+                                  0x400000ULL,
+                                  0x2000000ULL,
+                                  0x5000000ULL,
+                                  0xa000000ULL,
+                                  0x14000000ULL,
+                                  0x28000000ULL,
+                                  0x50000000ULL,
+                                  0xa0000000ULL,
+                                  0x40000000ULL,
+                                  0x200000000ULL,
+                                  0x500000000ULL,
+                                  0xa00000000ULL,
+                                  0x1400000000ULL,
+                                  0x2800000000ULL,
+                                  0x5000000000ULL,
+                                  0xa000000000ULL,
+                                  0x4000000000ULL,
+                                  0x20000000000ULL,
+                                  0x50000000000ULL,
+                                  0xa0000000000ULL,
+                                  0x140000000000ULL,
+                                  0x280000000000ULL,
+                                  0x500000000000ULL,
+                                  0xa00000000000ULL,
+                                  0x400000000000ULL,
+                                  0x2000000000000ULL,
+                                  0x5000000000000ULL,
+                                  0xa000000000000ULL,
+                                  0x14000000000000ULL,
+                                  0x28000000000000ULL,
+                                  0x50000000000000ULL,
+                                  0xa0000000000000ULL,
+                                  0x40000000000000ULL}};
+
 void InitMoves(void) {
     int sq, sq2;
-    int pc;
 
     for (sq = 0; sq < 128; sq++) {
         conv[sq] = 127;
@@ -67,290 +320,7 @@ void InitMoves(void) {
 
     for (sq = 0; sq < 64; sq++) {
         for (sq2 = 0; sq2 < 64; sq2++) {
-            for (pc = Pawn; pc <= BPawn; pc++) {
-                NextSquare[pc][sq][sq2].nextPos = -1;
-                NextSquare[pc][sq][sq2].nextDir = -1;
-            }
             NextSQ[sq][sq2] = -1;
-        }
-    }
-
-    /*
-     * Pawns
-     */
-
-    for (sq = 0; sq < 128; sq++) {
-        int next;
-        int next2;
-
-        if (sq & 0x88)
-            continue;
-
-        next = sq + 0x11;
-        if (!(next & 0x88)) {
-            NextSquare[Pawn][conv[sq]][conv[sq]].nextPos = conv[next];
-            NextSquare[Pawn][conv[sq]][conv[sq]].nextDir = conv[next];
-        } else {
-            next = sq;
-        }
-
-        next2 = sq + 0x0f;
-        if (!(next2 & 0x88)) {
-            NextSquare[Pawn][conv[sq]][conv[next]].nextPos = conv[next2];
-            NextSquare[Pawn][conv[sq]][conv[next]].nextDir = conv[next2];
-        }
-    }
-
-    for (sq = 0; sq < 128; sq++) {
-        int next;
-        int next2;
-
-        if (sq & 0x88)
-            continue;
-
-        next = sq - 0x11;
-        if (!(next & 0x88)) {
-            NextSquare[BPawn][conv[sq]][conv[sq]].nextPos = conv[next];
-            NextSquare[BPawn][conv[sq]][conv[sq]].nextDir = conv[next];
-        } else {
-            next = sq;
-        }
-
-        next2 = sq - 0x0f;
-        if (!(next2 & 0x88)) {
-            NextSquare[BPawn][conv[sq]][conv[next]].nextPos = conv[next2];
-            NextSquare[BPawn][conv[sq]][conv[next]].nextDir = conv[next2];
-        }
-    }
-
-    /*
-     * Knight
-     */
-
-    for (sq = 0; sq < 128; sq++) {
-        int next;
-        int i;
-        if (sq & 0x88)
-            continue;
-
-        next = sq;
-
-        for (i = 0; i < 8; i++) {
-            int next2 = sq + KnightDirs[i];
-            if (next2 & 0x88)
-                continue;
-
-            NextSquare[Knight][conv[sq]][conv[next]].nextPos = conv[next2];
-            NextSquare[Knight][conv[sq]][conv[next]].nextDir = conv[next2];
-
-            next = next2;
-        }
-    }
-
-    /*
-     * King
-     */
-
-    for (sq = 0; sq < 128; sq++) {
-        int next;
-        int i;
-        if (sq & 0x88)
-            continue;
-
-        next = sq;
-
-        for (i = 0; i < 8; i++) {
-            int next2 = sq + KingDirs[i];
-            if (next2 & 0x88)
-                continue;
-
-            NextSquare[King][conv[sq]][conv[next]].nextPos = conv[next2];
-            NextSquare[King][conv[sq]][conv[next]].nextDir = conv[next2];
-
-            next = next2;
-        }
-    }
-
-    /*
-     * Bishops
-     */
-
-    for (sq = 0; sq < 128; sq++) {
-        int dir, nextdir;
-        int next;
-        bool start = true;
-
-        if (sq & 0x88)
-            continue;
-
-        dir = 0;
-
-        while (dir < 4) {
-            int next2 = -1;
-
-            next = sq + BishopDirs[dir];
-            if (next & 0x88) {
-                dir++;
-                continue;
-            }
-
-            nextdir = dir + 1;
-            while (nextdir < 4) {
-                next2 = sq + BishopDirs[nextdir];
-                if (!(next2 & 0x88))
-                    break;
-                nextdir++;
-            }
-
-            if (start) {
-                NextSquare[Bishop][conv[sq]][conv[sq]].nextPos = conv[next];
-                start = false;
-            }
-
-            for (;;) {
-                int next3 = next + BishopDirs[dir];
-
-                if (next3 & 0x88) {
-                    if (nextdir < 4) {
-                        NextSquare[Bishop][conv[sq]][conv[next]].nextPos =
-                            conv[next2];
-                        NextSquare[Bishop][conv[sq]][conv[next]].nextDir =
-                            conv[next2];
-                    }
-                    break;
-                } else {
-                    NextSquare[Bishop][conv[sq]][conv[next]].nextPos =
-                        conv[next3];
-                    if (nextdir < 4) {
-                        NextSquare[Bishop][conv[sq]][conv[next]].nextDir =
-                            conv[next2];
-                    }
-                }
-                next = next3;
-            }
-            dir++;
-        }
-    }
-
-    /*
-     * Rooks
-     */
-
-    for (sq = 0; sq < 128; sq++) {
-        int dir, nextdir;
-        int next;
-        bool start = true;
-
-        if (sq & 0x88)
-            continue;
-
-        dir = 0;
-
-        while (dir < 4) {
-            int next2 = -1;
-
-            next = sq + RookDirs[dir];
-            if (next & 0x88) {
-                dir++;
-                continue;
-            }
-
-            nextdir = dir + 1;
-            while (nextdir < 4) {
-                next2 = sq + RookDirs[nextdir];
-                if (!(next2 & 0x88))
-                    break;
-                nextdir++;
-            }
-
-            if (start) {
-                NextSquare[Rook][conv[sq]][conv[sq]].nextPos = conv[next];
-                start = false;
-            }
-
-            for (;;) {
-                int next3 = next + RookDirs[dir];
-
-                if (next3 & 0x88) {
-                    if (nextdir < 4) {
-                        NextSquare[Rook][conv[sq]][conv[next]].nextPos =
-                            conv[next2];
-                        NextSquare[Rook][conv[sq]][conv[next]].nextDir =
-                            conv[next2];
-                    }
-                    break;
-                } else {
-                    NextSquare[Rook][conv[sq]][conv[next]].nextPos =
-                        conv[next3];
-                    if (nextdir < 4) {
-                        NextSquare[Rook][conv[sq]][conv[next]].nextDir =
-                            conv[next2];
-                    }
-                }
-                next = next3;
-            }
-            dir++;
-        }
-    }
-
-    /*
-     * Queens
-     */
-
-    for (sq = 0; sq < 128; sq++) {
-        int dir, nextdir;
-        int next;
-        bool start = true;
-
-        if (sq & 0x88)
-            continue;
-
-        dir = 0;
-
-        while (dir < 8) {
-            int next2 = -1;
-
-            next = sq + QueenDirs[dir];
-            if (next & 0x88) {
-                dir++;
-                continue;
-            }
-
-            nextdir = dir + 1;
-            while (nextdir < 8) {
-                next2 = sq + QueenDirs[nextdir];
-                if (!(next2 & 0x88))
-                    break;
-                nextdir++;
-            }
-
-            if (start) {
-                NextSquare[Queen][conv[sq]][conv[sq]].nextPos = conv[next];
-                start = false;
-            }
-
-            for (;;) {
-                int next3 = next + QueenDirs[dir];
-
-                if (next3 & 0x88) {
-                    if (nextdir < 8) {
-                        NextSquare[Queen][conv[sq]][conv[next]].nextPos =
-                            conv[next2];
-                        NextSquare[Queen][conv[sq]][conv[next]].nextDir =
-                            conv[next2];
-                    }
-                    break;
-                } else {
-                    NextSquare[Queen][conv[sq]][conv[next]].nextPos =
-                        conv[next3];
-                    if (nextdir < 8) {
-                        NextSquare[Queen][conv[sq]][conv[next]].nextDir =
-                            conv[next2];
-                    }
-                }
-                next = next3;
-            }
-            dir++;
         }
     }
 

@@ -34,6 +34,7 @@
  */
 
 #include "amy.h"
+#include "magic.h"
 
 /*
  * Names of pieces (language dependent)
@@ -184,40 +185,39 @@ static void DebugEngine(struct Position *p) {
  */
 
 static void AtkSet(struct Position *p, int type, int color, int square) {
-    struct MoveData *md;
-    int nsq;
+    BitBoard attacks;
 
-    if (type == Pawn) {
-        if (color == Black) {
-            p->atkTo[square] = BPawnEPM[square];
-            if ((square & 7) > 0) {
-                SetBit(p->atkFr[square - 9], square);
-            }
-            if ((square & 7) < 7) {
-                SetBit(p->atkFr[square - 7], square);
-            }
-        } else {
-            p->atkTo[square] = WPawnEPM[square];
-            if ((square & 7) > 0) {
-                SetBit(p->atkFr[square + 7], square);
-            }
-            if ((square & 7) < 7) {
-                SetBit(p->atkFr[square + 9], square);
-            }
-        }
-    } else {
-        md = NextSquare[type][square];
-        nsq = md[square].nextPos;
-        for (int i = 0; nsq >= 0 && i < 64; i++) {
-            SetBit(p->atkTo[square], nsq);
-            SetBit(p->atkFr[nsq], square);
-            nsq =
-                (p->piece[nsq] != Neutral) ? md[nsq].nextDir : md[nsq].nextPos;
-        }
-        if (nsq >= 0) {
-            printf("AtkSet(%d, %d, %d): nsq=%d\n", type, color, square, nsq);
-            Panic(p);
-        }
+    switch (type) {
+    case Pawn:
+        attacks = PawnEPM[color][square];
+        break;
+    case Knight:
+        attacks = KnightEPM[square];
+        break;
+    case Bishop:
+        attacks = bishop_attacks(square, p->mask[0][0] | p->mask[1][0]);
+        break;
+    case Rook:
+        attacks = rook_attacks(square, p->mask[0][0] | p->mask[1][0]);
+        break;
+    case Queen:
+        attacks = bishop_attacks(square, p->mask[0][0] | p->mask[1][0]) |
+                  rook_attacks(square, p->mask[0][0] | p->mask[1][0]);
+        break;
+    case King:
+        attacks = KingEPM[square];
+        break;
+    default:
+        printf("AtkSet(%d, %d, %d)\n", type, color, square);
+        Panic(p);
+        return; // never reached
+    }
+
+    p->atkTo[square] = attacks;
+    while (attacks) {
+        int i = FindSetBit(attacks);
+        attacks &= attacks - 1;
+        SetBit(p->atkFr[i], square);
     }
 }
 
@@ -1063,7 +1063,8 @@ bool LegalMove(struct Position *p, int move) {
     /* if the move is a pawn move to the 1st/8th rank, it must be
      * be a promotion.
      */
-    if ((to < 8 || to >= 56) && TYPE(p->piece[fr]) == Pawn && !(move & M_PANY))
+    if ((to <= h1 || to >= a8) && TYPE(p->piece[fr]) == Pawn &&
+        !(move & M_PANY))
         return false;
 
     if (move & M_CAPTURE) {
