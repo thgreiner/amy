@@ -81,7 +81,7 @@ const int EPTranslate[] = {0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
  * Masks for castle rights:
  */
 
-const int CastleMask[2][2] = {
+const int8_t CastleMask[2][2] = {
     {0x01, 0x02}, /* White can castle king/queenp->turn */
     {0x04, 0x08}  /* dito for black */
 };
@@ -326,7 +326,7 @@ int PromoType(int move) {
 
 /*
  * Make a castle move
- * I seperated this routine from the normal DoMove routine since it has
+ * I separated this routine from the normal DoMove routine since it has
  * to move two pieces
  */
 
@@ -812,7 +812,6 @@ void RecalcAttacks(struct Position *p) {
     p->material[White] = p->material[Black] = p->nonPawn[White] =
         p->nonPawn[Black] = p->material_signature[White] =
             p->material_signature[Black] =
-
                 p->hkey = p->pkey = 0;
 
     tmp = p->mask[White][0];
