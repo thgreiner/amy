@@ -136,7 +136,7 @@ int PBAltMove;
 
 char BestLine[2048];
 char ShortBestLine[2048];
-char AnalysisLine[2048];
+char AnalysisLine[4096];
 
 OPTIONAL_ATOMIC unsigned long HTry, HHit, PTry, PHit, STry, SHit;
 

@@ -283,18 +283,17 @@ int ProbeST(hash_t key, int *score) {
 #if MP && HAVE_LIBPTHREAD
     pthread_mutex_lock(ScoreMutex + ((key >> 32) & MUTEX_MASK));
 #endif /* MP && HAVE_LIBPTHREAD */
-    struct STEntry *h = ScoreTable + ((key >> 32) & ST_Mask);
-    int result = Useless;
-
-    if (h->st_Signature == (unsigned int)key && h->st_Score != PT_INVALID) {
-        *score = h->st_Score;
-        result = Useful;
-    }
+    struct STEntry h = ScoreTable[(key >> 32) & ST_Mask];
 #if MP && HAVE_LIBPTHREAD
     pthread_mutex_unlock(ScoreMutex + ((key >> 32) & MUTEX_MASK));
 #endif /* MP && HAVE_LIBPTHREAD */
 
-    return result;
+    if (h.st_Signature == (unsigned int)key && h.st_Score != PT_INVALID) {
+        *score = h.st_Score;
+        return Useful;
+    }
+
+    return Useless;
 }
 
 void StoreHT(hash_t key, int best, int alpha, int beta, int bestm, int depth,
