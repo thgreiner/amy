@@ -153,7 +153,7 @@ char *FormatCount(unsigned long count, char *buffer, size_t len) {
         double scaled = count * 1e-3;
         snprintf(buffer, len, "%.1fk", scaled);
     } else if (count < 1000000ull) {
-        int scaled = (int) (count * 1e-3);
+        int scaled = (int)(count * 1e-3);
         snprintf(buffer, len, "%dk", scaled);
     } else if (count < 10000000ull) {
         double scaled = count * 1e-6;
