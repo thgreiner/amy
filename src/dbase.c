@@ -2095,7 +2095,9 @@ void ShowPosition(struct Position *p) {
 
     Print(0, "        +---+---+---+---+---+---+---+---+\n");
     for (rk = 7; rk >= 0; rk--) {
-        Print(0, "      %c ", '1' + rk);
+        char indicator =
+            ((rk == 7) && (p->turn)) || ((rk == 0) && (!p->turn)) ? '>' : ' ';
+        Print(0, "    %c %c ", indicator, '1' + rk);
         for (fl = 0; fl < 8; fl++) {
             int i = (rk << 3) + fl;
 
