@@ -134,22 +134,43 @@ char *FormatScore(int score, char *buffer, size_t len) {
 
 /**
  * Convert a count to a string.
+ *
+ * Args:
+ *     count: the count to format
+ *     buffer: the buffer to write the formatted string to
+ *     len: the length of the buffer
+ *
+ * Returns:
+ *     the pointer to the buffer
  */
 char *FormatCount(unsigned long count, char *buffer, size_t len) {
     if (count < 1000) {
         snprintf(buffer, len, "%lu", count);
-    } else if (count < 1000000ull) {
+    } else if (count < 10000ull) {
         double scaled = count * 1e-3;
         snprintf(buffer, len, "%.2fk", scaled);
-    } else if (count < 1000000000ull) {
+    } else if (count < 100000ull) {
+        double scaled = count * 1e-3;
+        snprintf(buffer, len, "%.1fk", scaled);
+    } else if (count < 1000000ull) {
+        int scaled = (int) (count * 1e-3);
+        snprintf(buffer, len, "%dk", scaled);
+    } else if (count < 10000000ull) {
         double scaled = count * 1e-6;
         snprintf(buffer, len, "%.2fM", scaled);
+    } else if (count < 100000000ull) {
+        double scaled = count * 1e-6;
+        snprintf(buffer, len, "%.1fM", scaled);
+    } else if (count < 1000000000ull) {
+        int scaled = (int)(count * 1e-6);
+        snprintf(buffer, len, "%dM", scaled);
     } else {
         double scaled = count * 1e-6;
         snprintf(buffer, len, "%.2fG", scaled);
     }
     return buffer;
 }
+
 /**
  * Get the current time.
  */
