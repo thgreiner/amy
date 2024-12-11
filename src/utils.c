@@ -165,7 +165,7 @@ char *FormatCount(unsigned long count, char *buffer, size_t len) {
         int scaled = (int)(count * 1e-6);
         snprintf(buffer, len, "%dM", scaled);
     } else {
-        double scaled = count * 1e-6;
+        double scaled = count * 1e-9;
         snprintf(buffer, len, "%.2fG", scaled);
     }
     return buffer;
