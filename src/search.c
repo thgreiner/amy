@@ -244,18 +244,12 @@ static bool TerminateSearch(struct SearchData *sd) {
 
 static int IsRecapture(int piece1, int piece2) {
     switch (TYPE(piece1)) {
-    case Pawn:
-        return TYPE(piece2) == Pawn;
     case Knight:
     case Bishop:
         return (TYPE(piece2) == Knight || TYPE(piece2) == Bishop);
-    case Rook:
-        return TYPE(piece2) == Rook;
-    case Queen:
-        return TYPE(piece2) == Queen;
+    default:
+        return TYPE(piece1) == TYPE(piece2);
     }
-
-    return false;
 }
 
 /*
@@ -323,7 +317,7 @@ static int CheckExtend(struct Position *p) {
         ff = KingEPM[kp] & ~p->mask[p->turn][0];
 
         i = FindSetBit(att);
-        if (Sliding[TYPE(p->piece[i])])
+        if (TstBit(p->slidingPieces, i))
             ff &= ~Ray[i][kp];
 
         /* check for king flight squares */
@@ -377,7 +371,7 @@ static int CheckExtend(struct Position *p) {
             return nd;
 
         /* if possible, try an interposition */
-        if (Sliding[TYPE(p->piece[atp])]) {
+        if (TstBit(p->slidingPieces, atp)) {
             tmp = InterPath[atp][kp];
             while (tmp) {
                 BitBoard tmp2;
