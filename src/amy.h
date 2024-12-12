@@ -235,7 +235,9 @@ typedef void (*COMMAND)(char *args);
 
 typedef uint64_t BitBoard;
 typedef uint64_t ran_t;
-typedef int64_t hash_t;
+typedef uint64_t hash_t;
+
+typedef int32_t move_t;
 
 struct Position {
     BitBoard atkTo[64];
@@ -258,7 +260,7 @@ struct Position {
 };
 
 struct GameLog {
-    int gl_Move;           /* the move that has been made in the position */
+    move_t gl_Move;        /* the move that has been made in the position */
     int8_t gl_Piece;       /* the piece that was captured (if any) */
     int8_t gl_Castle;      /* the castling rights */
     int8_t gl_EnPassant;   /* the enpassant target square (if any) */
@@ -289,13 +291,13 @@ struct SearchStatus {
     uint16_t st_first;
     uint16_t st_nc_first;
     uint16_t st_last;
-    int st_hashmove;
-    int st_k1, st_k2, st_kl, st_cm, st_k3;
+    move_t st_hashmove;
+    move_t st_k1, st_k2, st_kl, st_cm, st_k3;
 };
 
 struct KillerEntry {
-    int killer1, killer2; /* killer moves */
-    int kcount1, kcount2; /* killer count */
+    move_t killer1, killer2;   /* killer moves */
+    uint32_t kcount1, kcount2; /* killer count */
 };
 
 struct SearchData {
@@ -309,7 +311,7 @@ struct SearchData {
     struct HTEntry *localHashTable;
 #endif
 
-    int *moveHeap;
+    move_t *moveHeap;
     int *dataHeap;
     unsigned int counterTab[2][4096]; /* counter moves per side */
     unsigned int historyTab[2][4096]; /* history moves per side */
@@ -321,7 +323,7 @@ struct SearchData {
     bool master; /* true if a master process */
     unsigned long nodes_cnt, qnodes_cnt, check_nodes_cnt;
 
-    int best_move;
+    move_t best_move;
     uint16_t depth;
 
     uint16_t nrootmoves;
@@ -340,7 +342,7 @@ struct PawnFacts {
 
 struct HTEntry {
     unsigned int ht_Signature;
-    int ht_Move;
+    move_t ht_Move;
     int ht_Score;
     short ht_Flags;
     short ht_Depth;
@@ -478,29 +480,29 @@ void QueryBook(struct Position *);
 int SelectBook(struct Position *);
 struct Command *ParseInput(char *line);
 void ExecuteCommand(struct Command *theCommand);
-void DoMove(struct Position *, int move);
-void UndoMove(struct Position *, int move);
+void DoMove(struct Position *, move_t move);
+void UndoMove(struct Position *, move_t move);
 void DoNull(struct Position *);
 void UndoNull(struct Position *);
-int GenTo(struct Position *, int square, int *moves);
-int GenEnpas(struct Position *, int *moves);
-int GenFrom(struct Position *, int square, int *moves);
-void GenRest(int *moves);
-int GenCaps(int *moves, int good);
-int GenChecks(struct Position *, int *moves);
-int GenContactChecks(int *moves);
-bool MayCastle(struct Position *, int move);
-bool LegalMove(struct Position *, int move);
-bool IsCheckingMove(struct Position *, int move);
-int LegalMoves(struct Position *, int *mvs);
-int PLegalMoves(struct Position *, int *mvs);
+int GenTo(struct Position *, int square, move_t *moves);
+int GenEnpas(struct Position *, move_t *moves);
+int GenFrom(struct Position *, int square, move_t *moves);
+void GenRest(move_t *moves);
+int GenCaps(move_t *moves, int good);
+int GenChecks(struct Position *, move_t *moves);
+int GenContactChecks(move_t *moves);
+bool MayCastle(struct Position *, move_t move);
+bool LegalMove(struct Position *, move_t move);
+bool IsCheckingMove(struct Position *, move_t move);
+int LegalMoves(struct Position *, move_t *mvs);
+int PLegalMoves(struct Position *, move_t *mvs);
 int Repeated(struct Position *, int mode);
-char *SAN(struct Position *, int, char *);
-int ParseSAN(struct Position *, char *);
-int ParseSANList(char *, int, int *, int, int *);
+char *SAN(struct Position *, move_t, char *);
+move_t ParseSAN(struct Position *, char *);
+move_t ParseSANList(char *, int, move_t *, int, int *);
 char *MakeEPD(struct Position *);
 void ShowPosition(struct Position *);
-int PromoType(int move);
+int PromoType(move_t move);
 
 struct Position *CreatePositionFromEPD(char *);
 struct Position *InitialPosition(void);
@@ -508,9 +510,9 @@ struct Position *ClonePosition(struct Position *src);
 void FreePosition(struct Position *);
 
 void ShowMoves(struct Position *);
-int ParseGSAN(struct Position *, char *san);
-int ParseGSANList(char *san, int side, int *mvs, int cnt);
-char *ICS_SAN(int move);
+move_t ParseGSAN(struct Position *, char *san);
+move_t ParseGSANList(char *san, int side, move_t *mvs, int cnt);
+char *ICS_SAN(move_t move);
 bool InCheck(struct Position *, int);
 void RecalcAttacks(struct Position *);
 const char *GameEnd(struct Position *);
@@ -532,9 +534,9 @@ void StoreHT(hash_t, int, int, int, int, int, int, int);
 void StorePT(hash_t, int, struct PawnFacts *);
 void StoreST(hash_t, int);
 #if MP
-int ProbeHT(hash_t, int *, int, int *, bool *, int, int, struct HTEntry *);
+int ProbeHT(hash_t, int *, int, move_t *, bool *, int, int, struct HTEntry *);
 #else
-int ProbeHT(hash_t, int *, int, int *, bool *, int);
+int ProbeHT(hash_t, int *, int, move_t *, bool *, int);
 #endif
 int ProbePT(hash_t, int *, struct PawnFacts *);
 int ProbeST(hash_t, int *);
@@ -563,7 +565,7 @@ void LeaveNode(struct SearchData *);
 int NextMove(struct SearchData *);
 int NextEvasion(struct SearchData *);
 int NextMoveQ(struct SearchData *, int);
-void PutKiller(struct SearchData *, int);
+void PutKiller(struct SearchData *, move_t);
 
 void SaveGame(struct Position *, char *);
 void LoadGame(struct Position *, char *);

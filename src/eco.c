@@ -65,7 +65,7 @@ void ParseEcoPgn(char *fname) {
         if (fgets(buffer, 1024, fin) != NULL) {
             for (x = strtok(buffer, " \n\r\t"); x;
                  x = strtok(NULL, " \n\r\t")) {
-                int move = ParseSAN(p, x);
+                move_t move = ParseSAN(p, x);
                 if (move != M_NONE) {
                     DoMove(p, move);
                 }

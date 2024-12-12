@@ -700,7 +700,7 @@ static void Benchmark(char *args) {
 }
 
 static BitBoard SearchFully(struct Position *p, BitBoard cnt, int depth) {
-    int moves[128];
+    move_t moves[128];
     int mcnt;
     int i;
 

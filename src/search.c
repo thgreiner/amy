@@ -402,7 +402,7 @@ static int CheckExtend(struct Position *p) {
  * Compute an optimistic score for a move.
  */
 
-static int ScoreMove(struct Position *p, int move) {
+static int ScoreMove(struct Position *p, move_t move) {
     int score = 0;
 
     if (move & M_CAPTURE)
@@ -429,7 +429,7 @@ static int ScoreMove(struct Position *p, int move) {
  */
 
 static void StoreResult(struct SearchData *sd, int score, int alpha, int beta,
-                        int move, int depth, int threat) {
+                        move_t move, int depth, int threat) {
     struct Position *p = sd->position;
 
     if (!(move & M_TACTICAL) && score > alpha) {
@@ -455,7 +455,7 @@ static void StoreResult(struct SearchData *sd, int score, int alpha, int beta,
 static int quies(struct SearchData *sd, int alpha, int beta, int depth) {
     struct Position *p = sd->position;
     int best;
-    int move;
+    move_t move;
     int talpha;
     int tmp;
 
@@ -552,12 +552,12 @@ static int negascout(struct SearchData *sd, int alpha, int beta,
     struct Position *p = sd->position;
     struct SearchStatus *st;
     int best = -INF;
-    int bestm = M_NONE;
+    move_t bestm = M_NONE;
     int tmp;
     int talpha;
     int incheck;
     int lmove;
-    int move;
+    move_t move;
     int extend = 0;
     bool threat = false;
     int reduce_extensions;
@@ -1091,7 +1091,7 @@ static char *NumberedSAN(struct Position *p, int move, char *buffer,
  */
 
 static void AnaLoop(struct Position *p, int depth) {
-    int move;
+    move_t move;
     bool dummy = false;
     int score;
 
@@ -1147,7 +1147,7 @@ static void AnaLoop(struct Position *p, int depth) {
     }
 }
 
-static void AnalyzeHT(struct Position *p, int move) {
+static void AnalyzeHT(struct Position *p, move_t move) {
     NumberedSAN(p, move, BestLine, sizeof(BestLine));
     strcat(BestLine, " ");
     char san_buffer[16];
@@ -1182,7 +1182,7 @@ static int gaps[] = {57, 23, 10, 4, 1};
  * and sorts the remaining moves by number of nodes searched
  * in decreasing order.
  */
-static void ResortMovesList(int cnt, int *mvs, unsigned long *nodes) {
+static void ResortMovesList(int cnt, move_t *mvs, unsigned long *nodes) {
     if (cnt <= 0)
         return;
 
@@ -1195,7 +1195,7 @@ static void ResortMovesList(int cnt, int *mvs, unsigned long *nodes) {
         int gap = gaps[gap_index];
         for (int i = gap; i < cnt; i++) {
             int j;
-            int mvs_tmp = mvs[i];
+            move_t mvs_tmp = mvs[i];
             unsigned long nodes_tmp = nodes[i];
 
             for (j = i; (j >= gap) && (nodes[j - gap] < nodes_tmp); j -= gap) {
@@ -1215,7 +1215,7 @@ static void ResortMovesList(int cnt, int *mvs, unsigned long *nodes) {
 
 static void *IterateInt(void *x) {
     int best;
-    int mvs[256];
+    move_t mvs[256];
     unsigned long nodes[256];
     int last = 0;
     double elapsed;
@@ -1347,7 +1347,7 @@ static void *IterateInt(void *x) {
                 pv_stable = false;
 
                 if (sd->movenum != 0) {
-                    int tm = mvs[sd->movenum];
+                    move_t tm = mvs[sd->movenum];
                     int tn = nodes[sd->movenum];
                     int j;
 
@@ -1671,7 +1671,7 @@ static void StartHelpers(struct Position *p) {
 int Iterate(struct Position *p) {
     float soft, hard;
     int cnt;
-    int mvs[256];
+    move_t mvs[256];
     struct SearchData *sd;
 
     FHTime = 0;
@@ -1734,7 +1734,7 @@ int Iterate(struct Position *p) {
  * Search the root node.
  */
 void SearchRoot(struct Position *p) {
-    int move = M_NONE;
+    move_t move = M_NONE;
     struct Position *q;
 
     SearchMode = Searching;
@@ -1806,7 +1806,7 @@ int PermanentBrain(struct Position *p) {
     }
 
     if (LegalMove(p, PBMove)) {
-        int move = M_NONE;
+        move_t move = M_NONE;
         struct Position *q;
         bool inbook = false;
         char san_buffer[16];

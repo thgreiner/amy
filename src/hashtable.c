@@ -171,10 +171,10 @@ static inline bool PutHTEntryBestEffort(hash_t key, struct HTEntry entry,
 }
 
 #if MP
-int ProbeHT(hash_t key, int *score, int depth, int *bestm, bool *threat,
+int ProbeHT(hash_t key, int *score, int depth, move_t *bestm, bool *threat,
             int ply, int exclusiveP, struct HTEntry *localHT)
 #else
-int ProbeHT(hash_t key, int *score, int depth, int *bestm, bool *threat,
+int ProbeHT(hash_t key, int *score, int depth, move_t *bestm, bool *threat,
             int ply)
 #endif
 {
