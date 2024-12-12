@@ -171,10 +171,10 @@ static inline bool PutHTEntryBestEffort(hash_t key, struct HTEntry entry,
 }
 
 #if MP
-int ProbeHT(hash_t key, int *score, int depth, int *bestm, bool *threat,
+int ProbeHT(hash_t key, int *score, int depth, move_t *bestm, bool *threat,
             int ply, int exclusiveP, struct HTEntry *localHT)
 #else
-int ProbeHT(hash_t key, int *score, int depth, int *bestm, bool *threat,
+int ProbeHT(hash_t key, int *score, int depth, move_t *bestm, bool *threat,
             int ply)
 #endif
 {
@@ -263,38 +263,39 @@ int ProbePT(hash_t key, int *score, struct PawnFacts *pf) {
 #if MP && HAVE_LIBPTHREAD
     pthread_mutex_lock(PawnMutex + ((key >> 32) & MUTEX_MASK));
 #endif /* MP && HAVE_LIBPTHREAD */
-    struct PTEntry *h = PawnTable + ((key >> 32) & PT_Mask);
-    int result = Useless;
 
-    if (h->pt_Signature == (unsigned int)key && h->pt_Score != PT_INVALID) {
-        *score = h->pt_Score;
-        *pf = h->pt_PawnFacts;
-        result = Useful;
-    }
+    struct PTEntry h = PawnTable[(key >> 32) & PT_Mask];
 
 #if MP && HAVE_LIBPTHREAD
     pthread_mutex_unlock(PawnMutex + ((key >> 32) & MUTEX_MASK));
 #endif /* MP && HAVE_LIBPTHREAD */
 
-    return result;
+    if (h.pt_Signature == (unsigned int)key && h.pt_Score != PT_INVALID) {
+        *score = h.pt_Score;
+        *pf = h.pt_PawnFacts;
+        return Useful;
+    }
+
+    return Useless;
 }
 
 int ProbeST(hash_t key, int *score) {
 #if MP && HAVE_LIBPTHREAD
     pthread_mutex_lock(ScoreMutex + ((key >> 32) & MUTEX_MASK));
 #endif /* MP && HAVE_LIBPTHREAD */
-    struct STEntry *h = ScoreTable + ((key >> 32) & ST_Mask);
-    int result = Useless;
 
-    if (h->st_Signature == (unsigned int)key && h->st_Score != PT_INVALID) {
-        *score = h->st_Score;
-        result = Useful;
-    }
+    struct STEntry h = ScoreTable[(key >> 32) & ST_Mask];
+
 #if MP && HAVE_LIBPTHREAD
     pthread_mutex_unlock(ScoreMutex + ((key >> 32) & MUTEX_MASK));
 #endif /* MP && HAVE_LIBPTHREAD */
 
-    return result;
+    if (h.st_Signature == (unsigned int)key && h.st_Score != PT_INVALID) {
+        *score = h.st_Score;
+        return Useful;
+    }
+
+    return Useless;
 }
 
 void StoreHT(hash_t key, int best, int alpha, int beta, int bestm, int depth,
@@ -378,25 +379,30 @@ void StoreHT(hash_t key, int best, int alpha, int beta, int bestm, int depth,
 }
 
 void StorePT(hash_t key, int score, struct PawnFacts *pf) {
+    struct PTEntry h = {.pt_Signature = (unsigned int)key,
+                        .pt_Score = score,
+                        .pt_PawnFacts = *pf};
+
 #if MP && HAVE_LIBPTHREAD
     pthread_mutex_lock(PawnMutex + ((key >> 32) & MUTEX_MASK));
 #endif /* MP && HAVE_LIBPTHREAD */
-    struct PTEntry *h = PawnTable + ((key >> 32) & PT_Mask);
-    h->pt_Signature = (unsigned int)key;
-    h->pt_Score = score;
-    h->pt_PawnFacts = *pf;
+
+    PawnTable[(key >> 32) & PT_Mask] = h;
+
 #if MP && HAVE_LIBPTHREAD
     pthread_mutex_unlock(PawnMutex + ((key >> 32) & MUTEX_MASK));
 #endif /* MP && HAVE_LIBPTHREAD */
 }
 
 void StoreST(hash_t key, int score) {
+    struct STEntry h = {.st_Signature = (unsigned int)key, .st_Score = score};
+
 #if MP && HAVE_LIBPTHREAD
     pthread_mutex_lock(ScoreMutex + ((key >> 32) & MUTEX_MASK));
 #endif /* MP && HAVE_LIBPTHREAD */
-    struct STEntry *h = ScoreTable + ((key >> 32) & ST_Mask);
-    h->st_Signature = (unsigned int)key;
-    h->st_Score = score;
+
+    ScoreTable[(key >> 32) & ST_Mask] = h;
+
 #if MP && HAVE_LIBPTHREAD
     pthread_mutex_unlock(ScoreMutex + ((key >> 32) & MUTEX_MASK));
 #endif /* MP && HAVE_LIBPTHREAD */

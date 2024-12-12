@@ -80,7 +80,7 @@ struct SearchData *CreateSearchData(struct Position *p) {
     }
     sd->killer = sd->killerTable;
 
-    sd->moveHeap = calloc(sizeof(int), MAX_SEARCH_HEAP);
+    sd->moveHeap = calloc(sizeof(move_t), MAX_SEARCH_HEAP);
     if (!sd->moveHeap) {
         Print(0, "Cannot allocate moveHeap.\n");
         exit(1);
@@ -143,7 +143,7 @@ int NextMove(struct SearchData *sd) {
     struct SearchStatus *st = sd->current;
     struct Position *p = sd->position;
     int i;
-    int move;
+    move_t move;
 
     switch (st->st_phase) {
     case HashMove:
@@ -263,7 +263,7 @@ int NextMove(struct SearchData *sd) {
     }
     /* fall through */
     case CounterMv: {
-        int lmove = (p->actLog - 1)->gl_Move;
+        move_t lmove = (p->actLog - 1)->gl_Move;
 
 #ifdef VERBOSE
         Print(9, "CounterMv\n");
@@ -448,7 +448,7 @@ int NextEvasion(struct SearchData *sd) {
     struct SearchStatus *st = sd->current;
     struct Position *p = sd->position;
     int i;
-    int move;
+    move_t move;
 
     switch (st->st_phase) {
     case HashMove:
@@ -556,7 +556,7 @@ int NextEvasion(struct SearchData *sd) {
     }
         /* fall through */
     case CounterMv: {
-        int lmove = (p->actLog - 1)->gl_Move;
+        move_t lmove = (p->actLog - 1)->gl_Move;
 
 #ifdef VERBOSE
         Print(9, "CounterMv\n");
@@ -785,7 +785,8 @@ static void GenerateQCaptures(struct SearchData *sd, int alpha) {
 
         tmp = p->atkTo[i] & p->mask[OPP(p->turn)][0];
         while (tmp) {
-            int move, sw;
+            move_t move;
+            int sw;
             j = FindSetBit(tmp);
             tmp &= tmp - 1;
             move = i | (j << 6) | M_CAPTURE;
@@ -896,7 +897,7 @@ static void GenerateQCaptures(struct SearchData *sd, int alpha) {
 int NextMoveQ(struct SearchData *sd, int alpha) {
     struct SearchStatus *st = sd->current;
     int i;
-    int move;
+    move_t move;
 
     switch (st->st_phase) {
     case HashMove:
@@ -939,7 +940,7 @@ int NextMoveQ(struct SearchData *sd, int alpha) {
  * Enter move in Killertable
  */
 
-void PutKiller(struct SearchData *sd, int m) {
+void PutKiller(struct SearchData *sd, move_t m) {
     struct KillerEntry *k = sd->killer;
 
     if (m == k->killer1) {

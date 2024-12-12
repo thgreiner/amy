@@ -1,4 +1,5 @@
 ![main branch](https://github.com/thgreiner/amy/actions/workflows/c-cpp.yml/badge.svg)
+![License](https://img.shields.io/github/license/thgreiner/amy)
 
 What is Amy?
 ============
@@ -136,6 +137,7 @@ Setting options via .amyrc / Amy.ini
 Amy supports an .amyrc file to set several options. The .amyrc file should be
 in the current directory when starting amy. Here is a sample .amyrc:
 
+```
 #
 # Sample .amyrc 
 #
@@ -150,6 +152,7 @@ cpu=2
 #
 # Enable game autosaving to allow booklearning
 autosave=true
+```
 
 Since people using Windows have reported that they have to resort to DOS mode
 for creating a .amyrc file, Amy also looks for Amy.ini.

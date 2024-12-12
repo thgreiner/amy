@@ -201,7 +201,7 @@ static void BookupInternal(char *file_name, int verbosity) {
                 exit(1);
             }
 
-            int themove = ParseSAN(p, move);
+            move_t themove = ParseSAN(p, move);
             if (themove != M_NONE) {
                 DoMove(p, themove);
                 if (GetEcoCode(p->hkey) != 0) {
@@ -254,9 +254,9 @@ void Bookup(char *file_name) { BookupInternal(file_name, 0); }
 
 void BookupQuiet(char *file_name) { BookupInternal(file_name, 9); }
 
-static void GetAllBookMoves(struct Position *p, int *cnt, int *book_moves,
+static void GetAllBookMoves(struct Position *p, int *cnt, move_t *book_moves,
                             struct BookQuery *entries) {
-    int mvs[256];
+    move_t mvs[256];
     int mv_cnt = LegalMoves(p, mvs);
     int i;
 
@@ -286,7 +286,7 @@ static void GetAllBookMoves(struct Position *p, int *cnt, int *book_moves,
     }
 }
 
-static void SortBook(int cnt, int *mvs, struct BookQuery *entries) {
+static void SortBook(int cnt, move_t *mvs, struct BookQuery *entries) {
     bool done = false;
 
     while (!done) {
@@ -301,7 +301,7 @@ static void SortBook(int cnt, int *mvs, struct BookQuery *entries) {
                 entries[i].be.win + entries[i].be.loss + entries[i].be.draw;
             if (f1 < f2) {
                 struct BookQuery betmp = entries[i];
-                int move;
+                move_t move;
                 entries[i] = entries[i - 1];
                 entries[i - 1] = betmp;
                 move = mvs[i];
@@ -380,7 +380,7 @@ static void CalculatePropabilities(int cnt, struct BookQuery *entries,
 int SelectBook(struct Position *p) {
     int i, cnt = 0;
     struct BookQuery be[32];
-    int moves[32];
+    move_t moves[32];
     double props[32];
     double random_value = Random();
 
@@ -406,7 +406,7 @@ int SelectBook(struct Position *p) {
 void QueryBook(struct Position *p) {
     int i, cnt = 0;
     struct BookQuery be[32];
-    int moves[32];
+    move_t moves[32];
     double props[32];
 
     GetAllBookMoves(p, &cnt, moves, be);
@@ -482,7 +482,7 @@ void CreateLearnDB(char *file_name) {
         while ((move = nextToken(&x, " \n\r\t")) != NULL) {
             int flags = 0;
             char *modifier = move + strlen(move) - 1;
-            int themove;
+            move_t themove;
 
             if (*modifier == '!') {
                 flags = GoodMove;

@@ -81,7 +81,7 @@ const int EPTranslate[] = {0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
  * Masks for castle rights:
  */
 
-const int CastleMask[2][2] = {
+const int8_t CastleMask[2][2] = {
     {0x01, 0x02}, /* White can castle king/queenp->turn */
     {0x04, 0x08}  /* dito for black */
 };
@@ -98,7 +98,7 @@ static void GainAttack(struct Position *, int, int);
 static void LooseAttack(struct Position *, int from, int to);
 static void GainAttacks(struct Position *, int to);
 static void LooseAttacks(struct Position *, int to);
-int PromoType(int move);
+int PromoType(move_t move);
 
 /*
  * Routines to up/downdate the global database
@@ -310,7 +310,7 @@ static void LooseAttacks(struct Position *p, int to) {
  * Determine type of promotion from move
  */
 
-int PromoType(int move) {
+int PromoType(move_t move) {
     if (move & M_PQUEEN)
         return Queen;
     if (move & M_PROOK)
@@ -326,11 +326,11 @@ int PromoType(int move) {
 
 /*
  * Make a castle move
- * I seperated this routine from the normal DoMove routine since it has
+ * I separated this routine from the normal DoMove routine since it has
  * to move two pieces
  */
 
-static void DoCastle(struct Position *p, int move) {
+static void DoCastle(struct Position *p, move_t move) {
     int from = M_FROM(move);
     int to = M_TO(move);
     int or = (move & M_SCASTLE) ? from + 3 : from - 4;
@@ -386,7 +386,7 @@ static void DoCastle(struct Position *p, int move) {
  * Unmake a castle move
  */
 
-static void UndoCastle(struct Position *p, int move) {
+static void UndoCastle(struct Position *p, move_t move) {
     int from = M_FROM(move);
     int to = M_TO(move);
     int or = (move & M_SCASTLE) ? from + 3 : from - 4;
@@ -436,7 +436,7 @@ static void UndoCastle(struct Position *p, int move) {
  * updates the global database
  */
 
-void DoMove(struct Position *p, int move) {
+void DoMove(struct Position *p, move_t move) {
     int from = M_FROM(move);
     int to = M_TO(move);
     int tp = TYPE(p->piece[from]);
@@ -625,7 +625,7 @@ void DoMove(struct Position *p, int move) {
     p->hkey ^= STMKey;
 }
 
-void UndoMove(struct Position *p, int move) {
+void UndoMove(struct Position *p, move_t move) {
     int from = M_FROM(move);
     int to = M_TO(move);
     int tp = TYPE(p->piece[to]);
@@ -811,9 +811,7 @@ void RecalcAttacks(struct Position *p) {
 
     p->material[White] = p->material[Black] = p->nonPawn[White] =
         p->nonPawn[Black] = p->material_signature[White] =
-            p->material_signature[Black] =
-
-                p->hkey = p->pkey = 0;
+            p->material_signature[Black] = p->hkey = p->pkey = 0;
 
     tmp = p->mask[White][0];
     while (tmp) {
@@ -887,7 +885,7 @@ void RecalcAttacks(struct Position *p) {
  * Generate all capturing moves to a square "square"
  */
 
-int GenTo(struct Position *p, int square, int *moves) {
+int GenTo(struct Position *p, int square, move_t *moves) {
     int cnt = 0;
     int tm = (square << 6) | M_CAPTURE;
     BitBoard tmp;
@@ -911,7 +909,7 @@ int GenTo(struct Position *p, int square, int *moves) {
     return cnt;
 }
 
-int GenEnpas(struct Position *p, int *moves) {
+int GenEnpas(struct Position *p, move_t *moves) {
     int cnt = 0;
     BitBoard tmp;
 
@@ -932,7 +930,7 @@ int GenEnpas(struct Position *p, int *moves) {
  * Generate all non-capturing moves from "square"
  */
 
-int GenFrom(struct Position *p, int square, int *moves) {
+int GenFrom(struct Position *p, int square, move_t *moves) {
     if (TYPE(p->piece[square]) != Pawn) {
         int cnt = 0;
         BitBoard tmp;
@@ -997,7 +995,7 @@ int GenFrom(struct Position *p, int square, int *moves) {
  * Test if castling is legal
  */
 
-bool MayCastle(struct Position *p, int move) {
+bool MayCastle(struct Position *p, move_t move) {
     /* Sometimes there might be a legal castling move, but for the
        wrong p->turn, probably from the Countermove table */
     if (M_FROM(move) != ((p->turn == White) ? e1 : e8))
@@ -1045,7 +1043,7 @@ bool MayCastle(struct Position *p, int move) {
  * Test if a move is legal
  */
 
-bool LegalMove(struct Position *p, int move) {
+bool LegalMove(struct Position *p, move_t move) {
     int fr = M_FROM(move);
     int to = M_TO(move);
 
@@ -1131,7 +1129,7 @@ bool LegalMove(struct Position *p, int move) {
  * Test wether a move will give check
  */
 
-bool IsCheckingMove(struct Position *p, int move) {
+bool IsCheckingMove(struct Position *p, move_t move) {
     int fr = M_FROM(move);
     int to = M_TO(move);
     int tp = TYPE(p->piece[fr]);
@@ -1214,9 +1212,9 @@ bool IsCheckingMove(struct Position *p, int move) {
  * not be checks!
  */
 
-int GenChecks(struct Position *p, int *moves) {
+int GenChecks(struct Position *p, move_t *moves) {
     int cnt = 0;
-    int *m = moves;
+    move_t *m = moves;
     BitBoard tmp;
     BitBoard fr;
     int kp = p->kingSq[OPP(p->turn)];
@@ -1422,7 +1420,7 @@ int Repeated(struct Position *p, int mode) {
  * Returns:
  *   the pointer to the generated string (buffer)
  */
-char *SAN(struct Position *p, int move, char *buffer) {
+char *SAN(struct Position *p, move_t move, char *buffer) {
     char *x = buffer;
 
     int to = M_TO(move);
@@ -1527,7 +1525,7 @@ char *SAN(struct Position *p, int move, char *buffer) {
  * Generate the ICS SAN for a move
  */
 
-char *ICS_SAN(int move) {
+char *ICS_SAN(move_t move) {
     static char buffer[16];
     char *x = buffer;
 
@@ -1564,8 +1562,9 @@ char *ICS_SAN(int move) {
  * Parse a move string in e2e4 notation
  */
 
-int ParseGSAN(struct Position *p, char *san) {
-    int cnt, mvs[256];
+move_t ParseGSAN(struct Position *p, char *san) {
+    int cnt;
+    move_t mvs[256];
     int fr, to;
     int mask;
     int i;
@@ -1626,7 +1625,7 @@ int ParseGSAN(struct Position *p, char *san) {
  * Parse a move string in e2e4 notation against a supplied move list
  */
 
-int ParseGSANList(char *san, int side, int *mvs, int cnt) {
+move_t ParseGSANList(char *san, int side, move_t *mvs, int cnt) {
     int fr, to;
     int mask;
     int i;
@@ -1691,8 +1690,8 @@ int ParseGSANList(char *san, int side, int *mvs, int cnt) {
  * Test a pseudolegal move for legality
  */
 
-static bool TryMove(struct Position *p, int move) {
-    int tmp;
+static bool TryMove(struct Position *p, move_t move) {
+    bool tmp;
     DoMove(p, move);
     tmp = InCheck(p, OPP(p->turn));
     UndoMove(p, move);
@@ -1704,12 +1703,13 @@ static bool TryMove(struct Position *p, int move) {
  * Parse a move string (in SAN)
  */
 
-int ParseSAN(struct Position *p, char *san) {
+move_t ParseSAN(struct Position *p, char *san) {
     int tp = Neutral;
     int frk = -1, ffl = -1, trk = -1, tfl = -1;
     int pro = 0;
-    int move;
-    int mvs[256], cnt, i;
+    move_t move;
+    move_t mvs[256];
+    int cnt, i;
 
     /* Check castling first */
 
@@ -1844,7 +1844,7 @@ int ParseSAN(struct Position *p, char *san) {
  * Parse a move string (in SAN) against supplied move list
  */
 
-int ParseSANList(char *san, int side, int *mvs, int cnt, int *pmap) {
+move_t ParseSANList(char *san, int side, move_t *mvs, int cnt, int *pmap) {
     int tp = Neutral;
     int frk = -1, ffl = -1, trk = -1, tfl = -1;
     int pro = 0;
@@ -1978,9 +1978,12 @@ int ParseSANList(char *san, int side, int *mvs, int cnt, int *pmap) {
 /*
  * Generate all pseudolegal (!) moves
  * or test if there are any, if mvs = NULL
+ *
+ * Returns:
+ *     the number of generated moves
  */
 
-int PLegalMoves(struct Position *p, int *mvs) {
+int PLegalMoves(struct Position *p, move_t *mvs) {
     int cnt = 0;
     BitBoard tmp;
 
@@ -2011,10 +2014,14 @@ int PLegalMoves(struct Position *p, int *mvs) {
 
 /**
  * Generate all strictly legal moves.
+ *
+ * Returns:
+ *     the number of generated moves
  */
 
-int LegalMoves(struct Position *p, int *mvs) {
-    int t, m[32];
+int LegalMoves(struct Position *p, move_t *mvs) {
+    int t;
+    move_t m[32];
     int cnt = 0;
     BitBoard tmp;
 
@@ -2158,7 +2165,8 @@ void ShowPosition(struct Position *p) {
  */
 
 void ShowMoves(struct Position *p) {
-    int cnt, mvs[256];
+    int cnt;
+    move_t mvs[256];
     int i;
     char san_buffer[16];
 

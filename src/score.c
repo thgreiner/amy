@@ -389,7 +389,7 @@ static int ScorePawns(const struct Position *p, struct PawnFacts *pawnFacts) {
             }
         }
 
-        if ((sq & 7) < 7 && p->piece[sq + 1] == Pawn) {
+        if ((sq & 7) < 7 && TstBit(p->mask[White][Pawn], sq + 1)) {
             score += PawnDuo;
         }
     }
@@ -445,7 +445,7 @@ static int ScorePawns(const struct Position *p, struct PawnFacts *pawnFacts) {
             }
         }
 
-        if ((sq & 7) < 7 && p->piece[sq + 1] == -Pawn) {
+        if ((sq & 7) < 7 && TstBit(p->mask[Black][Pawn], sq + 1)) {
             score -= PawnDuo;
         }
     }
@@ -632,7 +632,7 @@ static int ScorePawns(const struct Position *p, struct PawnFacts *pawnFacts) {
         pawnFacts->pf_Flags |= FianchettoBlackQueenSide;
     }
 
-    if (p->piece[d4] == Pawn && p->piece[d5] == -Pawn) {
+    if (TstBit(p->mask[White][Pawn], d4) && TstBit(p->mask[Black][Pawn], d5)) {
         pawnFacts->pf_Flags |= QueensPawnOpening;
     }
 
@@ -1060,10 +1060,10 @@ static int ScoreDevelopment(const struct Position *p) {
      * Don't develop pieces to e3/d3 if they block a pawn
      */
 
-    if (p->piece[e2] == Pawn && p->piece[e3] != Neutral) {
+    if (TstBit(p->mask[White][Pawn], e2) && TstBit(p->mask[White][0], e3)) {
         score += PawnDevelopmentBlocked;
     }
-    if (p->piece[d2] == Pawn && p->piece[d3] != Neutral) {
+    if (TstBit(p->mask[White][Pawn], d2) && TstBit(p->mask[White][0], d3)) {
         score += PawnDevelopmentBlocked;
     }
 
@@ -1071,10 +1071,10 @@ static int ScoreDevelopment(const struct Position *p) {
      * Don't develop pieces to e6/d6 if they block a pawn
      */
 
-    if (p->piece[e7] == -Pawn && p->piece[e6] != Neutral) {
+    if (TstBit(p->mask[Black][Pawn], e7) && TstBit(p->mask[Black][0], e6)) {
         score -= PawnDevelopmentBlocked;
     }
-    if (p->piece[d7] == -Pawn && p->piece[d6] != Neutral) {
+    if (TstBit(p->mask[Black][Pawn], d7) && TstBit(p->mask[Black][0], d6)) {
         score -= PawnDevelopmentBlocked;
     }
 
@@ -1179,19 +1179,23 @@ static int ScorePositionForWhite(const struct Position *p) {
      *
      *************************************************************/
 
-    if (p->piece[a7] == Bishop && p->piece[b6] == -Pawn &&
+    if (TstBit(p->mask[White][Bishop], a7) &&
+        TstBit(p->mask[Black][Pawn], b6) &&
         (p->atkFr[b6] & p->mask[Black][Pawn])) {
         score += BishopTrapped;
     }
-    if (p->piece[h7] == Bishop && p->piece[g6] == -Pawn &&
+    if (TstBit(p->mask[White][Bishop], h7) &&
+        TstBit(p->mask[Black][Pawn], g6) &&
         (p->atkFr[g6] & p->mask[Black][Pawn])) {
         score += BishopTrapped;
     }
-    if (p->piece[a2] == -Bishop && p->piece[b3] == Pawn &&
+    if (TstBit(p->mask[Black][Bishop], a2) &&
+        TstBit(p->mask[White][Pawn], b3) &&
         (p->atkFr[b3] & p->mask[White][Pawn])) {
         score -= BishopTrapped;
     }
-    if (p->piece[h2] == -Bishop && p->piece[g3] == Pawn &&
+    if (TstBit(p->mask[Black][Bishop], h2) &&
+        TstBit(p->mask[White][Pawn], g3) &&
         (p->atkFr[g3] & p->mask[White][Pawn])) {
         score -= BishopTrapped;
     }
@@ -1290,7 +1294,7 @@ static int ScorePositionForWhite(const struct Position *p) {
                  4;
 
         if (sq == c3 && pawnFacts.pf_Flags & QueensPawnOpening &&
-            p->piece[c2] == Pawn) {
+            TstBit(p->mask[White][Pawn], c2)) {
             score += KnightBlocksCPawn;
         }
     }
@@ -1315,7 +1319,7 @@ static int ScorePositionForWhite(const struct Position *p) {
                  4;
 
         if (sq == c6 && pawnFacts.pf_Flags & QueensPawnOpening &&
-            p->piece[c7] == -Pawn) {
+            TstBit(p->mask[Black][Pawn], c7)) {
             score -= KnightBlocksCPawn;
         }
     }

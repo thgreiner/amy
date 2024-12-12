@@ -700,7 +700,7 @@ static void Benchmark(char *args) {
 }
 
 static BitBoard SearchFully(struct Position *p, BitBoard cnt, int depth) {
-    int moves[128];
+    move_t moves[128];
     int mcnt;
     int i;
 
@@ -726,26 +726,25 @@ static BitBoard SearchFully(struct Position *p, BitBoard cnt, int depth) {
 }
 
 static void Perft(char *args) {
-    BitBoard cnt = 0;
-    int depth;
-    int start, end;
-    double elapsed;
-
     if (args == NULL) {
         Print(0, "Usage: perft <depth>\n");
         return;
     }
 
+    int depth;
     sscanf(args, "%d", &depth);
 
-    start = GetTime();
+    BitBoard cnt = 0;
+
+    int start = GetTime();
     cnt = SearchFully(CurrentPosition, cnt, depth);
-    end = GetTime();
+    int end = GetTime();
 
-    elapsed = (end - start) / 100.0;
+    double elapsed = (end - start) / 100.0;
+    double nps = cnt / elapsed;
 
-    Print(0, "Perft(%d): %lld terminal positions in %g secs\n", depth, cnt,
-          elapsed);
+    Print(0, "Perft(%d): %lld terminal positions in %g secs (%g nps)\n", depth,
+          cnt, elapsed, nps);
 }
 
 static void Load(char *args) {
