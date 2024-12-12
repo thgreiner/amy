@@ -285,10 +285,10 @@ struct CommandEntry {
 };
 
 struct SearchStatus {
-    int st_phase;
-    int st_first;
-    int st_nc_first;
-    int st_last;
+    uint16_t st_phase;
+    uint16_t st_first;
+    uint16_t st_nc_first;
+    uint16_t st_last;
     int st_hashmove;
     int st_k1, st_k2, st_kl, st_cm, st_k3;
 };
@@ -316,16 +316,16 @@ struct SearchData {
 
     int pv_save[64];
 
-    int ply;
+    uint16_t ply;
 
     bool master; /* true if a master process */
     unsigned long nodes_cnt, qnodes_cnt, check_nodes_cnt;
 
     int best_move;
-    int depth;
+    uint16_t depth;
 
-    int nrootmoves;
-    int movenum;
+    uint16_t nrootmoves;
+    uint16_t movenum;
 };
 
 struct PawnFacts {
