@@ -34,10 +34,8 @@
  */
 
 #include "amy.h"
+#include "heap.h"
 #include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 static void Quit(char *);
 static void Show(char *);
@@ -73,6 +71,7 @@ static void XboardTime(char *);
 static void Analyze(char *args);
 static void StopAnalyze(char *args);
 static void SelfPlay(char *args);
+static void TestNext(char *args);
 
 static struct CommandEntry Commands[] = {
     {"analyze", &Analyze, false, false, "enter analyze mode (xboard)", NULL},
@@ -115,6 +114,7 @@ static struct CommandEntry Commands[] = {
     {"xboard", &SetXBoard, false, false, "switch to xboard compatibility",
      NULL},
     {"?", &MoveNow, true, false, "move now", NULL},
+    {"tn", &TestNext, false, false, "test the move generators", NULL},
     {NULL, NULL, false, false, NULL, NULL}};
 
 struct Command *ParseInput(char *line) {
@@ -699,28 +699,30 @@ static void Benchmark(char *args) {
     FreePosition(p);
 }
 
-static BitBoard SearchFully(struct Position *p, BitBoard cnt, int depth) {
-    move_t moves[128];
-    int mcnt;
-    int i;
+static BitBoard SearchFully(struct Position *p, BitBoard cnt, int depth,
+                            heap_t heap) {
+    unsigned int i;
 
     if (depth <= 0) {
         return cnt + 1;
     }
 
-    mcnt = PLegalMoves(p, moves);
+    push_section(heap);
+    PLegalMoves(p, heap);
 
-    for (i = 0; i < mcnt; i++) {
-        int move = moves[i];
+    for (i = heap->current_section->start; i < heap->current_section->end;
+         i++) {
+        int move = heap->data[i];
         if (move & M_CANY && !MayCastle(p, move))
             continue;
 
         DoMove(p, move);
         if (!InCheck(p, OPP(p->turn))) {
-            cnt = SearchFully(p, cnt, depth - 1);
+            cnt = SearchFully(p, cnt, depth - 1, heap);
         }
         UndoMove(p, move);
     }
+    pop_section(heap);
 
     return cnt;
 }
@@ -735,10 +737,13 @@ static void Perft(char *args) {
     sscanf(args, "%d", &depth);
 
     BitBoard cnt = 0;
+    heap_t heap = allocate_heap();
 
     int start = GetTime();
-    cnt = SearchFully(CurrentPosition, cnt, depth);
+    cnt = SearchFully(CurrentPosition, cnt, depth, heap);
     int end = GetTime();
+
+    free_heap(heap);
 
     double elapsed = (end - start) / 100.0;
     double nps = cnt / elapsed;
@@ -814,4 +819,9 @@ static void SelfPlay(char *args) {
     (void)args;
     SelfPlayMode = true;
     State = STATE_CALCULATING;
+}
+
+static void TestNext(char *args) {
+    (void)args;
+    TestNextGenerators(CurrentPosition);
 }

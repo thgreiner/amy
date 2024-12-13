@@ -34,6 +34,7 @@
  */
 
 #include "amy.h"
+#include "heap.h"
 
 #define MAX_TREE_SIZE 64 /* maximum depth we will search to */
 
@@ -80,17 +81,10 @@ struct SearchData *CreateSearchData(struct Position *p) {
     }
     sd->killer = sd->killerTable;
 
-    sd->moveHeap = calloc(sizeof(move_t), MAX_SEARCH_HEAP);
-    if (!sd->moveHeap) {
-        Print(0, "Cannot allocate moveHeap.\n");
-        exit(1);
-    }
+    sd->heap = allocate_heap();
 
-    sd->dataHeap = calloc(sizeof(int), MAX_SEARCH_HEAP);
-    if (!sd->dataHeap) {
-        Print(0, "Cannot allocate dataHeap.\n");
-        exit(1);
-    }
+    sd->data_heap = NULL;
+    sd->data_heap_size = 0;
 
 #if MP
     sd->localHashTable = calloc(sizeof(struct HTEntry), L_HT_Size);
@@ -108,8 +102,9 @@ struct SearchData *CreateSearchData(struct Position *p) {
 void FreeSearchData(struct SearchData *sd) {
     free(sd->statusTable);
     free(sd->killerTable);
-    free(sd->moveHeap);
-    free(sd->dataHeap);
+    free(sd->data_heap);
+    free_heap(sd->heap);
+
 #if MP
     free(sd->localHashTable);
 #endif
@@ -131,18 +126,32 @@ void EnterNode(struct SearchData *sd) {
         st->st_first = st->st_last = old->st_last;
     else
         st->st_first = st->st_last = 0;
+
+    push_section(sd->heap);
 }
 
 void LeaveNode(struct SearchData *sd) {
+    pop_section(sd->heap);
     sd->current--;
     sd->killer--;
     sd->ply--;
 }
 
-int NextMove(struct SearchData *sd) {
+static inline void grow_data_heap(struct SearchData *sd) {
+    if (sd->heap->current_section->end > sd->data_heap_size) {
+        sd->data_heap_size = sd->heap->current_section->end + 256;
+        sd->data_heap =
+            realloc(sd->data_heap, sd->data_heap_size * sizeof(int32_t));
+        if (sd->data_heap == NULL) {
+            perror("Cannot grow data_heap");
+            exit(1);
+        }
+    }
+}
+
+move_t NextMove(struct SearchData *sd) {
     struct SearchStatus *st = sd->current;
     struct Position *p = sd->position;
-    int i;
     move_t move;
 
     switch (st->st_phase) {
@@ -158,8 +167,6 @@ int NextMove(struct SearchData *sd) {
         }
     /* fall through */
     case GenerateCaptures: {
-        BitBoard targets;
-        int cnt;
 #ifdef VERBOSE
         Print(9, "GenerateCaptures\n");
 #endif
@@ -167,40 +174,41 @@ int NextMove(struct SearchData *sd) {
         /*
          * Generate captures.
          */
-
-        targets = p->mask[OPP(p->turn)][0];
+        BitBoard targets = p->mask[OPP(p->turn)][0];
         while (targets) {
-            int j;
-
-            i = FindSetBit(targets);
+            int to = FindSetBit(targets);
             targets &= targets - 1;
-            cnt = GenTo(p, i, sd->moveHeap + st->st_last);
-            for (j = 0; j < cnt; j++) {
-                sd->dataHeap[st->st_last] =
-                    SwapOff(p, sd->moveHeap[st->st_last]);
-                st->st_last++;
-            }
+
+            GenTo(p, to, sd->heap);
         }
 
-        targets = p->mask[p->turn][Pawn] & SeventhRank[p->turn];
-        while (targets) {
-            int j;
-            i = FindSetBit(targets);
-            targets &= targets - 1;
-            cnt = GenFrom(p, i, sd->moveHeap + st->st_last);
+        BitBoard promoting_pawns =
+            p->mask[p->turn][Pawn] & SeventhRank[p->turn];
+        while (promoting_pawns) {
+            int from = FindSetBit(promoting_pawns);
+            promoting_pawns &= promoting_pawns - 1;
 
-            for (j = 0; j < cnt; j++) {
-                sd->dataHeap[st->st_last] =
-                    SwapOff(p, sd->moveHeap[st->st_last]);
-                st->st_last++;
-            }
+            GenFrom(p, from, sd->heap);
         }
 
-        cnt = GenEnpas(p, sd->moveHeap + st->st_last);
-        for (i = 0; i < cnt; i++) {
-            sd->dataHeap[st->st_last] = 0;
-            st->st_last++;
+        grow_data_heap(sd);
+        for (unsigned int j = sd->heap->current_section->start;
+             j < sd->heap->current_section->end; j++) {
+            sd->data_heap[j] = SwapOff(p, sd->heap->data[j]);
         }
+
+        unsigned int last_end = sd->heap->current_section->end;
+        GenEnpas(p, sd->heap);
+        grow_data_heap(sd);
+
+        for (unsigned int j = last_end; j < sd->heap->current_section->end;
+             j++) {
+            sd->data_heap[j] = 0;
+        }
+
+        st->st_first = sd->heap->current_section->start;
+        st->st_last = sd->heap->current_section->end;
+        st->st_nc_first = st->st_last;
 
         st->st_phase = GainingCapture;
     }
@@ -211,20 +219,20 @@ int NextMove(struct SearchData *sd) {
 #endif
         while (st->st_last > st->st_first) {
             int besti = st->st_first;
-            int best = sd->dataHeap[besti];
+            int best = sd->data_heap[besti];
 
-            for (i = st->st_first + 1; i < st->st_last; i++) {
-                if (sd->dataHeap[i] > best) {
-                    best = sd->dataHeap[i];
+            for (unsigned int i = st->st_first + 1; i < st->st_last; i++) {
+                if (sd->data_heap[i] > best) {
+                    best = sd->data_heap[i];
                     besti = i;
                 }
             }
             if (best >= 0) {
-                move = sd->moveHeap[besti];
+                move = sd->heap->data[besti];
                 st->st_last--;
 
-                sd->moveHeap[besti] = sd->moveHeap[st->st_last];
-                sd->dataHeap[besti] = sd->dataHeap[st->st_last];
+                sd->heap->data[besti] = sd->heap->data[st->st_last];
+                sd->data_heap[besti] = sd->data_heap[st->st_last];
 
                 if (move == st->st_hashmove)
                     continue;
@@ -296,7 +304,7 @@ int NextMove(struct SearchData *sd) {
 
             if (move != st->st_hashmove && move != st->st_k1 &&
                 move != st->st_k2 && move != st->st_cm && LegalMove(p, move)) {
-                st->st_phase = /* GenerateRest */ LoosingCapture;
+                st->st_phase = LoosingCapture;
                 st->st_k3 = move;
 
                 return move;
@@ -310,18 +318,18 @@ int NextMove(struct SearchData *sd) {
 #endif
         while (st->st_last > st->st_first) {
             int besti = st->st_first;
-            int best = sd->dataHeap[besti];
+            int best = sd->data_heap[besti];
 
-            for (i = st->st_first + 1; i < st->st_last; i++) {
-                if (sd->dataHeap[i] > best) {
-                    best = sd->dataHeap[i];
+            for (unsigned int i = st->st_first + 1; i < st->st_last; i++) {
+                if (sd->data_heap[i] > best) {
+                    best = sd->data_heap[i];
                     besti = i;
                 }
             }
-            move = sd->moveHeap[besti];
+            move = sd->heap->data[besti];
 
-            sd->moveHeap[besti] = sd->moveHeap[st->st_first];
-            sd->dataHeap[besti] = sd->dataHeap[st->st_first];
+            sd->heap->data[besti] = sd->heap->data[st->st_first];
+            sd->data_heap[besti] = sd->data_heap[st->st_first];
             st->st_first++;
 
             st->st_phase = LoosingCapture;
@@ -337,60 +345,47 @@ int NextMove(struct SearchData *sd) {
 #ifdef VERBOSE
         Print(9, "GenerateRest\n");
 #endif
-        BitBoard tmp, tmp2;
-        BitBoard excl;
-
-        int i, j;
-
-        excl = p->mask[White][0] | p->mask[Black][0];
-
-        st->st_nc_first = st->st_last;
+        const BitBoard empty = ~(p->mask[White][0] | p->mask[Black][0]);
 
         if (p->castle & CastleMask[p->turn][0]) {
-            sd->moveHeap[st->st_last++] = (p->turn == White ? e1 : e8) |
-                                          ((p->turn == White ? g1 : g8) << 6) |
-                                          M_SCASTLE;
+            append_to_heap(sd->heap,
+                           make_move(p->turn == White ? e1 : e8,
+                                     p->turn == White ? g1 : g8, M_SCASTLE));
         }
         if (p->castle & CastleMask[p->turn][1]) {
-            sd->moveHeap[st->st_last++] = (p->turn == White ? e1 : e8) |
-                                          ((p->turn == White ? c1 : c8) << 6) |
-                                          M_LCASTLE;
+            append_to_heap(sd->heap,
+                           make_move(p->turn == White ? e1 : e8,
+                                     p->turn == White ? c1 : c8, M_LCASTLE));
         }
 
-        tmp = p->mask[p->turn][0] & ~p->mask[p->turn][Pawn];
+        BitBoard non_pawn = p->mask[p->turn][0] & ~p->mask[p->turn][Pawn];
 
-        while (tmp) {
-            i = FindSetBit(tmp);
-            tmp &= tmp - 1;
-            tmp2 = p->atkTo[i] & ~excl;
-            while (tmp2) {
-                j = FindSetBit(tmp2);
-                tmp2 &= tmp2 - 1;
-                sd->moveHeap[st->st_last++] = i | (j << 6);
+        while (non_pawn) {
+            int from = FindSetBit(non_pawn);
+            non_pawn &= non_pawn - 1;
+            BitBoard attacks = p->atkTo[from] & empty;
+            while (attacks) {
+                int to = FindSetBit(attacks);
+                attacks &= attacks - 1;
+                append_to_heap(sd->heap, make_move(from, to, 0));
             }
         }
 
-        tmp = p->mask[p->turn][Pawn] & ~SeventhRank[p->turn];
+        BitBoard tmp = p->mask[p->turn][Pawn] & ~SeventhRank[p->turn];
 
         if (p->turn == White)
             tmp = ShiftUp(tmp);
         else
             tmp = ShiftDown(tmp);
 
-        tmp2 = tmp &= ~excl;
+        BitBoard tmp2 = tmp &= empty;
 
         while (tmp2) {
-            int fr;
-            i = FindSetBit(tmp2);
+            int to = FindSetBit(tmp2);
             tmp2 &= tmp2 - 1;
-            fr = (p->turn == White) ? i - 8 : i + 8;
-            if (PromoSquare[i]) {
-                sd->moveHeap[st->st_last++] = fr | (i << 6) | M_PQUEEN;
-                sd->moveHeap[st->st_last++] = fr | (i << 6) | M_PKNIGHT;
-                sd->moveHeap[st->st_last++] = fr | (i << 6) | M_PROOK;
-                sd->moveHeap[st->st_last++] = fr | (i << 6) | M_PBISHOP;
-            } else
-                sd->moveHeap[st->st_last++] = fr | (i << 6);
+
+            int fr = (p->turn == White) ? to - 8 : to + 8;
+            append_to_heap(sd->heap, make_move(fr, to, 0));
         }
 
         tmp &= ThirdRank[p->turn];
@@ -400,17 +395,18 @@ int NextMove(struct SearchData *sd) {
         else
             tmp = ShiftDown(tmp);
 
-        tmp &= ~excl;
+        tmp &= empty;
 
         while (tmp) {
-            int fr;
-            i = FindSetBit(tmp);
+            int to = FindSetBit(tmp);
             tmp &= tmp - 1;
-            fr = (p->turn == White) ? i - 16 : i + 16;
-            sd->moveHeap[st->st_last++] = fr | (i << 6) | M_PAWND;
+
+            int fr = (p->turn == White) ? to - 16 : to + 16;
+            append_to_heap(sd->heap, make_move(fr, to, M_PAWND));
         }
 
         st->st_phase = HistoryMoves;
+        st->st_last = sd->heap->current_section->end;
     }
 
     case HistoryMoves:
@@ -419,19 +415,19 @@ int NextMove(struct SearchData *sd) {
 #endif
         while (st->st_last > st->st_nc_first) {
             int besti = st->st_nc_first;
-            int best = sd->historyTab[p->turn][sd->moveHeap[besti] & 4095];
+            int best = sd->historyTab[p->turn][sd->heap->data[besti] & 4095];
 
-            for (i = st->st_nc_first + 1; i < st->st_last; i++) {
-                int hval = sd->historyTab[p->turn][sd->moveHeap[i] & 4095];
+            for (unsigned int i = st->st_nc_first + 1; i < st->st_last; i++) {
+                int hval = sd->historyTab[p->turn][sd->heap->data[i] & 4095];
                 if (hval > best) {
                     best = hval;
                     besti = i;
                 }
             }
-            move = sd->moveHeap[besti];
+            move = sd->heap->data[besti];
 
             st->st_last--;
-            sd->moveHeap[besti] = sd->moveHeap[st->st_last];
+            sd->heap->data[besti] = sd->heap->data[st->st_last];
 
             if (move == st->st_hashmove || move == st->st_k1 ||
                 move == st->st_k2 || move == st->st_k3 || move == st->st_cm)
@@ -444,10 +440,9 @@ int NextMove(struct SearchData *sd) {
     return M_NONE;
 }
 
-int NextEvasion(struct SearchData *sd) {
+move_t NextEvasion(struct SearchData *sd) {
     struct SearchStatus *st = sd->current;
     struct Position *p = sd->position;
-    int i;
     move_t move;
 
     switch (st->st_phase) {
@@ -463,9 +458,6 @@ int NextEvasion(struct SearchData *sd) {
         }
         /* fall through */
     case GenerateCaptures: {
-        BitBoard targets;
-        int cnt;
-
 #ifdef VERBOSE
         Print(9, "GainingCapture\n");
 #endif
@@ -478,44 +470,52 @@ int NextEvasion(struct SearchData *sd) {
 
         int kp = p->kingSq[p->turn];
 
-        targets = (p->atkFr[kp] | p->atkTo[kp]) & p->mask[OPP(p->turn)][0];
+        BitBoard targets =
+            (p->atkFr[kp] | p->atkTo[kp]) & p->mask[OPP(p->turn)][0];
 
         while (targets) {
-            int j;
-            i = FindSetBit(targets);
+            int to = FindSetBit(targets);
             targets &= targets - 1;
-            cnt = GenTo(p, i, sd->moveHeap + st->st_last);
-            for (j = 0; j < cnt; j++) {
-                sd->dataHeap[st->st_last] =
-                    SwapOff(p, sd->moveHeap[st->st_last]);
-                st->st_last++;
-            }
+            GenTo(p, to, sd->heap);
         }
 
-        cnt = GenEnpas(p, sd->moveHeap + st->st_last);
-        for (i = 0; i < cnt; i++) {
-            sd->dataHeap[st->st_last] = 0;
-            st->st_last++;
+        grow_data_heap(sd);
+        for (unsigned int j = sd->heap->current_section->start;
+             j < sd->heap->current_section->end; j++) {
+            sd->data_heap[j] = SwapOff(p, sd->heap->data[j]);
         }
+
+        unsigned int last_end = sd->heap->current_section->end;
+        GenEnpas(p, sd->heap);
+        grow_data_heap(sd);
+
+        for (unsigned int j = last_end; j < sd->heap->current_section->end;
+             j++) {
+            sd->data_heap[j] = 0;
+        }
+
+        st->st_first = sd->heap->current_section->start;
+        st->st_last = sd->heap->current_section->end;
+        st->st_nc_first = st->st_last;
     }
         /* fall through */
     case GainingCapture:
         while (st->st_last > st->st_first) {
             int besti = st->st_first;
-            int best = sd->dataHeap[besti];
+            int best = sd->data_heap[besti];
 
-            for (i = st->st_first + 1; i < st->st_last; i++) {
-                if (sd->dataHeap[i] > best) {
-                    best = sd->dataHeap[i];
+            for (unsigned int i = st->st_first + 1; i < st->st_last; i++) {
+                if (sd->data_heap[i] > best) {
+                    best = sd->data_heap[i];
                     besti = i;
                 }
             }
             if (best >= 0) {
-                move = sd->moveHeap[besti];
+                move = sd->heap->data[besti];
                 st->st_last--;
 
-                sd->moveHeap[besti] = sd->moveHeap[st->st_last];
-                sd->dataHeap[besti] = sd->dataHeap[st->st_last];
+                sd->heap->data[besti] = sd->heap->data[st->st_last];
+                sd->data_heap[besti] = sd->data_heap[st->st_last];
 
                 st->st_phase = GainingCapture;
 
@@ -602,18 +602,18 @@ int NextEvasion(struct SearchData *sd) {
 #endif
         while (st->st_last > st->st_first) {
             int besti = st->st_first;
-            int best = sd->dataHeap[besti];
+            int best = sd->data_heap[besti];
 
-            for (i = st->st_first + 1; i < st->st_last; i++) {
-                if (sd->dataHeap[i] > best) {
-                    best = sd->dataHeap[i];
+            for (unsigned int i = st->st_first + 1; i < st->st_last; i++) {
+                if (sd->data_heap[i] > best) {
+                    best = sd->data_heap[i];
                     besti = i;
                 }
             }
-            move = sd->moveHeap[besti];
+            move = sd->heap->data[besti];
 
-            sd->moveHeap[besti] = sd->moveHeap[st->st_first];
-            sd->dataHeap[besti] = sd->dataHeap[st->st_first];
+            sd->heap->data[besti] = sd->heap->data[st->st_first];
+            sd->data_heap[besti] = sd->data_heap[st->st_first];
             st->st_first++;
 
             st->st_phase = LoosingCapture;
@@ -626,118 +626,113 @@ int NextEvasion(struct SearchData *sd) {
 
         /* fall through */
     case GenerateRest: {
-        BitBoard tmp, tmp2;
-        BitBoard excl;
-        int kp = p->kingSq[p->turn]; /* FindSetBit(Mask[Side][King]); */
-        BitBoard att, des;
-        int i;
 #ifdef VERBOSE
         Print(9, "HistoryMoves\n");
 #endif
 
-        excl = p->mask[White][0] | p->mask[Black][0];
+        const int kp = p->kingSq[p->turn]; /* FindSetBit(Mask[Side][King]); */
+        const BitBoard empty = ~(p->mask[White][0] | p->mask[Black][0]);
 
-        st->st_nc_first = st->st_last;
+        BitBoard king_flight_squares = p->atkTo[kp] & empty;
 
-        tmp = p->atkTo[kp] & ~excl;
-
-        while (tmp) {
-            i = FindSetBit(tmp);
-            tmp &= tmp - 1;
-            if (!(p->atkFr[i] & p->mask[OPP(p->turn)][0]))
-                sd->moveHeap[st->st_last++] = kp | (i << 6);
+        while (king_flight_squares) {
+            int to = FindSetBit(king_flight_squares);
+            king_flight_squares &= king_flight_squares - 1;
+            if (!(p->atkFr[to] & p->mask[OPP(p->turn)][0]))
+                append_to_heap(sd->heap, make_move(kp, to, 0));
         }
 
-        att = (p->mask[OPP(p->turn)][Bishop] | p->mask[OPP(p->turn)][Rook] |
-               p->mask[OPP(p->turn)][Queen]) &
-              p->atkFr[kp];
-        des = 0;
+        BitBoard sliding_attackers =
+            (p->mask[OPP(p->turn)][Bishop] | p->mask[OPP(p->turn)][Rook] |
+             p->mask[OPP(p->turn)][Queen]) &
+            p->atkFr[kp];
 
-        while (att) {
-            i = FindSetBit(att);
-            att &= att - 1;
-            des = InterPath[kp][i];
+        BitBoard interpositions = 0;
+
+        while (sliding_attackers) {
+            int attacker_sq = FindSetBit(sliding_attackers);
+            sliding_attackers &= sliding_attackers - 1;
+            interpositions = InterPath[kp][attacker_sq];
         }
 
-        tmp = (p->mask[p->turn][0] & ~p->mask[p->turn][King]) &
-              ~p->mask[p->turn][Pawn];
+        BitBoard non_pawns = (p->mask[p->turn][0] & ~p->mask[p->turn][King]) &
+                             ~p->mask[p->turn][Pawn];
 
-        while (tmp) {
-            int j;
-            BitBoard mto;
+        while (non_pawns) {
+            int from = FindSetBit(non_pawns);
+            non_pawns &= non_pawns - 1;
+            BitBoard blocking = p->atkTo[from] & empty & interpositions;
 
-            i = FindSetBit(tmp);
-            tmp &= tmp - 1;
-            mto = (p->atkTo[i] & ~excl) & des;
-
-            while (mto) {
-                j = FindSetBit(mto);
-                mto &= mto - 1;
-                sd->moveHeap[st->st_last++] = i | (j << 6);
+            while (blocking) {
+                int to = FindSetBit(blocking);
+                blocking &= blocking - 1;
+                append_to_heap(sd->heap, make_move(from, to, 0));
             }
         }
 
-        tmp = p->mask[p->turn][Pawn];
+        BitBoard pawns = p->mask[p->turn][Pawn];
 
         if (p->turn == White)
-            tmp = ShiftUp(tmp);
+            pawns = ShiftUp(pawns);
         else
-            tmp = ShiftDown(tmp);
+            pawns = ShiftDown(pawns);
 
-        tmp2 = tmp = (tmp & ~excl);
+        BitBoard pawns_to = pawns = (pawns & empty);
 
-        while (tmp2) {
-            int fr;
-            i = FindSetBit(tmp2);
-            tmp2 &= tmp2 - 1;
-            fr = (p->turn == White) ? i - 8 : i + 8;
+        while (pawns_to) {
+            int to = FindSetBit(pawns_to);
+            pawns_to &= pawns_to - 1;
+            int fr = (p->turn == White) ? to - 8 : to + 8;
 
-            if (PromoSquare[i]) {
-                sd->moveHeap[st->st_last++] = fr | (i << 6) | M_PQUEEN;
-                sd->moveHeap[st->st_last++] = fr | (i << 6) | M_PKNIGHT;
-                sd->moveHeap[st->st_last++] = fr | (i << 6) | M_PROOK;
-                sd->moveHeap[st->st_last++] = fr | (i << 6) | M_PBISHOP;
+            if (PromoSquare[to]) {
+                append_to_heap(sd->heap, make_move(fr, to, M_PQUEEN));
+                append_to_heap(sd->heap, make_move(fr, to, M_PKNIGHT));
+                append_to_heap(sd->heap, make_move(fr, to, M_PROOK));
+                append_to_heap(sd->heap, make_move(fr, to, M_PBISHOP));
             } else
-                sd->moveHeap[st->st_last++] = fr | (i << 6);
+                append_to_heap(sd->heap, make_move(fr, to, 0));
         }
 
-        tmp &= ThirdRank[p->turn];
+        pawns &= ThirdRank[p->turn];
 
         if (p->turn == White)
-            tmp = ShiftUp(tmp);
+            pawns = ShiftUp(pawns);
         else
-            tmp = ShiftDown(tmp);
+            pawns = ShiftDown(pawns);
 
-        tmp &= ~excl;
+        pawns &= empty;
 
-        while (tmp) {
-            int fr;
-            i = FindSetBit(tmp);
-            tmp &= tmp - 1;
-            fr = (p->turn == White) ? i - 16 : i + 16;
-            sd->moveHeap[st->st_last++] = fr | (i << 6) | M_PAWND;
+        while (pawns) {
+            int to = FindSetBit(pawns);
+            pawns &= pawns - 1;
+            int fr = (p->turn == White) ? to - 16 : to + 16;
+            append_to_heap(sd->heap, make_move(fr, to, M_PAWND));
         }
+
+        st->st_phase = HistoryMoves;
+        st->st_last = sd->heap->current_section->end;
     }
 
         /* fall through */
     case HistoryMoves:
+#ifdef VERBOSE
+        Print(9, "HistoryMoves\n");
+#endif
         while (st->st_last > st->st_nc_first) {
             int besti = st->st_nc_first;
-            int m = sd->moveHeap[besti];
-            unsigned int best = sd->historyTab[p->turn][m & 4095];
-            for (i = st->st_nc_first + 1; i < st->st_last; i++) {
-                m = sd->moveHeap[i];
-                if (sd->historyTab[p->turn][m & 4095] > best) {
-                    best = sd->historyTab[p->turn][m & 4095];
+            int best = sd->historyTab[p->turn][sd->heap->data[besti] & 4095];
+
+            for (unsigned int i = st->st_nc_first + 1; i < st->st_last; i++) {
+                int hval = sd->historyTab[p->turn][sd->heap->data[i] & 4095];
+                if (hval > best) {
+                    best = hval;
                     besti = i;
                 }
             }
-            move = sd->moveHeap[besti];
+            move = sd->heap->data[besti];
 
             st->st_last--;
-            sd->moveHeap[besti] = sd->moveHeap[st->st_last];
-
-            st->st_phase = HistoryMoves;
+            sd->heap->data[besti] = sd->heap->data[st->st_last];
 
             if (move == st->st_hashmove || move == st->st_k1 ||
                 move == st->st_k2 || move == st->st_k3 || move == st->st_cm)
@@ -758,6 +753,8 @@ static void GenerateQCaptures(struct SearchData *sd, int alpha) {
     int score;
     int i;
 
+    st->st_first = sd->heap->current_section->start;
+
     att = p->mask[p->turn][0];
 
     /* Handle pawn promotions first */
@@ -774,25 +771,28 @@ static void GenerateQCaptures(struct SearchData *sd, int alpha) {
         next = (p->turn == White) ? i + 8 : i - 8;
 
         if (p->piece[next] == Neutral) {
-            int move = i | (next << 6);
+            move_t move = make_move(i, next, M_PQUEEN);
             int sw;
-            if ((sw = SwapOff(p, move | M_PQUEEN)) >= 0) {
-                sd->moveHeap[st->st_last] = move | M_PQUEEN;
-                sd->dataHeap[st->st_last] = sw;
+            if ((sw = SwapOff(p, move)) >= 0) {
+                st->st_last = sd->heap->current_section->end;
+                append_to_heap(sd->heap, move);
+                grow_data_heap(sd);
+                sd->data_heap[st->st_last] = sw;
                 st->st_last++;
             }
         }
 
         tmp = p->atkTo[i] & p->mask[OPP(p->turn)][0];
         while (tmp) {
-            move_t move;
             int sw;
             j = FindSetBit(tmp);
             tmp &= tmp - 1;
-            move = i | (j << 6) | M_CAPTURE;
-            if ((sw = SwapOff(p, move | M_PQUEEN)) >= 0) {
-                sd->moveHeap[st->st_last] = move | M_PQUEEN;
-                sd->dataHeap[st->st_last] = sw;
+            move_t move = make_move(i, j, M_CAPTURE | M_PQUEEN);
+            if ((sw = SwapOff(p, move)) >= 0) {
+                st->st_last = sd->heap->current_section->end;
+                append_to_heap(sd->heap, move);
+                grow_data_heap(sd);
+                sd->data_heap[st->st_last] = sw;
                 st->st_last++;
             }
         }
@@ -814,14 +814,15 @@ static void GenerateQCaptures(struct SearchData *sd, int alpha) {
         def &= def - 1;
         tmp2 = p->atkFr[i] & att;
         while (tmp2) {
-            int move, sw;
             j = FindSetBit(tmp2);
             tmp2 &= tmp2 - 1;
-            move = j | i << 6 | M_CAPTURE;
-            sw = SwapOff(p, move);
+            move_t move = make_move(j, i, M_CAPTURE);
+            int sw = SwapOff(p, move);
             if (sw >= 0) {
-                sd->moveHeap[st->st_last] = move;
-                sd->dataHeap[st->st_last] = sw;
+                st->st_last = sd->heap->current_section->end;
+                append_to_heap(sd->heap, move);
+                grow_data_heap(sd);
+                sd->data_heap[st->st_last] = sw;
                 st->st_last++;
             }
         }
@@ -836,14 +837,15 @@ static void GenerateQCaptures(struct SearchData *sd, int alpha) {
         def &= def - 1;
         tmp2 = p->atkFr[i] & att;
         while (tmp2) {
-            int move, sw;
             j = FindSetBit(tmp2);
             tmp2 &= tmp2 - 1;
-            move = j | i << 6 | M_CAPTURE;
-            sw = SwapOff(p, move);
+            move_t move = make_move(j, i, M_CAPTURE);
+            int sw = SwapOff(p, move);
             if (sw >= 0) {
-                sd->moveHeap[st->st_last] = move;
-                sd->dataHeap[st->st_last] = sw;
+                st->st_last = sd->heap->current_section->end;
+                append_to_heap(sd->heap, move);
+                grow_data_heap(sd);
+                sd->data_heap[st->st_last] = sw;
                 st->st_last++;
             }
         }
@@ -858,14 +860,15 @@ static void GenerateQCaptures(struct SearchData *sd, int alpha) {
         def &= def - 1;
         tmp2 = p->atkFr[i] & att;
         while (tmp2) {
-            int move, sw;
             j = FindSetBit(tmp2);
             tmp2 &= tmp2 - 1;
-            move = j | i << 6 | M_CAPTURE;
-            sw = SwapOff(p, move);
+            move_t move = make_move(j, i, M_CAPTURE);
+            int sw = SwapOff(p, move);
             if (sw >= 0) {
-                sd->moveHeap[st->st_last] = move;
-                sd->dataHeap[st->st_last] = sw;
+                st->st_last = sd->heap->current_section->end;
+                append_to_heap(sd->heap, move);
+                grow_data_heap(sd);
+                sd->data_heap[st->st_last] = sw;
                 st->st_last++;
             }
         }
@@ -880,21 +883,22 @@ static void GenerateQCaptures(struct SearchData *sd, int alpha) {
         def &= def - 1;
         tmp2 = p->atkFr[i] & att;
         while (tmp2) {
-            int move, sw;
             j = FindSetBit(tmp2);
             tmp2 &= tmp2 - 1;
-            move = j | i << 6 | M_CAPTURE;
-            sw = SwapOff(p, move);
+            move_t move = make_move(j, i, M_CAPTURE);
+            int sw = SwapOff(p, move);
             if (sw >= 0) {
-                sd->moveHeap[st->st_last] = move;
-                sd->dataHeap[st->st_last] = sw;
+                st->st_last = sd->heap->current_section->end;
+                append_to_heap(sd->heap, move);
+                grow_data_heap(sd);
+                sd->data_heap[st->st_last] = sw;
                 st->st_last++;
             }
         }
     }
 }
 
-int NextMoveQ(struct SearchData *sd, int alpha) {
+move_t NextMoveQ(struct SearchData *sd, int alpha) {
     struct SearchStatus *st = sd->current;
     int i;
     move_t move;
@@ -915,19 +919,19 @@ int NextMoveQ(struct SearchData *sd, int alpha) {
 #endif
         if (st->st_last > st->st_first) {
             int besti = st->st_first;
-            int best = sd->dataHeap[besti];
+            int best = sd->data_heap[besti];
 
             for (i = st->st_first + 1; i < st->st_last; i++) {
-                if (sd->dataHeap[i] > best) {
-                    best = sd->dataHeap[i];
+                if (sd->data_heap[i] > best) {
+                    best = sd->data_heap[i];
                     besti = i;
                 }
             }
 
-            move = sd->moveHeap[besti];
+            move = sd->heap->data[besti];
             st->st_last--;
-            sd->moveHeap[besti] = sd->moveHeap[st->st_last];
-            sd->dataHeap[besti] = sd->dataHeap[st->st_last];
+            sd->heap->data[besti] = sd->heap->data[st->st_last];
+            sd->data_heap[besti] = sd->data_heap[st->st_last];
 
             return move;
         }
@@ -967,4 +971,41 @@ void PutKiller(struct SearchData *sd, move_t m) {
             k->kcount2 = 1;
         }
     }
+}
+
+static void test_next_move(struct SearchData *sd,
+                           move_t (*func)(struct SearchData *)) {
+    bool comma = false;
+    EnterNode(sd);
+
+    while (true) {
+        move_t move = func(sd);
+        if (move == M_NONE)
+            break;
+
+        if (LegalMove(sd->position, move)) {
+            if (comma) {
+                Print(0, ", ");
+            }
+            char san_buffer[16];
+            Print(0, "%s", SAN(sd->position, move, san_buffer));
+            comma = true;
+        }
+    }
+    LeaveNode(sd);
+    Print(0, "\n");
+}
+
+move_t next_move_q_fixed_alpha(struct SearchData *sd) {
+    return NextMoveQ(sd, -500000);
+}
+
+void TestNextGenerators(struct Position *p) {
+    struct SearchData *sd = CreateSearchData(p);
+    Print(0, "NextMove:\n");
+    test_next_move(sd, &NextMove);
+    Print(0, "\nNextEvasion:\n");
+    test_next_move(sd, &NextEvasion);
+    Print(0, "\nNextMoveQ:\n");
+    test_next_move(sd, &next_move_q_fixed_alpha);
 }

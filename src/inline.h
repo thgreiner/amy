@@ -64,4 +64,11 @@ static inline int EdgeDist(int sq) {
     return MAX(filedist, rankdist);
 }
 
+/**
+ * Create a move from from square, to square and flags.
+ */
+static inline int make_move(int from, int to, int flags) {
+    return (move_t)(from | (to << 6) | flags);
+}
+
 #endif /* INLINE_H */

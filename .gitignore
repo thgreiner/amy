@@ -14,3 +14,4 @@ doc/index.html
 amy-*.tar.gz
 configure
 **/Makefile.in
+**/Makefile.deps

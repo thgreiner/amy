@@ -1215,7 +1215,6 @@ static void ResortMovesList(int cnt, move_t *mvs, unsigned long *nodes) {
 
 static void *IterateInt(void *x) {
     int best;
-    move_t mvs[256];
     unsigned long nodes[256];
     int last = 0;
     double elapsed;
@@ -1230,7 +1229,10 @@ static void *IterateInt(void *x) {
     p = sd->position;
 
     InitSearch(sd);
-    sd->nrootmoves = LegalMoves(p, mvs);
+    sd->nrootmoves = LegalMoves(p, sd->heap);
+
+    move_t *mvs = sd->heap->data + sd->heap->current_section->start;
+
     best = p->material[p->turn] - p->material[OPP(p->turn)];
 
     if (!(mvs[0] & M_TACTICAL))
@@ -1247,6 +1249,7 @@ static void *IterateInt(void *x) {
         for (sd->movenum = 0; sd->movenum < sd->nrootmoves; sd->movenum++) {
             int tmp;
             int next_depth = (sd->depth - 2) * OnePly;
+            move_t move = mvs[sd->movenum];
 
             nodes[sd->movenum] = sd->nodes_cnt;
 
@@ -1254,15 +1257,15 @@ static void *IterateInt(void *x) {
                 char time_buffer[16];
                 char san_buffer[32];
 
-                PrintNoLog(2, "%2d  %s   %2d/%2d  %s      \r", sd->depth,
-                           FormatTime(CurTime - StartTime, time_buffer,
-                                      sizeof(time_buffer)),
-                           sd->movenum + 1, sd->nrootmoves,
-                           NumberedSAN(p, mvs[sd->movenum], san_buffer,
-                                       sizeof(san_buffer)));
+                PrintNoLog(
+                    2, "%2d  %s   %2d/%2d  %s      \r", sd->depth,
+                    FormatTime(CurTime - StartTime, time_buffer,
+                               sizeof(time_buffer)),
+                    sd->movenum + 1, sd->nrootmoves,
+                    NumberedSAN(p, move, san_buffer, sizeof(san_buffer)));
             }
 
-            DoMove(p, mvs[sd->movenum]);
+            DoMove(p, move);
             if (InCheck(p, p->turn))
                 next_depth += ExtendInCheck;
 
@@ -1277,7 +1280,7 @@ static void *IterateInt(void *x) {
             } else {
                 tmp = -quies(sd, -beta, -alpha, 0);
             }
-            UndoMove(p, mvs[sd->movenum]);
+            UndoMove(p, move);
             if (AbortSearch)
                 goto final;
 
@@ -1294,7 +1297,7 @@ static void *IterateInt(void *x) {
                     char san_buffer[32];
                     SearchOutputFailHighLow(
                         sd->depth, CurTime - StartTime, false,
-                        NumberedSAN(p, mvs[0], san_buffer, sizeof(san_buffer)),
+                        NumberedSAN(p, move, san_buffer, sizeof(san_buffer)),
                         sd->nodes_cnt + sd->qnodes_cnt);
                 }
 
@@ -1303,7 +1306,7 @@ static void *IterateInt(void *x) {
                 beta = tmp;
                 alpha = tmp - ResearchWindow;
 
-                DoMove(p, mvs[sd->movenum]);
+                DoMove(p, move);
                 if (next_depth >= 0) {
 #if MP
                     tmp = -negascout(sd, -beta, -alpha, next_depth, PVNode, 0);
@@ -1313,7 +1316,7 @@ static void *IterateInt(void *x) {
                 } else {
                     tmp = -quies(sd, -beta, -alpha, 0);
                 }
-                UndoMove(p, mvs[sd->movenum]);
+                UndoMove(p, move);
                 if (AbortSearch)
                     goto final;
 
@@ -1321,7 +1324,7 @@ static void *IterateInt(void *x) {
                     beta = tmp;
                     alpha = -INF;
 
-                    DoMove(p, mvs[sd->movenum]);
+                    DoMove(p, move);
                     if (next_depth >= 0) {
 #if MP
                         tmp = -negascout(sd, -beta, -alpha, next_depth, PVNode,
@@ -1332,7 +1335,7 @@ static void *IterateInt(void *x) {
                     } else {
                         tmp = -quies(sd, -beta, -alpha, 0);
                     }
-                    UndoMove(p, mvs[sd->movenum]);
+                    UndoMove(p, move);
                     if (AbortSearch)
                         goto final;
                 }
@@ -1347,7 +1350,6 @@ static void *IterateInt(void *x) {
                 pv_stable = false;
 
                 if (sd->movenum != 0) {
-                    move_t tm = mvs[sd->movenum];
                     int tn = nodes[sd->movenum];
                     int j;
 
@@ -1355,11 +1357,11 @@ static void *IterateInt(void *x) {
                         mvs[j] = mvs[j - 1];
                         nodes[j] = nodes[j - 1];
                     }
-                    mvs[0] = tm;
+                    mvs[0] = move;
                     nodes[0] = tn;
 
-                    if (!(mvs[0] & M_TACTICAL))
-                        PutKiller(sd, mvs[0]);
+                    if (!(move & M_TACTICAL))
+                        PutKiller(sd, move);
                     PBMove = M_NONE;
                     is_pv = true;
 
@@ -1377,7 +1379,7 @@ static void *IterateInt(void *x) {
                 alpha = tmp;
                 beta = tmp + ResearchWindow;
 
-                DoMove(p, mvs[0]);
+                DoMove(p, move);
                 if (next_depth >= 0) {
 #if MP
                     tmp = -negascout(sd, -beta, -alpha, next_depth, PVNode, 0);
@@ -1387,7 +1389,7 @@ static void *IterateInt(void *x) {
                 } else {
                     tmp = -quies(sd, -beta, -alpha, 0);
                 }
-                UndoMove(p, mvs[0]);
+                UndoMove(p, move);
                 if (AbortSearch)
                     goto final;
 
@@ -1395,7 +1397,7 @@ static void *IterateInt(void *x) {
                     alpha = tmp;
                     beta = INF;
 
-                    DoMove(p, mvs[0]);
+                    DoMove(p, move);
                     if (next_depth >= 0) {
 #if MP
                         tmp = -negascout(sd, -beta, -alpha, next_depth, PVNode,
@@ -1406,7 +1408,7 @@ static void *IterateInt(void *x) {
                     } else {
                         tmp = -quies(sd, -beta, -alpha, 0);
                     }
-                    UndoMove(p, mvs[0]);
+                    UndoMove(p, move);
                     if (AbortSearch)
                         goto final;
                 }
@@ -1671,7 +1673,6 @@ static void StartHelpers(struct Position *p) {
 int Iterate(struct Position *p) {
     float soft, hard;
     int cnt;
-    move_t mvs[256];
     struct SearchData *sd;
 
     FHTime = 0;
@@ -1682,7 +1683,8 @@ int Iterate(struct Position *p) {
 
     CalcTime(p, &soft, &hard);
 
-    cnt = LegalMoves(p, mvs);
+    heap_t heap = allocate_heap();
+    cnt = LegalMoves(p, heap);
 
     AbortSearch = false;
     NeedTime = false;
@@ -1694,15 +1696,20 @@ int Iterate(struct Position *p) {
      */
 
     if (cnt == 0) {
+        free_heap(heap);
         if (!InCheck(p, p->turn))
             strcpy(AnalysisLine, "stalemate");
         else
             strcpy(AnalysisLine, "mate");
         return M_NONE;
     } else if (cnt == 1 && SearchMode != Analyzing) {
+        move_t only_move = heap->data[heap->current_section->start];
+        free_heap(heap);
         strcpy(AnalysisLine, "forced move");
-        return mvs[0];
+        return only_move;
     }
+
+    free_heap(heap);
 
     SoftLimit = StartTime + (int)(soft * ONE_SECOND);
     SoftLimit2 = StartTime + (int)(85 * soft);
@@ -1720,14 +1727,14 @@ int Iterate(struct Position *p) {
     sd->master = true;
     IterateInt(sd);
 
-    mvs[0] = sd->best_move;
+    move_t best_move = sd->best_move;
     FreeSearchData(sd);
 
 #if MP
     StopHelpers();
 #endif /* MP */
 
-    return mvs[0];
+    return best_move;
 }
 
 /**

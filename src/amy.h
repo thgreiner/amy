@@ -95,7 +95,6 @@
 #include <pthread.h>
 #endif
 
-#include <stdint.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -239,6 +238,23 @@ typedef uint64_t hash_t;
 
 typedef int32_t move_t;
 
+struct heap_section {
+    unsigned int start;
+    unsigned int end;
+};
+
+typedef struct heap_section *heap_section_t;
+
+struct heap {
+    move_t *data;
+    unsigned int capacity;
+    heap_section_t sections_start;
+    heap_section_t sections_end;
+    heap_section_t current_section;
+};
+
+typedef struct heap *heap_t;
+
 struct Position {
     BitBoard atkTo[64];
     BitBoard atkFr[64];
@@ -311,8 +327,10 @@ struct SearchData {
     struct HTEntry *localHashTable;
 #endif
 
-    move_t *moveHeap;
-    int *dataHeap;
+    heap_t heap;
+    int32_t *data_heap;
+    unsigned int data_heap_size;
+
     unsigned int counterTab[2][4096]; /* counter moves per side */
     unsigned int historyTab[2][4096]; /* history moves per side */
 
@@ -484,18 +502,18 @@ void DoMove(struct Position *, move_t move);
 void UndoMove(struct Position *, move_t move);
 void DoNull(struct Position *);
 void UndoNull(struct Position *);
-int GenTo(struct Position *, int square, move_t *moves);
-int GenEnpas(struct Position *, move_t *moves);
-int GenFrom(struct Position *, int square, move_t *moves);
+void GenTo(struct Position *, int, heap_t);
+void GenEnpas(struct Position *, heap_t);
+void GenFrom(struct Position *, int, heap_t);
 void GenRest(move_t *moves);
 int GenCaps(move_t *moves, int good);
-int GenChecks(struct Position *, move_t *moves);
+void GenChecks(struct Position *, heap_t);
 int GenContactChecks(move_t *moves);
 bool MayCastle(struct Position *, move_t move);
 bool LegalMove(struct Position *, move_t move);
 bool IsCheckingMove(struct Position *, move_t move);
-int LegalMoves(struct Position *, move_t *mvs);
-int PLegalMoves(struct Position *, move_t *mvs);
+int LegalMoves(struct Position *, heap_t);
+void PLegalMoves(struct Position *, heap_t);
 int Repeated(struct Position *, int mode);
 char *SAN(struct Position *, move_t, char *);
 move_t ParseSAN(struct Position *, char *);
@@ -566,6 +584,7 @@ int NextMove(struct SearchData *);
 int NextEvasion(struct SearchData *);
 int NextMoveQ(struct SearchData *, int);
 void PutKiller(struct SearchData *, move_t);
+void TestNextGenerators(struct Position *);
 
 void SaveGame(struct Position *, char *);
 void LoadGame(struct Position *, char *);
@@ -623,6 +642,9 @@ void RecogInit(void);
 int ProbeRecognizer(const struct Position *p, int *score);
 
 void DoBookLearning(void);
+
+heap_t allocate_heap(void);
+void free_heap(heap_t heap);
 
 #include "inline.h"
 
