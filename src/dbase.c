@@ -35,6 +35,7 @@
 
 #include "amy.h"
 #include "heap.h"
+#include "inline.h"
 #include "magic.h"
 
 /*
@@ -56,29 +57,6 @@ int Value[] = {0,           PAWN_Value, KNIGHT_Value, BISHOP_Value, ROOK_Value,
 const bool Sliding[] = {false, false, false, true, true, true, false};
 
 /*
- * Does a pawn promote on a square? True for ranks 1 and 8
- */
-
-const int PromoSquare[] = {1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0,
-                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                           0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1};
-
-/*
- * Table to translate EnPassant squares:
- * EPTranslate[e4] = e3 means a pawns double stepped to e4 can be captured
- * enpassant on e3
- * EPTranslate[e3] = e4 means a enpassant capture on e3 will remove pawn
- * on e4
- */
-
-const int EPTranslate[] = {0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-                           0,  0,  0,  a4, b4, c4, d4, e4, f4, g4, h4, a3, b3,
-                           c3, d3, e3, f3, g3, h3, a6, b6, c6, d6, e6, f6, g6,
-                           h6, a5, b5, c5, d5, e5, f5, g5, h5, 0,  0,  0,  0,
-                           0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0};
-
-/*
  * Masks for castle rights:
  */
 
@@ -86,9 +64,6 @@ const int8_t CastleMask[2][2] = {
     {0x01, 0x02}, /* White can castle king/queenp->turn */
     {0x04, 0x08}  /* dito for black */
 };
-
-/* game history */
-/* struct GameLog GameLog[1000]; */
 
 /* local prototypes
  */
@@ -517,7 +492,7 @@ void DoMove(struct Position *p, move_t move) {
                 p->castle &= ~(CastleMask[OPP(p->turn)][1]);
             }
         } else if (move & M_ENPASSANT) {
-            int so = EPTranslate[to];
+            int so = to ^ 8;
 
             /* piece looses its attacks */
             AtkClr(p, so);
@@ -598,7 +573,7 @@ void DoMove(struct Position *p, move_t move) {
 
     p->enPassant = 0;
     if (move & M_PAWND) {
-        int tmpPassant = EPTranslate[to];
+        int tmpPassant = to ^ 8;
         if (p->atkFr[tmpPassant] & p->mask[OPP(p->turn)][Pawn]) {
             p->enPassant = tmpPassant;
         }
@@ -692,7 +667,7 @@ void UndoMove(struct Position *p, move_t move) {
             /* update material signature */
             p->material_signature[OPP(p->turn)] |= SIGNATURE_BIT(sp);
         } else if (move & M_ENPASSANT) {
-            int so = EPTranslate[to];
+            int so = to ^ 8;
 
             /* piece looses its attacks */
             AtkSet(p, Pawn, OPP(p->turn), so);
@@ -891,7 +866,7 @@ void GenTo(struct Position *p, int square, heap_t heap) {
     while (tmp) {
         int i = FindSetBit(tmp);
         tmp &= tmp - 1;
-        if (TYPE(p->piece[i]) == Pawn && PromoSquare[square]) {
+        if (TYPE(p->piece[i]) == Pawn && is_promo_square(square)) {
             append_to_heap(heap, make_move(i, square, M_CAPTURE | M_PQUEEN));
             append_to_heap(heap, make_move(i, square, M_CAPTURE | M_PKNIGHT));
             append_to_heap(heap, make_move(i, square, M_CAPTURE | M_PROOK));
@@ -953,7 +928,7 @@ void GenFrom(struct Position *p, int square, heap_t heap) {
         int sq = (p->turn == White ? square + 8 : square - 8);
 
         if (p->piece[sq] == Neutral) {
-            if (PromoSquare[sq]) {
+            if (is_promo_square(sq)) {
                 append_to_heap(heap, make_move(square, sq, M_PQUEEN));
                 append_to_heap(heap, make_move(square, sq, M_PKNIGHT));
                 append_to_heap(heap, make_move(square, sq, M_PROOK));

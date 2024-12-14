@@ -71,4 +71,12 @@ static inline int make_move(int from, int to, int flags) {
     return (move_t)(from | (to << 6) | flags);
 }
 
+/**
+ * Returns if the square is a promotion square.
+ */
+static inline bool is_promo_square(int sq) {
+    int rank = sq >> 3;
+    return rank == 0 || rank == 7;
+}
+
 #endif /* INLINE_H */

@@ -35,6 +35,7 @@
 
 #include "amy.h"
 #include "heap.h"
+#include "inline.h"
 
 #define MAX_TREE_SIZE 64 /* maximum depth we will search to */
 
@@ -55,8 +56,6 @@ enum SearchPhases {
 };
 
 enum GeneratedPhases { Nothing = 0, Captures = 1, NonCaptures = 2, Checks = 4 };
-
-extern int PromoSquare[];
 
 struct SearchData *CreateSearchData(struct Position *p) {
     struct SearchData *sd = calloc(sizeof(struct SearchData), 1);
@@ -684,7 +683,7 @@ move_t NextEvasion(struct SearchData *sd) {
             pawns_to &= pawns_to - 1;
             int fr = (p->turn == White) ? to - 8 : to + 8;
 
-            if (PromoSquare[to]) {
+            if (is_promo_square(to)) {
                 append_to_heap(sd->heap, make_move(fr, to, M_PQUEEN));
                 append_to_heap(sd->heap, make_move(fr, to, M_PKNIGHT));
                 append_to_heap(sd->heap, make_move(fr, to, M_PROOK));
