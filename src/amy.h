@@ -159,7 +159,7 @@
 #define MAX_TREE_SIZE 64 /* maximum depth we will search to */
 #define MAX_SEARCH_HEAP 2000
 
-#define GAME_LOG_SIZE 1000 /* maximum do's we support */
+#define INITIAL_GAME_LOG_SIZE 40 /* Initial size of game history */
 
 #define PB_NO_PB_MOVE 0
 #define PB_NO_PB_HIT 1
@@ -264,6 +264,7 @@ struct Position {
     hash_t pkey;
     struct GameLog *gameLog;
     struct GameLog *actLog;
+    unsigned int gameLogSize;
     int material[2], nonPawn[2];
     int16_t outOfBookCnt[2];
     int16_t ply;

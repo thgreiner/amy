@@ -3,6 +3,8 @@
 ## [0.9.6]
 
 * Refactored search move generation
+* Replaced several lookup tables by small functions
+
 
 ## [0.9.5] 2024-12-10
 

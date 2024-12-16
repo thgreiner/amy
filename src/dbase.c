@@ -297,9 +297,7 @@ int PromoType(move_t move) {
 /*
  * Determines if a piece of type tp is a sliding piece.
  */
-static inline bool is_sliding(int tp) {
-	return tp >= Bishop && tp <= Queen;
-}
+static inline bool is_sliding(int tp) { return tp >= Bishop && tp <= Queen; }
 
 /*
  * Make a castle move
@@ -587,8 +585,17 @@ void DoMove(struct Position *p, move_t move) {
 
     /* Update GameLog */
     p->actLog->gl_Move = move;
-    p->actLog++;
     p->ply++;
+
+    /* Grow gameLog if needed. */
+    if (p->ply >= p->gameLogSize) {
+        p->gameLogSize *= 2;
+        p->gameLog =
+            realloc(p->gameLog, sizeof(struct GameLog) * p->gameLogSize);
+        p->actLog = p->gameLog + p->ply;
+    } else {
+        p->actLog++;
+    }
 
     /* Check if reversible move */
     if (move & (M_CAPTURE | M_PANY | M_CANY) || tp == Pawn) {
@@ -1313,10 +1320,7 @@ void GenChecks(struct Position *p, heap_t heap) {
 bool InCheck(struct Position *p, int side) {
     int sq = p->kingSq[side];
 
-    if (p->atkFr[sq] & p->mask[!side][0])
-        return true;
-    else
-        return false;
+    return (p->atkFr[sq] & p->mask[!side][0]);
 }
 
 /*
@@ -2581,7 +2585,8 @@ struct Position *CreatePositionFromEPD(char *epd) {
         Print(0, "Cannot allocate Position.\n");
         exit(1);
     }
-    p->gameLog = calloc(sizeof(struct GameLog), GAME_LOG_SIZE);
+    p->gameLogSize = INITIAL_GAME_LOG_SIZE;
+    p->gameLog = calloc(sizeof(struct GameLog), p->gameLogSize);
     if (!p->gameLog) {
         Print(0, "Cannot allocate GameLog.\n");
         exit(1);
@@ -2618,12 +2623,13 @@ struct Position *ClonePosition(struct Position *src) {
     }
     memcpy(p, src, sizeof(struct Position));
 
-    p->gameLog = calloc(sizeof(struct GameLog), GAME_LOG_SIZE);
+    p->gameLogSize = src->gameLogSize;
+    p->gameLog = calloc(sizeof(struct GameLog), p->gameLogSize);
     if (!p->gameLog) {
         Print(0, "Cannot allocate GameLog.\n");
         exit(1);
     }
-    memcpy(p->gameLog, src->gameLog, sizeof(struct GameLog) * GAME_LOG_SIZE);
+    memcpy(p->gameLog, src->gameLog, sizeof(struct GameLog) * p->gameLogSize);
 
     p->actLog = p->gameLog + (src->actLog - src->gameLog);
 
