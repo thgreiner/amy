@@ -304,9 +304,6 @@ struct CommandEntry {
 
 struct SearchStatus {
     uint16_t st_phase;
-    uint16_t st_first;
-    uint16_t st_nc_first;
-    uint16_t st_last;
     move_t st_hashmove;
     move_t st_k1, st_k2, st_kl, st_cm, st_k3;
 };

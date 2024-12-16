@@ -112,7 +112,6 @@ void FreeSearchData(struct SearchData *sd) {
 }
 
 void EnterNode(struct SearchData *sd) {
-    struct SearchStatus *old = (sd->current);
     struct SearchStatus *st;
 
     st = ++(sd->current);
@@ -120,11 +119,6 @@ void EnterNode(struct SearchData *sd) {
     st->st_phase = HashMove;
     sd->ply++;
     sd->killer++;
-
-    if (sd->ply > 0)
-        st->st_first = st->st_last = old->st_last;
-    else
-        st->st_first = st->st_last = 0;
 
     push_section(sd->heap);
 }
@@ -149,6 +143,7 @@ static inline void grow_data_heap(struct SearchData *sd) {
 }
 
 move_t NextMove(struct SearchData *sd) {
+    heap_section_t section = sd->heap->current_section;
     struct SearchStatus *st = sd->current;
     struct Position *p = sd->position;
     move_t move;
@@ -191,23 +186,17 @@ move_t NextMove(struct SearchData *sd) {
         }
 
         grow_data_heap(sd);
-        for (unsigned int j = sd->heap->current_section->start;
-             j < sd->heap->current_section->end; j++) {
+        for (unsigned int j = section->start; j < section->end; j++) {
             sd->data_heap[j] = SwapOff(p, sd->heap->data[j]);
         }
 
-        unsigned int last_end = sd->heap->current_section->end;
+        unsigned int last_end = section->end;
         GenEnpas(p, sd->heap);
         grow_data_heap(sd);
 
-        for (unsigned int j = last_end; j < sd->heap->current_section->end;
-             j++) {
+        for (unsigned int j = last_end; j < section->end; j++) {
             sd->data_heap[j] = 0;
         }
-
-        st->st_first = sd->heap->current_section->start;
-        st->st_last = sd->heap->current_section->end;
-        st->st_nc_first = st->st_last;
 
         st->st_phase = GainingCapture;
     }
@@ -216,11 +205,11 @@ move_t NextMove(struct SearchData *sd) {
 #ifdef VERBOSE
         Print(9, "GainingCapture\n");
 #endif
-        while (st->st_last > st->st_first) {
-            int besti = st->st_first;
+        while (section->end > section->start) {
+            unsigned int besti = section->start;
             int best = sd->data_heap[besti];
 
-            for (unsigned int i = st->st_first + 1; i < st->st_last; i++) {
+            for (unsigned int i = section->start + 1; i < section->end; i++) {
                 if (sd->data_heap[i] > best) {
                     best = sd->data_heap[i];
                     besti = i;
@@ -228,10 +217,10 @@ move_t NextMove(struct SearchData *sd) {
             }
             if (best >= 0) {
                 move = sd->heap->data[besti];
-                st->st_last--;
+                section->end--;
 
-                sd->heap->data[besti] = sd->heap->data[st->st_last];
-                sd->data_heap[besti] = sd->data_heap[st->st_last];
+                sd->heap->data[besti] = sd->heap->data[section->end];
+                sd->data_heap[besti] = sd->data_heap[section->end];
 
                 if (move == st->st_hashmove)
                     continue;
@@ -315,21 +304,22 @@ move_t NextMove(struct SearchData *sd) {
 #ifdef VERBOSE
         Print(9, "LoosingCapture\n");
 #endif
-        while (st->st_last > st->st_first) {
-            int besti = st->st_first;
+        while (section->end > section->start) {
+            unsigned int besti = section->start;
             int best = sd->data_heap[besti];
 
-            for (unsigned int i = st->st_first + 1; i < st->st_last; i++) {
+            for (unsigned int i = section->start + 1; i < section->end; i++) {
                 if (sd->data_heap[i] > best) {
                     best = sd->data_heap[i];
                     besti = i;
                 }
             }
-            move = sd->heap->data[besti];
 
-            sd->heap->data[besti] = sd->heap->data[st->st_first];
-            sd->data_heap[besti] = sd->data_heap[st->st_first];
-            st->st_first++;
+            move = sd->heap->data[besti];
+            section->end--;
+
+            sd->heap->data[besti] = sd->heap->data[section->end];
+            sd->data_heap[besti] = sd->data_heap[section->end];
 
             st->st_phase = LoosingCapture;
 
@@ -405,18 +395,17 @@ move_t NextMove(struct SearchData *sd) {
         }
 
         st->st_phase = HistoryMoves;
-        st->st_last = sd->heap->current_section->end;
     }
 
     case HistoryMoves:
 #ifdef VERBOSE
         Print(9, "HistoryMoves\n");
 #endif
-        while (st->st_last > st->st_nc_first) {
-            int besti = st->st_nc_first;
+        while (section->end > section->start) {
+            int besti = section->start;
             int best = sd->historyTab[p->turn][sd->heap->data[besti] & 4095];
 
-            for (unsigned int i = st->st_nc_first + 1; i < st->st_last; i++) {
+            for (unsigned int i = section->start + 1; i < section->end; i++) {
                 int hval = sd->historyTab[p->turn][sd->heap->data[i] & 4095];
                 if (hval > best) {
                     best = hval;
@@ -425,8 +414,8 @@ move_t NextMove(struct SearchData *sd) {
             }
             move = sd->heap->data[besti];
 
-            st->st_last--;
-            sd->heap->data[besti] = sd->heap->data[st->st_last];
+            section->end--;
+            sd->heap->data[besti] = sd->heap->data[section->end];
 
             if (move == st->st_hashmove || move == st->st_k1 ||
                 move == st->st_k2 || move == st->st_k3 || move == st->st_cm)
@@ -440,6 +429,7 @@ move_t NextMove(struct SearchData *sd) {
 }
 
 move_t NextEvasion(struct SearchData *sd) {
+    heap_section_t section = sd->heap->current_section;
     struct SearchStatus *st = sd->current;
     struct Position *p = sd->position;
     move_t move;
@@ -479,31 +469,25 @@ move_t NextEvasion(struct SearchData *sd) {
         }
 
         grow_data_heap(sd);
-        for (unsigned int j = sd->heap->current_section->start;
-             j < sd->heap->current_section->end; j++) {
+        for (unsigned int j = section->start; j < section->end; j++) {
             sd->data_heap[j] = SwapOff(p, sd->heap->data[j]);
         }
 
-        unsigned int last_end = sd->heap->current_section->end;
+        unsigned int last_end = section->end;
         GenEnpas(p, sd->heap);
         grow_data_heap(sd);
 
-        for (unsigned int j = last_end; j < sd->heap->current_section->end;
-             j++) {
+        for (unsigned int j = last_end; j < section->end; j++) {
             sd->data_heap[j] = 0;
         }
-
-        st->st_first = sd->heap->current_section->start;
-        st->st_last = sd->heap->current_section->end;
-        st->st_nc_first = st->st_last;
     }
         /* fall through */
     case GainingCapture:
-        while (st->st_last > st->st_first) {
-            int besti = st->st_first;
+        while (section->end > section->start) {
+            unsigned int besti = section->start;
             int best = sd->data_heap[besti];
 
-            for (unsigned int i = st->st_first + 1; i < st->st_last; i++) {
+            for (unsigned int i = section->start + 1; i < section->end; i++) {
                 if (sd->data_heap[i] > best) {
                     best = sd->data_heap[i];
                     besti = i;
@@ -511,10 +495,10 @@ move_t NextEvasion(struct SearchData *sd) {
             }
             if (best >= 0) {
                 move = sd->heap->data[besti];
-                st->st_last--;
+                section->end--;
 
-                sd->heap->data[besti] = sd->heap->data[st->st_last];
-                sd->data_heap[besti] = sd->data_heap[st->st_last];
+                sd->heap->data[besti] = sd->heap->data[section->end];
+                sd->data_heap[besti] = sd->data_heap[section->end];
 
                 st->st_phase = GainingCapture;
 
@@ -599,11 +583,11 @@ move_t NextEvasion(struct SearchData *sd) {
 #ifdef VERBOSE
         Print(9, "LoosingCapture\n");
 #endif
-        while (st->st_last > st->st_first) {
-            int besti = st->st_first;
+        while (section->end > section->start) {
+            unsigned int besti = section->start;
             int best = sd->data_heap[besti];
 
-            for (unsigned int i = st->st_first + 1; i < st->st_last; i++) {
+            for (unsigned int i = section->start + 1; i < section->end; i++) {
                 if (sd->data_heap[i] > best) {
                     best = sd->data_heap[i];
                     besti = i;
@@ -611,9 +595,9 @@ move_t NextEvasion(struct SearchData *sd) {
             }
             move = sd->heap->data[besti];
 
-            sd->heap->data[besti] = sd->heap->data[st->st_first];
-            sd->data_heap[besti] = sd->data_heap[st->st_first];
-            st->st_first++;
+            section->end--;
+            sd->heap->data[besti] = sd->heap->data[section->end];
+            sd->data_heap[besti] = sd->data_heap[section->end];
 
             st->st_phase = LoosingCapture;
 
@@ -709,7 +693,6 @@ move_t NextEvasion(struct SearchData *sd) {
         }
 
         st->st_phase = HistoryMoves;
-        st->st_last = sd->heap->current_section->end;
     }
 
         /* fall through */
@@ -717,11 +700,11 @@ move_t NextEvasion(struct SearchData *sd) {
 #ifdef VERBOSE
         Print(9, "HistoryMoves\n");
 #endif
-        while (st->st_last > st->st_nc_first) {
-            int besti = st->st_nc_first;
+        while (section->end > section->start) {
+            unsigned int besti = section->start;
             int best = sd->historyTab[p->turn][sd->heap->data[besti] & 4095];
 
-            for (unsigned int i = st->st_nc_first + 1; i < st->st_last; i++) {
+            for (unsigned int i = section->start + 1; i < section->end; i++) {
                 int hval = sd->historyTab[p->turn][sd->heap->data[i] & 4095];
                 if (hval > best) {
                     best = hval;
@@ -730,8 +713,8 @@ move_t NextEvasion(struct SearchData *sd) {
             }
             move = sd->heap->data[besti];
 
-            st->st_last--;
-            sd->heap->data[besti] = sd->heap->data[st->st_last];
+            section->end--;
+            sd->heap->data[besti] = sd->heap->data[section->end];
 
             if (move == st->st_hashmove || move == st->st_k1 ||
                 move == st->st_k2 || move == st->st_k3 || move == st->st_cm)
@@ -745,14 +728,12 @@ move_t NextEvasion(struct SearchData *sd) {
 }
 
 static void GenerateQCaptures(struct SearchData *sd, int alpha) {
-    struct SearchStatus *st = sd->current;
+    heap_section_t section = sd->heap->current_section;
     struct Position *p = sd->position;
     BitBoard pwn7th;
     BitBoard att, def;
     int score;
     int i;
-
-    st->st_first = sd->heap->current_section->start;
 
     att = p->mask[p->turn][0];
 
@@ -773,11 +754,9 @@ static void GenerateQCaptures(struct SearchData *sd, int alpha) {
             move_t move = make_move(i, next, M_PQUEEN);
             int sw;
             if ((sw = SwapOff(p, move)) >= 0) {
-                st->st_last = sd->heap->current_section->end;
                 append_to_heap(sd->heap, move);
                 grow_data_heap(sd);
-                sd->data_heap[st->st_last] = sw;
-                st->st_last++;
+                sd->data_heap[section->end - 1] = sw;
             }
         }
 
@@ -788,11 +767,9 @@ static void GenerateQCaptures(struct SearchData *sd, int alpha) {
             tmp &= tmp - 1;
             move_t move = make_move(i, j, M_CAPTURE | M_PQUEEN);
             if ((sw = SwapOff(p, move)) >= 0) {
-                st->st_last = sd->heap->current_section->end;
                 append_to_heap(sd->heap, move);
                 grow_data_heap(sd);
-                sd->data_heap[st->st_last] = sw;
-                st->st_last++;
+                sd->data_heap[section->end - 1] = sw;
             }
         }
     }
@@ -818,11 +795,9 @@ static void GenerateQCaptures(struct SearchData *sd, int alpha) {
             move_t move = make_move(j, i, M_CAPTURE);
             int sw = SwapOff(p, move);
             if (sw >= 0) {
-                st->st_last = sd->heap->current_section->end;
                 append_to_heap(sd->heap, move);
                 grow_data_heap(sd);
-                sd->data_heap[st->st_last] = sw;
-                st->st_last++;
+                sd->data_heap[section->end - 1] = sw;
             }
         }
     }
@@ -841,11 +816,9 @@ static void GenerateQCaptures(struct SearchData *sd, int alpha) {
             move_t move = make_move(j, i, M_CAPTURE);
             int sw = SwapOff(p, move);
             if (sw >= 0) {
-                st->st_last = sd->heap->current_section->end;
                 append_to_heap(sd->heap, move);
                 grow_data_heap(sd);
-                sd->data_heap[st->st_last] = sw;
-                st->st_last++;
+                sd->data_heap[section->end - 1] = sw;
             }
         }
     }
@@ -864,11 +837,9 @@ static void GenerateQCaptures(struct SearchData *sd, int alpha) {
             move_t move = make_move(j, i, M_CAPTURE);
             int sw = SwapOff(p, move);
             if (sw >= 0) {
-                st->st_last = sd->heap->current_section->end;
                 append_to_heap(sd->heap, move);
                 grow_data_heap(sd);
-                sd->data_heap[st->st_last] = sw;
-                st->st_last++;
+                sd->data_heap[section->end - 1] = sw;
             }
         }
     }
@@ -887,19 +858,17 @@ static void GenerateQCaptures(struct SearchData *sd, int alpha) {
             move_t move = make_move(j, i, M_CAPTURE);
             int sw = SwapOff(p, move);
             if (sw >= 0) {
-                st->st_last = sd->heap->current_section->end;
                 append_to_heap(sd->heap, move);
                 grow_data_heap(sd);
-                sd->data_heap[st->st_last] = sw;
-                st->st_last++;
+                sd->data_heap[section->end - 1] = sw;
             }
         }
     }
 }
 
 move_t NextMoveQ(struct SearchData *sd, int alpha) {
+    heap_section_t section = sd->heap->current_section;
     struct SearchStatus *st = sd->current;
-    int i;
     move_t move;
 
     switch (st->st_phase) {
@@ -916,11 +885,11 @@ move_t NextMoveQ(struct SearchData *sd, int alpha) {
 #ifdef VERBOSE
         Print(9, "GainingCapture\n");
 #endif
-        if (st->st_last > st->st_first) {
-            int besti = st->st_first;
+        while (section->end > section->start) {
+            unsigned int besti = section->start;
             int best = sd->data_heap[besti];
 
-            for (i = st->st_first + 1; i < st->st_last; i++) {
+            for (unsigned int i = section->start + 1; i < section->end; i++) {
                 if (sd->data_heap[i] > best) {
                     best = sd->data_heap[i];
                     besti = i;
@@ -928,9 +897,9 @@ move_t NextMoveQ(struct SearchData *sd, int alpha) {
             }
 
             move = sd->heap->data[besti];
-            st->st_last--;
-            sd->heap->data[besti] = sd->heap->data[st->st_last];
-            sd->data_heap[besti] = sd->data_heap[st->st_last];
+            section->end--;
+            sd->heap->data[besti] = sd->heap->data[section->end];
+            sd->data_heap[besti] = sd->data_heap[section->end];
 
             return move;
         }

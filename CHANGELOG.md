@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.9.6]
+
+* Refactored search move generation
+
 ## [0.9.5] 2024-12-10
 
 * Fixed a lot of compiler warnings
