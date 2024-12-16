@@ -35,9 +35,6 @@
 
 #include "amy.h"
 #include "heap.h"
-#include "inline.h"
-
-#define MAX_TREE_SIZE 64 /* maximum depth we will search to */
 
 enum SearchPhases {
     HashMove,

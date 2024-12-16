@@ -45,7 +45,6 @@ static void SetTime(char *);
 static void SetXBoard(char *);
 static void Go(char *);
 static void Force(char *);
-static void New(char *);
 static void Name(char *);
 static void MoveNow(char *);
 static void Edit(char *);
@@ -98,7 +97,7 @@ static struct CommandEntry Commands[] = {
     {"load", &Load, false, false, "load game from PGN file", NULL},
     {"moves", &MovesCmd, false, false, "show legal moves", NULL},
     {"name", &Name, true, false, "set the opponents name", NULL},
-    {"new", &New, true, true, "start new game", NULL},
+    {"new", &NewGame, true, true, "start new game", NULL},
     {"nopost", &NoPost, true, false, "switch off post mode (xboard)", NULL},
     {"perft", &Perft, false, false, "Run the perft benchmark", NULL},
     {"post", &Post, true, false, "switch on post mode (xboard)", NULL},
@@ -283,6 +282,70 @@ static void Test(char *fname) {
         fclose(fout);
 }
 
+struct SingleTimeControl {
+    int moves;
+    int total_time;
+    int increment;
+};
+
+struct TimeControl {
+    struct SingleTimeControl first;
+    struct SingleTimeControl second;
+    bool hasSecondTimeControl;
+};
+
+/** Stores the single global time control. */
+static struct TimeControl globalTimeControl = {.first.moves = 60,
+                                               .first.total_time = 5 * 60,
+                                               .hasSecondTimeControl = false};
+
+static void reset_time_control(bool verbose) {
+    TMoves = globalTimeControl.first.moves;
+    TTime = globalTimeControl.first.total_time;
+    Increment = globalTimeControl.first.increment;
+
+    TwoTimeControls = globalTimeControl.hasSecondTimeControl;
+
+    TMoves2 = globalTimeControl.second.moves;
+    TTime2 = globalTimeControl.second.total_time;
+
+    Moves[White] = Moves[Black] = TMoves;
+    Time[White] = Time[Black] = TTime;
+
+    if (verbose) {
+        Print(0, "Timecontrol is ");
+        if (globalTimeControl.first.moves >= 0) {
+            if (globalTimeControl.first.moves == 0)
+                Print(0, "all ");
+            else
+                Print(0, "%d ", globalTimeControl.first.moves);
+
+            if (globalTimeControl.first.increment) {
+                Print(0, "moves in %d mins + %d secs Increment\n",
+                      globalTimeControl.first.total_time / 60,
+                      globalTimeControl.first.increment);
+            } else {
+                Print(0, "moves in %d mins\n",
+                      globalTimeControl.first.total_time / 60);
+            }
+
+        } else {
+            Print(0, "%d seconds/move fixed time\n",
+                  globalTimeControl.first.total_time);
+        }
+
+        if (globalTimeControl.hasSecondTimeControl) {
+            Print(0, "Second Timecontrol is ");
+            if (globalTimeControl.second.moves == 0)
+                Print(0, "all ");
+            else
+                Print(0, "%d ", globalTimeControl.second.moves);
+            Print(0, "moves in %d mins\n",
+                  globalTimeControl.second.total_time / 60);
+        }
+    }
+}
+
 static void SetTime(char *arg) {
     int ttmoves, ttime, tminutes, tseconds, inc = 0;
     char *x, *colon;
@@ -304,13 +367,12 @@ static void SetTime(char *arg) {
         }
         sscanf(args[2], "%d", &inc);
 
-        TwoTimeControls = false;
-        TMoves = ttmoves;
-        TTime = ttime;
-        Increment = inc;
+        globalTimeControl.first.moves = ttmoves;
+        globalTimeControl.first.total_time = ttime;
+        globalTimeControl.first.increment = inc;
+        globalTimeControl.hasSecondTimeControl = false;
 
-        Moves[White] = Moves[Black] = TMoves;
-        Time[White] = Time[Black] = TTime;
+        reset_time_control(false);
     } else {
         x = strtok(args[0], "/+ \t\n\r");
         if (x) {
@@ -344,39 +406,27 @@ static void SetTime(char *arg) {
                             TwoTimeControls = true;
                     }
                 }
-                Print(0, "Timecontrol is ");
                 if (ttmoves >= 0) {
-                    if (ttmoves == 0)
-                        Print(0, "all ");
-                    else
-                        Print(0, "%d ", ttmoves);
-                    if (inc) {
-                        Print(0, "moves in %d mins + %d secs Increment\n",
-                              ttime, inc);
-                    } else {
-                        Print(0, "moves in %d mins\n", ttime);
-                    }
-                    TMoves = ttmoves;
-                    TTime = ttime * 60;
-                    Increment = inc;
+                    globalTimeControl.first.moves = ttmoves;
+                    globalTimeControl.first.total_time = ttime * 60;
+                    globalTimeControl.first.increment = inc;
+                    globalTimeControl.hasSecondTimeControl = false;
 
-                    Moves[White] = Moves[Black] = TMoves;
-                    Time[White] = Time[Black] = TTime;
                 } else {
-                    Print(0, "%d seconds/move fixed time\n", ttime);
-                    TMoves = -1;
-                    TTime = ttime;
+                    globalTimeControl.first.moves = -1;
+                    globalTimeControl.first.total_time = ttime;
+                    globalTimeControl.first.increment = 0;
+                    globalTimeControl.hasSecondTimeControl = false;
                 }
                 if (TwoTimeControls) {
-                    Print(0, "Second Timecontrol is ");
-                    if (TMoves2 == 0)
-                        Print(0, "all ");
-                    else
-                        Print(0, "%d ", TMoves2);
-                    Print(0, "moves in %d mins\n", TTime2);
-                    TTime2 *= 60;
+                    globalTimeControl.second.moves = TMoves2;
+                    globalTimeControl.second.total_time = TTime2 * 60;
+                    globalTimeControl.second.increment = 0;
+                    globalTimeControl.hasSecondTimeControl = true;
                 }
             }
+
+            reset_time_control(true);
         }
     }
 }
@@ -408,7 +458,7 @@ static void Force(char *args) {
     AbortSearch = true;
 }
 
-static void New(char *args) {
+void NewGame(char *args) {
     (void)args;
     /*
      * Create a new save file.
@@ -421,6 +471,7 @@ static void New(char *args) {
     if (State != STATE_ANALYZING) {
         State = STATE_WAITING;
     }
+    reset_time_control(!XBoardMode);
 }
 
 static void MoveNow(char *args) {

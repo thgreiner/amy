@@ -154,10 +154,7 @@
             * indicate checkmate */
 #define ON_EVALUATION (INF + 1)
 
-#define CUT_ABORTED (INF + 1)
-
 #define MAX_TREE_SIZE 64 /* maximum depth we will search to */
-#define MAX_SEARCH_HEAP 2000
 
 #define INITIAL_GAME_LOG_SIZE 40 /* Initial size of game history */
 
@@ -266,8 +263,8 @@ struct Position {
     struct GameLog *actLog;
     unsigned int gameLogSize;
     int material[2], nonPawn[2];
-    int16_t outOfBookCnt[2];
-    int16_t ply;
+    uint16_t outOfBookCnt[2];
+    uint16_t ply;
     int8_t piece[64];
     int8_t castle;
     int8_t enPassant;
@@ -543,19 +540,16 @@ void AgeHashTable(void);
 void ClearPawnHashTable(void);
 void AllocateHT(void);
 #if MP
+int ProbeHT(hash_t, int *, int, move_t *, bool *, int, int, struct HTEntry *);
 void StoreHT(hash_t, int, int, int, int, int, int, int, struct HTEntry *);
 #else
+int ProbeHT(hash_t, int *, int, move_t *, bool *, int);
 void StoreHT(hash_t, int, int, int, int, int, int, int);
 #endif
-void StorePT(hash_t, int, struct PawnFacts *);
-void StoreST(hash_t, int);
-#if MP
-int ProbeHT(hash_t, int *, int, move_t *, bool *, int, int, struct HTEntry *);
-#else
-int ProbeHT(hash_t, int *, int, move_t *, bool *, int);
-#endif
 int ProbePT(hash_t, int *, struct PawnFacts *);
+void StorePT(hash_t, int, struct PawnFacts *);
 int ProbeST(hash_t, int *);
+void StoreST(hash_t, int);
 void ShowHashStatistics(void);
 void GuessHTSizes(char *);
 
@@ -630,6 +624,7 @@ void GetTmpFileName(char *, size_t);
 char *nextToken(char **, const char *);
 int Percentage(unsigned long, unsigned long);
 
+void NewGame(char *);
 void ShowVersion(void);
 
 ran_t Random64(void);

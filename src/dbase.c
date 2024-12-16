@@ -35,7 +35,6 @@
 
 #include "amy.h"
 #include "heap.h"
-#include "inline.h"
 #include "magic.h"
 
 /*
@@ -741,19 +740,27 @@ void DoNull(struct Position *p) {
     p->actLog->gl_EnPassant = p->enPassant;
     p->actLog->gl_Castle = p->castle;
     p->actLog->gl_HashKey = p->hkey;
-
-    p->actLog++;
-    p->ply++;
-
-    /* treat null move as irreversible */
-    p->actLog->gl_IrrevCount = 0;
-
     p->enPassant = 0;
 
     if (p->enPassant != p->actLog->gl_EnPassant) {
         p->hkey ^= HashKeysEP[p->actLog->gl_EnPassant];
         p->hkey ^= HashKeysEP[p->enPassant];
     }
+
+    p->ply++;
+
+    /* Grow gameLog if needed. */
+    if (p->ply >= p->gameLogSize) {
+        p->gameLogSize *= 2;
+        p->gameLog =
+            realloc(p->gameLog, sizeof(struct GameLog) * p->gameLogSize);
+        p->actLog = p->gameLog + p->ply;
+    } else {
+        p->actLog++;
+    }
+
+    /* treat null move as irreversible */
+    p->actLog->gl_IrrevCount = 0;
 
     /* swap p->turns */
     p->turn = OPP(p->turn);
@@ -2641,6 +2648,8 @@ struct Position *ClonePosition(struct Position *src) {
  */
 
 void FreePosition(struct Position *p) {
-    free(p->gameLog);
-    free(p);
+    if (p) {
+        free(p->gameLog);
+        free(p);
+    }
 }
