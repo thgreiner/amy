@@ -51,12 +51,6 @@ int Value[] = {0,           PAWN_Value, KNIGHT_Value, BISHOP_Value, ROOK_Value,
                QUEEN_Value, 0};
 
 /*
- * Does a piece slide? True for Bishop, Rook and Queen
- */
-
-const bool Sliding[] = {false, false, false, true, true, true, false};
-
-/*
  * Masks for castle rights:
  */
 
@@ -301,6 +295,13 @@ int PromoType(move_t move) {
 }
 
 /*
+ * Determines if a piece of type tp is a sliding piece.
+ */
+static inline bool is_sliding(int tp) {
+	return tp >= Bishop && tp <= Queen;
+}
+
+/*
  * Make a castle move
  * I separated this routine from the normal DoMove routine since it has
  * to move two pieces
@@ -438,7 +439,7 @@ void DoMove(struct Position *p, move_t move) {
         p->piece[from] = Neutral;
         ClrBit(p->mask[p->turn][0], from);
         ClrBit(p->mask[p->turn][tp], from);
-        if (Sliding[tp])
+        if (is_sliding(tp))
             ClrBit(p->slidingPieces, from);
         /* re-calculate attacks through from-square */
         GainAttacks(p, from);
@@ -468,7 +469,7 @@ void DoMove(struct Position *p, move_t move) {
 
             ClrBit(p->mask[OPP(p->turn)][0], to);
             ClrBit(p->mask[OPP(p->turn)][sp], to);
-            if (Sliding[sp])
+            if (is_sliding(sp))
                 ClrBit(p->slidingPieces, to);
 
             /* Update oppponents material and PawnCount */
@@ -546,7 +547,7 @@ void DoMove(struct Position *p, move_t move) {
         p->piece[to] = (p->turn == White) ? tp : -tp;
         SetBit(p->mask[p->turn][0], to);
         SetBit(p->mask[p->turn][tp], to);
-        if (Sliding[tp])
+        if (is_sliding(tp))
             SetBit(p->slidingPieces, to);
 
         /* piece gains its attacks */
@@ -626,7 +627,7 @@ void UndoMove(struct Position *p, move_t move) {
         /* update masks */
         ClrBit(p->mask[p->turn][0], to);
         ClrBit(p->mask[p->turn][tp], to);
-        if (Sliding[tp])
+        if (is_sliding(tp))
             ClrBit(p->slidingPieces, to);
 
         if (move & M_PANY) {
@@ -656,7 +657,7 @@ void UndoMove(struct Position *p, move_t move) {
             sp = TYPE(sp);
             SetBit(p->mask[OPP(p->turn)][0], to);
             SetBit(p->mask[OPP(p->turn)][sp], to);
-            if (Sliding[sp])
+            if (is_sliding(sp))
                 SetBit(p->slidingPieces, to);
 
             /* Update oppponents material and PawnCount */
@@ -704,7 +705,7 @@ void UndoMove(struct Position *p, move_t move) {
         p->piece[from] = (p->turn == White) ? tp : -tp;
         SetBit(p->mask[p->turn][0], from);
         SetBit(p->mask[p->turn][tp], from);
-        if (Sliding[tp])
+        if (is_sliding(tp))
             SetBit(p->slidingPieces, from);
 
         /* piece gains its attacks */
@@ -795,7 +796,7 @@ void RecalcAttacks(struct Position *p) {
         int pc = p->piece[i];
         tmp &= tmp - 1;
         SetBit(p->mask[White][pc], i);
-        if (Sliding[pc])
+        if (is_sliding(pc))
             SetBit(p->slidingPieces, i);
         p->material[White] += Value[pc];
         p->hkey ^= HashKeys[White][pc][i];
@@ -816,7 +817,7 @@ void RecalcAttacks(struct Position *p) {
         int pc = -p->piece[i];
         tmp &= tmp - 1;
         SetBit(p->mask[Black][pc], i);
-        if (Sliding[pc])
+        if (is_sliding(pc))
             SetBit(p->slidingPieces, i);
         p->material[Black] += Value[pc];
         p->hkey ^= HashKeys[Black][pc][i];
