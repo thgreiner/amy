@@ -34,7 +34,6 @@
  */
 
 #include "amy.h"
-#include "inline.h"
 
 BitBoard ShiftUpMask, ShiftDownMask;
 BitBoard ShiftLeftMask, ShiftRightMask;

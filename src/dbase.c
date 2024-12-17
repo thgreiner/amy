@@ -34,6 +34,7 @@
  */
 
 #include "amy.h"
+#include "heap.h"
 #include "magic.h"
 
 /*
@@ -49,35 +50,6 @@ int Value[] = {0,           PAWN_Value, KNIGHT_Value, BISHOP_Value, ROOK_Value,
                QUEEN_Value, 0};
 
 /*
- * Does a piece slide? True for Bishop, Rook and Queen
- */
-
-const bool Sliding[] = {false, false, false, true, true, true, false};
-
-/*
- * Does a pawn promote on a square? True for ranks 1 and 8
- */
-
-const int PromoSquare[] = {1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0,
-                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                           0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1};
-
-/*
- * Table to translate EnPassant squares:
- * EPTranslate[e4] = e3 means a pawns double stepped to e4 can be captured
- * enpassant on e3
- * EPTranslate[e3] = e4 means a enpassant capture on e3 will remove pawn
- * on e4
- */
-
-const int EPTranslate[] = {0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-                           0,  0,  0,  a4, b4, c4, d4, e4, f4, g4, h4, a3, b3,
-                           c3, d3, e3, f3, g3, h3, a6, b6, c6, d6, e6, f6, g6,
-                           h6, a5, b5, c5, d5, e5, f5, g5, h5, 0,  0,  0,  0,
-                           0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0};
-
-/*
  * Masks for castle rights:
  */
 
@@ -85,9 +57,6 @@ const int8_t CastleMask[2][2] = {
     {0x01, 0x02}, /* White can castle king/queenp->turn */
     {0x04, 0x08}  /* dito for black */
 };
-
-/* game history */
-/* struct GameLog GameLog[1000]; */
 
 /* local prototypes
  */
@@ -98,7 +67,6 @@ static void GainAttack(struct Position *, int, int);
 static void LooseAttack(struct Position *, int from, int to);
 static void GainAttacks(struct Position *, int to);
 static void LooseAttacks(struct Position *, int to);
-int PromoType(move_t move);
 
 /*
  * Routines to up/downdate the global database
@@ -325,6 +293,11 @@ int PromoType(move_t move) {
 }
 
 /*
+ * Determines if a piece of type tp is a sliding piece.
+ */
+static inline bool is_sliding(int tp) { return tp >= Bishop && tp <= Queen; }
+
+/*
  * Make a castle move
  * I separated this routine from the normal DoMove routine since it has
  * to move two pieces
@@ -462,7 +435,7 @@ void DoMove(struct Position *p, move_t move) {
         p->piece[from] = Neutral;
         ClrBit(p->mask[p->turn][0], from);
         ClrBit(p->mask[p->turn][tp], from);
-        if (Sliding[tp])
+        if (is_sliding(tp))
             ClrBit(p->slidingPieces, from);
         /* re-calculate attacks through from-square */
         GainAttacks(p, from);
@@ -492,7 +465,7 @@ void DoMove(struct Position *p, move_t move) {
 
             ClrBit(p->mask[OPP(p->turn)][0], to);
             ClrBit(p->mask[OPP(p->turn)][sp], to);
-            if (Sliding[sp])
+            if (is_sliding(sp))
                 ClrBit(p->slidingPieces, to);
 
             /* Update oppponents material and PawnCount */
@@ -516,7 +489,7 @@ void DoMove(struct Position *p, move_t move) {
                 p->castle &= ~(CastleMask[OPP(p->turn)][1]);
             }
         } else if (move & M_ENPASSANT) {
-            int so = EPTranslate[to];
+            int so = to ^ 8;
 
             /* piece looses its attacks */
             AtkClr(p, so);
@@ -570,7 +543,7 @@ void DoMove(struct Position *p, move_t move) {
         p->piece[to] = (p->turn == White) ? tp : -tp;
         SetBit(p->mask[p->turn][0], to);
         SetBit(p->mask[p->turn][tp], to);
-        if (Sliding[tp])
+        if (is_sliding(tp))
             SetBit(p->slidingPieces, to);
 
         /* piece gains its attacks */
@@ -597,7 +570,7 @@ void DoMove(struct Position *p, move_t move) {
 
     p->enPassant = 0;
     if (move & M_PAWND) {
-        int tmpPassant = EPTranslate[to];
+        int tmpPassant = to ^ 8;
         if (p->atkFr[tmpPassant] & p->mask[OPP(p->turn)][Pawn]) {
             p->enPassant = tmpPassant;
         }
@@ -610,8 +583,17 @@ void DoMove(struct Position *p, move_t move) {
 
     /* Update GameLog */
     p->actLog->gl_Move = move;
-    p->actLog++;
     p->ply++;
+
+    /* Grow gameLog if needed. */
+    if (p->ply >= p->gameLogSize) {
+        p->gameLogSize *= 2;
+        p->gameLog =
+            realloc(p->gameLog, sizeof(struct GameLog) * p->gameLogSize);
+        p->actLog = p->gameLog + p->ply;
+    } else {
+        p->actLog++;
+    }
 
     /* Check if reversible move */
     if (move & (M_CAPTURE | M_PANY | M_CANY) || tp == Pawn) {
@@ -650,7 +632,7 @@ void UndoMove(struct Position *p, move_t move) {
         /* update masks */
         ClrBit(p->mask[p->turn][0], to);
         ClrBit(p->mask[p->turn][tp], to);
-        if (Sliding[tp])
+        if (is_sliding(tp))
             ClrBit(p->slidingPieces, to);
 
         if (move & M_PANY) {
@@ -680,7 +662,7 @@ void UndoMove(struct Position *p, move_t move) {
             sp = TYPE(sp);
             SetBit(p->mask[OPP(p->turn)][0], to);
             SetBit(p->mask[OPP(p->turn)][sp], to);
-            if (Sliding[sp])
+            if (is_sliding(sp))
                 SetBit(p->slidingPieces, to);
 
             /* Update oppponents material and PawnCount */
@@ -691,7 +673,7 @@ void UndoMove(struct Position *p, move_t move) {
             /* update material signature */
             p->material_signature[OPP(p->turn)] |= SIGNATURE_BIT(sp);
         } else if (move & M_ENPASSANT) {
-            int so = EPTranslate[to];
+            int so = to ^ 8;
 
             /* piece looses its attacks */
             AtkSet(p, Pawn, OPP(p->turn), so);
@@ -728,7 +710,7 @@ void UndoMove(struct Position *p, move_t move) {
         p->piece[from] = (p->turn == White) ? tp : -tp;
         SetBit(p->mask[p->turn][0], from);
         SetBit(p->mask[p->turn][tp], from);
-        if (Sliding[tp])
+        if (is_sliding(tp))
             SetBit(p->slidingPieces, from);
 
         /* piece gains its attacks */
@@ -757,19 +739,27 @@ void DoNull(struct Position *p) {
     p->actLog->gl_EnPassant = p->enPassant;
     p->actLog->gl_Castle = p->castle;
     p->actLog->gl_HashKey = p->hkey;
-
-    p->actLog++;
-    p->ply++;
-
-    /* treat null move as irreversible */
-    p->actLog->gl_IrrevCount = 0;
-
     p->enPassant = 0;
 
     if (p->enPassant != p->actLog->gl_EnPassant) {
         p->hkey ^= HashKeysEP[p->actLog->gl_EnPassant];
         p->hkey ^= HashKeysEP[p->enPassant];
     }
+
+    p->ply++;
+
+    /* Grow gameLog if needed. */
+    if (p->ply >= p->gameLogSize) {
+        p->gameLogSize *= 2;
+        p->gameLog =
+            realloc(p->gameLog, sizeof(struct GameLog) * p->gameLogSize);
+        p->actLog = p->gameLog + p->ply;
+    } else {
+        p->actLog++;
+    }
+
+    /* treat null move as irreversible */
+    p->actLog->gl_IrrevCount = 0;
 
     /* swap p->turns */
     p->turn = OPP(p->turn);
@@ -819,7 +809,7 @@ void RecalcAttacks(struct Position *p) {
         int pc = p->piece[i];
         tmp &= tmp - 1;
         SetBit(p->mask[White][pc], i);
-        if (Sliding[pc])
+        if (is_sliding(pc))
             SetBit(p->slidingPieces, i);
         p->material[White] += Value[pc];
         p->hkey ^= HashKeys[White][pc][i];
@@ -840,7 +830,7 @@ void RecalcAttacks(struct Position *p) {
         int pc = -p->piece[i];
         tmp &= tmp - 1;
         SetBit(p->mask[Black][pc], i);
-        if (Sliding[pc])
+        if (is_sliding(pc))
             SetBit(p->slidingPieces, i);
         p->material[Black] += Value[pc];
         p->hkey ^= HashKeys[Black][pc][i];
@@ -884,55 +874,43 @@ void RecalcAttacks(struct Position *p) {
 /*
  * Generate all capturing moves to a square "square"
  */
-
-int GenTo(struct Position *p, int square, move_t *moves) {
-    int cnt = 0;
-    int tm = (square << 6) | M_CAPTURE;
-    BitBoard tmp;
-
-    tmp = p->atkFr[square] & p->mask[p->turn][0];
+void GenTo(struct Position *p, int square, heap_t heap) {
+    BitBoard tmp = p->atkFr[square] & p->mask[p->turn][0];
 
     while (tmp) {
         int i = FindSetBit(tmp);
         tmp &= tmp - 1;
-        if (TYPE(p->piece[i]) == Pawn && PromoSquare[square]) {
-            *(moves++) = i | tm | M_PQUEEN;
-            *(moves++) = i | tm | M_PKNIGHT;
-            *(moves++) = i | tm | M_PROOK;
-            *(moves++) = i | tm | M_PBISHOP;
-            cnt += 4;
+        if (TYPE(p->piece[i]) == Pawn && is_promo_square(square)) {
+            append_to_heap(heap, make_move(i, square, M_CAPTURE | M_PQUEEN));
+            append_to_heap(heap, make_move(i, square, M_CAPTURE | M_PKNIGHT));
+            append_to_heap(heap, make_move(i, square, M_CAPTURE | M_PROOK));
+            append_to_heap(heap, make_move(i, square, M_CAPTURE | M_PBISHOP));
         } else {
-            *(moves++) = i | tm;
-            cnt++;
+            append_to_heap(heap, make_move(i, square, M_CAPTURE));
         }
     }
-    return cnt;
 }
 
-int GenEnpas(struct Position *p, move_t *moves) {
-    int cnt = 0;
+void GenEnpas(struct Position *p, heap_t heap) {
     BitBoard tmp;
 
     if (!p->enPassant)
-        return 0;
+        return;
 
     tmp = p->atkFr[p->enPassant] & p->mask[p->turn][Pawn];
     while (tmp) {
         int i = FindSetBit(tmp);
         tmp &= tmp - 1;
-        *(moves++) = i | (p->enPassant << 6) | M_ENPASSANT;
-        cnt++;
+        append_to_heap(heap, make_move(i, p->enPassant, M_ENPASSANT));
     }
-    return cnt;
 }
 
 /*
  * Generate all non-capturing moves from "square"
  */
 
-int GenFrom(struct Position *p, int square, move_t *moves) {
+void GenFrom(struct Position *p, int square, heap_t heap) {
     if (TYPE(p->piece[square]) != Pawn) {
-        int cnt = 0;
         BitBoard tmp;
 
         tmp = p->atkTo[square] & ~(p->mask[White][0] | p->mask[Black][0]);
@@ -940,8 +918,7 @@ int GenFrom(struct Position *p, int square, move_t *moves) {
         while (tmp) {
             int i = FindSetBit(tmp);
             tmp &= tmp - 1;
-            *(moves++) = square | (i << 6);
-            cnt++;
+            append_to_heap(heap, make_move(square, i, 0));
         }
 
         /* Generate castling moves
@@ -951,43 +928,37 @@ int GenFrom(struct Position *p, int square, move_t *moves) {
         if (TYPE(p->piece[square]) == King) {
             if (p->castle & CastleMask[p->turn][0]) {
                 /* OK, we might castle king p->turn */
-                *(moves++) = (p->turn == White ? e1 : e8) |
-                             ((p->turn == White ? g1 : g8) << 6) | M_SCASTLE;
-                cnt++;
+                append_to_heap(heap, make_move(p->turn == White ? e1 : e8,
+                                               p->turn == White ? g1 : g8,
+                                               M_SCASTLE));
             }
             if (p->castle & CastleMask[p->turn][1]) {
-                *(moves++) = (p->turn == White ? e1 : e8) |
-                             ((p->turn == White ? c1 : c8) << 6) | M_LCASTLE;
-                cnt++;
+                append_to_heap(heap, make_move(p->turn == White ? e1 : e8,
+                                               p->turn == White ? c1 : c8,
+                                               M_LCASTLE));
             }
         }
-        return cnt;
     } else {
         int sq = (p->turn == White ? square + 8 : square - 8);
 
         if (p->piece[sq] == Neutral) {
-            if (PromoSquare[sq]) {
-                *(moves++) = square | (sq << 6) | M_PQUEEN;
-                *(moves++) = square | (sq << 6) | M_PKNIGHT;
-                *(moves++) = square | (sq << 6) | M_PROOK;
-                *(moves++) = square | (sq << 6) | M_PBISHOP;
-                return 4;
+            if (is_promo_square(sq)) {
+                append_to_heap(heap, make_move(square, sq, M_PQUEEN));
+                append_to_heap(heap, make_move(square, sq, M_PKNIGHT));
+                append_to_heap(heap, make_move(square, sq, M_PROOK));
+                append_to_heap(heap, make_move(square, sq, M_PBISHOP));
             } else {
-                *(moves++) = square | (sq << 6);
+                append_to_heap(heap, make_move(square, sq, 0));
 
                 if ((p->turn == White && square <= h2) ||
                     (p->turn == Black && square >= a7)) {
                     sq = (p->turn == White ? sq + 8 : sq - 8);
                     if (p->piece[sq] == Neutral) {
-                        *(moves++) = square | (sq << 6) | M_PAWND;
-                        return 2;
+                        append_to_heap(heap, make_move(square, sq, M_PAWND));
                     }
                 }
-
-                return 1;
             }
-        } else
-            return 0;
+        }
     }
 }
 
@@ -1212,9 +1183,7 @@ bool IsCheckingMove(struct Position *p, move_t move) {
  * not be checks!
  */
 
-int GenChecks(struct Position *p, move_t *moves) {
-    int cnt = 0;
-    move_t *m = moves;
+void GenChecks(struct Position *p, heap_t heap) {
     BitBoard tmp;
     BitBoard fr;
     int kp = p->kingSq[OPP(p->turn)];
@@ -1236,13 +1205,9 @@ int GenChecks(struct Position *p, move_t *moves) {
 
             if (CountBits(tmp2) == 1) {
                 int j = FindSetBit(tmp2);
-                int lcnt;
 
                 if (TstBit(fsq, j)) {
-                    lcnt = GenFrom(p, j, m);
-                    cnt += lcnt;
-                    m += lcnt;
-
+                    GenFrom(p, j, heap);
                     ClrBit(fsq, j);
                 }
             }
@@ -1259,13 +1224,9 @@ int GenChecks(struct Position *p, move_t *moves) {
 
             if (CountBits(tmp2) == 1) {
                 int j = FindSetBit(tmp2);
-                int lcnt;
 
                 if (TstBit(fsq, j)) {
-                    lcnt = GenFrom(p, j, m);
-                    cnt += lcnt;
-                    m += lcnt;
-
+                    GenFrom(p, j, heap);
                     ClrBit(fsq, j);
                 }
             }
@@ -1289,8 +1250,7 @@ int GenChecks(struct Position *p, move_t *moves) {
             tmp2 &= tmp2 - 1;
             if (InterPath[kp][sq2] & all)
                 continue;
-            *(m++) = sq | (sq2 << 6);
-            cnt++;
+            append_to_heap(heap, make_move(sq, sq2, 0));
         }
     }
 
@@ -1311,8 +1271,7 @@ int GenChecks(struct Position *p, move_t *moves) {
             tmp2 &= tmp2 - 1;
             if (InterPath[kp][sq2] & all)
                 continue;
-            *(m++) = sq | (sq2 << 6);
-            cnt++;
+            append_to_heap(heap, make_move(sq, sq2, 0));
         }
     }
 
@@ -1333,8 +1292,7 @@ int GenChecks(struct Position *p, move_t *moves) {
         while (tmp2) {
             int sq2 = FindSetBit(tmp2);
             tmp2 &= tmp2 - 1;
-            *(m++) = sq | (sq2 << 6);
-            cnt++;
+            append_to_heap(heap, make_move(sq, sq2, 0));
         }
     }
 
@@ -1351,31 +1309,14 @@ int GenChecks(struct Position *p, move_t *moves) {
 
         if (p->turn == White) {
             if (p->piece[sq - 8] == Pawn) {
-                *(m++) = (sq - 8) | (sq << 6);
-                cnt++;
+                append_to_heap(heap, make_move(sq - 8, sq, 0));
             }
         } else {
             if (p->piece[sq + 8] == -Pawn) {
-                *(m++) = (sq + 8) | (sq << 6);
-                cnt++;
+                append_to_heap(heap, make_move(sq + 8, sq, 0));
             }
         }
     }
-
-    return cnt;
-}
-
-/*
- * Test wether a p->turn is in check
- */
-
-bool InCheck(struct Position *p, int side) {
-    int sq = p->kingSq[side];
-
-    if (p->atkFr[sq] & p->mask[!side][0])
-        return true;
-    else
-        return false;
 }
 
 /*
@@ -1562,12 +1503,9 @@ char *ICS_SAN(move_t move) {
  * Parse a move string in e2e4 notation
  */
 
-move_t ParseGSAN(struct Position *p, char *san) {
-    int cnt;
-    move_t mvs[256];
+move_t parse_gsan_internal(struct Position *p, char *san, heap_t heap) {
     int fr, to;
     int mask;
-    int i;
 
     if (!strncmp(san, "O-O-O", 5) || !strncmp(san, "o-o-o", 5) ||
         !strncmp(san, "0-0-0", 5)) {
@@ -1585,18 +1523,20 @@ move_t ParseGSAN(struct Position *p, char *san) {
             return move;
     }
 
-    cnt = LegalMoves(p, mvs);
+    (void)LegalMoves(p, heap);
 
     fr = *san - 'a' + 8 * (*(san + 1) - '1');
     to = *(san + 2) - 'a' + 8 * (*(san + 3) - '1');
 
     mask = fr + (to << 6);
 
-    for (i = 0; i < cnt; i++) {
-        if ((mvs[i] & 4095) == mask) {
-            if (mvs[i] & M_PANY) {
+    for (unsigned int i = heap->current_section->start;
+         i < heap->current_section->end; i++) {
+        move_t move = heap->data[i];
+        if ((move & 4095) == mask) {
+            if (move & M_PANY) {
                 char p = *(san + 4);
-                int move = mvs[i] & (~M_PANY);
+                move = move & (~M_PANY);
 
                 if (p == 'q')
                     return move | M_PQUEEN;
@@ -1615,10 +1555,18 @@ move_t ParseGSAN(struct Position *p, char *san) {
                 if (p == 'B')
                     return move | M_PBISHOP;
             } else
-                return mvs[i];
+                return move;
         }
     }
     return M_NONE;
+}
+
+move_t ParseGSAN(struct Position *p, char *san) {
+    heap_t heap = allocate_heap();
+    move_t move = parse_gsan_internal(p, san, heap);
+    free_heap(heap);
+
+    return move;
 }
 
 /*
@@ -1702,14 +1650,12 @@ static bool TryMove(struct Position *p, move_t move) {
 /*
  * Parse a move string (in SAN)
  */
-
-move_t ParseSAN(struct Position *p, char *san) {
+static move_t parse_san_with_heap(struct Position *p, char *san, heap_t heap) {
     int tp = Neutral;
     int frk = -1, ffl = -1, trk = -1, tfl = -1;
     int pro = 0;
+    unsigned int i;
     move_t move;
-    move_t mvs[256];
-    int cnt, i;
 
     /* Check castling first */
 
@@ -1731,7 +1677,7 @@ move_t ParseSAN(struct Position *p, char *san) {
             return M_NONE;
     }
 
-    cnt = PLegalMoves(p, mvs);
+    PLegalMoves(p, heap);
 
     /* special handling of pawn captures a la 'cd' */
     if (strlen(san) == 2 && *san >= 'a' && *san <= 'h' && *(san + 1) >= 'a' &&
@@ -1739,14 +1685,16 @@ move_t ParseSAN(struct Position *p, char *san) {
         ffl = *san - 'a';
         tfl = *(san + 1) - 'a';
 
-        for (i = 0; i < cnt; i++) {
-            int fr = M_FROM(mvs[i]);
-            int to = M_TO(mvs[i]);
+        for (i = heap->current_section->start; i < heap->current_section->end;
+             i++) {
+            move = heap->data[i];
+            int fr = M_FROM(move);
+            int to = M_TO(move);
 
             if (TYPE(p->piece[fr]) == Pawn &&
-                (mvs[i] & (M_CAPTURE | M_ENPASSANT)) && (fr & 7) == ffl &&
-                (to & 7) == tfl && TryMove(p, mvs[i]))
-                return mvs[i];
+                (move & (M_CAPTURE | M_ENPASSANT)) && (fr & 7) == ffl &&
+                (to & 7) == tfl && TryMove(p, move))
+                return move;
         }
         return M_NONE;
     }
@@ -1818,8 +1766,10 @@ move_t ParseSAN(struct Position *p, char *san) {
     if (tp == Neutral)
         tp = Pawn;
 
-    for (i = 0; i < cnt; i++) {
-        int fr = M_FROM(mvs[i]), to = M_TO(mvs[i]);
+    for (i = heap->current_section->start; i < heap->current_section->end;
+         i++) {
+        move = heap->data[i];
+        int fr = M_FROM(move), to = M_TO(move);
 
         if (TYPE(p->piece[fr]) != tp)
             continue;
@@ -1829,15 +1779,22 @@ move_t ParseSAN(struct Position *p, char *san) {
             continue;
         if (frk != -1 && (fr >> 3) != frk)
             continue;
-        if (pro && (mvs[i] & M_PANY) != pro)
+        if (pro && (move & M_PANY) != pro)
             continue;
-        if (!TryMove(p, mvs[i]))
+        if (!TryMove(p, move))
             continue;
 
-        return mvs[i];
+        return move;
     }
 
     return M_NONE;
+}
+
+move_t ParseSAN(struct Position *p, char *san) {
+    heap_t heap = allocate_heap();
+    move_t move = parse_san_with_heap(p, san, heap);
+    free_heap(heap);
+    return move;
 }
 
 /*
@@ -1978,38 +1935,28 @@ move_t ParseSANList(char *san, int side, move_t *mvs, int cnt, int *pmap) {
 /*
  * Generate all pseudolegal (!) moves
  * or test if there are any, if mvs = NULL
- *
- * Returns:
- *     the number of generated moves
  */
 
-int PLegalMoves(struct Position *p, move_t *mvs) {
-    int cnt = 0;
+void PLegalMoves(struct Position *p, heap_t heap) {
     BitBoard tmp;
 
     tmp = p->mask[OPP(p->turn)][0];
     while (tmp) {
         int j = FindSetBit(tmp);
-        int t = GenTo(p, j, mvs);
         tmp &= tmp - 1;
 
-        cnt += t;
-        mvs += t;
+        GenTo(p, j, heap);
     }
 
     tmp = p->mask[p->turn][0];
     while (tmp) {
         int j = FindSetBit(tmp);
-        int t = GenFrom(p, j, mvs);
         tmp &= tmp - 1;
 
-        cnt += t;
-        mvs += t;
+        GenFrom(p, j, heap);
     }
 
-    cnt += GenEnpas(p, mvs);
-
-    return cnt;
+    GenEnpas(p, heap);
 }
 
 /**
@@ -2019,76 +1966,91 @@ int PLegalMoves(struct Position *p, move_t *mvs) {
  *     the number of generated moves
  */
 
-int LegalMoves(struct Position *p, move_t *mvs) {
-    int t;
-    move_t m[32];
-    int cnt = 0;
+void legal_moves_internal(struct Position *p, heap_t heap, heap_t tmp_heap) {
     BitBoard tmp;
 
     tmp = p->mask[OPP(p->turn)][0];
     while (tmp) {
         int j = FindSetBit(tmp);
-        int i;
+        unsigned int i;
         tmp &= tmp - 1;
-        t = GenTo(p, j, m);
 
-        for (i = 0; i < t; i++) {
-            DoMove(p, m[i]);
+        push_section(tmp_heap);
+        GenTo(p, j, tmp_heap);
+
+        for (i = tmp_heap->current_section->start;
+             i < tmp_heap->current_section->end; i++) {
+            move_t move = tmp_heap->data[i];
+            DoMove(p, move);
             if (!InCheck(p, OPP(p->turn))) {
-                if (mvs)
-                    *(mvs++) = m[i];
-                else {
-                    UndoMove(p, m[i]);
-                    return true;
-                }
-                cnt++;
+                append_to_heap(heap, move);
             }
-            UndoMove(p, m[i]);
+            UndoMove(p, move);
         }
+
+        pop_section(tmp_heap);
     }
 
     tmp = p->mask[p->turn][0];
     while (tmp) {
         int j = FindSetBit(tmp);
-        int i;
+        unsigned int i;
         tmp &= tmp - 1;
 
-        t = GenFrom(p, j, m);
-        for (i = 0; i < t; i++) {
-            if ((m[i] & M_CANY) && !MayCastle(p, m[i]))
+        push_section(tmp_heap);
+        GenFrom(p, j, tmp_heap);
+
+        for (i = tmp_heap->current_section->start;
+             i < tmp_heap->current_section->end; i++) {
+            move_t move = tmp_heap->data[i];
+            if ((move & M_CANY) && !MayCastle(p, move))
                 continue;
 
-            DoMove(p, m[i]);
+            DoMove(p, move);
             if (!InCheck(p, OPP(p->turn))) {
-                if (mvs)
-                    *(mvs++) = m[i];
-                else {
-                    UndoMove(p, m[i]);
-                    return true;
-                }
-                cnt++;
+                append_to_heap(heap, move);
             }
-            UndoMove(p, m[i]);
+            UndoMove(p, move);
         }
+
+        pop_section(tmp_heap);
     }
 
-    t = GenEnpas(p, m);
+    push_section(tmp_heap);
+    GenEnpas(p, tmp_heap);
     {
-        int i;
-        for (i = 0; i < t; i++) {
-            DoMove(p, m[i]);
+        unsigned int i;
+        for (i = tmp_heap->current_section->start;
+             i < tmp_heap->current_section->end; i++) {
+            move_t move = tmp_heap->data[i];
+            DoMove(p, move);
             if (!InCheck(p, OPP(p->turn))) {
-                if (mvs)
-                    *(mvs++) = m[i];
-                else {
-                    UndoMove(p, m[i]);
-                    return true;
-                }
-                cnt++;
+                append_to_heap(heap, move);
             }
-            UndoMove(p, m[i]);
+            UndoMove(p, move);
         }
     }
+    pop_section(tmp_heap);
+}
+
+int LegalMoves(struct Position *p, heap_t heap) {
+    heap_t tmp_heap = allocate_heap();
+    heap_t destination = heap;
+
+    if (heap == NULL) {
+        destination = allocate_heap();
+    }
+
+    legal_moves_internal(p, destination, tmp_heap);
+
+    int cnt =
+        destination->current_section->end - destination->current_section->start;
+
+    if (heap == NULL) {
+        free_heap(destination);
+    }
+
+    free_heap(tmp_heap);
 
     return cnt;
 }
@@ -2165,34 +2127,45 @@ void ShowPosition(struct Position *p) {
  */
 
 void ShowMoves(struct Position *p) {
-    int cnt;
-    move_t mvs[256];
-    int i;
+    unsigned int i;
     char san_buffer[16];
 
-    cnt = LegalMoves(p, mvs);
+    heap_t heap = allocate_heap();
 
-    for (i = 0; i < cnt; i++) {
-        Print(0, "%s ", SAN(p, mvs[i], san_buffer));
-        if (IsCheckingMove(p, mvs[i]))
+    push_section(heap);
+    LegalMoves(p, heap);
+
+    for (i = heap->current_section->start; i < heap->current_section->end;
+         i++) {
+        move_t move = heap->data[i];
+        Print(0, "%s ", SAN(p, move, san_buffer));
+        if (IsCheckingMove(p, move))
             Print(0, "(check) ");
-        if (!LegalMove(p, mvs[i])) {
+        if (!LegalMove(p, move)) {
             Print(0, "(rejected?!) ");
         }
-        if (mvs[i] & (M_CAPTURE | M_ENPASSANT)) {
-            Print(0, "(%d) ", SwapOff(p, mvs[i]));
+        if (move & (M_CAPTURE | M_ENPASSANT)) {
+            Print(0, "(%d) ", SwapOff(p, move));
         }
     }
     Print(0, "\n");
 
-    cnt = GenChecks(p, mvs);
-    for (i = 0; i < cnt; i++) {
-        if (i == 0)
-            Print(0, "Checks: ");
-        Print(0, "%s ", SAN(p, mvs[i], san_buffer));
-    }
-    if (i != 0)
+    pop_section(heap);
+
+    push_section(heap);
+    GenChecks(p, heap);
+
+    if (heap->current_section->end > heap->current_section->start) {
+        Print(0, "Checks: ");
+        for (i = heap->current_section->start; i < heap->current_section->end;
+             i++) {
+            move_t move = heap->data[i];
+            Print(0, "%s ", SAN(p, move, san_buffer));
+        }
         Print(0, "\n");
+    }
+
+    free_heap(heap);
 }
 
 /*
@@ -2610,7 +2583,8 @@ struct Position *CreatePositionFromEPD(char *epd) {
         Print(0, "Cannot allocate Position.\n");
         exit(1);
     }
-    p->gameLog = calloc(sizeof(struct GameLog), GAME_LOG_SIZE);
+    p->gameLogSize = INITIAL_GAME_LOG_SIZE;
+    p->gameLog = calloc(sizeof(struct GameLog), p->gameLogSize);
     if (!p->gameLog) {
         Print(0, "Cannot allocate GameLog.\n");
         exit(1);
@@ -2647,12 +2621,13 @@ struct Position *ClonePosition(struct Position *src) {
     }
     memcpy(p, src, sizeof(struct Position));
 
-    p->gameLog = calloc(sizeof(struct GameLog), GAME_LOG_SIZE);
+    p->gameLogSize = src->gameLogSize;
+    p->gameLog = calloc(sizeof(struct GameLog), p->gameLogSize);
     if (!p->gameLog) {
         Print(0, "Cannot allocate GameLog.\n");
         exit(1);
     }
-    memcpy(p->gameLog, src->gameLog, sizeof(struct GameLog) * GAME_LOG_SIZE);
+    memcpy(p->gameLog, src->gameLog, sizeof(struct GameLog) * p->gameLogSize);
 
     p->actLog = p->gameLog + (src->actLog - src->gameLog);
 
@@ -2664,6 +2639,8 @@ struct Position *ClonePosition(struct Position *src) {
  */
 
 void FreePosition(struct Position *p) {
-    free(p->gameLog);
-    free(p);
+    if (p) {
+        free(p->gameLog);
+        free(p);
+    }
 }

@@ -143,10 +143,10 @@ int main(int argc, char *argv[]) {
 
     Print(0, "\n");
 
-    GetTmpFileName(AutoSaveFileName, sizeof(AutoSaveFileName));
-
     /* Ensure true random behavior. */
     InitRandom(GetTime());
+
+    NewGame(NULL);
 
     StateMachine();
 

@@ -95,7 +95,6 @@
 #include <pthread.h>
 #endif
 
-#include <stdint.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -155,12 +154,9 @@
             * indicate checkmate */
 #define ON_EVALUATION (INF + 1)
 
-#define CUT_ABORTED (INF + 1)
-
 #define MAX_TREE_SIZE 64 /* maximum depth we will search to */
-#define MAX_SEARCH_HEAP 2000
 
-#define GAME_LOG_SIZE 1000 /* maximum do's we support */
+#define INITIAL_GAME_LOG_SIZE 40 /* Initial size of game history */
 
 #define PB_NO_PB_MOVE 0
 #define PB_NO_PB_HIT 1
@@ -239,6 +235,23 @@ typedef uint64_t hash_t;
 
 typedef int32_t move_t;
 
+struct heap_section {
+    unsigned int start;
+    unsigned int end;
+};
+
+typedef struct heap_section *heap_section_t;
+
+struct heap {
+    move_t *data;
+    unsigned int capacity;
+    heap_section_t sections_start;
+    heap_section_t sections_end;
+    heap_section_t current_section;
+};
+
+typedef struct heap *heap_t;
+
 struct Position {
     BitBoard atkTo[64];
     BitBoard atkFr[64];
@@ -248,9 +261,10 @@ struct Position {
     hash_t pkey;
     struct GameLog *gameLog;
     struct GameLog *actLog;
+    unsigned int gameLogSize;
     int material[2], nonPawn[2];
-    int16_t outOfBookCnt[2];
-    int16_t ply;
+    uint16_t outOfBookCnt[2];
+    uint16_t ply;
     int8_t piece[64];
     int8_t castle;
     int8_t enPassant;
@@ -288,9 +302,6 @@ struct CommandEntry {
 
 struct SearchStatus {
     uint16_t st_phase;
-    uint16_t st_first;
-    uint16_t st_nc_first;
-    uint16_t st_last;
     move_t st_hashmove;
     move_t st_k1, st_k2, st_kl, st_cm, st_k3;
 };
@@ -311,8 +322,10 @@ struct SearchData {
     struct HTEntry *localHashTable;
 #endif
 
-    move_t *moveHeap;
-    int *dataHeap;
+    heap_t heap;
+    int32_t *data_heap;
+    unsigned int data_heap_size;
+
     unsigned int counterTab[2][4096]; /* counter moves per side */
     unsigned int historyTab[2][4096]; /* history moves per side */
 
@@ -484,18 +497,18 @@ void DoMove(struct Position *, move_t move);
 void UndoMove(struct Position *, move_t move);
 void DoNull(struct Position *);
 void UndoNull(struct Position *);
-int GenTo(struct Position *, int square, move_t *moves);
-int GenEnpas(struct Position *, move_t *moves);
-int GenFrom(struct Position *, int square, move_t *moves);
+void GenTo(struct Position *, int, heap_t);
+void GenEnpas(struct Position *, heap_t);
+void GenFrom(struct Position *, int, heap_t);
 void GenRest(move_t *moves);
 int GenCaps(move_t *moves, int good);
-int GenChecks(struct Position *, move_t *moves);
+void GenChecks(struct Position *, heap_t);
 int GenContactChecks(move_t *moves);
 bool MayCastle(struct Position *, move_t move);
 bool LegalMove(struct Position *, move_t move);
 bool IsCheckingMove(struct Position *, move_t move);
-int LegalMoves(struct Position *, move_t *mvs);
-int PLegalMoves(struct Position *, move_t *mvs);
+int LegalMoves(struct Position *, heap_t);
+void PLegalMoves(struct Position *, heap_t);
 int Repeated(struct Position *, int mode);
 char *SAN(struct Position *, move_t, char *);
 move_t ParseSAN(struct Position *, char *);
@@ -513,7 +526,6 @@ void ShowMoves(struct Position *);
 move_t ParseGSAN(struct Position *, char *san);
 move_t ParseGSANList(char *san, int side, move_t *mvs, int cnt);
 char *ICS_SAN(move_t move);
-bool InCheck(struct Position *, int);
 void RecalcAttacks(struct Position *);
 const char *GameEnd(struct Position *);
 void ParseEcoPgn(char *);
@@ -527,19 +539,16 @@ void AgeHashTable(void);
 void ClearPawnHashTable(void);
 void AllocateHT(void);
 #if MP
+int ProbeHT(hash_t, int *, int, move_t *, bool *, int, int, struct HTEntry *);
 void StoreHT(hash_t, int, int, int, int, int, int, int, struct HTEntry *);
 #else
+int ProbeHT(hash_t, int *, int, move_t *, bool *, int);
 void StoreHT(hash_t, int, int, int, int, int, int, int);
 #endif
-void StorePT(hash_t, int, struct PawnFacts *);
-void StoreST(hash_t, int);
-#if MP
-int ProbeHT(hash_t, int *, int, move_t *, bool *, int, int, struct HTEntry *);
-#else
-int ProbeHT(hash_t, int *, int, move_t *, bool *, int);
-#endif
 int ProbePT(hash_t, int *, struct PawnFacts *);
+void StorePT(hash_t, int, struct PawnFacts *);
 int ProbeST(hash_t, int *);
+void StoreST(hash_t, int);
 void ShowHashStatistics(void);
 void GuessHTSizes(char *);
 
@@ -566,6 +575,7 @@ int NextMove(struct SearchData *);
 int NextEvasion(struct SearchData *);
 int NextMoveQ(struct SearchData *, int);
 void PutKiller(struct SearchData *, move_t);
+void TestNextGenerators(struct Position *);
 
 void SaveGame(struct Position *, char *);
 void LoadGame(struct Position *, char *);
@@ -599,6 +609,8 @@ int SwapOff(struct Position *, int);
 
 void DoTC(struct Position *, int);
 void CalcTime(struct Position *, float *, float *);
+void SetTimeControl(char **, bool);
+void ResetTimeControl(bool);
 
 void OpenLogFile(char *name);
 void Print(int, char *, ...);
@@ -613,6 +625,7 @@ void GetTmpFileName(char *, size_t);
 char *nextToken(char **, const char *);
 int Percentage(unsigned long, unsigned long);
 
+void NewGame(char *);
 void ShowVersion(void);
 
 ran_t Random64(void);
@@ -623,6 +636,9 @@ void RecogInit(void);
 int ProbeRecognizer(const struct Position *p, int *score);
 
 void DoBookLearning(void);
+
+heap_t allocate_heap(void);
+void free_heap(heap_t heap);
 
 #include "inline.h"
 

@@ -10,15 +10,6 @@ will want to compile Amy yourself.
 
 ## Unix / Linux systems
 
-### Prerequisites
-
-Amy uses the Berkeley DB library ([](http://www.sleepycat.com)) software
-to store the opening book. If you plan to use Amy with an opening book
-(which is quite likely), you should install the Berkeley DB software
-prior to compiling Amy. Note that there are several revisions of the
-Berkeley DB software. Amy is known to work with revision 2 software
-(tested with versions 2.7.3 and 2.7.7).
-
 ### Compiling from source
 
 Amy uses the autoconf utility to configure operating system dependant

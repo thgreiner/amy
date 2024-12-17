@@ -35,7 +35,6 @@
 
 #include "amy.h"
 #include "assert.h"
-#include "inline.h"
 
 uint16_t rook_table_offsets[64];
 uint64_t rook_table[102400];

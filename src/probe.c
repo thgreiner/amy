@@ -5,8 +5,6 @@
  *
  * Amy is copyrighted by Thorsten Greiner
  *
- * $Id: probe.c 27 2003-02-11 22:39:17Z thorsten $
- *
  */
 
 #include "amy.h"

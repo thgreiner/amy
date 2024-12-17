@@ -34,10 +34,8 @@
  */
 
 #include "amy.h"
+#include "heap.h"
 #include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 static void Quit(char *);
 static void Show(char *);
@@ -47,7 +45,6 @@ static void SetTime(char *);
 static void SetXBoard(char *);
 static void Go(char *);
 static void Force(char *);
-static void New(char *);
 static void Name(char *);
 static void MoveNow(char *);
 static void Edit(char *);
@@ -73,6 +70,7 @@ static void XboardTime(char *);
 static void Analyze(char *args);
 static void StopAnalyze(char *args);
 static void SelfPlay(char *args);
+static void TestNext(char *args);
 
 static struct CommandEntry Commands[] = {
     {"analyze", &Analyze, false, false, "enter analyze mode (xboard)", NULL},
@@ -99,7 +97,7 @@ static struct CommandEntry Commands[] = {
     {"load", &Load, false, false, "load game from PGN file", NULL},
     {"moves", &MovesCmd, false, false, "show legal moves", NULL},
     {"name", &Name, true, false, "set the opponents name", NULL},
-    {"new", &New, true, true, "start new game", NULL},
+    {"new", &NewGame, true, true, "start new game", NULL},
     {"nopost", &NoPost, true, false, "switch off post mode (xboard)", NULL},
     {"perft", &Perft, false, false, "Run the perft benchmark", NULL},
     {"post", &Post, true, false, "switch on post mode (xboard)", NULL},
@@ -115,6 +113,7 @@ static struct CommandEntry Commands[] = {
     {"xboard", &SetXBoard, false, false, "switch to xboard compatibility",
      NULL},
     {"?", &MoveNow, true, false, "move now", NULL},
+    {"tn", &TestNext, false, false, "test the move generators", NULL},
     {NULL, NULL, false, false, NULL, NULL}};
 
 struct Command *ParseInput(char *line) {
@@ -284,101 +283,13 @@ static void Test(char *fname) {
 }
 
 static void SetTime(char *arg) {
-    int ttmoves, ttime, tminutes, tseconds, inc = 0;
-    char *x, *colon;
     char *args[3];
 
     args[0] = strtok(arg, " \t");
     args[1] = strtok(NULL, " \t");
     args[2] = strtok(NULL, " \t");
 
-    if (XBoardMode) {
-        sscanf(args[0], "%d", &ttmoves);
-        colon = strchr(args[1], ':'); /* check for time in xx:yy format */
-        if (colon) {
-            sscanf(args[1], "%d:%d", &tminutes, &tseconds);
-            ttime = (tminutes * 60) + tseconds;
-        } else {
-            sscanf(args[1], "%d", &tminutes);
-            ttime = tminutes * 60;
-        }
-        sscanf(args[2], "%d", &inc);
-
-        TwoTimeControls = false;
-        TMoves = ttmoves;
-        TTime = ttime;
-        Increment = inc;
-
-        Moves[White] = Moves[Black] = TMoves;
-        Time[White] = Time[Black] = TTime;
-    } else {
-        x = strtok(args[0], "/+ \t\n\r");
-        if (x) {
-            if (!strcmp(x, "sd"))
-                ttmoves = 0;
-            else if (!strcmp(x, "fixed"))
-                ttmoves = -1;
-            else
-                sscanf(x, "%d", &ttmoves);
-            x = strtok(NULL, "/ \t\n\r");
-            if (x) {
-                sscanf(x, "%d", &ttime);
-                for (x++; *x; x++) {
-                    if (*x == '+') {
-                        sscanf(x + 1, "%d", &inc);
-                        break;
-                    }
-                }
-                if (args[1] != NULL) {
-                    x = strtok(args[1], " /\n\t\r");
-                    TMoves2 = -1;
-                    if (!strcmp(x, "sd"))
-                        TMoves2 = 0;
-                    else
-                        sscanf(x, "%d", &TMoves2);
-                    x = strtok(NULL, " /\n\t\r");
-                    if (x) {
-                        TTime2 = -1;
-                        sscanf(x, "%d", &TTime2);
-                        if (TMoves2 >= 0 && TTime2 > 0)
-                            TwoTimeControls = true;
-                    }
-                }
-                Print(0, "Timecontrol is ");
-                if (ttmoves >= 0) {
-                    if (ttmoves == 0)
-                        Print(0, "all ");
-                    else
-                        Print(0, "%d ", ttmoves);
-                    if (inc) {
-                        Print(0, "moves in %d mins + %d secs Increment\n",
-                              ttime, inc);
-                    } else {
-                        Print(0, "moves in %d mins\n", ttime);
-                    }
-                    TMoves = ttmoves;
-                    TTime = ttime * 60;
-                    Increment = inc;
-
-                    Moves[White] = Moves[Black] = TMoves;
-                    Time[White] = Time[Black] = TTime;
-                } else {
-                    Print(0, "%d seconds/move fixed time\n", ttime);
-                    TMoves = -1;
-                    TTime = ttime;
-                }
-                if (TwoTimeControls) {
-                    Print(0, "Second Timecontrol is ");
-                    if (TMoves2 == 0)
-                        Print(0, "all ");
-                    else
-                        Print(0, "%d ", TMoves2);
-                    Print(0, "moves in %d mins\n", TTime2);
-                    TTime2 *= 60;
-                }
-            }
-        }
-    }
+    SetTimeControl(args, XBoardMode);
 }
 
 static void SetXBoard(char *args) {
@@ -408,7 +319,7 @@ static void Force(char *args) {
     AbortSearch = true;
 }
 
-static void New(char *args) {
+void NewGame(char *args) {
     (void)args;
     /*
      * Create a new save file.
@@ -421,6 +332,7 @@ static void New(char *args) {
     if (State != STATE_ANALYZING) {
         State = STATE_WAITING;
     }
+    ResetTimeControl(!XBoardMode);
 }
 
 static void MoveNow(char *args) {
@@ -699,28 +611,30 @@ static void Benchmark(char *args) {
     FreePosition(p);
 }
 
-static BitBoard SearchFully(struct Position *p, BitBoard cnt, int depth) {
-    move_t moves[128];
-    int mcnt;
-    int i;
+static BitBoard SearchFully(struct Position *p, BitBoard cnt, int depth,
+                            heap_t heap) {
+    unsigned int i;
 
     if (depth <= 0) {
         return cnt + 1;
     }
 
-    mcnt = PLegalMoves(p, moves);
+    push_section(heap);
+    PLegalMoves(p, heap);
 
-    for (i = 0; i < mcnt; i++) {
-        int move = moves[i];
+    for (i = heap->current_section->start; i < heap->current_section->end;
+         i++) {
+        int move = heap->data[i];
         if (move & M_CANY && !MayCastle(p, move))
             continue;
 
         DoMove(p, move);
         if (!InCheck(p, OPP(p->turn))) {
-            cnt = SearchFully(p, cnt, depth - 1);
+            cnt = SearchFully(p, cnt, depth - 1, heap);
         }
         UndoMove(p, move);
     }
+    pop_section(heap);
 
     return cnt;
 }
@@ -735,10 +649,13 @@ static void Perft(char *args) {
     sscanf(args, "%d", &depth);
 
     BitBoard cnt = 0;
+    heap_t heap = allocate_heap();
 
     int start = GetTime();
-    cnt = SearchFully(CurrentPosition, cnt, depth);
+    cnt = SearchFully(CurrentPosition, cnt, depth, heap);
     int end = GetTime();
+
+    free_heap(heap);
 
     double elapsed = (end - start) / 100.0;
     double nps = cnt / elapsed;
@@ -814,4 +731,9 @@ static void SelfPlay(char *args) {
     (void)args;
     SelfPlayMode = true;
     State = STATE_CALCULATING;
+}
+
+static void TestNext(char *args) {
+    (void)args;
+    TestNextGenerators(CurrentPosition);
 }

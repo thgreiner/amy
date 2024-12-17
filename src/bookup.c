@@ -256,25 +256,28 @@ void BookupQuiet(char *file_name) { BookupInternal(file_name, 9); }
 
 static void GetAllBookMoves(struct Position *p, int *cnt, move_t *book_moves,
                             struct BookQuery *entries) {
-    move_t mvs[256];
-    int mv_cnt = LegalMoves(p, mvs);
-    int i;
+    unsigned int i;
 
-    for (i = 0; i < mv_cnt; i++) {
+    heap_t heap = allocate_heap();
+    LegalMoves(p, heap);
+
+    for (i = heap->current_section->start; i < heap->current_section->end;
+         i++) {
+        move_t move = heap->data[i];
         struct BookEntry *be = NULL;
         struct LearnEntry *le = NULL;
 
-        DoMove(p, mvs[i]);
+        DoMove(p, move);
         /* If the move leads to a repetition, do not accept it. */
         if (!Repeated(p, false)) {
             be = GetBookEntry(p->hkey);
             le = GetLearnEntry(p->hkey);
         }
-        UndoMove(p, mvs[i]);
+        UndoMove(p, move);
 
         if (be) {
             memset(entries + *cnt, 0, sizeof(struct BookQuery));
-            book_moves[*cnt] = mvs[i];
+            book_moves[*cnt] = move;
             entries[*cnt].be = *be;
             if (le) {
                 entries[*cnt].le = *le;
@@ -284,6 +287,8 @@ static void GetAllBookMoves(struct Position *p, int *cnt, move_t *book_moves,
             free(be);
         }
     }
+
+    free_heap(heap);
 }
 
 static void SortBook(int cnt, move_t *mvs, struct BookQuery *entries) {

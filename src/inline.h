@@ -64,4 +64,28 @@ static inline int EdgeDist(int sq) {
     return MAX(filedist, rankdist);
 }
 
+/**
+ * Create a move from from square, to square and flags.
+ */
+static inline int make_move(int from, int to, int flags) {
+    return (move_t)(from | (to << 6) | flags);
+}
+
+/**
+ * Returns if the square is a promotion square.
+ */
+static inline bool is_promo_square(int sq) {
+    int rank = sq >> 3;
+    return rank == 0 || rank == 7;
+}
+
+/*
+ * Test whether a side is in check
+ */
+
+static inline bool InCheck(struct Position *p, int side) {
+    int sq = p->kingSq[side];
+    return (p->atkFr[sq] & p->mask[!side][0]);
+}
+
 #endif /* INLINE_H */
