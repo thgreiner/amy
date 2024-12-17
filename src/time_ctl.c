@@ -44,6 +44,23 @@ int TwoTimeControls = false;
 
 int Increment = 0;
 
+struct SingleTimeControl {
+    int moves;
+    int total_time;
+    int increment;
+};
+
+struct TimeControl {
+    struct SingleTimeControl first;
+    struct SingleTimeControl second;
+    bool hasSecondTimeControl;
+};
+
+/** Stores the single global time control. */
+static struct TimeControl globalTimeControl = {.first.moves = 60,
+                                               .first.total_time = 5 * 60,
+                                               .hasSecondTimeControl = false};
+
 void DoTC(struct Position *p, int mtime) {
     Time[p->turn] += -mtime + Increment;
 
@@ -114,5 +131,164 @@ void CalcTime(struct Position *p, float *soft, float *hard) {
         Print(1, "TL: %.2f/%.2f\n", *soft, *hard);
     } else {
         *soft = *hard = (float)TTime;
+    }
+}
+
+static struct TimeControl parse_timecontrol_xboard(char *args[]) {
+    int ttmoves, ttime, tminutes, tseconds, inc = 0;
+
+    sscanf(args[0], "%d", &ttmoves);
+    char *colon = strchr(args[1], ':'); /* check for time in xx:yy format */
+    if (colon) {
+        sscanf(args[1], "%d:%d", &tminutes, &tseconds);
+        ttime = (tminutes * 60) + tseconds;
+    } else {
+        sscanf(args[1], "%d", &tminutes);
+        ttime = tminutes * 60;
+    }
+    sscanf(args[2], "%d", &inc);
+
+    struct TimeControl result = {.first.moves = ttmoves,
+                                 .first.total_time = ttime,
+                                 .first.increment = inc,
+                                 .hasSecondTimeControl = false};
+
+    return result;
+}
+
+/** Literal for 'sudden death' time control. */
+static const char *const sudden_death = "sd";
+
+/** Literal for 'fixed' time control. */
+static const char *const fixed = "fixed";
+
+static struct TimeControl parse_timecontrol(char *args[]) {
+    int ttmoves, ttime, inc = 0;
+    int ttmoves2, ttime2;
+
+    struct TimeControl result;
+
+    char *x = strtok(args[0], "/+ \t\n\r");
+    if (x) {
+        if (!strcmp(x, sudden_death))
+            ttmoves = 0;
+        else if (!strcmp(x, fixed))
+            ttmoves = -1;
+        else
+            sscanf(x, "%d", &ttmoves);
+        x = strtok(NULL, "/ \t\n\r");
+        if (x) {
+            sscanf(x, "%d", &ttime);
+            for (x++; *x; x++) {
+                if (*x == '+') {
+                    sscanf(x + 1, "%d", &inc);
+                    break;
+                }
+            }
+            if (args[1] != NULL) {
+                x = strtok(args[1], " /\n\t\r");
+                ttmoves2 = -1;
+                if (!strcmp(x, sudden_death))
+                    ttmoves2 = 0;
+                else
+                    sscanf(x, "%d", &ttmoves2);
+                x = strtok(NULL, " /\n\t\r");
+                if (x) {
+                    ttime2 = -1;
+                    sscanf(x, "%d", &ttime2);
+                    if (ttmoves2 >= 0 && ttime2 > 0)
+                        TwoTimeControls = true;
+                }
+            }
+            if (ttmoves >= 0) {
+                result.first.moves = ttmoves;
+                result.first.total_time = ttime * 60;
+                result.first.increment = inc;
+                result.hasSecondTimeControl = false;
+
+            } else {
+                result.first.moves = -1;
+                result.first.total_time = ttime;
+                result.first.increment = 0;
+                result.hasSecondTimeControl = false;
+            }
+            if (TwoTimeControls) {
+                result.second.moves = ttmoves2;
+                result.second.total_time = ttime2 * 60;
+                result.second.increment = 0;
+                result.hasSecondTimeControl = true;
+            }
+        }
+    }
+    return result;
+}
+
+/**
+ * Set the global time control using an array of strings.
+ *
+ * Args:
+ *     args: an array of strings for the time controls
+ *     xboard_flag: indicates whether the format is expected to be
+ *         for xboard or not
+ */
+void SetTimeControl(char *args[], bool xboard_flag) {
+    if (xboard_flag) {
+        globalTimeControl = parse_timecontrol_xboard(args);
+    } else {
+        globalTimeControl = parse_timecontrol(args);
+    }
+    ResetTimeControl(!xboard_flag);
+}
+
+/**
+ * Reset the global time control and clocks.
+ *
+ * Args:
+ *     verbose: if true, the settings are printed
+ */
+void ResetTimeControl(bool verbose) {
+    TMoves = globalTimeControl.first.moves;
+    TTime = globalTimeControl.first.total_time;
+    Increment = globalTimeControl.first.increment;
+
+    TwoTimeControls = globalTimeControl.hasSecondTimeControl;
+
+    TMoves2 = globalTimeControl.second.moves;
+    TTime2 = globalTimeControl.second.total_time;
+
+    Moves[White] = Moves[Black] = TMoves;
+    Time[White] = Time[Black] = TTime;
+
+    if (verbose) {
+        Print(0, "Timecontrol is ");
+        if (globalTimeControl.first.moves >= 0) {
+            if (globalTimeControl.first.moves == 0)
+                Print(0, "all ");
+            else
+                Print(0, "%d ", globalTimeControl.first.moves);
+
+            if (globalTimeControl.first.increment) {
+                Print(0, "moves in %d mins + %d secs Increment\n",
+                      globalTimeControl.first.total_time / 60,
+                      globalTimeControl.first.increment);
+            } else {
+                Print(0, "moves in %d mins\n",
+                      globalTimeControl.first.total_time / 60);
+            }
+
+        } else {
+            Print(0, "%d seconds/move fixed time\n",
+                  globalTimeControl.first.total_time);
+        }
+
+        if (globalTimeControl.hasSecondTimeControl) {
+            Print(0, "Second Timecontrol is ");
+            if (globalTimeControl.second.moves == 0)
+                Print(0, "all ");
+            else
+                Print(0, "%d ", globalTimeControl.second.moves);
+            Print(0, "moves in %d mins\n",
+                  globalTimeControl.second.total_time / 60);
+        }
     }
 }

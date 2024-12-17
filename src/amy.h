@@ -610,6 +610,8 @@ int SwapOff(struct Position *, int);
 
 void DoTC(struct Position *, int);
 void CalcTime(struct Position *, float *, float *);
+void SetTimeControl(char **, bool);
+void ResetTimeControl(bool);
 
 void OpenLogFile(char *name);
 void Print(int, char *, ...);
