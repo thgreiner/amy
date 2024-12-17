@@ -53,4 +53,4 @@ format:
 
 .PHONY: distclean-local
 distclean-local:
-	rm -f Eco.db Book.db Amy.log
+	rm -f Eco.db Book.db Amy.log Makefile.deps
