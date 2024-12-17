@@ -4,6 +4,7 @@
 
 * Refactored search move generation
 * Replaced several lookup tables by small functions
+* Fixed: "new" command should reset time ([#11](https://github.com/thgreiner/amy/issues/11))
 
 
 ## [0.9.5] 2024-12-10

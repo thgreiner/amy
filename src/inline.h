@@ -79,4 +79,13 @@ static inline bool is_promo_square(int sq) {
     return rank == 0 || rank == 7;
 }
 
+/*
+ * Test whether a side is in check
+ */
+
+static inline bool InCheck(struct Position *p, int side) {
+    int sq = p->kingSq[side];
+    return (p->atkFr[sq] & p->mask[!side][0]);
+}
+
 #endif /* INLINE_H */

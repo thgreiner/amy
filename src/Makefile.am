@@ -39,8 +39,10 @@ eco.o: ${srcdir}/eco.c
 
 -include Makefile.deps
 
-Makefile.deps: $(SRCS)
-	$(CC) $(CFLAGS) $(SRCS) -MM > Makefile.deps
+Makefile.deps: $(Amy_SOURCES)
+	$(CC) $(CFLAGS) $(DEFAULT_INCLUDES) $(Amy_SOURCES) -MM > Makefile.deps
+
+$(OBJS): Makefile
 
 .PHONY: format
 format:

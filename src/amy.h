@@ -526,7 +526,6 @@ void ShowMoves(struct Position *);
 move_t ParseGSAN(struct Position *, char *san);
 move_t ParseGSANList(char *san, int side, move_t *mvs, int cnt);
 char *ICS_SAN(move_t move);
-bool InCheck(struct Position *, int);
 void RecalcAttacks(struct Position *);
 const char *GameEnd(struct Position *);
 void ParseEcoPgn(char *);

@@ -67,7 +67,6 @@ static void GainAttack(struct Position *, int, int);
 static void LooseAttack(struct Position *, int from, int to);
 static void GainAttacks(struct Position *, int to);
 static void LooseAttacks(struct Position *, int to);
-int PromoType(move_t move);
 
 /*
  * Routines to up/downdate the global database
@@ -1321,16 +1320,6 @@ void GenChecks(struct Position *p, heap_t heap) {
 }
 
 /*
- * Test wether a p->turn is in check
- */
-
-bool InCheck(struct Position *p, int side) {
-    int sq = p->kingSq[side];
-
-    return (p->atkFr[sq] & p->mask[!side][0]);
-}
-
-/*
  * Repetition check
  * if mode = true, count the number of repetitions of current position
  * if mode = false, only check if current position is repeated
@@ -2175,6 +2164,8 @@ void ShowMoves(struct Position *p) {
         }
         Print(0, "\n");
     }
+
+    free_heap(heap);
 }
 
 /*

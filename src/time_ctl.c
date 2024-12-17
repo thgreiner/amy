@@ -166,7 +166,7 @@ static struct TimeControl parse_timecontrol(char *args[]) {
     int ttmoves, ttime, inc = 0;
     int ttmoves2, ttime2;
 
-    struct TimeControl result;
+    struct TimeControl result = globalTimeControl;
 
     char *x = strtok(args[0], "/+ \t\n\r");
     if (x) {
