@@ -146,8 +146,6 @@ int main(int argc, char *argv[]) {
     /* Ensure true random behavior. */
     InitRandom(GetTime());
 
-    NewGame(NULL);
-
     StateMachine();
 
     return 0;
