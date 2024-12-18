@@ -72,6 +72,13 @@ static inline int make_move(int from, int to, int flags) {
 }
 
 /**
+ * Create a promotion move from from square, to square and flags.
+ */
+static inline int make_promotion(int from, int to, int type, int flags) {
+    return (move_t)(from | (to << 6) | (type << M_PROMOTION_OFFSET) | flags);
+}
+
+/**
  * Returns if the square is a promotion square.
  */
 static inline bool is_promo_square(int sq) {
@@ -86,6 +93,14 @@ static inline bool is_promo_square(int sq) {
 static inline bool InCheck(struct Position *p, int side) {
     int sq = p->kingSq[side];
     return (p->atkFr[sq] & p->mask[!side][0]);
+}
+
+/*
+ * Determine type of promotion from move
+ */
+
+static inline int PromoType(move_t move) {
+	return (move & M_PROMOTION_MASK) >> M_PROMOTION_OFFSET;
 }
 
 #endif /* INLINE_H */
