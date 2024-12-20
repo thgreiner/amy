@@ -407,7 +407,7 @@ static int ScoreMove(struct Position *p, move_t move) {
 
     if (move & M_CAPTURE)
         score += Value[TYPE(p->piece[M_TO(move)])];
-    if (move & M_PANY)
+    if (move & M_PROMOTION_MASK)
         score += Value[PromoType(move)] - Value[Pawn];
     else if (TYPE(p->piece[M_FROM(move)]) == Pawn) {
         if (p->turn == White && M_TO(move) >= a7) {

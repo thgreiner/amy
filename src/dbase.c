@@ -275,24 +275,6 @@ static void LooseAttacks(struct Position *p, int to) {
 }
 
 /*
- * Determine type of promotion from move
- */
-
-int PromoType(move_t move) {
-    if (move & M_PQUEEN)
-        return Queen;
-    if (move & M_PROOK)
-        return Rook;
-    if (move & M_PBISHOP)
-        return Bishop;
-    if (move & M_PKNIGHT)
-        return Knight;
-
-    Print(9, "error in PromoType: move is no promotion\n");
-    return Neutral;
-}
-
-/*
  * Determines if a piece of type tp is a sliding piece.
  */
 static inline bool is_sliding(int tp) { return tp >= Bishop && tp <= Queen; }
@@ -525,7 +507,7 @@ void DoMove(struct Position *p, move_t move) {
             LooseAttacks(p, to);
         }
 
-        if (move & M_PANY) {
+        if (move & M_PROMOTION_MASK) {
             /* Promote piece */
             tp = PromoType(move);
 
@@ -596,7 +578,7 @@ void DoMove(struct Position *p, move_t move) {
     }
 
     /* Check if reversible move */
-    if (move & (M_CAPTURE | M_PANY | M_CANY) || tp == Pawn) {
+    if (move & (M_CAPTURE | M_PROMOTION_MASK | M_CANY) || tp == Pawn) {
         p->actLog->gl_IrrevCount = 0;
     } else {
         p->actLog->gl_IrrevCount = (p->actLog - 1)->gl_IrrevCount + 1;
@@ -635,7 +617,7 @@ void UndoMove(struct Position *p, move_t move) {
         if (is_sliding(tp))
             ClrBit(p->slidingPieces, to);
 
-        if (move & M_PANY) {
+        if (move & M_PROMOTION_MASK) {
             /* Update own material */
             p->material[p->turn] -= Value[tp] - Value[Pawn];
             p->nonPawn[p->turn] -= Value[tp];
@@ -881,10 +863,10 @@ void GenTo(struct Position *p, int square, heap_t heap) {
         int i = FindSetBit(tmp);
         tmp &= tmp - 1;
         if (TYPE(p->piece[i]) == Pawn && is_promo_square(square)) {
-            append_to_heap(heap, make_move(i, square, M_CAPTURE | M_PQUEEN));
-            append_to_heap(heap, make_move(i, square, M_CAPTURE | M_PKNIGHT));
-            append_to_heap(heap, make_move(i, square, M_CAPTURE | M_PROOK));
-            append_to_heap(heap, make_move(i, square, M_CAPTURE | M_PBISHOP));
+            append_to_heap(heap, make_promotion(i, square, Queen, M_CAPTURE));
+            append_to_heap(heap, make_promotion(i, square, Knight, M_CAPTURE));
+            append_to_heap(heap, make_promotion(i, square, Rook, M_CAPTURE));
+            append_to_heap(heap, make_promotion(i, square, Bishop, M_CAPTURE));
         } else {
             append_to_heap(heap, make_move(i, square, M_CAPTURE));
         }
@@ -943,10 +925,10 @@ void GenFrom(struct Position *p, int square, heap_t heap) {
 
         if (p->piece[sq] == Neutral) {
             if (is_promo_square(sq)) {
-                append_to_heap(heap, make_move(square, sq, M_PQUEEN));
-                append_to_heap(heap, make_move(square, sq, M_PKNIGHT));
-                append_to_heap(heap, make_move(square, sq, M_PROOK));
-                append_to_heap(heap, make_move(square, sq, M_PBISHOP));
+                append_to_heap(heap, make_promotion(square, sq, Queen, 0));
+                append_to_heap(heap, make_promotion(square, sq, Knight, 0));
+                append_to_heap(heap, make_promotion(square, sq, Rook, 0));
+                append_to_heap(heap, make_promotion(square, sq, Bishop, 0));
             } else {
                 append_to_heap(heap, make_move(square, sq, 0));
 
@@ -1026,14 +1008,14 @@ bool LegalMove(struct Position *p, move_t move) {
         return false;
 
     /* if a promotion, moving piece must be a pawn */
-    if (move & M_PANY && TYPE(p->piece[fr]) != Pawn)
+    if (move & M_PROMOTION_MASK && TYPE(p->piece[fr]) != Pawn)
         return false;
 
     /* if the move is a pawn move to the 1st/8th rank, it must be
      * be a promotion.
      */
     if ((to <= h1 || to >= a8) && TYPE(p->piece[fr]) == Pawn &&
-        !(move & M_PANY))
+        !(move & M_PROMOTION_MASK))
         return false;
 
     if (move & M_CAPTURE) {
@@ -1085,9 +1067,9 @@ bool LegalMove(struct Position *p, move_t move) {
             if (tt != to)
                 return false;
 
-            if (p->turn == White && to >= a8 && !(move & M_PANY))
+            if (p->turn == White && to >= a8 && !(move & M_PROMOTION_MASK))
                 return false;
-            if (p->turn == Black && to <= h1 && !(move & M_PANY))
+            if (p->turn == Black && to <= h1 && !(move & M_PROMOTION_MASK))
                 return false;
 
             return true;
@@ -1109,7 +1091,7 @@ bool IsCheckingMove(struct Position *p, move_t move) {
 
     /* Is it a direct check ? */
 
-    if (move & M_PANY)
+    if (move & M_PROMOTION_MASK)
         tp = PromoType(move);
 
     switch (tp) {
@@ -1376,7 +1358,7 @@ char *SAN(struct Position *p, move_t move, char *buffer) {
         *(x++) = 'a' + (to & 7);
         *(x++) = '1' + (to >> 3);
 
-        if (move & M_PANY) {
+        if (move & M_PROMOTION_MASK) {
             *(x++) = '=';
             *(x++) = PieceName[PromoType(move)];
         }
@@ -1480,20 +1462,8 @@ char *ICS_SAN(move_t move) {
     }
     *(x++) = 'a' + (to & 7);
     *(x++) = '1' + (to >> 3);
-    if (move & M_PANY) {
-        /*
-         *(x++) = '=';
+    if (move & M_PROMOTION_MASK) {
          *(x++) = PieceName[PromoType(move)];
-         */
-
-        if (move & M_PQUEEN)
-            *(x++) = 'Q';
-        if (move & M_PROOK)
-            *(x++) = 'R';
-        if (move & M_PKNIGHT)
-            *(x++) = 'N';
-        if (move & M_PBISHOP)
-            *(x++) = 'B';
     }
     *x = '\0';
     return buffer;
@@ -1534,26 +1504,18 @@ move_t parse_gsan_internal(struct Position *p, char *san, heap_t heap) {
          i < heap->current_section->end; i++) {
         move_t move = heap->data[i];
         if ((move & 4095) == mask) {
-            if (move & M_PANY) {
+            if (move & M_PROMOTION_MASK) {
                 char p = *(san + 4);
-                move = move & (~M_PANY);
+                move = move & (~M_PROMOTION_MASK);
 
-                if (p == 'q')
-                    return move | M_PQUEEN;
-                if (p == 'Q')
-                    return move | M_PQUEEN;
-                if (p == 'r')
-                    return move | M_PROOK;
-                if (p == 'R')
-                    return move | M_PROOK;
-                if (p == 'n')
-                    return move | M_PKNIGHT;
-                if (p == 'N')
-                    return move | M_PKNIGHT;
-                if (p == 'b')
-                    return move | M_PBISHOP;
-                if (p == 'B')
-                    return move | M_PBISHOP;
+                if (p == 'q' || p == 'Q')
+                    return move | (Queen << M_PROMOTION_OFFSET);
+                if (p == 'r' || p == 'R')
+                    return move | (Rook << M_PROMOTION_OFFSET);
+                if (p == 'n' || p == 'N') 
+                    return move | (Knight << M_PROMOTION_OFFSET);
+                if (p == 'b' || p == 'B')
+                    return move | (Bishop << M_PROMOTION_OFFSET);
             } else
                 return move;
         }
@@ -1607,26 +1569,18 @@ move_t ParseGSANList(char *san, int side, move_t *mvs, int cnt) {
 
     for (i = 0; i < cnt; i++) {
         if ((mvs[i] & 4095) == mask) {
-            if (mvs[i] & M_PANY) {
+            if (mvs[i] & M_PROMOTION_MASK) {
                 char p = *(san + 4);
-                int move = mvs[i] & (~M_PANY);
+                int move = mvs[i] & (~M_PROMOTION_MASK);
 
-                if (p == 'q')
-                    return move | M_PQUEEN;
-                if (p == 'Q')
-                    return move | M_PQUEEN;
-                if (p == 'r')
-                    return move | M_PROOK;
-                if (p == 'R')
-                    return move | M_PROOK;
-                if (p == 'n')
-                    return move | M_PKNIGHT;
-                if (p == 'N')
-                    return move | M_PKNIGHT;
-                if (p == 'b')
-                    return move | M_PBISHOP;
-                if (p == 'B')
-                    return move | M_PBISHOP;
+                if (p == 'q' || p == 'Q')
+                    return move | (Queen << M_PROMOTION_OFFSET);
+                if (p == 'r' || p == 'R')
+                    return move | (Rook << M_PROMOTION_OFFSET);
+                if (p == 'n' || p == 'N') 
+                    return move | (Knight << M_PROMOTION_OFFSET);
+                if (p == 'b' || p == 'B')
+                    return move | (Bishop << M_PROMOTION_OFFSET);
             } else
                 return mvs[i];
         }
@@ -1744,13 +1698,13 @@ static move_t parse_san_with_heap(struct Position *p, char *san, heap_t heap) {
         case '=':
             san++;
             if (*san == 'Q')
-                pro = M_PQUEEN;
+                pro = Queen;
             else if (*san == 'R')
-                pro = M_PROOK;
+                pro = Rook;
             else if (*san == 'B')
-                pro = M_PBISHOP;
+                pro = Bishop;
             else if (*san == 'N')
-                pro = M_PKNIGHT;
+                pro = Knight;
             else
                 return M_NONE;
             break;
@@ -1779,7 +1733,7 @@ static move_t parse_san_with_heap(struct Position *p, char *san, heap_t heap) {
             continue;
         if (frk != -1 && (fr >> 3) != frk)
             continue;
-        if (pro && (move & M_PANY) != pro)
+        if (pro && (PromoType(move) == pro))
             continue;
         if (!TryMove(p, move))
             continue;
@@ -1890,13 +1844,13 @@ move_t ParseSANList(char *san, int side, move_t *mvs, int cnt, int *pmap) {
         case '=':
             san++;
             if (*san == 'Q')
-                pro = M_PQUEEN;
+                pro = Queen;
             else if (*san == 'R')
-                pro = M_PROOK;
+                pro = Rook;
             else if (*san == 'B')
-                pro = M_PBISHOP;
+                pro = Bishop;
             else if (*san == 'N')
-                pro = M_PKNIGHT;
+                pro = Knight;
             else
                 return M_NONE;
             break;
@@ -1923,7 +1877,7 @@ move_t ParseSANList(char *san, int side, move_t *mvs, int cnt, int *pmap) {
             continue;
         if (frk != -1 && (fr >> 3) != frk)
             continue;
-        if (pro && (mvs[i] & M_PANY) != pro)
+        if (pro && (PromoType(mvs[i]) != pro))
             continue;
 
         return mvs[i];

@@ -96,7 +96,7 @@ int SwapOff(struct Position *p, int move) {
     BitBoard atks[2];
     BitBoard exclude;
 
-    if (move & M_PANY) {
+    if (move & M_PROMOTION_MASK) {
         swapval = SwapValue[PromoType(move)];
         swaplist[0] = SwapValue[TYPE(p->piece[to])] - SwapValue[Pawn] + swapval;
     } else {

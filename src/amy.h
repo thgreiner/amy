@@ -122,18 +122,15 @@
 #define M_SCASTLE (1 << 14)
 #define M_LCASTLE (1 << 15)
 #define M_PAWND (1 << 16)
-#define M_PQUEEN (1 << 17)
-#define M_PROOK (1 << 18)
-#define M_PBISHOP (1 << 19)
-#define M_PKNIGHT (1 << 20)
-#define M_ENPASSANT (1 << 21)
-#define M_NULL (1 << 22)
-#define M_HASHED (1 << 23)
+#define M_PROMOTION_OFFSET 17
+#define M_PROMOTION_MASK (7 << M_PROMOTION_OFFSET)
+#define M_ENPASSANT (1 << 20)
+#define M_NULL (1 << 21)
+#define M_HASHED (1 << 22)
 
 #define M_CANY (M_SCASTLE | M_LCASTLE)
-#define M_PANY (M_PQUEEN | M_PROOK | M_PBISHOP | M_PKNIGHT)
 
-#define M_TACTICAL (M_CAPTURE | M_ENPASSANT | M_PANY)
+#define M_TACTICAL (M_CAPTURE | M_ENPASSANT | M_PROMOTION_MASK)
 
 #define M_NONE 0
 
@@ -515,7 +512,6 @@ move_t ParseSAN(struct Position *, char *);
 move_t ParseSANList(char *, int, move_t *, int, int *);
 char *MakeEPD(struct Position *);
 void ShowPosition(struct Position *);
-int PromoType(move_t move);
 
 struct Position *CreatePositionFromEPD(char *);
 struct Position *InitialPosition(void);

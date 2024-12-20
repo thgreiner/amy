@@ -37,7 +37,7 @@
 
 static char InputBuffer[1024];
 
-int State;
+int State = STATE_WAITING;
 bool XBoardMode = false;
 bool ForceMode = false;
 bool EasyMode = false;
@@ -45,7 +45,7 @@ bool PostMode = false;
 bool AutoSave = false;
 bool SelfPlayMode = false;
 
-struct Position *CurrentPosition;
+struct Position *CurrentPosition = NULL;
 int ComputerSide;
 
 /**
@@ -54,9 +54,8 @@ int ComputerSide;
 void StateMachine(void) {
     const char *gameend;
 
-    State = STATE_WAITING;
+    NewGame(NULL);
 
-    CurrentPosition = InitialPosition();
     ComputerSide = Black;
 
     while (State != STATE_END) {

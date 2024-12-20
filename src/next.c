@@ -665,10 +665,10 @@ move_t NextEvasion(struct SearchData *sd) {
             int fr = (p->turn == White) ? to - 8 : to + 8;
 
             if (is_promo_square(to)) {
-                append_to_heap(sd->heap, make_move(fr, to, M_PQUEEN));
-                append_to_heap(sd->heap, make_move(fr, to, M_PKNIGHT));
-                append_to_heap(sd->heap, make_move(fr, to, M_PROOK));
-                append_to_heap(sd->heap, make_move(fr, to, M_PBISHOP));
+                append_to_heap(sd->heap, make_promotion(fr, to, Queen, 0));
+                append_to_heap(sd->heap, make_promotion(fr, to, Knight, 0));
+                append_to_heap(sd->heap, make_promotion(fr, to, Rook, 0));
+                append_to_heap(sd->heap, make_promotion(fr, to, Bishop, 0));
             } else
                 append_to_heap(sd->heap, make_move(fr, to, 0));
         }
@@ -748,7 +748,7 @@ static void GenerateQCaptures(struct SearchData *sd, int alpha) {
         next = (p->turn == White) ? i + 8 : i - 8;
 
         if (p->piece[next] == Neutral) {
-            move_t move = make_move(i, next, M_PQUEEN);
+            move_t move = make_promotion(i, next, Queen, 0);
             int sw;
             if ((sw = SwapOff(p, move)) >= 0) {
                 append_to_heap(sd->heap, move);
@@ -762,7 +762,7 @@ static void GenerateQCaptures(struct SearchData *sd, int alpha) {
             int sw;
             j = FindSetBit(tmp);
             tmp &= tmp - 1;
-            move_t move = make_move(i, j, M_CAPTURE | M_PQUEEN);
+            move_t move = make_promotion(i, j, Queen, M_CAPTURE);
             if ((sw = SwapOff(p, move)) >= 0) {
                 append_to_heap(sd->heap, move);
                 grow_data_heap(sd);

@@ -172,6 +172,7 @@ static void Quit(char *args) {
 #if MP
     StopHelpers();
 #endif
+    FreePosition(CurrentPosition);
     Print(0, "\n\nI'll be back.\n");
     exit(0);
 }
