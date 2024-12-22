@@ -32,10 +32,13 @@
 #ifndef TREE_H
 #define TREE_H
 
+#include <stddef.h>
+#include <stdio.h>
+
 struct TreeNode {
     char *key_data;
     size_t key_len;
-    char *value_data;
+    void *value_data;
     size_t value_len;
     struct TreeNode *left_child;
     struct TreeNode *right_child;
@@ -44,9 +47,9 @@ struct TreeNode {
 
 typedef struct TreeNode tree_node_t;
 
-tree_node_t *add_node(tree_node_t *node, char *key_data, size_t key_len,
-                      char *value_data, size_t value_len);
-char *lookup_value(tree_node_t *node, char *key_data, size_t key_len,
+tree_node_t *add_node(tree_node_t *node, void *key_data, size_t key_len,
+                      void *value_data, size_t value_len);
+void *lookup_value(tree_node_t *node, void *key_data, size_t key_len,
                    size_t *value_len);
 void free_node(tree_node_t *node);
 

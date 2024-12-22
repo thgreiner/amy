@@ -43,8 +43,8 @@ static const char *MAGIC = "ATRE";
 /**
  * Allocate a tree node.
  */
-static tree_node_t *allocate_node(char *key_data, size_t key_len,
-                                  char *value_data, size_t value_len) {
+static tree_node_t *allocate_node(void *key_data, size_t key_len,
+                                  void *value_data, size_t value_len) {
     tree_node_t *node = malloc(sizeof(tree_node_t));
     if (node == NULL) {
         perror("Failed to allocate node");
@@ -213,8 +213,8 @@ tree_node_t *balance(tree_node_t *node) {
 /**
  * Add a node to the tree.
  */
-tree_node_t *add_node(tree_node_t *node, char *key_data, size_t key_len,
-                      char *value_data, size_t value_len) {
+tree_node_t *add_node(tree_node_t *node, void *key_data, size_t key_len,
+                      void *value_data, size_t value_len) {
     if (node == NULL) {
         return allocate_node(key_data, key_len, value_data, value_len);
     }
@@ -244,7 +244,7 @@ tree_node_t *add_node(tree_node_t *node, char *key_data, size_t key_len,
 /**
  * Lookup a value in the tree.
  */
-static char *lookup_value_internal(tree_node_t *node, char *key_data,
+static void *lookup_value_internal(tree_node_t *node, char *key_data,
                                    size_t key_len, size_t *value_len,
                                    int depth) {
     if (node == NULL) {
@@ -277,7 +277,7 @@ static char *lookup_value_internal(tree_node_t *node, char *key_data,
  * contain the key. Otherwise, a copy of the value is returned.
  * Use free() on the return value to free the memory of the copy.
  */
-char *lookup_value(tree_node_t *node, char *key_data, size_t key_len,
+void *lookup_value(tree_node_t *node, void *key_data, size_t key_len,
                    size_t *value_len) {
     return lookup_value_internal(node, key_data, key_len, value_len, 0);
 }

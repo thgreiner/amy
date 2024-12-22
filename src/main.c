@@ -34,6 +34,7 @@
  */
 
 #include "amy.h"
+#include "test_yaml.h"
 
 char AutoSaveFileName[64];
 
@@ -42,6 +43,8 @@ int NumberOfCPUs;
 #endif
 
 static char EGTBPath[1024] = "TB";
+
+static void RunAllTests(void) { test_all_yaml(); }
 
 static void ProcessOptions(int argc, char *argv[]) {
     int i;
@@ -54,6 +57,10 @@ static void ProcessOptions(int argc, char *argv[]) {
             }
         }
 
+        if (!strcmp(argv[i], "--test")) {
+            RunAllTests();
+            exit(0);
+        }
 #if MP
         if (!strcmp(argv[i], "-cpu")) {
             i++;
