@@ -666,6 +666,8 @@ int ProbeRecognizer(const struct Position *p, int *score);
 
 void DoBookLearning(void);
 
+void ReadScoringConfig(char *);
+
 heap_t allocate_heap(void);
 void free_heap(heap_t heap);
 

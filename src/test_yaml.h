@@ -29,31 +29,9 @@
 
 */
 
-#ifndef TREE_H
-#define TREE_H
+#ifndef TEST_YAML_H
+#define TEST_YAML_H
 
-#include <stddef.h>
-#include <stdio.h>
-
-struct TreeNode {
-    char *key_data;
-    size_t key_len;
-    void *value_data;
-    size_t value_len;
-    struct TreeNode *left_child;
-    struct TreeNode *right_child;
-    unsigned int depth;
-};
-
-typedef struct TreeNode tree_node_t;
-
-tree_node_t *add_node(tree_node_t *node, void *key_data, size_t key_len,
-                      void *value_data, size_t value_len);
-void *lookup_value(tree_node_t *node, void *key_data, size_t key_len,
-                   size_t *value_len);
-void free_node(tree_node_t *node);
-
-void save_tree(tree_node_t *node, FILE *fout);
-tree_node_t *load_tree(FILE *fin);
+void test_all_yaml(void);
 
 #endif

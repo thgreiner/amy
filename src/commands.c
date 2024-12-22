@@ -61,16 +61,17 @@ static void ShowWarranty(char *);
 static void ShowDistribution(char *);
 static void Help(char *);
 static void Benchmark(char *);
-static void Perft(char *args);
+static void Perft(char *);
 static void Load(char *);
 static void Save(char *);
 static void Prefs(char *);
 static void Flatten(char *);
 static void XboardTime(char *);
-static void Analyze(char *args);
-static void StopAnalyze(char *args);
-static void SelfPlay(char *args);
-static void TestNext(char *args);
+static void Analyze(char *);
+static void StopAnalyze(char *);
+static void SelfPlay(char *);
+static void TestNext(char *);
+static void Conf(char *);
 
 static struct CommandEntry Commands[] = {
     {"analyze", &Analyze, false, false, "enter analyze mode (xboard)", NULL},
@@ -79,6 +80,7 @@ static struct CommandEntry Commands[] = {
     {"book", &Book, false, false, "display book moves", NULL},
     {"bk", &Book, false, false, "display book moves (xboard)", NULL},
     {"bookup", &Bookup, false, false, "create a book", NULL},
+    {"conf", &Conf, false, false, "load scoring config", NULL},
     {"d", &Show, true, false, "display current position", NULL},
     {"distribution", &ShowDistribution, true, false,
      "show terms of distribution", NULL},
@@ -737,4 +739,13 @@ static void SelfPlay(char *args) {
 static void TestNext(char *args) {
     (void)args;
     TestNextGenerators(CurrentPosition);
+}
+
+static void Conf(char *args) {
+    if (args == NULL) {
+        Print(0, "Usage: conf <filename>\n");
+        return;
+    }
+
+    ReadScoringConfig(args);
 }
