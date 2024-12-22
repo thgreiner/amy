@@ -100,7 +100,7 @@ static inline bool InCheck(struct Position *p, int side) {
  */
 
 static inline int PromoType(move_t move) {
-	return (move & M_PROMOTION_MASK) >> M_PROMOTION_OFFSET;
+    return (move & M_PROMOTION_MASK) >> M_PROMOTION_OFFSET;
 }
 
 #endif /* INLINE_H */
