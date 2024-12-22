@@ -36,24 +36,6 @@
 #include "amy.h"
 #include "heap.h"
 
-enum SearchPhases {
-    HashMove,
-    GenerateCaptures,
-    GainingCapture,
-    Killer1,
-    Killer2,
-    CounterMv,
-    Killer3,
-    GenerateRest,
-    LoosingCapture,
-    HistoryMoves,
-    Done,
-    GenerateQChecks,
-    QChecks
-};
-
-enum GeneratedPhases { Nothing = 0, Captures = 1, NonCaptures = 2, Checks = 4 };
-
 struct SearchData *CreateSearchData(struct Position *p) {
     struct SearchData *sd = calloc(sizeof(struct SearchData), 1);
     if (!sd) {
@@ -420,6 +402,9 @@ move_t NextMove(struct SearchData *sd) {
 
             return move;
         }
+
+    default:
+        break;
     }
 
     return M_NONE;
@@ -719,6 +704,8 @@ move_t NextEvasion(struct SearchData *sd) {
 
             return move;
         }
+    default:
+        break;
     }
 
     return M_NONE;
@@ -900,6 +887,8 @@ move_t NextMoveQ(struct SearchData *sd, int alpha) {
 
             return move;
         }
+    default:
+        break;
     }
 
     return M_NONE;

@@ -171,11 +171,12 @@ static inline bool PutHTEntryBestEffort(hash_t key, struct HTEntry entry,
 }
 
 #if MP
-int ProbeHT(hash_t key, int *score, int depth, move_t *bestm, bool *threat,
-            int ply, int exclusiveP, struct HTEntry *localHT)
+LookupResult ProbeHT(hash_t key, int *score, int depth, move_t *bestm,
+                     bool *threat, int ply, int exclusiveP,
+                     struct HTEntry *localHT)
 #else
-int ProbeHT(hash_t key, int *score, int depth, move_t *bestm, bool *threat,
-            int ply)
+LookupResult ProbeHT(hash_t key, int *score, int depth, move_t *bestm,
+                     bool *threat, int ply)
 #endif
 {
     hash_t effective_key = key;
@@ -259,7 +260,7 @@ int ProbeHT(hash_t key, int *score, int depth, move_t *bestm, bool *threat,
     return result;
 }
 
-int ProbePT(hash_t key, int *score, struct PawnFacts *pf) {
+LookupResult ProbePT(hash_t key, int *score, struct PawnFacts *pf) {
 #if MP && HAVE_LIBPTHREAD
     pthread_mutex_lock(PawnMutex + ((key >> 32) & MUTEX_MASK));
 #endif /* MP && HAVE_LIBPTHREAD */
@@ -279,7 +280,7 @@ int ProbePT(hash_t key, int *score, struct PawnFacts *pf) {
     return Useless;
 }
 
-int ProbeST(hash_t key, int *score) {
+LookupResult ProbeST(hash_t key, int *score) {
 #if MP && HAVE_LIBPTHREAD
     pthread_mutex_lock(ScoreMutex + ((key >> 32) & MUTEX_MASK));
 #endif /* MP && HAVE_LIBPTHREAD */

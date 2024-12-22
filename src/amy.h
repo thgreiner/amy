@@ -198,15 +198,24 @@ extern "C" {
  * Constants for piece types and colors.
  */
 
-enum PTypes { Neutral = 0, Pawn, Knight, Bishop, Rook, Queen, King, BPawn };
-enum CTypes { White = 0, Black = 1 };
+typedef enum {
+    Neutral = 0,
+    Pawn,
+    Knight,
+    Bishop,
+    Rook,
+    Queen,
+    King,
+    BPawn
+} Piece;
+typedef enum { White = 0, Black = 1 } Color;
 
 /*
  * Constants for chess board squares.
  */
 
 // clang-format off
-enum {
+typedef enum {
     a1 = 0, b1, c1, d1, e1, f1, g1, h1,
     a2, b2, c2, d2, e2, f2, g2, h2,
     a3, b3, c3, d3, e3, f3, g3, h3,
@@ -215,14 +224,37 @@ enum {
     a6, b6, c6, d6, e6, f6, g6, h6,
     a7, b7, c7, d7, e7, f7, g7, h7,
     a8, b8, c8, d8, e8, f8, g8, h8
-};
+} Square;
 // clang-format on
 
 /*
  * Constants for value status.
  */
 
-enum { ExactScore, LowerBound, UpperBound, Useful, Useless, OnEvaluation };
+typedef enum {
+    ExactScore,
+    LowerBound,
+    UpperBound,
+    Useful,
+    Useless,
+    OnEvaluation
+} LookupResult;
+
+typedef enum {
+    HashMove,
+    GenerateCaptures,
+    GainingCapture,
+    Killer1,
+    Killer2,
+    CounterMv,
+    Killer3,
+    GenerateRest,
+    LoosingCapture,
+    HistoryMoves,
+    Done,
+    GenerateQChecks,
+    QChecks
+} SearchPhase;
 
 typedef void (*COMMAND)(char *args);
 
@@ -298,7 +330,7 @@ struct CommandEntry {
 };
 
 struct SearchStatus {
-    uint16_t st_phase;
+    SearchPhase st_phase;
     move_t st_hashmove;
     move_t st_k1, st_k2, st_kl, st_cm, st_k3;
 };
@@ -494,9 +526,9 @@ void DoMove(struct Position *, move_t move);
 void UndoMove(struct Position *, move_t move);
 void DoNull(struct Position *);
 void UndoNull(struct Position *);
-void GenTo(struct Position *, int, heap_t);
+void GenTo(struct Position *, Square, heap_t);
 void GenEnpas(struct Position *, heap_t);
-void GenFrom(struct Position *, int, heap_t);
+void GenFrom(struct Position *, Square, heap_t);
 void GenRest(move_t *moves);
 int GenCaps(move_t *moves, int good);
 void GenChecks(struct Position *, heap_t);
@@ -509,7 +541,7 @@ void PLegalMoves(struct Position *, heap_t);
 int Repeated(struct Position *, int mode);
 char *SAN(struct Position *, move_t, char *);
 move_t ParseSAN(struct Position *, char *);
-move_t ParseSANList(char *, int, move_t *, int, int *);
+move_t ParseSANList(char *, Color, move_t *, int, int *);
 char *MakeEPD(struct Position *);
 void ShowPosition(struct Position *);
 
@@ -520,7 +552,7 @@ void FreePosition(struct Position *);
 
 void ShowMoves(struct Position *);
 move_t ParseGSAN(struct Position *, char *san);
-move_t ParseGSANList(char *san, int side, move_t *mvs, int cnt);
+move_t ParseGSANList(char *san, Color side, move_t *mvs, int cnt);
 char *ICS_SAN(move_t move);
 void RecalcAttacks(struct Position *);
 const char *GameEnd(struct Position *);
@@ -535,15 +567,16 @@ void AgeHashTable(void);
 void ClearPawnHashTable(void);
 void AllocateHT(void);
 #if MP
-int ProbeHT(hash_t, int *, int, move_t *, bool *, int, int, struct HTEntry *);
+LookupResult ProbeHT(hash_t, int *, int, move_t *, bool *, int, int,
+                     struct HTEntry *);
 void StoreHT(hash_t, int, int, int, int, int, int, int, struct HTEntry *);
 #else
-int ProbeHT(hash_t, int *, int, move_t *, bool *, int);
+LookupResult ProbeHT(hash_t, int *, int, move_t *, bool *, int);
 void StoreHT(hash_t, int, int, int, int, int, int, int);
 #endif
-int ProbePT(hash_t, int *, struct PawnFacts *);
+LookupResult ProbePT(hash_t, int *, struct PawnFacts *);
 void StorePT(hash_t, int, struct PawnFacts *);
-int ProbeST(hash_t, int *);
+LookupResult ProbeST(hash_t, int *);
 void StoreST(hash_t, int);
 void ShowHashStatistics(void);
 void GuessHTSizes(char *);

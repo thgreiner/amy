@@ -45,7 +45,7 @@
 
 #define WITH_ELO 1
 
-enum { GoodMove = 1, BadMove = 2 };
+enum MoveCategory { GoodMove = 1, BadMove = 2 };
 
 struct BookEntry {
     unsigned int win;  /* number of wins */

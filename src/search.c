@@ -648,6 +648,8 @@ static int negascout(struct SearchData *sd, int alpha, int beta,
         best = -ON_EVALUATION;
         goto EXIT;
 #endif
+    default:
+        break;
     }
 
     /*

@@ -61,12 +61,12 @@ const int8_t CastleMask[2][2] = {
 /* local prototypes
  */
 
-static void AtkSet(struct Position *, int, int, int);
-static void AtkClr(struct Position *, int);
-static void GainAttack(struct Position *, int, int);
-static void LooseAttack(struct Position *, int from, int to);
-static void GainAttacks(struct Position *, int to);
-static void LooseAttacks(struct Position *, int to);
+static void AtkSet(struct Position *, Piece, Color, Square);
+static void AtkClr(struct Position *, Square);
+static void GainAttack(struct Position *, Square, Square);
+static void LooseAttack(struct Position *, Square, Square);
+static void GainAttacks(struct Position *, Square);
+static void LooseAttacks(struct Position *, Square);
 
 /*
  * Routines to up/downdate the global database
@@ -152,7 +152,7 @@ static void DebugEngine(struct Position *p) {
  * Generate attacks for a piece "type" of "color" on square "square"
  */
 
-static void AtkSet(struct Position *p, int type, int color, int square) {
+static void AtkSet(struct Position *p, Piece type, Color color, Square square) {
     BitBoard attacks;
 
     switch (type) {
@@ -189,7 +189,7 @@ static void AtkSet(struct Position *p, int type, int color, int square) {
     }
 }
 
-static void AtkClr(struct Position *p, int square) {
+static void AtkClr(struct Position *p, Square square) {
     BitBoard tmp = p->atkTo[square];
     p->atkTo[square] = 0;
 
@@ -205,18 +205,19 @@ static void AtkClr(struct Position *p, int square) {
  * been removed
  */
 
-static void GainAttack(struct Position *p, int from, int to) {
+static void GainAttack(struct Position *p, const Square from, const Square to) {
     signed char *nsq = NextSQ[from];
+    int sq = to;
 
     for (;;) {
-        to = nsq[to];
-        if (to < 0)
+        sq = nsq[sq];
+        if (sq < 0)
             break;
 
-        SetBit(p->atkTo[from], to);
-        SetBit(p->atkFr[to], from);
+        SetBit(p->atkTo[from], sq);
+        SetBit(p->atkFr[sq], from);
 
-        if (p->piece[to] != Neutral)
+        if (p->piece[sq] != Neutral)
             break;
     }
 }
@@ -226,18 +227,20 @@ static void GainAttack(struct Position *p, int from, int to) {
  * onto "to"
  */
 
-static void LooseAttack(struct Position *p, int from, int to) {
+static void LooseAttack(struct Position *p, const Square from,
+                        const Square to) {
     signed char *nsq = NextSQ[from];
+    int sq = to;
 
     for (;;) {
-        to = nsq[to];
-        if (to < 0)
+        sq = nsq[sq];
+        if (sq < 0)
             break;
 
-        ClrBit(p->atkTo[from], to);
-        ClrBit(p->atkFr[to], from);
+        ClrBit(p->atkTo[from], sq);
+        ClrBit(p->atkFr[sq], from);
 
-        if (p->piece[to] != Neutral)
+        if (p->piece[sq] != Neutral)
             break;
     }
 }
@@ -247,7 +250,7 @@ static void LooseAttack(struct Position *p, int from, int to) {
  * the piece on this square has been removed
  */
 
-static void GainAttacks(struct Position *p, int to) {
+static void GainAttacks(struct Position *p, Square to) {
     BitBoard tmp = p->atkFr[to] & p->slidingPieces;
     int i;
 
@@ -263,7 +266,7 @@ static void GainAttacks(struct Position *p, int to) {
  * a piece has been put onto this square
  */
 
-static void LooseAttacks(struct Position *p, int to) {
+static void LooseAttacks(struct Position *p, Square to) {
     BitBoard tmp = p->atkFr[to] & p->slidingPieces;
     int i;
 
@@ -277,7 +280,7 @@ static void LooseAttacks(struct Position *p, int to) {
 /*
  * Determines if a piece of type tp is a sliding piece.
  */
-static inline bool is_sliding(int tp) { return tp >= Bishop && tp <= Queen; }
+static inline bool is_sliding(Piece tp) { return tp >= Bishop && tp <= Queen; }
 
 /*
  * Make a castle move
@@ -856,7 +859,7 @@ void RecalcAttacks(struct Position *p) {
 /*
  * Generate all capturing moves to a square "square"
  */
-void GenTo(struct Position *p, int square, heap_t heap) {
+void GenTo(struct Position *p, Square square, heap_t heap) {
     BitBoard tmp = p->atkFr[square] & p->mask[p->turn][0];
 
     while (tmp) {
@@ -891,7 +894,7 @@ void GenEnpas(struct Position *p, heap_t heap) {
  * Generate all non-capturing moves from "square"
  */
 
-void GenFrom(struct Position *p, int square, heap_t heap) {
+void GenFrom(struct Position *p, Square square, heap_t heap) {
     if (TYPE(p->piece[square]) != Pawn) {
         BitBoard tmp;
 
@@ -1463,7 +1466,7 @@ char *ICS_SAN(move_t move) {
     *(x++) = 'a' + (to & 7);
     *(x++) = '1' + (to >> 3);
     if (move & M_PROMOTION_MASK) {
-         *(x++) = PieceName[PromoType(move)];
+        *(x++) = PieceName[PromoType(move)];
     }
     *x = '\0';
     return buffer;
@@ -1512,7 +1515,7 @@ move_t parse_gsan_internal(struct Position *p, char *san, heap_t heap) {
                     return move | (Queen << M_PROMOTION_OFFSET);
                 if (p == 'r' || p == 'R')
                     return move | (Rook << M_PROMOTION_OFFSET);
-                if (p == 'n' || p == 'N') 
+                if (p == 'n' || p == 'N')
                     return move | (Knight << M_PROMOTION_OFFSET);
                 if (p == 'b' || p == 'B')
                     return move | (Bishop << M_PROMOTION_OFFSET);
@@ -1535,7 +1538,7 @@ move_t ParseGSAN(struct Position *p, char *san) {
  * Parse a move string in e2e4 notation against a supplied move list
  */
 
-move_t ParseGSANList(char *san, int side, move_t *mvs, int cnt) {
+move_t ParseGSANList(char *san, Color side, move_t *mvs, int cnt) {
     int fr, to;
     int mask;
     int i;
@@ -1577,7 +1580,7 @@ move_t ParseGSANList(char *san, int side, move_t *mvs, int cnt) {
                     return move | (Queen << M_PROMOTION_OFFSET);
                 if (p == 'r' || p == 'R')
                     return move | (Rook << M_PROMOTION_OFFSET);
-                if (p == 'n' || p == 'N') 
+                if (p == 'n' || p == 'N')
                     return move | (Knight << M_PROMOTION_OFFSET);
                 if (p == 'b' || p == 'B')
                     return move | (Bishop << M_PROMOTION_OFFSET);
@@ -1755,7 +1758,7 @@ move_t ParseSAN(struct Position *p, char *san) {
  * Parse a move string (in SAN) against supplied move list
  */
 
-move_t ParseSANList(char *san, int side, move_t *mvs, int cnt, int *pmap) {
+move_t ParseSANList(char *san, Color side, move_t *mvs, int cnt, int *pmap) {
     int tp = Neutral;
     int frk = -1, ffl = -1, trk = -1, tfl = -1;
     int pro = 0;
