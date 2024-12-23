@@ -435,6 +435,7 @@ struct IntArrayLookupResult get_as_int_array(struct Node *node, char *path,
     if (target == NULL) {
         struct IntArrayLookupResult lookup_result = {.result_code = NOT_FOUND,
                                                      .elements_read = 0};
+        return lookup_result;
     }
 
     struct ListNode *list_node = target->payload;
@@ -444,6 +445,7 @@ struct IntArrayLookupResult get_as_int_array(struct Node *node, char *path,
     if (type != LIST) {
         struct IntArrayLookupResult lookup_result = {.result_code = TYPE_ERROR,
                                                      .elements_read = 0};
+        return lookup_result;
     }
 
     int index = 0;
