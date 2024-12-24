@@ -52,5 +52,5 @@ AC_CHECK_FUNCS(gettimeofday select strerror strstr setbuf gethostname ffsll)
 AX_GCC_BUILTIN(__builtin_ctzll)
 AX_GCC_BUILTIN(__builtin_popcountll)
 
-AC_CONFIG_FILES([Makefile EPD/Makefile PGN/Makefile src/Makefile doc/Makefile])
+AC_CONFIG_FILES([Makefile EPD/Makefile PGN/Makefile src/Makefile doc/Makefile include/Makefile])
 AC_OUTPUT

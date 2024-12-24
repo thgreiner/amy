@@ -1,12 +1,12 @@
 bin_PROGRAMS = Amy
 
 Amy_SOURCES = bitboard.c bookup.c commands.c dbase.c eco.c hashtable.c \
-              heap.c heap.h \
-              init.c inline.h learn.c magic.c magic.h mates.c movedata.c \
+              heap.c \
+              init.c learn.c magic.c mates.c movedata.c \
               mytb.cpp next.c pgn.c probe.c random.c recog.c score.c \
               score_config.c search.c \
               search_io.c state_machine.c swap.c time_ctl.c utils.c tree.c \
-              version.c yaml.c yaml.h test_yaml.c test_yaml.h main.c
+              version.c yaml.c test_yaml.c main.c
 
 Amy_DEPENDENCIES = bitboard.c bookup.o commands.o dbase.o eco.o \
               heap.o \
@@ -16,11 +16,11 @@ Amy_DEPENDENCIES = bitboard.c bookup.o commands.o dbase.o eco.o \
               search_io.o state_machine.o swap.o time_ctl.o utils.o tree.o \
               version.o yaml.o test_yaml.o main.o
 
+AM_CFLAGS=-I$(top_srcdir)/include
+
 pkgdata_DATA = Eco.db Book.db
 
 EXTRA_Amy_SOURCES = tbindex.cpp tbdecode.c
-
-noinst_HEADERS = amy.h tree.h
 
 EXTRA_DIST = bitboard_x86.s
 
@@ -32,17 +32,17 @@ Book.db: Eco.db ${srcdir}/../PGN/ClassicGames.pgn
 	echo "bookup ${srcdir}/../PGN/ClassicGames.pgn" | ./Amy
 
 bookup.o: ${srcdir}/bookup.c
-	$(CC) $(CFLAGS) $(DEFAULT_INCLUDES) -DBOOKDIR=\"${pkgdatadir}\" \
+	$(CC) $(CFLAGS) $(AM_CFLAGS) $(DEFAULT_INCLUDES) -DBOOKDIR=\"${pkgdatadir}\" \
         ${srcdir}/bookup.c -c -o bookup.o
 
 eco.o: ${srcdir}/eco.c
-	$(CC) $(CFLAGS) $(DEFAULT_INCLUDES) -DECODIR=\"${pkgdatadir}\" \
+	$(CC) $(CFLAGS) $(AM_CFLAGS) $(DEFAULT_INCLUDES) -DECODIR=\"${pkgdatadir}\" \
         ${srcdir}/eco.c -c -o eco.o
 
 -include Makefile.deps
 
 Makefile.deps: $(Amy_SOURCES)
-	$(CC) $(CFLAGS) $(DEFAULT_INCLUDES) $(Amy_SOURCES) -MM > Makefile.deps
+	$(CC) $(CFLAGS) $(AM_CFLAGS) $(DEFAULT_INCLUDES) $(Amy_SOURCES) -MM > Makefile.deps
 
 $(OBJS): Makefile
 
