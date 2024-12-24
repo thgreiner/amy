@@ -349,6 +349,7 @@ struct SearchData {
     struct KillerEntry *killerTable;
 #if MP
     struct HTEntry *localHashTable;
+    heap_t deferred_heap;
 #endif
 
     heap_t heap;
