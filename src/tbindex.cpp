@@ -1490,6 +1490,7 @@ class TEnumerate3 {
 static INLINE INDEX TB_FASTCALL IndEnPassant11W(square sqw, square sqb,
                                                 square sqEnP) {
     assert(sqb + 8 == sqEnP);
+    (void)sqb;
     if (sqw + 7 == sqEnP)
         // Capture to the left
         return (sqw & 7) - 1;
@@ -1503,6 +1504,7 @@ static INLINE INDEX TB_FASTCALL IndEnPassant11W(square sqw, square sqb,
 static INLINE INDEX TB_FASTCALL IndEnPassant11B(square sqw, square sqb,
                                                 square sqEnP) {
     assert(sqw - 8 == sqEnP);
+    (void)sqw;
     if (sqb - 9 == sqEnP)
         // Capture to the left
         return (sqb & 7) - 1;
@@ -1575,6 +1577,7 @@ template <int piw1> class T21 {
         sqwk = SqFindKing(psqW);
         sqw1 = SqFindOne(psqW, piw1);
         sqbk = SqFindKing(psqB);
+        (void)sqEnP;
 
         if (x_piecePawn == piw1)
             sqMask = rgsqReflectMaskY[sqwk] ^ rgsqReflectInvertMask[fInvert];
@@ -1603,6 +1606,7 @@ template <int piw1> class T21 {
         sqwk = SqFindKing(psqW);
         sqw1 = SqFindOne(psqW, piw1);
         sqbk = SqFindKing(psqB);
+        (void)sqEnP;
 
         if (x_piecePawn == piw1)
             sqMask = rgsqReflectMaskY[sqbk] ^ rgsqReflectInvertMask[fInvert];
@@ -1734,6 +1738,7 @@ template <int piw1, int piw2> class T31 {
     static INDEX TB_FASTCALL IndCalcW(square *psqW, square *psqB, square sqEnP,
                                       int fInvert) {
         square sqwk, sqw1, sqw2, sqbk, sqMask;
+        (void)sqEnP;
 
         sqwk = SqFindKing(psqW);
         if (piw1 == piw2) {
@@ -1769,6 +1774,7 @@ template <int piw1, int piw2> class T31 {
     static INDEX TB_FASTCALL IndCalcB(square *psqW, square *psqB, square sqEnP,
                                       int fInvert) {
         square sqwk, sqw1, sqw2, sqbk, sqMask;
+        (void)sqEnP;
 
         sqwk = SqFindKing(psqW);
         if (piw1 == piw2) {
@@ -2079,8 +2085,8 @@ template <int piw1, int piw2, int piw3> class T41 {
                 sqbk = reflect_xy(sqbk);
             };
         }
-        return TEnumerate3<piw1, piw2, piw3, x_piecePawn == piw3, false>::Index(
-            sqwk, sqw1, sqw2, sqw3, sqbk);
+        return TEnumerate3 < piw1, piw2, piw3, x_piecePawn == piw3,
+               false > ::Index(sqwk, sqw1, sqw2, sqw3, sqbk);
     }
 
     static INDEX TB_FASTCALL IndCalcB(square *psqW, square *psqB, square sqEnP,
@@ -3756,7 +3762,7 @@ extern "C" int FReadTableToMemory(int iTb,    // IN | Tablebase
     if (NULL == fp)
         return false;
 
-        // Find database size
+    // Find database size
 #if defined(NEW)
     cb = rgtbdDesc[iTb].m_rgcbLength[side];
     if (0 != cb) {
@@ -4099,7 +4105,7 @@ static int TB_FASTCALL TbtProbeTable(int iTb, color side, INDEX indOffset) {
                 (0 != comp_decode_and_check_crc(block, info, block->orig.size,
                                                 TB_CRC_CHECK));
 
-            // Release block
+        // Release block
 #if defined(SMP)
         Lock(lockDecode);
         *pBlock = block;

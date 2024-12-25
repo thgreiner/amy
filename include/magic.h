@@ -36,6 +36,8 @@
 #ifndef MAGIC_H
 #define MAGIC_H
 
+#include <stdint.h>
+
 extern uint16_t rook_table_offsets[64];
 extern uint64_t rook_table[102400];
 

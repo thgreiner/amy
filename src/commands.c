@@ -748,4 +748,5 @@ static void Conf(char *args) {
     }
 
     ReadScoringConfig(args);
+    RecalcAttacks(CurrentPosition);
 }

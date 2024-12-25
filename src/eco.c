@@ -38,7 +38,11 @@
 
 #define ECO_NAME "Eco.db"
 
+#ifdef ECODIR
 #define DEFAULT_ECO_NAME ECODIR "/" ECO_NAME
+#else
+#warning "ECODIR is not defined!"
+#endif
 
 void ParseEcoPgn(char *fname) {
     FILE *fin = fopen(fname, "r");
@@ -101,9 +105,11 @@ char *GetEcoCode(hash_t hkey) {
     if (EcoDB == NULL) {
         FILE *fin = fopen(ECO_NAME, "r");
 
+#ifdef DEFAULT_ECO_NAME
         if (fin == NULL) {
             fin = fopen(DEFAULT_ECO_NAME, "r");
         }
+#endif
 
         if (fin == NULL) {
             Print(0, "Can't open database: %s\n", strerror(errno));

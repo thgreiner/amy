@@ -36,12 +36,14 @@
 #include "amy.h"
 #include "tree.h"
 
-#include <math.h>
-
 #define BOOK_NAME "Book.db"
 #define LEARN_NAME "Learn.db"
 
+#ifdef BOOKDIR
 #define DEFAULT_BOOK_NAME BOOKDIR "/" BOOK_NAME
+#else
+#warning "BOOKDIR is not defined!"
+#endif
 
 #define WITH_ELO 1
 
@@ -109,9 +111,12 @@ static void OpenBookFile(tree_node_t **db) {
     static bool error_printed = false;
 
     FILE *fin = fopen(BOOK_NAME, "r");
+
+#ifdef DEFAULT_BOOK_NAME
     if (fin == NULL) {
         fin = fopen(DEFAULT_BOOK_NAME, "r");
     }
+#endif
 
     if (fin == NULL) {
         if (!error_printed) {
