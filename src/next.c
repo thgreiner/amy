@@ -112,9 +112,9 @@ void LeaveNode(struct SearchData *sd) {
     sd->current--;
     sd->killer--;
     sd->ply--;
-    #if MP
-        pop_section(sd->deferred_heap);
-    #endif
+#if MP
+    pop_section(sd->deferred_heap);
+#endif
 }
 
 static inline void grow_data_heap(struct SearchData *sd) {

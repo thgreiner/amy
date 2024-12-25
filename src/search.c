@@ -44,7 +44,7 @@
 #define REVERSE "\x1B[7m"
 #define NORMAL "\x1B[0m"
 
-#define MAX_DEFERRED 128
+#define DEFERRED_DEPTH_OFFSET 32768
 
 /*
  * We use fractional ply extensions.
@@ -941,7 +941,8 @@ static int negascout(struct SearchData *sd, int alpha, int beta,
                  * depth.
                  */
                 append_to_heap(sd->deferred_heap, move);
-                append_to_heap(sd->deferred_heap, next_depth + 50000);
+                append_to_heap(sd->deferred_heap,
+                               next_depth + DEFERRED_DEPTH_OFFSET);
             } else {
 #endif /* MP */
 
@@ -985,11 +986,14 @@ static int negascout(struct SearchData *sd, int alpha, int beta,
     /*
      * Now search all moves which were ON_EVALUATION in pass one.
      */
-    for (unsigned int deferred_index=sd->deferred_heap->current_section->start;
-        deferred_index < sd->deferred_heap->current_section->end; deferred_index += 2) {
+    for (unsigned int deferred_index =
+             sd->deferred_heap->current_section->start;
+         deferred_index < sd->deferred_heap->current_section->end;
+         deferred_index += 2) {
 
-            move = sd->deferred_heap->data[deferred_index];
-        int next_depth = sd->deferred_heap->data[deferred_index+1] - 50000;
+        move = sd->deferred_heap->data[deferred_index];
+        int next_depth =
+            sd->deferred_heap->data[deferred_index + 1] - DEFERRED_DEPTH_OFFSET;
 
         DoMove(p, move);
 

@@ -4,3 +4,4 @@ EXTRA_DIST = AmyLogo.gif Preferences
 
 format:
 	make -C src format
+	make -C include format
