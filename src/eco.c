@@ -94,6 +94,8 @@ void ParseEcoPgn(char *fname) {
     save_tree(node, fout);
     fclose(fout);
 
+    free_node(node);
+
     Print(0, "\nECO database created.\n");
 }
 

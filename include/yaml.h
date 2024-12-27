@@ -95,4 +95,6 @@ struct IntArrayLookupResult get_as_int_array(struct Node *, char *, int (*)[],
                                              int);
 void abort_if_allocation_failed(void *x);
 
+void free_yaml_node(struct Node *);
+
 #endif

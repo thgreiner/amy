@@ -189,8 +189,6 @@ static void BookupInternal(char *file_name, int verbosity) {
     while (!scanHeader(fin, &header)) {
         int result;
 
-        p = InitialPosition();
-
         if (!strcmp(header.result, "1-0"))
             result = 1;
         else if (!strcmp(header.result, "0-1"))
@@ -199,6 +197,8 @@ static void BookupInternal(char *file_name, int verbosity) {
             result = 0;
         else
             continue;
+
+        p = InitialPosition();
 
         while (!scanMove(fin, move)) {
             if (!(strlen(move) < 12)) {
@@ -209,8 +209,10 @@ static void BookupInternal(char *file_name, int verbosity) {
             move_t themove = ParseSAN(p, move);
             if (themove != M_NONE) {
                 DoMove(p, themove);
-                if (GetEcoCode(p->hkey) != 0) {
+                char *eco_code = GetEcoCode(p->hkey);
+                if (eco_code) {
                     afterEco = 0;
+                    free(eco_code);
                 } else {
                     afterEco++;
                 }

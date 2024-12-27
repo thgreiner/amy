@@ -46,6 +46,10 @@ struct TokenizerState {
     bool flow_style;
 };
 
+void free_yaml_node(struct Node *);
+void free_list_node(struct ListNode *);
+void free_tree_node(tree_node_t *tree);
+
 void abort_if_allocation_failed(void *x) {
     if (!x) {
         perror("Cannot allocate buffer");
@@ -189,14 +193,6 @@ static struct Token next_token(struct TokenizerState *state) {
     }
 }
 
-static void free_list(struct ListNode *list) {
-    if (list == NULL)
-        return;
-    struct ListNode *next = list->next;
-    free(list);
-    free_list(next);
-}
-
 struct ListNode *parse_list(struct TokenizerState *state) {
     struct ListNode *result = NULL;
     struct ListNode *last_node = NULL;
@@ -237,8 +233,8 @@ struct ListNode *parse_list(struct TokenizerState *state) {
                 continue;
             }
         }
-        printf("Unexpected token %d!\n", token.type);
-        free_list(result);
+        printf("parse_list: Unexpected token %d!\n", token.type);
+        free_list_node(result);
         return NULL;
     }
 }
@@ -251,6 +247,7 @@ struct Node *parse_dict(struct TokenizerState *state) {
         if (token.type == WORD) {
             struct Token expected_colon = next_token(state);
             if (expected_colon.type != COLON) {
+                free(token.text);
                 printf("Unexpected token %d!\n", expected_colon.type);
                 return NULL;
             }
@@ -263,17 +260,30 @@ struct Node *parse_dict(struct TokenizerState *state) {
                              &node, sizeof(struct Node));
             } else if (expected_value.type == OPENING_BRACKET) {
                 struct ListNode *list_node = parse_list(state);
+                if (list_node == NULL) {
+                    free(token.text);
+                    free_tree_node(result_dict);
+                    return NULL;
+                }
                 struct Node node = {.type = LIST, .payload = list_node};
                 result_dict =
                     add_node(result_dict, token.text, strlen(token.text) + 1,
                              &node, sizeof(struct Node));
             } else if (expected_value.type == OPENING_BRACE) {
                 struct Node *dict_node = parse_dict(state);
+                if (dict_node == NULL) {
+                    free(token.text);
+                    free_tree_node(result_dict);
+                    return NULL;
+                }
                 result_dict =
                     add_node(result_dict, token.text, strlen(token.text) + 1,
                              dict_node, sizeof(struct Node));
+                free(dict_node);
             } else {
                 printf("Unexpected token %d!\n", expected_value.type);
+                free(token.text);
+                free_tree_node(result_dict);
                 return NULL;
             }
 
@@ -539,4 +549,43 @@ void dump_node(struct Node *node) {
     } else {
         printf("Unknown node type: %d\n", node->type);
     }
+}
+
+void free_yaml_node(struct Node *);
+
+void free_list_node(struct ListNode *list_node) {
+    if (list_node == NULL)
+        return;
+    free_yaml_node(list_node->value);
+    struct ListNode *next = list_node->next;
+    free(list_node);
+    free_list_node(next);
+}
+
+void free_tree_node(tree_node_t *tree) {
+    if (tree == NULL) {
+        return;
+    }
+    free_tree_node(tree->left_child);
+    free_tree_node(tree->right_child);
+
+    free_yaml_node(tree->value_data);
+    free(tree->key_data);
+
+    free(tree);
+}
+
+void free_yaml_node(struct Node *node) {
+    if (node->type == DICT) {
+        tree_node_t *tree = node->payload;
+        free_tree_node(tree);
+    } else if (node->type == SCALAR) {
+        free(node->payload);
+    } else if (node->type == LIST) {
+        struct ListNode *list = node->payload;
+        free_list_node(list);
+    } else {
+        printf("Unknown node type: %d\n", node->type);
+    }
+    free(node);
 }

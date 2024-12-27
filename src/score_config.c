@@ -41,6 +41,11 @@ void ReadScoringConfig(char *file_name) {
         return;
 
     struct Node *node = parse_yaml(buffer);
+    free(buffer);
+
+    if (node == NULL) {
+        return;
+    }
 
     struct IntLookupResult result;
 
@@ -68,7 +73,7 @@ void ReadScoringConfig(char *file_name) {
         Value[Queen] = result.result;
     }
 
-    free(buffer);
+    free_yaml_node(node);
 }
 
 static char *read_file(char *file_name) {
