@@ -73,6 +73,22 @@ void ReadScoringConfig(char *file_name) {
         Value[Queen] = result.result;
     }
 
+    struct IntArrayLookupResult array_result;
+    int piece_square_table[64];
+
+    array_result = get_as_int_array(node, "knight.piece_square_table",
+                                    &piece_square_table, 64);
+
+    if (array_result.result_code == OK) {
+        Print(0, "Knight piece_square_table: %d\n", array_result.elements_read);
+        for (unsigned int i = 0; i < array_result.elements_read; i++) {
+            Print(0, "%5d, ", piece_square_table[i]);
+            if (i % 8 == 7) {
+                Print(0, "\n");
+            }
+        }
+    }
+
     free_yaml_node(node);
 }
 
