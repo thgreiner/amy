@@ -34,6 +34,7 @@
  */
 
 #include "amy.h"
+#include "heap.h"
 
 #define NULLMOVE 1
 #define FUTILITY 1
