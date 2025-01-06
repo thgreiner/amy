@@ -591,7 +591,7 @@ static void Benchmark(char *args) {
     (void)args;
     int move = g1 | (f3 << 6);
     int i;
-    const int cycles = 1000000;
+    const int cycles = 10000000;
     int start, end;
     double elapsed;
     struct Position *p;
@@ -748,4 +748,5 @@ static void Conf(char *args) {
     }
 
     ReadScoringConfig(args);
+    RecalcAttacks(CurrentPosition);
 }

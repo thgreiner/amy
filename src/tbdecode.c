@@ -806,6 +806,7 @@ static int comp_open_file(decode_info **res, FILE *fd, int check_crc) {
 static int comp_init_block(decode_block *block, int block_size, uchar *orig) {
     if (block == 0)
         return RET(COMP_ERR_PARAM);
+    (void)block_size;
     block->orig.first = orig;
     block->comp.first = (uchar *)(block + 1);
     block->b.ptr = 0;

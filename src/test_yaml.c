@@ -56,6 +56,10 @@ static void test_simple_dict(void) {
     assert(value->type == SCALAR);
 
     assert(!strcmp("value", value->payload));
+
+    free(value);
+
+    free_yaml_node(result);
 }
 
 static void test_nested_dict(void) {
@@ -86,6 +90,10 @@ static void test_nested_dict(void) {
 
     assert(value2->type == SCALAR);
     assert(!strcmp("value", value2->payload));
+
+    free(value);
+    free(value2);
+    free_yaml_node(result);
 }
 
 static void test_get_as_string(void) {
@@ -98,6 +106,8 @@ static void test_get_as_string(void) {
     assert(lookup_result.result_code == OK);
     assert(lookup_result.result != NULL);
     assert(!strcmp(lookup_result.result, "value"));
+
+    free_yaml_node(result);
 }
 
 static void test_get_as_string_not_found(void) {
@@ -108,6 +118,8 @@ static void test_get_as_string_not_found(void) {
 
     struct StringLookupResult lookupResult = get_as_string(result, "other_key");
     assert(lookupResult.result_code == NOT_FOUND);
+
+    free_yaml_node(result);
 }
 
 static void test_get_as_string_nested(void) {
@@ -122,6 +134,8 @@ static void test_get_as_string_nested(void) {
     assert(lookup_result.result_code == OK);
     assert(lookup_result.result != NULL);
     assert(!strcmp(lookup_result.result, "value"));
+
+    free_yaml_node(result);
 }
 
 static void test_get_as_int(void) {
@@ -133,6 +147,8 @@ static void test_get_as_int(void) {
     struct IntLookupResult lookup_result = get_as_int(result, "key");
     assert(lookup_result.result_code == OK);
     assert(lookup_result.result == 500);
+
+    free_yaml_node(result);
 }
 
 static void test_get_as_int_format_error(void) {
@@ -143,6 +159,8 @@ static void test_get_as_int_format_error(void) {
 
     struct IntLookupResult lookup_result = get_as_int(result, "key");
     assert(lookup_result.result_code == FORMAT_ERROR);
+
+    free_yaml_node(result);
 }
 
 static void test_get_as_list(void) {
@@ -165,6 +183,8 @@ static void test_get_as_list(void) {
 
     next = next->next;
     assert(next == NULL);
+
+    free_yaml_node(result);
 }
 
 static void test_get_as_int_array(void) {
@@ -183,6 +203,8 @@ static void test_get_as_int_array(void) {
     assert(buf[0] == 1);
     assert(buf[1] == 0);
     assert(buf[2] == 2);
+
+    free_yaml_node(node);
 }
 
 static void test_get_as_int_array_short(void) {
@@ -200,6 +222,8 @@ static void test_get_as_int_array_short(void) {
     assert(lookup_result.elements_read == 2);
     assert(buf[0] == 1);
     assert(buf[1] == -1);
+
+    free_yaml_node(node);
 }
 
 static void test_get_as_list_flow_style(void) {
@@ -227,6 +251,8 @@ static void test_get_as_list_flow_style(void) {
 
     next = next->next;
     assert(next == NULL);
+
+    free_yaml_node(result);
 }
 
 static void test_get_as_int_array_illegal_input(void) {
@@ -241,6 +267,14 @@ static void test_get_as_int_array_illegal_input(void) {
         get_as_int_array(node, "key", &buf, 3);
 
     assert(lookup_result.result_code == FORMAT_ERROR);
+
+    free_yaml_node(node);
+}
+
+static void test_malformed_input(void) {
+    char *payload = "item1:\n  key: [1, a, 2\nitem2: scalar\n";
+    struct Node *node = parse_yaml(payload);
+    assert(node == NULL);
 }
 
 void test_all_yaml(void) {
@@ -256,4 +290,5 @@ void test_all_yaml(void) {
     test_get_as_int_array();
     test_get_as_int_array_short();
     test_get_as_int_array_illegal_input();
+    test_malformed_input();
 }

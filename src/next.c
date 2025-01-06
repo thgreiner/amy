@@ -70,6 +70,7 @@ struct SearchData *CreateSearchData(struct Position *p) {
         Print(0, "Cannot allocate thread-local hashtable.\n");
         exit(1);
     }
+    sd->deferred_heap = allocate_heap();
 #endif
 
     sd->ply = 0;
@@ -85,6 +86,7 @@ void FreeSearchData(struct SearchData *sd) {
 
 #if MP
     free(sd->localHashTable);
+    free_heap(sd->deferred_heap);
 #endif
 
     free(sd);
@@ -100,6 +102,9 @@ void EnterNode(struct SearchData *sd) {
     sd->killer++;
 
     push_section(sd->heap);
+#if MP
+    push_section(sd->deferred_heap);
+#endif
 }
 
 void LeaveNode(struct SearchData *sd) {
@@ -107,6 +112,9 @@ void LeaveNode(struct SearchData *sd) {
     sd->current--;
     sd->killer--;
     sd->ply--;
+#if MP
+    pop_section(sd->deferred_heap);
+#endif
 }
 
 static inline void grow_data_heap(struct SearchData *sd) {

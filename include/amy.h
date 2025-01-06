@@ -76,6 +76,9 @@
 #include <conio.h>
 #include <io.h>
 #include <windows.h>
+#define PATH_SEPARATOR "\\"
+#else
+#define PATH_SEPARATOR "/"
 #endif
 
 #if HAVE_UNISTD_H
@@ -349,6 +352,7 @@ struct SearchData {
     struct KillerEntry *killerTable;
 #if MP
     struct HTEntry *localHashTable;
+    heap_t deferred_heap;
 #endif
 
     heap_t heap;

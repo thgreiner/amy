@@ -208,6 +208,7 @@ static void AtkClr(struct Position *p, Square square) {
 static void GainAttack(struct Position *p, const Square from, const Square to) {
     signed char *nsq = NextSQ[from];
     int sq = to;
+    const BitBoard all = p->mask[0][0] | p->mask[1][0];
 
     for (;;) {
         sq = nsq[sq];
@@ -217,7 +218,7 @@ static void GainAttack(struct Position *p, const Square from, const Square to) {
         SetBit(p->atkTo[from], sq);
         SetBit(p->atkFr[sq], from);
 
-        if (p->piece[sq] != Neutral)
+        if (TstBit(all, sq))
             break;
     }
 }
@@ -231,6 +232,7 @@ static void LooseAttack(struct Position *p, const Square from,
                         const Square to) {
     signed char *nsq = NextSQ[from];
     int sq = to;
+    const BitBoard all = p->mask[0][0] | p->mask[1][0];
 
     for (;;) {
         sq = nsq[sq];
@@ -240,7 +242,7 @@ static void LooseAttack(struct Position *p, const Square from,
         ClrBit(p->atkTo[from], sq);
         ClrBit(p->atkFr[sq], from);
 
-        if (p->piece[sq] != Neutral)
+        if (TstBit(all, sq))
             break;
     }
 }

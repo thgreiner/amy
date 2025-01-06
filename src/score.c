@@ -100,24 +100,26 @@ static const int PawnMajority = 100;
 static const int CoveredPassedPawn6th = 200;
 static const int CoveredPassedPawn7th = 600;
 
-static const int PassedPawn[] = {0, 32, 64, 128, 256, 512, 1024, 0};
+static const int16_t PassedPawn[] = {0, 32, 64, 128, 256, 512, 1024, 0};
 
-static const int PassedPawnBlocked[] = {0, 16, 48, 96, 192, 384, 768, 0};
+static const int16_t PassedPawnBlocked[] = {0, 16, 48, 96, 192, 384, 768, 0};
 
-static const int PassedPawnConnected[] = {0, 4, 12, 24, 48, 96, 192, 0};
+static const int16_t PassedPawnConnected[] = {0, 4, 12, 24, 48, 96, 192, 0};
 
-static const int IsolatedPawn[] = {-70, -80, -90, -100, -100, -90, -80, -70};
+static const int16_t IsolatedPawn[] = {-70,  -80, -90, -100,
+                                       -100, -90, -80, -70};
 
-static const int PawnAdvanceOpening[] = {-10, -10, 5, 10, 10, -20, -50, -50};
+static const int16_t PawnAdvanceOpening[] = {-10, -10, 5,   10,
+                                             10,  -20, -50, -50};
 
-static const int PawnAdvanceMiddlegame[] = {0, 0, 10, 15, 15, 10, 0, 0};
+static const int16_t PawnAdvanceMiddlegame[] = {0, 0, 10, 15, 15, 10, 0, 0};
 
-static const int PawnAdvanceEndgame[] = {10, 10, 10, 10, 10, 10, 10, 10};
+static const int16_t PawnAdvanceEndgame[] = {10, 10, 10, 10, 10, 10, 10, 10};
 
-static int WPawnPos[64];
-static int BPawnPos[64];
+static int16_t WPawnPos[64];
+static int16_t BPawnPos[64];
 
-static const int DistantPassedPawn[] = {
+static const int16_t DistantPassedPawn[] = {
     500, 300, 300, 300, 200, 200, 150, 150, 150, 100, 100, 50,
     50,  50,  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
     0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0};
@@ -129,18 +131,29 @@ static const int DistantPassedPawn[] = {
 static const int KnightKingProximity = 7;
 static const int KnightBlocksCPawn = -100;
 
-static const int KnightPos[] = {
-    -160, -160, -160, -160, -160, -160, -160, -160, -160, -30,  60,   60,   60,
-    60,   -30,  -160, -160, 60,   130,  130,  130,  130,  60,   -160, -160, 130,
-    190,  190,  190,  190,  130,  -160, -130, 130,  190,  250,  250,  190,  130,
-    -130, -130, 190,  250,  250,  250,  250,  190,  -130, -130, 90,   160,  160,
-    160,  160,  90,   -130, -130, -130, -130, -130, -130, -130, -130, -130};
+// clang-format off
+static const int16_t KnightPos[64] = {
+    -160, -160, -160, -160, -160, -160, -160, -160,
+    -160,  -30,   60,   60,   60,   60,  -30, -160,
+    -160,   60,  130,  130,  130,  130,   60, -160,
+    -160,  130,  190,  190,  190,  190,  130, -160,
+    -130,  130,  190,  250,  250,  190,  130, -130,
+    -130,  190,  250,  250,  250,  250,  190, -130,
+    -130,   90,  160,  160,  160,  160,  90,  -130,
+    -130, -130, -130, -130, -130, -130, -130, -130
+};
 
-static const int KnightOutpost[] = {
-    0, 0, 0,  0,   0,   0,  0, 0, 0, 0, 0,  0,   0,   0,  0, 0,
-    0, 0, 0,  0,   0,   0,  0, 0, 0, 0, 0,  40,  40,  0,  0, 0,
-    0, 0, 80, 100, 100, 80, 0, 0, 0, 0, 80, 120, 120, 80, 0, 0,
-    0, 0, 40, 80,  80,  40, 0, 0, 0, 0, 0,  0,   0,   0,  0, 0};
+static const int16_t KnightOutpost[64] = {
+    0, 0,  0,   0,   0,  0, 0, 0,
+    0, 0,  0,   0,   0,  0, 0, 0,
+    0, 0,  0,   0,   0,  0, 0, 0,
+    0, 0,  0,  40,  40,  0, 0, 0,
+    0, 0, 80, 100, 100, 80, 0, 0,
+    0, 0, 80, 120, 120, 80, 0, 0,
+    0, 0, 40,  80,  80, 40, 0, 0,
+    0, 0,  0,   0,   0,  0, 0, 0
+};
+// clang-format on
 
 /**
  * Bishop scoring parameters
@@ -149,18 +162,25 @@ static const int KnightOutpost[] = {
 /*
  * The value of the bishop pair depends on the number of white pawns.
  */
-static const int BishopPair[] = {200, 200, 200, 200, 200, 200, 200, 150, 100};
+static const int16_t BishopPair[] = {200, 200, 200, 200, 200,
+                                     200, 200, 150, 100};
 
 static const int BishopMobility = 25;
 static const int BishopKingProximity = 7;
 static const int BishopTrapped = -1500;
 
-static const int BishopPos[] = {
-    60,  60,  60,  60,  60,  60,  60,  60,  60,  250, 60,  60,  60,
-    60,  250, 60,  60,  160, 160, 160, 160, 160, 160, 60,  160, 250,
-    280, 340, 340, 280, 250, 160, 160, 250, 280, 340, 340, 280, 250,
-    160, 160, 250, 280, 280, 280, 280, 250, 160, 160, 250, 250, 250,
-    250, 250, 250, 160, 160, 160, 160, 160, 160, 160, 160, 160};
+// clang-format off
+static const int16_t BishopPos[64] = {
+     60,  60,  60,  60,  60,  60,  60,  60,
+     60, 250,  60,  60,  60,  60, 250,  60,
+     60, 160, 160, 160, 160, 160, 160,  60,
+    160, 250, 280, 340, 340, 280, 250, 160,
+    160, 250, 280, 340, 340, 280, 250, 160,
+    160, 250, 280, 280, 280, 280, 250, 160,
+    160, 250, 250, 250, 250, 250, 250, 160,
+    160, 160, 160, 160, 160, 160, 160, 160
+};
+// clang-format on
 
 /**
  * Rook scoring parameters
@@ -178,12 +198,18 @@ static const int RookBehindPasser = 12; /* will be scaled by phase */
 
 static const int RookOn7thRank = 300;
 
-static const int RookPos[] = {
-    0,   90,  130, 220, 220, 130, 90,  0,   0,   0,   0,   0,   0,
-    0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
-    0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
-    0,   130, 130, 130, 130, 130, 130, 130, 130, 200, 200, 200, 200,
-    200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200};
+// clang-format off
+static const int16_t RookPos[64] = {
+      0,  90, 130, 220, 220, 130,  90,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,
+    130, 130, 130, 130, 130, 130, 130, 130,
+    200, 200, 200, 200, 200, 200, 200, 200,
+    200, 200, 200, 200, 200, 200, 200, 200
+};
+// clang-format on
 
 /**
  * Queen scoring parameters
@@ -191,18 +217,29 @@ static const int RookPos[] = {
 
 static const int QueenKingProximity = 8;
 
-static const int QueenPos[] = {
-    0, 0,  0,  0,  0,  0,  0,  0, 0, 30, 30, 30, 30, 30, 30, 0,
-    0, 30, 60, 60, 60, 60, 30, 0, 0, 30, 60, 90, 90, 60, 30, 0,
-    0, 30, 60, 90, 90, 60, 30, 0, 0, 30, 60, 60, 60, 60, 30, 0,
-    0, 30, 30, 60, 60, 30, 30, 0, 0, 0,  0,  0,  0,  0,  0,  0};
-
-static const int QueenPosDevelopment[] = {
-    -200, -200, 0, 0, 0, 0, -200, -200, -200, -200, 30, 30, 30, 0, -200, -200,
-    -200, -200, 0, 0, 0, 0, -200, -200, -200, -200, 0,  0,  0,  0, -200, -200,
-    -200, -200, 0, 0, 0, 0, -200, -200, -200, -200, 0,  0,  0,  0, -200, -200,
-    -200, -200, 0, 0, 0, 0, -200, -200, -200, -200, 0,  0,  0,  0, -200, -200,
+// clang-format off
+static const int16_t QueenPos[64] = {
+    0, 0,  0,  0,  0,  0,  0,  0,
+    0, 30, 30, 30, 30, 30, 30, 0,
+    0, 30, 60, 60, 60, 60, 30, 0,
+    0, 30, 60, 90, 90, 60, 30, 0,
+    0, 30, 60, 90, 90, 60, 30, 0,
+    0, 30, 60, 60, 60, 60, 30, 0,
+    0, 30, 30, 60, 60, 30, 30, 0,
+    0, 0,  0,  0,  0,  0,  0,  0
 };
+
+static const int16_t QueenPosDevelopment[64] = {
+    -200, -200,  0,  0,  0, 0, -200, -200,
+    -200, -200, 30, 30, 30, 0, -200, -200,
+    -200, -200,  0,  0,  0, 0, -200, -200,
+    -200, -200,  0,  0,  0, 0, -200, -200,
+    -200, -200,  0,  0,  0, 0, -200, -200,
+    -200, -200,  0,  0,  0, 0, -200, -200,
+    -200, -200,  0,  0,  0, 0, -200, -200,
+    -200, -200,  0,  0,  0, 0, -200, -200,
+};
+// clang-format on
 
 /**
  * King scoring parameters
@@ -211,7 +248,7 @@ static const int QueenPosDevelopment[] = {
 static const int KingBlocksRook = -300;
 
 // clang-format off
-static const int KingPosMiddlegame[64] = {
+static const int16_t KingPosMiddlegame[64] = {
     -100, 0,    -200, -300, -300, -200,    0, -100,
     -100, -100, -200, -300, -300, -200, -100, -100,
     -300, -300, -300, -300, -300, -300, -300, -300,
@@ -221,7 +258,7 @@ static const int KingPosMiddlegame[64] = {
     -700, -700, -700, -700, -700, -700, -700, -700,
     -800, -800, -800, -800, -800, -800, -800, -800};
 
-static const int KingPosEndgame[64] = {
+static const int16_t KingPosEndgame[64] = {
     -300, -300, -300, -300, -300, -300, -300, -300,
     -300, -200, -100, -100, -100, -100, -200, -300,
     -300, -100,    0,  100,  100,    0, -100, -300,
@@ -231,7 +268,7 @@ static const int KingPosEndgame[64] = {
     -300, -100, -100, -100, -100, -100, -100, -300,
     -300, -300, -300, -300, -300, -300, -300, -300};
 
-static const int KingPosEndgameQueenSide[64] = {
+static const int16_t KingPosEndgameQueenSide[64] = {
     -300, -300, -300, -300, -300, -400, -500, -600,
     -100, -100, -100, -100, -100, -200, -300, -600,
        0,  100,  100,    0, -100, -200, -300, -600,
@@ -241,7 +278,7 @@ static const int KingPosEndgameQueenSide[64] = {
     -100, -100, -100, -100, -100, -200, -300, -600,
     -300, -300, -300, -300, -300, -400, -300, -600};
 
-static const int KingPosEndgameKingSide[64] = {
+static const int16_t KingPosEndgameKingSide[64] = {
     -600, -500, -400, -300, -300, -300, -300, -300,
     -600, -300, -200, -100, -100, -100, -100, -100,
     -600, -300, -200, -100,    0,  100, 100,     0,
@@ -250,22 +287,21 @@ static const int KingPosEndgameKingSide[64] = {
     -600, -300, -200, -100,  200,  300,  300,  200,
     -600, -300, -200, -100, -100, -100, -100, -100,
     -600, -500, -400, -300, -300, -300, -300, -300};
-
 // clang-format on
 
-static const int ScaleHalfOpenFilesMine[] = {0, 4, 7, 9, 11};
+static const int16_t ScaleHalfOpenFilesMine[] = {0, 4, 7, 9, 11};
 
-static const int ScaleHalfOpenFilesYours[] = {0, 2, 3, 4, 5};
+static const int16_t ScaleHalfOpenFilesYours[] = {0, 2, 3, 4, 5};
 
-static const int ScaleOpenFiles[] = {0, 8, 13, 16, 19};
+static const int16_t ScaleOpenFiles[] = {0, 8, 13, 16, 19};
 
-static const int ScaleUp[] = {0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-                              0,  0,  0,  1,  2,  4,  6,  8,  10, 12, 14,
-                              15, 16, 16, 16, 16, 16, 16, 16, 16, 16};
+static const int16_t ScaleUp[] = {0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+                                  0,  0,  0,  1,  2,  4,  6,  8,  10, 12, 14,
+                                  15, 16, 16, 16, 16, 16, 16, 16, 16, 16};
 
-static const int ScaleDown[] = {16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16,
-                                16, 16, 16, 15, 14, 12, 10, 8,  6,  4,  2,
-                                1,  0,  0,  0,  0,  0,  0,  0,  0,  0};
+static const int16_t ScaleDown[] = {16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16,
+                                    16, 16, 16, 15, 14, 12, 10, 8,  6,  4,  2,
+                                    1,  0,  0,  0,  0,  0,  0,  0,  0,  0};
 
 /*
  * MaxPos is the maximum difference between the material balance and
@@ -1130,7 +1166,7 @@ static int ScorePositionForWhite(const struct Position *p) {
 
     int wphase;
     int bphase;
-    const int *kingPST;
+    const int16_t *kingPST;
     int fastscore;
     int diff;
 

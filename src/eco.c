@@ -38,10 +38,14 @@
 
 #define ECO_NAME "Eco.db"
 
-#define DEFAULT_ECO_NAME ECODIR "/" ECO_NAME
+#ifdef ECODIR
+#define DEFAULT_ECO_NAME ECODIR PATH_SEPARATOR ECO_NAME
+#else
+#warning "ECODIR is not defined!"
+#endif
 
 void ParseEcoPgn(char *fname) {
-    FILE *fin = fopen(fname, "r");
+    FILE *fin = fopen(fname, "rb");
     char buffer[1024];
     char name[128];
 
@@ -80,7 +84,7 @@ void ParseEcoPgn(char *fname) {
 
     fclose(fin);
 
-    FILE *fout = fopen(ECO_NAME, "w");
+    FILE *fout = fopen(ECO_NAME, "wb");
     if (fout == NULL) {
         Print(0, "\nCannot save ECO database to %s: %s\n", ECO_NAME,
               strerror(errno));
@@ -89,6 +93,8 @@ void ParseEcoPgn(char *fname) {
 
     save_tree(node, fout);
     fclose(fout);
+
+    free_node(node);
 
     Print(0, "\nECO database created.\n");
 }
@@ -99,11 +105,13 @@ char *GetEcoCode(hash_t hkey) {
     char *retval = NULL;
 
     if (EcoDB == NULL) {
-        FILE *fin = fopen(ECO_NAME, "r");
+        FILE *fin = fopen(ECO_NAME, "rb");
 
+#ifdef DEFAULT_ECO_NAME
         if (fin == NULL) {
-            fin = fopen(DEFAULT_ECO_NAME, "r");
+            fin = fopen(DEFAULT_ECO_NAME, "rb");
         }
+#endif
 
         if (fin == NULL) {
             Print(0, "Can't open database: %s\n", strerror(errno));
