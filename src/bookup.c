@@ -40,7 +40,7 @@
 #define LEARN_NAME "Learn.db"
 
 #ifdef BOOKDIR
-#define DEFAULT_BOOK_NAME BOOKDIR "/" BOOK_NAME
+#define DEFAULT_BOOK_NAME BOOKDIR PATH_SEPARATOR BOOK_NAME
 #else
 #warning "BOOKDIR is not defined!"
 #endif
@@ -110,11 +110,11 @@ static tree_node_t *PutBookEntry(tree_node_t *database, hash_t hk, int result,
 static void OpenBookFile(tree_node_t **db) {
     static bool error_printed = false;
 
-    FILE *fin = fopen(BOOK_NAME, "r");
+    FILE *fin = fopen(BOOK_NAME, "rb");
 
 #ifdef DEFAULT_BOOK_NAME
     if (fin == NULL) {
-        fin = fopen(DEFAULT_BOOK_NAME, "r");
+        fin = fopen(DEFAULT_BOOK_NAME, "rb");
     }
 #endif
 
@@ -147,7 +147,7 @@ static struct LearnEntry *GetLearnEntry(hash_t hk) {
     struct LearnEntry *retval = NULL;
 
     if (LearnDB == NULL) {
-        FILE *fin = fopen(LEARN_NAME, "r");
+        FILE *fin = fopen(LEARN_NAME, "rb");
         if (fin != NULL) {
             LearnDB = load_tree(fin);
             fclose(fin);
@@ -176,7 +176,7 @@ static void BookupInternal(char *file_name, int verbosity) {
     struct PGNHeader header;
     char move[12];
 
-    fin = fopen(file_name, "r");
+    fin = fopen(file_name, "rb");
     if (fin == NULL) {
         Print(0, "Can't open bookfile.\n");
         return;
@@ -245,7 +245,7 @@ static void BookupInternal(char *file_name, int verbosity) {
     Print(verbosity, "(%d)\n", lines);
     fclose(fin);
 
-    FILE *fout = fopen(BOOK_NAME, "w");
+    FILE *fout = fopen(BOOK_NAME, "wb");
     if (fout == NULL) {
         Print(0, "Can't write database: %s\n", strerror(errno));
         return;
@@ -456,7 +456,7 @@ void QueryBook(struct Position *p) {
 
 static void PutLearnEntry(hash_t hk, int learn_value, int flags) {
     if (LearnDB == NULL) {
-        FILE *fin = fopen(LEARN_NAME, "r");
+        FILE *fin = fopen(LEARN_NAME, "rb");
         if (fin != NULL) {
             LearnDB = load_tree(fin);
             fclose(fin);
@@ -473,7 +473,7 @@ static void PutLearnEntry(hash_t hk, int learn_value, int flags) {
 }
 
 void CreateLearnDB(char *file_name) {
-    FILE *fin = fopen(file_name, "r");
+    FILE *fin = fopen(file_name, "rb");
     char buffer[1024];
     struct Position *p;
 
@@ -527,7 +527,7 @@ void CreateLearnDB(char *file_name) {
     fclose(fin);
 
     if (LearnDB != NULL) {
-        FILE *fout = fopen(LEARN_NAME, "w");
+        FILE *fout = fopen(LEARN_NAME, "wb");
         if (fout != NULL) {
             save_tree(LearnDB, fout);
             fclose(fout);
@@ -572,7 +572,7 @@ void FlattenBook(unsigned int threshold) {
 
         PrintNoLog(0, "Read %d entries, wrote %d entries\n", read, written);
 
-        FILE *fout = fopen("Book2.db", "w");
+        FILE *fout = fopen("Book2.db", "wb");
         if (fout != NULL) {
             save_tree(flattened, fout);
             fclose(fout);
