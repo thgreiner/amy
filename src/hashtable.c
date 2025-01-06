@@ -2,7 +2,7 @@
 
     Amy - a chess playing program
 
-    Copyright (c) 2002-2024, Thorsten Greiner
+    Copyright (c) 2002-2025, Thorsten Greiner
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -34,10 +34,6 @@
  */
 
 #include "amy.h"
-#include <inttypes.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 #define HT_AGE (0x3f)
 #define HT_NCPU ((0x3f) << 6)

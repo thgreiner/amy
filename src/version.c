@@ -2,7 +2,7 @@
 
     Amy - a chess playing program
 
-    Copyright (c) 2002-2024, Thorsten Greiner
+    Copyright (c) 2002-2025, Thorsten Greiner
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -36,7 +36,7 @@
 #include "amy.h"
 
 static char CopyrightNotice[] =
-    "    Amy version " VERSION ", Copyright (c) 2002-2024, Thorsten Greiner\n"
+    "    Amy version " VERSION ", Copyright (c) 2002-2025, Thorsten Greiner\n"
     "    Amy comes with ABSOLUTELY NO WARRANTY; for details type 'warranty'.\n"
     "    This is free software, and you are welcome to redistribute it\n"
     "    under certain conditions; type 'distribution' for details.\n\n"
