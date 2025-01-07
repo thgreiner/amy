@@ -2537,13 +2537,13 @@ bool IsPassed(const struct Position *p, int sq, int side) {
  */
 
 struct Position *CreatePositionFromEPD(char *epd) {
-    struct Position *p = calloc(sizeof(struct Position), 1);
+    struct Position *p = calloc(1, sizeof(struct Position));
     if (!p) {
         Print(0, "Cannot allocate Position.\n");
         exit(1);
     }
     p->gameLogSize = INITIAL_GAME_LOG_SIZE;
-    p->gameLog = calloc(sizeof(struct GameLog), p->gameLogSize);
+    p->gameLog = calloc(p->gameLogSize, sizeof(struct GameLog));
     if (!p->gameLog) {
         Print(0, "Cannot allocate GameLog.\n");
         exit(1);
@@ -2573,7 +2573,7 @@ struct Position *InitialPosition(void) {
 }
 
 struct Position *ClonePosition(struct Position *src) {
-    struct Position *p = calloc(sizeof(struct Position), 1);
+    struct Position *p = calloc(1, sizeof(struct Position));
     if (!p) {
         Print(0, "Cannot allocated Position.\n");
         exit(1);
@@ -2581,7 +2581,7 @@ struct Position *ClonePosition(struct Position *src) {
     memcpy(p, src, sizeof(struct Position));
 
     p->gameLogSize = src->gameLogSize;
-    p->gameLog = calloc(sizeof(struct GameLog), p->gameLogSize);
+    p->gameLog = calloc(p->gameLogSize, sizeof(struct GameLog));
     if (!p->gameLog) {
         Print(0, "Cannot allocate GameLog.\n");
         exit(1);

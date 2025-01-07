@@ -353,8 +353,8 @@ static tree_node_t *load_tree_internal(FILE *fin) {
     tree_node_t *node = NULL;
     size_t key_len;
     size_t value_len;
-    char *key_data = malloc(0);
-    char *value_data = malloc(9);
+    char *key_data = malloc(8);
+    char *value_data = malloc(256);
 
     for (;;) {
         key_len = read_size(fin);

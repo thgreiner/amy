@@ -37,7 +37,7 @@
 #include "heap.h"
 
 struct SearchData *CreateSearchData(struct Position *p) {
-    struct SearchData *sd = calloc(sizeof(struct SearchData), 1);
+    struct SearchData *sd = calloc(1, sizeof(struct SearchData));
     if (!sd) {
         Print(0, "Cannot allocate SearchData.\n");
         exit(1);
@@ -45,14 +45,14 @@ struct SearchData *CreateSearchData(struct Position *p) {
 
     sd->position = p;
 
-    sd->statusTable = calloc(sizeof(struct SearchStatus), MAX_TREE_SIZE);
+    sd->statusTable = calloc(MAX_TREE_SIZE, sizeof(struct SearchStatus));
     if (!sd->statusTable) {
         Print(0, "Cannot allocate SearchStatus.\n");
         exit(1);
     }
     sd->current = sd->statusTable;
 
-    sd->killerTable = calloc(sizeof(struct KillerEntry), MAX_TREE_SIZE);
+    sd->killerTable = calloc(MAX_TREE_SIZE, sizeof(struct KillerEntry));
     if (!sd->killerTable) {
         Print(0, "Cannot allocate KillerEntry.\n");
         exit(1);
