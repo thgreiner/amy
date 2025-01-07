@@ -41,7 +41,7 @@
  * Debugging stuff
  */
 
-/* #define DEBUG */
+// #define DEBUG
 #ifdef DEBUG
 
 enum {
@@ -723,6 +723,9 @@ static int ScorePassedPawns(const struct Position *p, int wphase, int bphase,
     pcs = pawnFacts->pf_WhitePassers;
 
     while (pcs) {
+#ifdef DEBUG
+        int score_at_start = score;
+#endif
         int sq = FindSetBit(pcs);
         int rank = sq >> 3;
         int file = sq & 7;
@@ -737,6 +740,13 @@ static int ScorePassedPawns(const struct Position *p, int wphase, int bphase,
             score += ScaleDown[wphase] * PassedPawnBlocked[rank] / 16;
         }
 
+#ifdef DEBUG
+        if (DebugWhat & DebugPassedPawns) {
+            int increment = score - score_at_start;
+            Print(0, "score increment from %c%c: %d\n", SQUARE(sq), increment);
+        }
+#endif
+
         /* Score covered passed pawns. */
 
         if (p->atkFr[sq] & p->mask[White][Pawn]) {
@@ -748,13 +758,31 @@ static int ScorePassedPawns(const struct Position *p, int wphase, int bphase,
             }
         }
 
-        if (ConnectedMask[sq] & pawnFacts->pf_WhitePassers) {
-            int rank2 =
-                FindSetBit(ConnectedMask[sq] & pawnFacts->pf_WhitePassers) >> 3;
-
-            score +=
-                ScaleDown[wphase] * PassedPawnConnected[MAX(rank, rank2)] / 16;
+#ifdef DEBUG
+        if (DebugWhat & DebugPassedPawns) {
+            int increment = score - score_at_start;
+            Print(0, "score increment from %c%c: %d\n", SQUARE(sq), increment);
         }
+#endif
+
+        if (ConnectedMask[sq] & pawnFacts->pf_WhitePassers) {
+            int max_rank = rank;
+            BitBoard tmp2 = ConnectedMask[sq] & pawnFacts->pf_WhitePassers;
+            while (tmp2) {
+                int sq2 = FindSetBit(tmp2);
+                tmp2 &= tmp2 - 1;
+                int rank2 = sq2 >> 3;
+                max_rank = MAX(rank2, max_rank);
+            }
+            score += ScaleDown[wphase] * PassedPawnConnected[max_rank] / 16;
+        }
+
+#ifdef DEBUG
+        if (DebugWhat & DebugPassedPawns) {
+            int increment = score - score_at_start;
+            Print(0, "score increment from %c%c: %d\n", SQUARE(sq), increment);
+        }
+#endif
 
         /* Check for rook attacks 'from behind' */
 
@@ -765,6 +793,13 @@ static int ScorePassedPawns(const struct Position *p, int wphase, int bphase,
         } else if (tmp & p->mask[Black][Rook]) {
             score -= ScaleDown[wphase] * RookBehindPasser;
         }
+
+#ifdef DEBUG
+        if (DebugWhat & DebugPassedPawns) {
+            int increment = score - score_at_start;
+            Print(0, "score increment from %c%c: %d\n", SQUARE(sq), increment);
+        }
+#endif
 
         /* Check if pawn is out of the king's square */
         if (p->nonPawn[Black] == 0) {
@@ -785,11 +820,11 @@ static int ScorePassedPawns(const struct Position *p, int wphase, int bphase,
             !(p->mask[Black][Pawn] & LeftOf[file + 2])) {
 #ifdef DEBUG
             if (DebugWhat & DebugPassedPawns) {
-                Print(0, "white outside passend pawn on %c%c\n", SQUARE(sq));
+                Print(0, "white outside passed pawn on %c%c\n", SQUARE(sq));
             }
 #endif
 
-            wdistant = rank;
+            wdistant = MAX(wdistant, rank);
         }
 
         if (file > 3 && !(allpawns & RightOf[file]) &&
@@ -797,17 +832,26 @@ static int ScorePassedPawns(const struct Position *p, int wphase, int bphase,
             !(p->mask[Black][Pawn] & RightOf[file - 2])) {
 #ifdef DEBUG
             if (DebugWhat & DebugPassedPawns) {
-                Print(0, "white outside passend pawn on %c%c\n", SQUARE(sq));
+                Print(0, "white outside passed pawn on %c%c\n", SQUARE(sq));
             }
 #endif
 
-            wdistant = rank;
+            wdistant = MAX(wdistant, rank);
         }
     }
+
+#ifdef DEBUG
+    if (DebugWhat & DebugPassedPawns) {
+        Print(0, "After white pawn basic scoring: %d\n", score);
+    }
+#endif
 
     pcs = pawnFacts->pf_BlackPassers;
 
     while (pcs) {
+#ifdef DEBUG
+        int score_at_start = score;
+#endif
         int sq = FindSetBit(pcs);
         int rank = 7 - (sq >> 3);
         int file = sq & 7;
@@ -822,6 +866,13 @@ static int ScorePassedPawns(const struct Position *p, int wphase, int bphase,
             score -= ScaleDown[bphase] * PassedPawnBlocked[rank] / 16;
         }
 
+#ifdef DEBUG
+        if (DebugWhat & DebugPassedPawns) {
+            int increment = score - score_at_start;
+            Print(0, "score increment from %c%c: %d\n", SQUARE(sq), increment);
+        }
+#endif
+
         /* Score covered passed pawns. */
 
         if (p->atkFr[sq] & p->mask[Black][Pawn]) {
@@ -833,14 +884,31 @@ static int ScorePassedPawns(const struct Position *p, int wphase, int bphase,
             }
         }
 
-        if (ConnectedMask[sq] & pawnFacts->pf_BlackPassers) {
-            int rank2 = 7 - (FindSetBit(ConnectedMask[sq] &
-                                        pawnFacts->pf_BlackPassers) >>
-                             3);
-
-            score -=
-                ScaleDown[bphase] * PassedPawnConnected[MAX(rank, rank2)] / 16;
+#ifdef DEBUG
+        if (DebugWhat & DebugPassedPawns) {
+            int increment = score - score_at_start;
+            Print(0, "score increment from %c%c: %d\n", SQUARE(sq), increment);
         }
+#endif
+
+        if (ConnectedMask[sq] & pawnFacts->pf_BlackPassers) {
+            int max_rank = rank;
+            BitBoard tmp2 = ConnectedMask[sq] & pawnFacts->pf_BlackPassers;
+            while (tmp2) {
+                int sq2 = FindSetBit(tmp2);
+                tmp2 &= tmp2 - 1;
+                int rank2 = 7 - (sq2 >> 3);
+                max_rank = MAX(rank2, max_rank);
+            }
+            score -= ScaleDown[bphase] * PassedPawnConnected[max_rank] / 16;
+        }
+
+#ifdef DEBUG
+        if (DebugWhat & DebugPassedPawns) {
+            int increment = score - score_at_start;
+            Print(0, "score increment from %c%c: %d\n", SQUARE(sq), increment);
+        }
+#endif
 
         /* Check for rook attacks 'from behind' */
 
@@ -851,6 +919,13 @@ static int ScorePassedPawns(const struct Position *p, int wphase, int bphase,
         } else if (tmp & p->mask[Black][Rook]) {
             score -= ScaleDown[bphase] * RookBehindPasser;
         }
+
+#ifdef DEBUG
+        if (DebugWhat & DebugPassedPawns) {
+            int increment = score - score_at_start;
+            Print(0, "score increment from %c%c: %d\n", SQUARE(sq), increment);
+        }
+#endif
 
         /* Check if pawn is out of the king's square */
         if (p->nonPawn[White] == 0) {
@@ -871,11 +946,11 @@ static int ScorePassedPawns(const struct Position *p, int wphase, int bphase,
             !(p->mask[White][Pawn] & LeftOf[file + 2])) {
 #ifdef DEBUG
             if (DebugWhat & DebugPassedPawns) {
-                Print(0, "black outside passend pawn on %c%c\n", SQUARE(sq));
+                Print(0, "black outside passed pawn on %c%c\n", SQUARE(sq));
             }
 #endif
 
-            bdistant = rank;
+            bdistant = MAX(bdistant, rank);
         }
 
         if (file > 3 && !(allpawns & RightOf[file]) &&
@@ -883,13 +958,19 @@ static int ScorePassedPawns(const struct Position *p, int wphase, int bphase,
             !(p->mask[White][Pawn] & RightOf[file - 2])) {
 #ifdef DEBUG
             if (DebugWhat & DebugPassedPawns) {
-                Print(0, "black outside passend pawn on %c%c\n", SQUARE(sq));
+                Print(0, "black outside passed pawn on %c%c\n", SQUARE(sq));
             }
 #endif
 
-            bdistant = rank;
+            bdistant = MAX(bdistant, rank);
         }
     }
+
+#ifdef DEBUG
+    if (DebugWhat & DebugPassedPawns) {
+        Print(0, "After black pawn basic scoring: %d\n", score);
+    }
+#endif
 
     /*
      * Evaluate pawns that can outrun the king.
@@ -960,6 +1041,13 @@ static int ScorePassedPawns(const struct Position *p, int wphase, int bphase,
         }
     }
 
+#ifdef DEBUG
+    if (DebugWhat & DebugPassedPawns) {
+        Print(0, "Before runner scoring: wdistant: %d bdistant: %d\n", wdistant,
+              bdistant);
+    }
+#endif
+
     if (wdistant && !bdistant) {
         score += DistantPassedPawn[wphase];
     } else if (bdistant && !wdistant) {
@@ -971,6 +1059,12 @@ static int ScorePassedPawns(const struct Position *p, int wphase, int bphase,
             score -= DistantPassedPawn[bphase];
         }
     }
+
+#ifdef DEBUG
+    if (DebugWhat & DebugPassedPawns) {
+        Print(0, "After runner scoring: %d\n", score);
+    }
+#endif
 
     return score;
 }
@@ -1179,16 +1273,30 @@ static int ScorePositionForWhite(const struct Position *p) {
      * Lookup the current position in the evaluation hashtable
      */
 
+#ifndef DEBUG
     STry++;
     if (ProbeST(p->hkey, &score) == Useful) {
         SHit++;
         return score;
     }
+#endif
 
     score = MaterialBalance(p);
     fastscore = score;
 
+#ifdef DEBUG
+    if (DebugWhat & DebugPieces) {
+        Print(0, "After material balance: %d\n", score);
+    }
+#endif
+
     score += ScorePawnsHashed(p, &pawnFacts);
+
+#ifdef DEBUG
+    if (DebugWhat & DebugPieces) {
+        Print(0, "After hashed pawns: %d\n", score);
+    }
+#endif
 
     /*************************************************************
      *
@@ -1201,6 +1309,12 @@ static int ScorePositionForWhite(const struct Position *p) {
 
     score += ScoreKingSafety(p, wphase, bphase, &pawnFacts);
 
+#ifdef DEBUG
+    if (DebugWhat & DebugPieces) {
+        Print(0, "After king safety: %d\n", score);
+    }
+#endif
+
     /*************************************************************
      *
      * Passed Pawns
@@ -1208,6 +1322,12 @@ static int ScorePositionForWhite(const struct Position *p) {
      *************************************************************/
 
     score += ScorePassedPawns(p, wphase, bphase, &pawnFacts);
+
+#ifdef DEBUG
+    if (DebugWhat & DebugPieces) {
+        Print(0, "After passed pawns: %d\n", score);
+    }
+#endif
 
     /*************************************************************
      *
@@ -1236,6 +1356,12 @@ static int ScorePositionForWhite(const struct Position *p) {
         score -= BishopTrapped;
     }
 
+#ifdef DEBUG
+    if (DebugWhat & DebugPieces) {
+        Print(0, "After trapped bishops: %d\n", score);
+    }
+#endif
+
     /*************************************************************
      *
      * Development
@@ -1245,6 +1371,12 @@ static int ScorePositionForWhite(const struct Position *p) {
     if (RootGamePhase == Opening) {
         score += ScoreDevelopment(p);
     }
+
+#ifdef DEBUG
+    if (DebugWhat & DebugPieces) {
+        Print(0, "After development: %d\n", score);
+    }
+#endif
 
     /*************************************************************
      *
@@ -1304,6 +1436,12 @@ static int ScorePositionForWhite(const struct Position *p) {
         score -= KingBlocksRook;
     };
 
+#ifdef DEBUG
+    if (DebugWhat & DebugPieces) {
+        Print(0, "After king: %d\n", score);
+    }
+#endif
+
     /*************************************************************
      *
      * Knights
@@ -1360,6 +1498,12 @@ static int ScorePositionForWhite(const struct Position *p) {
         }
     }
 
+#ifdef DEBUG
+    if (DebugWhat & DebugPieces) {
+        Print(0, "After knights: %d\n", score);
+    }
+#endif
+
     /*************************************************************
      *
      * Bishops
@@ -1413,6 +1557,12 @@ static int ScorePositionForWhite(const struct Position *p) {
                   (4 - KingDist(sq, p->kingSq[White]))) >>
                  4;
     }
+
+#ifdef DEBUG
+    if (DebugWhat & DebugPieces) {
+        Print(0, "After bishops: %d\n", score);
+    }
+#endif
 
     /*************************************************************
      *
@@ -1497,6 +1647,12 @@ static int ScorePositionForWhite(const struct Position *p) {
         }
     }
 
+#ifdef DEBUG
+    if (DebugWhat & DebugPieces) {
+        Print(0, "After rooks: %d\n", score);
+    }
+#endif
+
     /*************************************************************
      *
      * Queens
@@ -1535,6 +1691,12 @@ static int ScorePositionForWhite(const struct Position *p) {
                  4;
     }
 
+#ifdef DEBUG
+    if (DebugWhat & DebugPieces) {
+        Print(0, "After queens: %d\n", score);
+    }
+#endif
+
     /*
      * Check if both sides have only one bishops. If so, and they are opposite
      * colored, scale the score down.
@@ -1542,13 +1704,30 @@ static int ScorePositionForWhite(const struct Position *p) {
 
     if (((p->material_signature[White] & 0x1e) == SIGNATURE_BIT(Bishop)) &&
         ((p->material_signature[Black] & 0x1e) == SIGNATURE_BIT(Bishop))) {
-        int white = (p->mask[White][Bishop] & WhiteSquaresMask) != 0;
-        int black = (p->mask[Black][Bishop] & WhiteSquaresMask) != 0;
+        bool white_on_white =
+            (p->mask[White][Bishop] & WhiteSquaresMask) != 0ULL;
+        bool white_on_black =
+            (p->mask[White][Bishop] & BlackSquaresMask) != 0ULL;
+        bool black_on_white =
+            (p->mask[Black][Bishop] & WhiteSquaresMask) != 0ULL;
+        bool black_on_black =
+            (p->mask[Black][Bishop] & BlackSquaresMask) != 0ULL;
 
-        if ((!white && black) || (white && !black)) {
-            score = 4 * score / 5;
+        bool white_single_colored = white_on_white ^ white_on_black;
+        bool black_single_colored = black_on_white ^ black_on_black;
+
+        if (white_single_colored && black_single_colored) {
+            if (white_on_white && black_on_black) {
+                score = 4 * score / 5;
+            }
         }
     }
+
+#ifdef DEBUG
+    if (DebugWhat & DebugPieces) {
+        Print(0, "After bishop adjustment: %d\n", score);
+    }
+#endif
 
     /*
      * Adjust MaxPos if necessary. If the current difference is greater than
@@ -1562,7 +1741,11 @@ static int ScorePositionForWhite(const struct Position *p) {
         MaxPos = (MaxPosInit + 31 * MaxPos) >> 5;
     }
 
-    score = (score + 7) & ~15;
+    if (score >= 0) {
+        score = (score + 7) & ~15;
+    } else {
+        score = -((-score + 7) & ~15);
+    }
 
     StoreST(p->hkey, score);
 
@@ -1652,8 +1835,8 @@ void InitScore(const struct Position *p) {
     ClearPawnHashTable();
 
 #ifdef DEBUG
-    DebugWhat = DebugKingSafety;
-    ScorePositionForWhite(p, -999999, 999999);
+    DebugWhat = 255;
+    ScorePositionForWhite(p);
     DebugWhat = 0;
 #endif
 

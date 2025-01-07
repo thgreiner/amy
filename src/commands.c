@@ -72,6 +72,8 @@ static void StopAnalyze(char *);
 static void SelfPlay(char *);
 static void TestNext(char *);
 static void Conf(char *);
+static void ShowScore(char *);
+static void TestScore(char *);
 
 static struct CommandEntry Commands[] = {
     {"analyze", &Analyze, false, false, "enter analyze mode (xboard)", NULL},
@@ -105,10 +107,13 @@ static struct CommandEntry Commands[] = {
     {"post", &Post, true, false, "switch on post mode (xboard)", NULL},
     {"prefs", &Prefs, false, false, "read opening book preferences", NULL},
     {"quit", &Quit, true, false, "quit Amy", NULL},
+    {"s", &ShowScore, true, false, "display static evaluation", NULL},
     {"save", &Save, false, false, "save game to PGN file", NULL},
     {"self", &SelfPlay, false, false, "start self play", NULL},
     {"show", &Show, true, false, "display current position", NULL},
     {"test", &Test, false, false, "run EPD test suite", NULL},
+    {"test-score", &TestScore, false, false,
+     "run static evaluatior on EPD test suite", NULL},
     {"time", &XboardTime, true, false, "set time (xboard)", NULL},
     {"undo", &Undo, true, true, "undo last move", NULL},
     {"warranty", &ShowWarranty, true, false, "show terms of warranty", NULL},
@@ -275,6 +280,53 @@ static void Test(char *fname) {
         Print(0, "solved %d out of %d  (BT2630 = %d, LCT2 = %d, BS2830 = %d)\n",
               solved, total, btval, lctval, bsval);
         Print(0, "-----------------------------------------------\n\n");
+
+        FreePosition(p);
+    }
+
+    if (fin)
+        fclose(fin);
+    if (fout)
+        fclose(fout);
+}
+
+static void TestScore(char *fname) {
+    struct Position *p;
+    FILE *fin, *fout;
+    char line[256];
+
+    if (!fname) {
+        Print(0, "Usage: test-score <filename>\n");
+        return;
+    }
+
+    fin = fopen(fname, "r");
+    if (!fin) {
+        Print(0, "Couldn't open %s for input.\n", fname);
+        return;
+    }
+
+    fout = fopen("test_score.epd", "w");
+
+    for (;;) {
+
+        if (fgets(line, 256, fin) == NULL)
+            break;
+        p = CreatePositionFromEPD(line);
+        InitScore(p);
+        int score = ScorePosition(p);
+
+        if (fout) {
+            int l = strlen(line);
+            l--;
+            line[l] = '\0';
+            l--;
+            if (line[l] == ';') {
+                line[l] = '\0';
+            }
+
+            fprintf(fout, "%s; score %d;\n", line, score);
+        }
 
         FreePosition(p);
     }
@@ -749,4 +801,11 @@ static void Conf(char *args) {
 
     ReadScoringConfig(args);
     RecalcAttacks(CurrentPosition);
+}
+
+static void ShowScore(char *args) {
+    (void)args;
+    InitScore(CurrentPosition);
+    int score = ScorePosition(CurrentPosition);
+    Print(0, "Static evaluation: %d\n", score);
 }
