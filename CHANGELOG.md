@@ -1,10 +1,13 @@
 # Change Log
 
-## [0.9.6]
+## [0.9.6] 2025-01-07
 
 * Refactored search move generation
 * Replaced several lookup tables by small functions
 * Fixed: "new" command should reset time ([#11](https://github.com/thgreiner/amy/issues/11))
+* Fixed several bugs in the evaluation function detected by symmetry testing
+* Started work on reading evaluation parameters from YAML file (unfinished)
+* Changes for Windows compatibility contributed by Jim Ablett
 
 
 ## [0.9.5] 2024-12-10
