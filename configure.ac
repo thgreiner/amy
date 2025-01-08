@@ -4,7 +4,7 @@ dnl This file is part of Amy, a chess program by Thorsten Greiner
 dnl
 dnl Amy is copyrighted by Thorsten Greiner
 
-AC_INIT([amy],[0.9.7-pre])
+AC_INIT([amy],[0.9.7])
 AC_CONFIG_SRCDIR(src/dbase.c)
 AM_INIT_AUTOMAKE([foreign])
 
