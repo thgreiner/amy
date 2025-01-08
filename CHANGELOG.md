@@ -1,5 +1,12 @@
 # Change Log
 
+## [0.9.7] 2025-01-08
+
+* Refactor connected passed pawn scoring
+* Bug fix: opposite colored bishop evaluation
+* Bug fix: promotion piece parsing
+
+
 ## [0.9.6] 2025-01-07
 
 * Refactored search move generation

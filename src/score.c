@@ -104,7 +104,7 @@ static const int16_t PassedPawn[] = {0, 32, 64, 128, 256, 512, 1024, 0};
 
 static const int16_t PassedPawnBlocked[] = {0, 16, 48, 96, 192, 384, 768, 0};
 
-static const int16_t PassedPawnConnected[] = {0, 4, 12, 24, 48, 96, 192, 0};
+static const int16_t PassedPawnConnected[] = {0, 2, 6, 12, 24, 48, 96, 0};
 
 static const int16_t IsolatedPawn[] = {-70,  -80, -90, -100,
                                        -100, -90, -80, -70};
@@ -276,12 +276,12 @@ static const int16_t KingPosEndgameQueenSide[64] = {
      200,  300,  300,  200, -100, -200, -300, -600,
      200,  300,  300,  200, -100, -200, -300, -600,
     -100, -100, -100, -100, -100, -200, -300, -600,
-    -300, -300, -300, -300, -300, -400, -300, -600};
+    -300, -300, -300, -300, -300, -400, -500, -600};
 
 static const int16_t KingPosEndgameKingSide[64] = {
     -600, -500, -400, -300, -300, -300, -300, -300,
     -600, -300, -200, -100, -100, -100, -100, -100,
-    -600, -300, -200, -100,    0,  100, 100,     0,
+    -600, -300, -200, -100,    0,  100,  100,    0,
     -600, -300, -200, -100,  100,  200,  200,  100,
     -600, -300, -200, -100,  200,  300,  300,  200,
     -600, -300, -200, -100,  200,  300,  300,  200,
@@ -1717,7 +1717,8 @@ static int ScorePositionForWhite(const struct Position *p) {
         bool black_single_colored = black_on_white ^ black_on_black;
 
         if (white_single_colored && black_single_colored) {
-            if (white_on_white && black_on_black) {
+            if ((white_on_white && black_on_black) ||
+                (white_on_black && black_on_white)) {
                 score = 4 * score / 5;
             }
         }
