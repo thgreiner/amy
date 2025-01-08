@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.9.7]
+
+* Refactor connected passed pawn scoring
+
 ## [0.9.6] 2025-01-07
 
 * Refactored search move generation

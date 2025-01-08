@@ -199,6 +199,15 @@ void InitPawnMasks(void) {
                 SetBit(ConnectedMask[i], i + 9);
             }
         }
+        if ((i & 7) > 0) {
+            SetBit(ConnectedMask[i], i - 1);
+            if ((i >> 3) > 1) {
+                SetBit(ConnectedMask[i], i + 7);
+            }
+            if ((i >> 3) < 6) {
+                SetBit(ConnectedMask[i], i - 9);
+            }
+        }
     }
 }
 
