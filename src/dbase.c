@@ -1738,7 +1738,7 @@ static move_t parse_san_with_heap(struct Position *p, char *san, heap_t heap) {
             continue;
         if (frk != -1 && (fr >> 3) != frk)
             continue;
-        if (pro && (PromoType(move) == pro))
+        if (pro && (PromoType(move) != pro))
             continue;
         if (!TryMove(p, move))
             continue;
