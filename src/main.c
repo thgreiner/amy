@@ -34,8 +34,8 @@
  */
 
 #include "amy.h"
-#include "test_yaml.h"
 #include "test_dbase.h"
+#include "test_yaml.h"
 
 char AutoSaveFileName[64];
 
@@ -45,7 +45,9 @@ int NumberOfCPUs;
 
 static char EGTBPath[1024] = "TB";
 
-static void RunAllTests(void) { test_all_yaml(); test_all_dbase();
+static void RunAllTests(void) {
+    test_all_yaml();
+    test_all_dbase();
 }
 
 static void ProcessOptions(int argc, char *argv[]) {
