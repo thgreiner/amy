@@ -51,6 +51,4 @@ static void test_parse_san_promotions() {
     FreePosition(p);
 }
 
-void test_all_dbase(void) {
-    test_parse_san_promotions();
-}
+void test_all_dbase(void) { test_parse_san_promotions(); }
