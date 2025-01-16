@@ -33,7 +33,7 @@
 #include "inline.h"
 #include <assert.h>
 
-static void test_parse_san_promotions() {
+static void test_parse_san_promotions(void) {
     struct Position *p = CreatePositionFromEPD("4K1k1/P7/8/8/8/8/8/8 w - -");
 
     move_t move = ParseSAN(p, "a8=Q");

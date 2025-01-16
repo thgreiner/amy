@@ -96,6 +96,102 @@ static void test_nested_dict(void) {
     free_yaml_node(result);
 }
 
+static void test_multi_line_array(void) {
+    char *payload = "array:\n"
+                    "- a\n"
+                    "- b\n";
+
+    struct Node *result = parse_yaml(payload);
+
+    assert(result != NULL);
+    assert(result->type == DICT);
+
+    tree_node_t *tree = result->payload;
+
+    size_t value_len;
+    struct Node *value = lookup_value(tree, "array", 6, &value_len);
+
+    assert(value != NULL);
+    assert(value_len == sizeof(struct Node));
+
+    assert(value->type == LIST);
+}
+
+static void test_nested_multi_line_array(void) {
+    char *payload = "level1:\n"
+                    "  array:\n"
+                    "  - a\n"
+                    "  - b\n"
+                    "  scalar: x\n";
+
+    struct Node *result = parse_yaml(payload);
+
+    assert(result != NULL);
+    assert(result->type == DICT);
+
+    tree_node_t *tree = result->payload;
+
+    size_t value_len;
+    struct Node *value = lookup_value(tree, "level1", 7, &value_len);
+
+    assert(value != NULL);
+    assert(value_len == sizeof(struct Node));
+
+    assert(value->type == DICT);
+
+    tree_node_t *nested = value->payload;
+
+    value = lookup_value(nested, "array", 6, &value_len);
+
+    assert(value != NULL);
+    assert(value_len == sizeof(struct Node));
+
+    assert(value->type == LIST);
+
+    value = lookup_value(nested, "scalar", 7, &value_len);
+
+    assert(value != NULL);
+    assert(value_len == sizeof(struct Node));
+
+    assert(value->type == SCALAR);
+}
+
+static void test_nested_multi_line_array_2(void) {
+    char *payload = "level1:\n"
+                    "  array:\n"
+                    "  - a\n"
+                    "  - b\n"
+                    "scalar: x\n";
+
+    struct Node *result = parse_yaml(payload);
+
+    assert(result != NULL);
+    assert(result->type == DICT);
+
+    tree_node_t *tree = result->payload;
+
+    size_t value_len;
+    struct Node *value = lookup_value(tree, "level1", 7, &value_len);
+
+    assert(value != NULL);
+    assert(value_len == sizeof(struct Node));
+
+    assert(value->type == DICT);
+
+    tree_node_t *nested = value->payload;
+
+    value = lookup_value(nested, "array", 6, &value_len);
+
+    assert(value != NULL);
+    assert(value_len == sizeof(struct Node));
+
+    assert(value->type == LIST);
+
+    value = lookup_value(nested, "scalar", 7, &value_len);
+
+    assert(value == NULL);
+}
+
 static void test_get_as_string(void) {
     char *payload = "key: value\n";
 
@@ -196,7 +292,7 @@ static void test_get_as_int_array(void) {
     int buf[3];
 
     struct IntArrayLookupResult lookup_result =
-        get_as_int_array(node, "key", &buf, 3);
+        get_as_int_array(node, "key", buf, 3);
 
     assert(lookup_result.result_code == OK);
     assert(lookup_result.elements_read == 3);
@@ -216,7 +312,7 @@ static void test_get_as_int_array_short(void) {
     int buf[2];
 
     struct IntArrayLookupResult lookup_result =
-        get_as_int_array(node, "key", &buf, 2);
+        get_as_int_array(node, "key", buf, 2);
 
     assert(lookup_result.result_code == OK);
     assert(lookup_result.elements_read == 2);
@@ -264,7 +360,7 @@ static void test_get_as_int_array_illegal_input(void) {
     int buf[3];
 
     struct IntArrayLookupResult lookup_result =
-        get_as_int_array(node, "key", &buf, 3);
+        get_as_int_array(node, "key", buf, 3);
 
     assert(lookup_result.result_code == FORMAT_ERROR);
 
@@ -277,9 +373,70 @@ static void test_malformed_input(void) {
     assert(node == NULL);
 }
 
+static void test_list_trailing_comma(void) {
+    char *payload = "key: [1, 0,]\n";
+
+    struct Node *result = parse_yaml(payload);
+    assert(result != NULL);
+
+    struct ListLookupResult lookup_result = get_as_list(result, "key");
+    assert(lookup_result.result_code == OK);
+
+    struct ListNode *list = lookup_result.result;
+    assert(list != NULL);
+
+    struct ListNode *next = list->next;
+    assert(next != NULL);
+
+    next = next->next;
+    assert(next == NULL);
+
+    free_yaml_node(result);
+}
+
+static void test_comments_and_empty_lines(void) {
+    char *payload = "key1: value1 # comment\n"
+                    "\n\n"
+                    "# top level comment\n"
+                    "key2: value2\n"
+                    "nested:\n"
+                    "  key3: value3\n"
+                    "\n\n"
+                    "  key4: value4\n";
+
+    struct Node *result = parse_yaml(payload);
+    assert(result != NULL);
+    assert(result->type == DICT);
+
+    struct StringLookupResult lookup_result = get_as_string(result, "key1");
+    assert(lookup_result.result_code == OK);
+    assert(lookup_result.result != NULL);
+    assert(!strcmp(lookup_result.result, "value1"));
+
+    lookup_result = get_as_string(result, "key2");
+    assert(lookup_result.result_code == OK);
+    assert(lookup_result.result != NULL);
+    assert(!strcmp(lookup_result.result, "value2"));
+
+    lookup_result = get_as_string(result, "nested.key3");
+    assert(lookup_result.result_code == OK);
+    assert(lookup_result.result != NULL);
+    assert(!strcmp(lookup_result.result, "value3"));
+
+    lookup_result = get_as_string(result, "nested.key4");
+    assert(lookup_result.result_code == OK);
+    assert(lookup_result.result != NULL);
+    assert(!strcmp(lookup_result.result, "value4"));
+
+    free_yaml_node(result);
+}
+
 void test_all_yaml(void) {
     test_simple_dict();
     test_nested_dict();
+    test_multi_line_array();
+    test_nested_multi_line_array();
+    test_nested_multi_line_array_2();
     test_get_as_string();
     test_get_as_string_not_found();
     test_get_as_string_nested();
@@ -291,4 +448,6 @@ void test_all_yaml(void) {
     test_get_as_int_array_short();
     test_get_as_int_array_illegal_input();
     test_malformed_input();
+    test_comments_and_empty_lines();
+    test_list_trailing_comma();
 }

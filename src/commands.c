@@ -72,6 +72,7 @@ static void StopAnalyze(char *);
 static void SelfPlay(char *);
 static void TestNext(char *);
 static void Conf(char *);
+static void SaveConf(char *);
 static void ShowScore(char *);
 static void TestScore(char *);
 
@@ -83,6 +84,7 @@ static struct CommandEntry Commands[] = {
     {"bk", &Book, false, false, "display book moves (xboard)", NULL},
     {"bookup", &Bookup, false, false, "create a book", NULL},
     {"conf", &Conf, false, false, "load scoring config", NULL},
+    {"conf-save", &SaveConf, false, false, "save scoring config", NULL},
     {"d", &Show, true, false, "display current position", NULL},
     {"distribution", &ShowDistribution, true, false,
      "show terms of distribution", NULL},
@@ -313,8 +315,8 @@ static void TestScore(char *fname) {
         if (fgets(line, 256, fin) == NULL)
             break;
         p = CreatePositionFromEPD(line);
-        InitScore(p);
-        int score = ScorePosition(p);
+        InitEvaluation(p);
+        int score = EvaluatePosition(p);
 
         if (fout) {
             int l = strlen(line);
@@ -799,13 +801,22 @@ static void Conf(char *args) {
         return;
     }
 
-    ReadScoringConfig(args);
+    LoadEvaluationConfig(args);
     RecalcAttacks(CurrentPosition);
+}
+
+static void SaveConf(char *args) {
+    if (args == NULL) {
+        Print(0, "Usage: save-conf <filename>\n");
+        return;
+    }
+
+    SaveEvaluationConfig(args);
 }
 
 static void ShowScore(char *args) {
     (void)args;
-    InitScore(CurrentPosition);
-    int score = ScorePosition(CurrentPosition);
+    InitEvaluation(CurrentPosition);
+    int score = EvaluatePosition(CurrentPosition);
     Print(0, "Static evaluation: %d\n", score);
 }

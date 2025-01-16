@@ -91,8 +91,7 @@ struct Node *parse_yaml(char *);
 struct StringLookupResult get_as_string(struct Node *, char *);
 struct IntLookupResult get_as_int(struct Node *, char *);
 struct ListLookupResult get_as_list(struct Node *, char *);
-struct IntArrayLookupResult get_as_int_array(struct Node *, char *, int (*)[],
-                                             int);
+struct IntArrayLookupResult get_as_int_array(struct Node *, char *, int *, int);
 void abort_if_allocation_failed(void *x);
 
 void free_yaml_node(struct Node *);

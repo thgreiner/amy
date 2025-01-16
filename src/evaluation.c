@@ -30,7 +30,7 @@
 */
 
 /*
- * score.c - positional scoring routines
+ * evaluation.c - positional evaluation routines
  */
 
 #include "amy.h"
@@ -78,72 +78,65 @@ enum { Opening, Middlegame, Endgame };
 char *GamePhaseName[] = {"Opening", "Middlegame", "Endgame"};
 
 /**
- * General scoring paramters
- */
-
-static const int Development = -100;
-
-/**
  * Pawn scoring parameters
  */
 
-static const int DoubledPawn = -70;
-static const int BackwardPawn = -100;
-static const int HiddenBackwardPawn = -70;
-static const int PawnOutrunsKing = 6000;
-static const int PawnDevelopmentBlocked = -100;
-static const int PawnDuo = 15;
-static const int PawnStorm = 10;
-static const int CrampingPawn = -160;
-static const int PawnMajority = 100;
+int DoubledPawn = -70;
+int BackwardPawn = -100;
+int HiddenBackwardPawn = -70;
+int PawnOutrunsKing = 6000;
+int PawnDevelopmentBlocked = -100;
+int PawnDuo = 15;
+int PawnStorm = 10;
+int CrampingPawn = -160;
+int PawnMajority = 100;
 
-static const int CoveredPassedPawn6th = 200;
-static const int CoveredPassedPawn7th = 600;
+int CoveredPassedPawn6th = 200;
+int CoveredPassedPawn7th = 600;
 
-static const int16_t PassedPawn[] = {0, 32, 64, 128, 256, 512, 1024, 0};
+int16_t PassedPawn[] = {0, 32, 64, 128, 256, 512, 1024, 0};
 
-static const int16_t PassedPawnBlocked[] = {0, 16, 48, 96, 192, 384, 768, 0};
+int16_t PassedPawnBlocked[] = {0, 16, 48, 96, 192, 384, 768, 0};
 
-static const int16_t PassedPawnConnected[] = {0, 2, 6, 12, 24, 48, 96, 0};
+int16_t PassedPawnConnected[] = {0, 2, 6, 12, 24, 48, 96, 0};
 
-static const int16_t IsolatedPawn[] = {-70,  -80, -90, -100,
-                                       -100, -90, -80, -70};
+int16_t IsolatedPawn[] = {-70, -80, -90, -100, -100, -90, -80, -70};
 
-static const int16_t PawnAdvanceOpening[] = {-10, -10, 5,   10,
-                                             10,  -20, -50, -50};
+int16_t PawnAdvanceOpening[] = {-10, -10, 5, 10, 10, -20, -50, -50};
 
-static const int16_t PawnAdvanceMiddlegame[] = {0, 0, 10, 15, 15, 10, 0, 0};
+int16_t PawnAdvanceMiddlegame[] = {0, 0, 10, 15, 15, 10, 0, 0};
 
-static const int16_t PawnAdvanceEndgame[] = {10, 10, 10, 10, 10, 10, 10, 10};
+int16_t PawnAdvanceEndgame[] = {10, 10, 10, 10, 10, 10, 10, 10};
+
+int16_t DistantPassedPawn[] = {500, 300, 300, 300, 200, 200, 150, 150, 150,
+                               100, 100, 50,  50,  50,  0,   0,   0,   0,
+                               0,   0,   0,   0,   0,   0,   0,   0,   0,
+                               0,   0,   0,   0,   0,   0,   0,   0};
 
 static int16_t WPawnPos[64];
 static int16_t BPawnPos[64];
-
-static const int16_t DistantPassedPawn[] = {
-    500, 300, 300, 300, 200, 200, 150, 150, 150, 100, 100, 50,
-    50,  50,  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
-    0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0};
 
 /**
  * Knight scoring parameters
  */
 
-static const int KnightKingProximity = 7;
-static const int KnightBlocksCPawn = -100;
+int KnightKingProximity = 7;
+int KnightBlocksCPawn = -100;
+int KnightEdgePenalty = -130;
 
 // clang-format off
-static const int16_t KnightPos[64] = {
-    -160, -160, -160, -160, -160, -160, -160, -160,
-    -160,  -30,   60,   60,   60,   60,  -30, -160,
-    -160,   60,  130,  130,  130,  130,   60, -160,
-    -160,  130,  190,  190,  190,  190,  130, -160,
-    -130,  130,  190,  250,  250,  190,  130, -130,
-    -130,  190,  250,  250,  250,  250,  190, -130,
-    -130,   90,  160,  160,  160,  160,  90,  -130,
-    -130, -130, -130, -130, -130, -130, -130, -130
+int16_t KnightPos[64] = {
+     -30,  -30,  -30,  -30,  -30,  -30,  -30,  -30,
+     -30,  -30,   60,   60,   60,   60,  -30,  -30,
+     -30,   60,  130,  130,  130,  130,   60,  -30,
+     -30,  130,  190,  190,  190,  190,  130,  -30,
+       0,  130,  190,  250,  250,  190,  130,    0,
+       0,  190,  250,  250,  250,  250,  190,    0,
+       0,   90,  160,  160,  160,  160,   90,    0,
+       0,    0,    0,    0,    0,    0,    0,    0
 };
 
-static const int16_t KnightOutpost[64] = {
+int16_t KnightOutpost[64] = {
     0, 0,  0,   0,   0,  0, 0, 0,
     0, 0,  0,   0,   0,  0, 0, 0,
     0, 0,  0,   0,   0,  0, 0, 0,
@@ -162,15 +155,14 @@ static const int16_t KnightOutpost[64] = {
 /*
  * The value of the bishop pair depends on the number of white pawns.
  */
-static const int16_t BishopPair[] = {200, 200, 200, 200, 200,
-                                     200, 200, 150, 100};
+int16_t BishopPair[] = {200, 200, 200, 200, 200, 200, 200, 150, 100};
 
-static const int BishopMobility = 25;
-static const int BishopKingProximity = 7;
-static const int BishopTrapped = -1500;
+int BishopMobility = 25;
+int BishopKingProximity = 7;
+int BishopTrapped = -1500;
 
 // clang-format off
-static const int16_t BishopPos[64] = {
+int16_t BishopPos[64] = {
      60,  60,  60,  60,  60,  60,  60,  60,
      60, 250,  60,  60,  60,  60, 250,  60,
      60, 160, 160, 160, 160, 160, 160,  60,
@@ -186,20 +178,20 @@ static const int16_t BishopPos[64] = {
  * Rook scoring parameters
  */
 
-static const int RookMobility = 10;
+int RookMobility = 10;
 
-static const int RookOnOpenFile = 100;
-static const int RookOnSemiOpenFile = 25;
+int RookOnOpenFile = 100;
+int RookOnSemiOpenFile = 25;
 
-static const int RookKingProximity = 5;
-static const int RookConnected = 60;
+int RookKingProximity = 5;
+int RookConnected = 60;
 
-static const int RookBehindPasser = 12; /* will be scaled by phase */
+int RookBehindPasser = 12; /* will be scaled by phase */
 
-static const int RookOn7thRank = 300;
+int RookOn7thRank = 300;
 
 // clang-format off
-static const int16_t RookPos[64] = {
+int16_t RookPos[64] = {
       0,  90, 130, 220, 220, 130,  90,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
@@ -215,10 +207,10 @@ static const int16_t RookPos[64] = {
  * Queen scoring parameters
  */
 
-static const int QueenKingProximity = 8;
+int QueenKingProximity = 8;
 
 // clang-format off
-static const int16_t QueenPos[64] = {
+int16_t QueenPos[64] = {
     0, 0,  0,  0,  0,  0,  0,  0,
     0, 30, 30, 30, 30, 30, 30, 0,
     0, 30, 60, 60, 60, 60, 30, 0,
@@ -229,7 +221,7 @@ static const int16_t QueenPos[64] = {
     0, 0,  0,  0,  0,  0,  0,  0
 };
 
-static const int16_t QueenPosDevelopment[64] = {
+int16_t QueenPosDevelopment[64] = {
     -200, -200,  0,  0,  0, 0, -200, -200,
     -200, -200, 30, 30, 30, 0, -200, -200,
     -200, -200,  0,  0,  0, 0, -200, -200,
@@ -245,10 +237,12 @@ static const int16_t QueenPosDevelopment[64] = {
  * King scoring parameters
  */
 
-static const int KingBlocksRook = -300;
+int KingBlocksRook = -300;
+int KingInCenter = -100;
+int KingSafetyScale = 1024;
 
 // clang-format off
-static const int16_t KingPosMiddlegame[64] = {
+int16_t KingPosMiddlegame[64] = {
     -100, 0,    -200, -300, -300, -200,    0, -100,
     -100, -100, -200, -300, -300, -200, -100, -100,
     -300, -300, -300, -300, -300, -300, -300, -300,
@@ -258,7 +252,7 @@ static const int16_t KingPosMiddlegame[64] = {
     -700, -700, -700, -700, -700, -700, -700, -700,
     -800, -800, -800, -800, -800, -800, -800, -800};
 
-static const int16_t KingPosEndgame[64] = {
+int16_t KingPosEndgame[64] = {
     -300, -300, -300, -300, -300, -300, -300, -300,
     -300, -200, -100, -100, -100, -100, -200, -300,
     -300, -100,    0,  100,  100,    0, -100, -300,
@@ -268,7 +262,7 @@ static const int16_t KingPosEndgame[64] = {
     -300, -100, -100, -100, -100, -100, -100, -300,
     -300, -300, -300, -300, -300, -300, -300, -300};
 
-static const int16_t KingPosEndgameQueenSide[64] = {
+int16_t KingPosEndgameQueenSide[64] = {
     -300, -300, -300, -300, -300, -400, -500, -600,
     -100, -100, -100, -100, -100, -200, -300, -600,
        0,  100,  100,    0, -100, -200, -300, -600,
@@ -277,23 +271,16 @@ static const int16_t KingPosEndgameQueenSide[64] = {
      200,  300,  300,  200, -100, -200, -300, -600,
     -100, -100, -100, -100, -100, -200, -300, -600,
     -300, -300, -300, -300, -300, -400, -500, -600};
-
-static const int16_t KingPosEndgameKingSide[64] = {
-    -600, -500, -400, -300, -300, -300, -300, -300,
-    -600, -300, -200, -100, -100, -100, -100, -100,
-    -600, -300, -200, -100,    0,  100,  100,    0,
-    -600, -300, -200, -100,  100,  200,  200,  100,
-    -600, -300, -200, -100,  200,  300,  300,  200,
-    -600, -300, -200, -100,  200,  300,  300,  200,
-    -600, -300, -200, -100, -100, -100, -100, -100,
-    -600, -500, -400, -300, -300, -300, -300, -300};
 // clang-format on
 
-static const int16_t ScaleHalfOpenFilesMine[] = {0, 4, 7, 9, 11};
+// Calculated by mirroring KingPosEndgameQueenSide
+static int16_t KingPosEndgameKingSide[64];
 
-static const int16_t ScaleHalfOpenFilesYours[] = {0, 2, 3, 4, 5};
+int16_t ScaleHalfOpenFilesMine[] = {0, 4, 7, 9, 11};
 
-static const int16_t ScaleOpenFiles[] = {0, 8, 13, 16, 19};
+int16_t ScaleHalfOpenFilesYours[] = {0, 2, 3, 4, 5};
+
+int16_t ScaleOpenFiles[] = {0, 8, 13, 16, 19};
 
 static const int16_t ScaleUp[] = {0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
                                   0,  0,  0,  1,  2,  4,  6,  8,  10, 12, 14,
@@ -318,7 +305,7 @@ static const int MaxPosInit = 2000;
 static int RootGamePhase;
 
 /**
- * Masks used in ScorePawns.
+ * Masks used in EvaluatePawns.
  */
 
 static const BitBoard FianchettoMaskWhiteKingSide =
@@ -331,7 +318,7 @@ static const BitBoard FianchettoMaskBlackQueenSide =
     SetMask(c7) | SetMask(b6) | SetMask(a7);
 
 /**
- * Masks used in ScoreDevelopment.
+ * Masks used in EvaluateDevelopment.
  */
 static const BitBoard WKingOpeningMask = SetMask(e1) | SetMask(d1);
 static const BitBoard BKingOpeningMask = SetMask(e8) | SetMask(d8);
@@ -345,8 +332,11 @@ static const BitBoard BRookTrapped1 = SetMask(g8) | SetMask(h8) | SetMask(h7);
 static const BitBoard BKingTrapsRook2 = SetMask(c8) | SetMask(b8);
 static const BitBoard BRookTrapped2 = SetMask(b8) | SetMask(a8) | SetMask(a7);
 
+static void create_mirrored_piece_square_table(int16_t *, int16_t *);
+static bool is_edge(unsigned int);
+
 /**
- * Score the pawn structure.
+ * Evaluate the pawn structure.
  *
  * This includes all scoring terms which are independent of piece placement
  * (i.e. only depend on pawn placement).
@@ -356,7 +346,8 @@ static const BitBoard BRookTrapped2 = SetMask(b8) | SetMask(a8) | SetMask(a7);
  *
  */
 
-static int ScorePawns(const struct Position *p, struct PawnFacts *pawnFacts) {
+static int EvaluatePawns(const struct Position *p,
+                         struct PawnFacts *pawnFacts) {
     BitBoard pcs = 0;
     int score = 0;
     int file = 0;
@@ -674,7 +665,7 @@ static int ScorePawns(const struct Position *p, struct PawnFacts *pawnFacts) {
 
 #ifdef DEBUG
     if (DebugWhat & DebugPawnStructure) {
-        Print(2, "ScorePawns returns %d\n", score);
+        Print(2, "EvaluatePawns returns %d\n", score);
     }
 #endif
 
@@ -683,18 +674,18 @@ static int ScorePawns(const struct Position *p, struct PawnFacts *pawnFacts) {
 
 /**
  * Look up current pawn structure in pawn hashtable. If not present,
- * use ScorePawns() to score the pawn structure. Store result in the
+ * use EvaluatePawns() to score the pawn structure. Store result in the
  * pawn hashtable.
  *
  */
 
-static int ScorePawnsHashed(const struct Position *p,
-                            struct PawnFacts *pawnFacts) {
+static int EvaluatePawnsHashed(const struct Position *p,
+                               struct PawnFacts *pawnFacts) {
     int score;
 
     PTry++;
     if (ProbePT(p->pkey, &score, pawnFacts) != Useful) {
-        score = ScorePawns(p, pawnFacts);
+        score = EvaluatePawns(p, pawnFacts);
         StorePT(p->pkey, score, pawnFacts);
     } else {
         PHit++;
@@ -704,11 +695,11 @@ static int ScorePawnsHashed(const struct Position *p,
 }
 
 /**
- * Score passed pawns
+ * Evaluate passed pawns
  */
 
-static int ScorePassedPawns(const struct Position *p, int wphase, int bphase,
-                            struct PawnFacts *pawnFacts) {
+static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
+                               struct PawnFacts *pawnFacts) {
     int score = 0;
     int wdistant = 0;
     int bdistant = 0;
@@ -747,7 +738,7 @@ static int ScorePassedPawns(const struct Position *p, int wphase, int bphase,
         }
 #endif
 
-        /* Score covered passed pawns. */
+        /* Evaluate covered passed pawns. */
 
         if (p->atkFr[sq] & p->mask[White][Pawn]) {
             if (rank == 5) {
@@ -873,7 +864,7 @@ static int ScorePassedPawns(const struct Position *p, int wphase, int bphase,
         }
 #endif
 
-        /* Score covered passed pawns. */
+        /* Evaluate covered passed pawns. */
 
         if (p->atkFr[sq] & p->mask[Black][Pawn]) {
             if (rank == 5) {
@@ -1070,11 +1061,11 @@ static int ScorePassedPawns(const struct Position *p, int wphase, int bphase,
 }
 
 /**
- * Score the king safety
+ * Evaluate the king safety
  */
 
-static int ScoreKingSafety(const struct Position *p, int wphase, int bphase,
-                           struct PawnFacts *pawnFacts) {
+static int EvaluateKingSafety(const struct Position *p, int wphase, int bphase,
+                              struct PawnFacts *pawnFacts) {
     int score = 0;
 
     int king_safety_w = 0;
@@ -1175,14 +1166,14 @@ static int ScoreKingSafety(const struct Position *p, int wphase, int bphase,
     }
 #endif
 
-    return 4 * score;
+    return (KingSafetyScale * score) / 256;
 }
 
 /**
- * Score the development status
+ * Evaluate the development status
  */
 
-static int ScoreDevelopment(const struct Position *p) {
+static int EvaluateDevelopment(const struct Position *p) {
     int score = 0;
     BitBoard pcs;
 
@@ -1213,11 +1204,11 @@ static int ScoreDevelopment(const struct Position *p) {
      */
 
     if (p->mask[White][King] & WKingOpeningMask) {
-        score += Development;
+        score += KingInCenter;
     }
 
     if (p->mask[Black][King] & BKingOpeningMask) {
-        score -= Development;
+        score -= KingInCenter;
     }
 
     /*
@@ -1242,7 +1233,7 @@ static int ScoreDevelopment(const struct Position *p) {
 }
 
 /**
- * Score the material balance.
+ * Evaluate the material balance.
  */
 
 int MaterialBalance(const struct Position *p) {
@@ -1252,10 +1243,10 @@ int MaterialBalance(const struct Position *p) {
 }
 
 /**
- * Score the position from white points of view.
+ * Evaluate the position from white points of view.
  */
 
-static int ScorePositionForWhite(const struct Position *p) {
+static int EvaluatePositionForWhite(const struct Position *p) {
     int score;
 
     int wphase;
@@ -1290,7 +1281,7 @@ static int ScorePositionForWhite(const struct Position *p) {
     }
 #endif
 
-    score += ScorePawnsHashed(p, &pawnFacts);
+    score += EvaluatePawnsHashed(p, &pawnFacts);
 
 #ifdef DEBUG
     if (DebugWhat & DebugPieces) {
@@ -1307,7 +1298,7 @@ static int ScorePositionForWhite(const struct Position *p) {
     wphase = MIN(31, p->nonPawn[Black] / Value[Pawn]);
     bphase = MIN(31, p->nonPawn[White] / Value[Pawn]);
 
-    score += ScoreKingSafety(p, wphase, bphase, &pawnFacts);
+    score += EvaluateKingSafety(p, wphase, bphase, &pawnFacts);
 
 #ifdef DEBUG
     if (DebugWhat & DebugPieces) {
@@ -1321,7 +1312,7 @@ static int ScorePositionForWhite(const struct Position *p) {
      *
      *************************************************************/
 
-    score += ScorePassedPawns(p, wphase, bphase, &pawnFacts);
+    score += EvaluatePassedPawns(p, wphase, bphase, &pawnFacts);
 
 #ifdef DEBUG
     if (DebugWhat & DebugPieces) {
@@ -1369,7 +1360,7 @@ static int ScorePositionForWhite(const struct Position *p) {
      *************************************************************/
 
     if (RootGamePhase == Opening) {
-        score += ScoreDevelopment(p);
+        score += EvaluateDevelopment(p);
     }
 
 #ifdef DEBUG
@@ -1399,7 +1390,7 @@ static int ScorePositionForWhite(const struct Position *p) {
     }
 
     /*
-     * Score white king
+     * Evaluate white king
      */
 
     score += (KingPosMiddlegame[p->kingSq[White]] * ScaleUp[wphase] +
@@ -1418,7 +1409,7 @@ static int ScorePositionForWhite(const struct Position *p) {
     };
 
     /*
-     * Score black king
+     * Evaluate black king
      */
 
     score -= (KingPosMiddlegame[REFLECT_X(p->kingSq[Black])] * ScaleUp[bphase] +
@@ -1449,7 +1440,7 @@ static int ScorePositionForWhite(const struct Position *p) {
      *************************************************************/
 
     /*
-     * Score white knights
+     * Evaluate white knights
      */
 
     pcs = p->mask[White][Knight];
@@ -1458,6 +1449,10 @@ static int ScorePositionForWhite(const struct Position *p) {
         pcs &= pcs - 1;
 
         score += KnightPos[sq];
+
+        if (is_edge(sq)) {
+            score += KnightEdgePenalty;
+        }
 
         if (!(p->mask[Black][Pawn] & OutpostMaskW[sq])) {
             score += KnightOutpost[sq];
@@ -1474,7 +1469,7 @@ static int ScorePositionForWhite(const struct Position *p) {
     }
 
     /*
-     * Score black knights
+     * Evaluate black knights
      */
 
     pcs = p->mask[Black][Knight];
@@ -1483,6 +1478,10 @@ static int ScorePositionForWhite(const struct Position *p) {
         pcs &= pcs - 1;
 
         score -= KnightPos[REFLECT_X(sq)];
+
+        if (is_edge(sq)) {
+            score -= KnightEdgePenalty;
+        }
 
         if (!(p->mask[White][Pawn] & OutpostMaskB[sq])) {
             score -= KnightOutpost[REFLECT_X(sq)];
@@ -1511,7 +1510,7 @@ static int ScorePositionForWhite(const struct Position *p) {
      *************************************************************/
 
     /*
-     * Score white bishops
+     * Evaluate white bishops
      */
 
     pcs = p->mask[White][Bishop];
@@ -1535,7 +1534,7 @@ static int ScorePositionForWhite(const struct Position *p) {
     }
 
     /*
-     * Score black bishops
+     * Evaluate black bishops
      */
 
     pcs = p->mask[Black][Bishop];
@@ -1571,7 +1570,7 @@ static int ScorePositionForWhite(const struct Position *p) {
      *************************************************************/
 
     /*
-     * Score white rooks
+     * Evaluate white rooks
      */
 
     pcs = p->mask[White][Rook];
@@ -1610,7 +1609,7 @@ static int ScorePositionForWhite(const struct Position *p) {
     }
 
     /*
-     * Score black rooks
+     * Evaluate black rooks
      */
 
     pcs = p->mask[Black][Rook];
@@ -1660,7 +1659,7 @@ static int ScorePositionForWhite(const struct Position *p) {
      *************************************************************/
 
     /*
-     * Score white queens
+     * Evaluate white queens
      */
 
     pcs = p->mask[White][Queen];
@@ -1676,7 +1675,7 @@ static int ScorePositionForWhite(const struct Position *p) {
     }
 
     /*
-     * Score black queens
+     * Evaluate black queens
      */
 
     pcs = p->mask[Black][Queen];
@@ -1758,18 +1757,18 @@ static int ScorePositionForWhite(const struct Position *p) {
  * if it is not white to move.
  */
 
-int ScorePosition(const struct Position *p) {
+int EvaluatePosition(const struct Position *p) {
     if (p->turn == White)
-        return ScorePositionForWhite(p);
+        return EvaluatePositionForWhite(p);
     else
-        return -ScorePositionForWhite(p);
+        return -EvaluatePositionForWhite(p);
 }
 
 /**
- * Do the pre-search initialization of scoring.
+ * Do the pre-search initialization of evaluation.
  */
 
-void InitScore(const struct Position *p) {
+void InitEvaluation(const struct Position *p) {
     int sq;
 
     int eg_threshold = Value[Queen] + Value[Bishop];
@@ -1835,9 +1834,15 @@ void InitScore(const struct Position *p) {
 
     ClearPawnHashTable();
 
+    /*
+     * Set up King piece square table.
+     */
+    create_mirrored_piece_square_table(KingPosEndgameQueenSide,
+                                       KingPosEndgameKingSide);
+
 #ifdef DEBUG
     DebugWhat = 255;
-    ScorePositionForWhite(p);
+    EvaluatePositionForWhite(p);
     DebugWhat = 0;
 #endif
 
@@ -1863,4 +1868,18 @@ void InitScore(const struct Position *p) {
     Print(2, "GamePhase: %s\n", GamePhaseName[RootGamePhase]);
 
     MaxPos = MaxPosInit;
+}
+
+static bool is_edge(unsigned int sq) {
+    return ((sq & 7) == 0 || (sq & 7) == 7 || sq <= h1 || sq >= a8);
+}
+
+static void create_mirrored_piece_square_table(int16_t *src, int16_t *dest) {
+    for (int rank = 0; rank < 8; rank++) {
+        for (int file = 0; file < 8; file++) {
+            int src_idx = 8 * rank + file;
+            int dest_idx = 8 * rank + 7 - file;
+            dest[dest_idx] = src[src_idx];
+        }
+    }
 }

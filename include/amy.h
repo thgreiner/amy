@@ -619,10 +619,10 @@ void InitEGTB(char *);
 int ProbeEGTB(const struct Position *, int *, int);
 
 int MaterialBalance(const struct Position *);
-int ScorePosition(const struct Position *);
+int EvaluatePosition(const struct Position *);
 bool CheckDraw(const struct Position *);
 bool IsPassed(const struct Position *, int, int);
-void InitScore(const struct Position *);
+void InitEvaluation(const struct Position *);
 int OptimisticBound(void);
 
 int Iterate(struct Position *);
@@ -670,7 +670,8 @@ int ProbeRecognizer(const struct Position *p, int *score);
 
 void DoBookLearning(void);
 
-void ReadScoringConfig(char *);
+void LoadEvaluationConfig(char *);
+void SaveEvaluationConfig(char *);
 
 heap_t allocate_heap(void);
 void free_heap(heap_t heap);

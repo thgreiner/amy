@@ -61,6 +61,13 @@ static void ProcessOptions(int argc, char *argv[]) {
             }
         }
 
+        if (!strcmp(argv[i], "-conf")) {
+            i++;
+            if (i < argc) {
+                LoadEvaluationConfig(argv[i]);
+            }
+        }
+
         if (!strcmp(argv[i], "--test")) {
             RunAllTests();
             exit(0);
@@ -136,6 +143,8 @@ int main(int argc, char *argv[]) {
     InitAll();
     HashInit();
 
+    ShowVersion();
+
     /*
      * Process rc file first, then command line options. This way command
      * line options can override rc file settings.
@@ -143,8 +152,6 @@ int main(int argc, char *argv[]) {
 
     ProcessRCFile();
     ProcessOptions(argc, argv);
-
-    ShowVersion();
 
     AllocateHT();
     InitEGTB(EGTBPath);

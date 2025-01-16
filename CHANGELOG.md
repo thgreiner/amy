@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.9.8]
+
+* Use R/W-locks instead of mutexes for hashtables
+* All configuration parameters can be read from/written to file
+
+
 ## [0.9.7] 2025-01-08
 
 * Refactor connected passed pawn scoring
