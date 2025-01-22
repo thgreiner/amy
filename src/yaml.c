@@ -41,9 +41,9 @@
 struct TokenizerState {
     const char *ptr;
     unsigned int indent_level;
-    unsigned int flow_style_indent_level;
     bool check_indent;
     bool flow_style;
+    bool in_sequence;
 };
 
 void free_yaml_node(struct Node *);
@@ -92,31 +92,43 @@ struct Token parse_word(struct TokenizerState *state) {
     return result;
 }
 
+static bool is_sequence_header(struct TokenizerState *state) {
+    return *state->ptr == '-' && *(state->ptr + 1) == ' ';
+}
+
 static struct Token handle_indent(struct TokenizerState *state,
                                   unsigned int indent) {
     state->check_indent = false;
 
-    if (state->flow_style) {
-        if (state->flow_style_indent_level == 0) {
-            if (indent > state->indent_level) {
-                state->flow_style_indent_level = indent;
-            } else {
-                return token_from_type(BAD_INDENT);
-            }
-        } else {
-            if (indent != state->flow_style_indent_level) {
-                return token_from_type(BAD_INDENT);
-            }
-        }
-    } else {
+    if (!state->flow_style) {
         if (indent > state->indent_level) {
             state->indent_level = indent;
             return token_from_type(OPENING_BRACE);
         }
 
         if (indent < state->indent_level) {
-            state->indent_level = indent;
-            return token_from_type(CLOSING_BRACE);
+            if (state->in_sequence) {
+                state->in_sequence = false;
+                state->check_indent = true;
+                return token_from_type(CLOSING_BRACKET);
+            } else {
+                state->indent_level = indent;
+                return token_from_type(CLOSING_BRACE);
+            }
+        }
+
+        if (is_sequence_header(state)) {
+            state->ptr += 2;
+            if (state->in_sequence) {
+                return token_from_type(COMMA);
+            }
+            state->in_sequence = true;
+            return token_from_type(OPENING_BRACKET);
+        } else {
+            if (state->in_sequence) {
+                state->in_sequence = false;
+                return token_from_type(CLOSING_BRACKET);
+            }
         }
     }
 
@@ -151,15 +163,20 @@ static struct Token next_token(struct TokenizerState *state) {
             }
         }
 
-        if (*state->ptr == '\0') {
-            return token_from_type(END);
-        }
-
         if (state->check_indent) {
             struct Token result = handle_indent(state, indent);
+            // printf("handle_indent() returned %d\n", result.type);
             if (result.type != CONTINUE) {
                 return result;
             }
+        }
+
+        if (*state->ptr == '\0') {
+            if (state->in_sequence) {
+                state->in_sequence = false;
+                return token_from_type(CLOSING_BRACKET);
+            }
+            return token_from_type(END);
         }
 
         if (*state->ptr == ':') {
@@ -170,7 +187,6 @@ static struct Token next_token(struct TokenizerState *state) {
         if (*state->ptr == '[') {
             state->ptr++;
             state->flow_style = true;
-            state->flow_style_indent_level = 0;
             return token_from_type(OPENING_BRACKET);
         }
 
@@ -199,10 +215,6 @@ struct ListNode *parse_list(struct TokenizerState *state) {
 
     struct Token token = next_token(state);
 
-    if (token.type == CLOSING_BRACKET) {
-        return result;
-    }
-
     for (;;) {
         if (token.type == WORD) {
             struct Node *value = malloc(sizeof(struct Node));
@@ -210,6 +222,7 @@ struct ListNode *parse_list(struct TokenizerState *state) {
 
             value->type = SCALAR;
             value->payload = token.text;
+            // printf("Parsed list element: %s\n", token.text);
 
             struct ListNode *next_node = malloc(sizeof(struct ListNode));
             abort_if_allocation_failed(next_node);
@@ -227,13 +240,17 @@ struct ListNode *parse_list(struct TokenizerState *state) {
 
             token = next_token(state);
             if (token.type == CLOSING_BRACKET) {
+                // printf("List done.\n");
                 return result;
             } else if (token.type == COMMA) {
                 token = next_token(state);
                 continue;
             }
+        } else if (token.type == CLOSING_BRACKET) {
+            // printf("List done.\n");
+            return result;
         }
-        printf("parse_list: Unexpected token %d!\n", token.type);
+        // printf("parse_list: Unexpected token %d!\n", token.type);
         free_list_node(result);
         return NULL;
     }
@@ -248,7 +265,7 @@ struct Node *parse_dict(struct TokenizerState *state) {
             struct Token expected_colon = next_token(state);
             if (expected_colon.type != COLON) {
                 free(token.text);
-                printf("Unexpected token %d!\n", expected_colon.type);
+                printf("Expected ':', got token %d!\n", expected_colon.type);
                 return NULL;
             }
             struct Token expected_value = next_token(state);
@@ -263,6 +280,7 @@ struct Node *parse_dict(struct TokenizerState *state) {
                 if (list_node == NULL) {
                     free(token.text);
                     free_tree_node(result_dict);
+                    // printf("Failed to parse list!\n");
                     return NULL;
                 }
                 struct Node node = {.type = LIST, .payload = list_node};
@@ -274,6 +292,7 @@ struct Node *parse_dict(struct TokenizerState *state) {
                 if (dict_node == NULL) {
                     free(token.text);
                     free_tree_node(result_dict);
+                    // printf("Failed to parse dict!\n");
                     return NULL;
                 }
                 result_dict =
@@ -281,7 +300,7 @@ struct Node *parse_dict(struct TokenizerState *state) {
                              dict_node, sizeof(struct Node));
                 free(dict_node);
             } else {
-                printf("Unexpected token %d!\n", expected_value.type);
+                // printf("Unexpected token %d!\n", expected_value.type);
                 free(token.text);
                 free_tree_node(result_dict);
                 return NULL;
@@ -292,6 +311,8 @@ struct Node *parse_dict(struct TokenizerState *state) {
             break;
         }
     }
+
+    // printf("Finished parsing dict.\n");
 
     struct Node *result = malloc(sizeof(struct Node));
     abort_if_allocation_failed(result);
@@ -306,7 +327,8 @@ struct Node *parse_yaml(char *text) {
     struct TokenizerState state = {.ptr = text,
                                    .indent_level = 0,
                                    .check_indent = true,
-                                   .flow_style = false};
+                                   .flow_style = false,
+                                   .in_sequence = false};
     return parse_dict(&state);
 }
 
@@ -353,6 +375,18 @@ struct Node *get_node(struct Node *node, char *path) {
     return result;
 }
 
+/**
+ * Lookup the string value under path. If successful (i.e. the node
+ * exists and is a scalar) returns .result_code = OK and a copy of
+ * the string value in .result. The caller is responsible for freeing
+ * the string value with free().
+ *
+ * Returns .result_code = NOT_FOUND if the node identified by path does
+ * not exist.
+ *
+ * Returns .result_code = TYPE_ERROR if the node identified by path is
+ * not a scalar.
+ */
 struct StringLookupResult get_as_string(struct Node *node, char *path) {
     struct Node *target = get_node(node, path);
 
@@ -362,7 +396,7 @@ struct StringLookupResult get_as_string(struct Node *node, char *path) {
         return lookup_result;
     }
 
-    char *result = target->payload;
+    char *result = strdup(target->payload);
     int type = target->type;
     free(target);
 
@@ -439,7 +473,7 @@ struct ListLookupResult get_as_list(struct Node *node, char *path) {
 }
 
 struct IntArrayLookupResult get_as_int_array(struct Node *node, char *path,
-                                             int (*buffer)[], int count) {
+                                             int *buffer, int count) {
     struct Node *target = get_node(node, path);
 
     if (target == NULL) {
@@ -480,75 +514,13 @@ struct IntArrayLookupResult get_as_int_array(struct Node *node, char *path,
                 .result_code = FORMAT_ERROR, .elements_read = 0};
             return lookup_result;
         }
-        (*buffer)[index] = value;
+        buffer[index] = value;
         list_node = list_node->next;
     }
 
     struct IntArrayLookupResult lookup_result = {.result_code = OK,
                                                  .elements_read = index};
     return lookup_result;
-}
-
-void test_next_token(char *buffer) {
-    printf("buffer:\n%s\n---\n", buffer);
-
-    struct TokenizerState state = {.ptr = buffer};
-
-    for (;;) {
-        struct Token token = next_token(&state);
-        printf("token type: %d\n", token.type);
-
-        if (token.type == END || token.type == UNKNOWN)
-            break;
-
-        printf("token text: >%s<\n", token.text);
-        free(token.text);
-    }
-}
-
-void dump_node(struct Node *);
-
-void dump_tree(tree_node_t *tree) {
-    if (tree == NULL) {
-        return;
-    }
-    dump_tree(tree->left_child);
-
-    printf("%s: ", (char *)tree->key_data);
-    struct Node *node = tree->value_data;
-
-    dump_node(node);
-
-    dump_tree(tree->right_child);
-}
-
-void dump_list(struct ListNode *list_node) {
-    if (list_node == NULL) {
-        return;
-    }
-    dump_node(list_node->value);
-    if (list_node->next) {
-        printf(",");
-        dump_list(list_node->next);
-    }
-}
-
-void dump_node(struct Node *node) {
-    if (node->type == DICT) {
-        tree_node_t *tree = node->payload;
-        printf("{\n");
-        dump_tree(tree);
-        printf("}\n");
-    } else if (node->type == SCALAR) {
-        printf("%s\n", (char *)node->payload);
-    } else if (node->type == LIST) {
-        struct ListNode *list = node->payload;
-        printf("[\n");
-        dump_list(list);
-        printf("]\n");
-    } else {
-        printf("Unknown node type: %d\n", node->type);
-    }
 }
 
 void free_yaml_node(struct Node *);

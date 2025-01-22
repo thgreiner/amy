@@ -85,7 +85,7 @@ static void acquire_read_lock(atomic_int *data) {
         int val = *data;
         if (val >= 0) {
             bool result = atomic_compare_exchange_strong(data, &val, val + 1);
-            if (result) 
+            if (result)
                 return;
         }
     }
@@ -113,7 +113,7 @@ static void acquire_write_lock(atomic_int *data) {
     for (;;) {
         int val = *data;
         if (val == 0) {
-            bool result = atomic_compare_exchange_strong(data, &val, - 1);
+            bool result = atomic_compare_exchange_strong(data, &val, -1);
             if (result)
                 return;
         }

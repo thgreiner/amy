@@ -475,7 +475,7 @@ static int quies(struct SearchData *sd, int alpha, int beta, int depth) {
      * Probe recognizers. If the probe is successful, use the
      * recognizer score as evaluation score.
      *
-     * Otherwise, use ScorePosition()
+     * Otherwise, use EvaluatePosition()
      */
 
     switch (ProbeRecognizer(p, &tmp)) {
@@ -495,7 +495,7 @@ static int quies(struct SearchData *sd, int alpha, int beta, int depth) {
         }
         break;
     default:
-        best = ScorePosition(p);
+        best = EvaluatePosition(p);
         break;
     }
 
@@ -1713,7 +1713,7 @@ int Iterate(struct Position *p) {
     SoftLimit2 = StartTime + (int)(85 * soft);
     HardLimit = StartTime + (int)(hard * ONE_SECOND);
 
-    InitScore(p);
+    InitEvaluation(p);
     AgeHashTable();
     SearchHeader();
 
