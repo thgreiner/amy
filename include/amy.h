@@ -618,20 +618,8 @@ int scanMove(FILE *fin, char *nextMove);
 void InitEGTB(char *);
 int ProbeEGTB(const struct Position *, int *, int);
 
-int MaterialBalance(const struct Position *);
-int EvaluatePosition(const struct Position *);
 bool CheckDraw(const struct Position *);
 bool IsPassed(const struct Position *, int, int);
-void InitEvaluation(const struct Position *);
-int OptimisticBound(void);
-
-int Iterate(struct Position *);
-void SearchRoot(struct Position *);
-void AnalysisMode(struct Position *);
-int PermanentBrain(struct Position *);
-#if MP
-void StopHelpers(void);
-#endif
 
 void SearchHeader(void);
 void SearchOutput(int depth, int time, int score, char *line, int nodes);

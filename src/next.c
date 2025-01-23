@@ -34,6 +34,7 @@
  */
 
 #include "amy.h"
+#include "evaluation.h"
 #include "heap.h"
 
 struct SearchData *CreateSearchData(struct Position *p) {

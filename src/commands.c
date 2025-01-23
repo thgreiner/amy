@@ -34,7 +34,9 @@
  */
 
 #include "amy.h"
+#include "evaluation.h"
 #include "heap.h"
+#include "search.h"
 #include <signal.h>
 
 static void Quit(char *);

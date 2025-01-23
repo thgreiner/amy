@@ -2,17 +2,10 @@
 
 ## Introduction
 
-The author releases Amy in source code only. Precompiled packages are
-available for FreeBSD and Windows systems. If you want to use Amy on a
-different operating system (e.g. Linux) or want to enable certain
-runtime features (e.g. parallel search on multiprocessor systems) you
-will want to compile Amy yourself.
+Amy is released in source code only. The binary releases are available
+from the [github release page](https://github.com/thgreiner/amy/releases).
 
-## Unix / Linux systems
-
-### Compiling from source
-
-Amy uses the autoconf utility to configure operating system dependant
+Amy uses the autoconf utility to configure operating system dependent
 details. The standard procedure to build Amy is to issue the commands
 `./configure && make && make install`. This will configure Amy for your
 platform, compile and install it in `/usr/local`.
@@ -20,24 +13,6 @@ platform, compile and install it in `/usr/local`.
 | Option | Description |
 |----|----|
 | `--enable-mt` | Enable multithreaded search. |
-
-autoconf parameters
-
-### Using the FreeBSD port
-
-On FreeBSD there is an Amy port located in `/usr/ports/games/amy`. To
-install Amy issue the command `cd /usr/ports/games/amy && make install`.
-
-## Mac OS X
-
-Joshua Shriver reported that Amy works 'out of the box' using the usual
-`./configure` and make approach on OS X. He recommends setting `CFLAGS`
-to "-O3 -faltivec -mcpu=7450" on a G4 Mac.
-
-## Windows systems
-
-Thanks to Dann Corbit there are several precompiled versions of Amy for
-Windows operating systems available on his ftp site.
 
 # Configuration
 
@@ -72,7 +47,16 @@ A typical resource file might look like this:
 | ht | Determines the size of the hashtable. Use the suffixes `k` to specify the size in kilobytes or `m` to specify the size in megabyes. |
 | tbpath | Specifies the path were the endgame tablebases are located. |
 
-Resource file entries
+## Evaluation and search configuration
+
+The parameters used for positional evaluation and for the search can be
+saved to and loaded from a configuration file in YAML format. There are three
+functionalities that support working with evaluation configuration files:
+
+1. the configuration file can be specified by supplying the `-conf _file_` option when invoking Amy
+2. the configuration file can be loaded from the command line using `conf _file_`
+3. the current configuration can be saved to file from the command line using `conf-save _file_`
+
 
 # Using the command line interface
 
