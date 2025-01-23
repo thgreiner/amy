@@ -34,6 +34,7 @@
  */
 
 #include "amy.h"
+#include "evaluation.h"
 #include "heap.h"
 
 #define NULLMOVE 1
@@ -51,41 +52,38 @@
  * See D. Levy, D. Broughton and M. Taylor: The SEX Algorithm in Computer Chess
  * ICCA Journal, Volume 2, No. 1, pp. 10-22.
  */
+static const int OnePly = 16;
 
-enum {
-    OnePly = 16,
+/*
+ * Check extensions. Every check is extended one ply. Additional extensions
+ * are awarded if there is only one legal reply or if it is a double or
+ * discovered check.
+ */
 
-    /*
-     * Check extensions. Every check is extended one ply. Additional extensions
-     * are awarded if there is only one legal reply or if it is a double or
-     * discovered check.
-     */
+int ExtendInCheck = 14;
+int ExtendDoubleCheck = 4;
+int ExtendDiscoveredCheck = 4;
+int ExtendSingularReply = 12;
 
-    ExtendInCheck = 14,
-    ExtendDoubleCheck = 4,
-    ExtendDiscoveredCheck = 4,
-    ExtendSingularReply = 12,
+/*
+ * A passed pawn push to the seventh rank is extended.
+ */
 
-    /*
-     * A passed pawn push to the seventh rank is extended.
-     */
+int ExtendPassedPawn = 14;
+int ExtendZugzwang = 12;
 
-    ExtendPassedPawn = 14,
-    ExtendZugzwang = 12,
+/*
+ * The tree below a null move is searched with reduced search depth.
+ */
 
-    /*
-     * The tree below a null move is searched with reduced search depth.
-     */
-
-    ReduceNullMove = 48,
-    ReduceNullMoveDeep = 65
-};
+int ReduceNullMove = 48;
+int ReduceNullMoveDeep = 65;
 
 /*
  * Captures and recaptures are extended.
  */
 
-static const int ExtendRecapture[] = {0, 4, 6, 6, 8, 10};
+int16_t ExtendRecapture[] = {0, 4, 6, 6, 8, 10};
 
 static const int PVWindow = 250;
 static const int ResearchWindow = 1500;

@@ -34,6 +34,7 @@
  */
 
 #include "amy.h"
+#include "search.h"
 
 static char InputBuffer[1024];
 

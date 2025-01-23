@@ -31,6 +31,7 @@
 
 #include "amy.h"
 #include "evaluation.h"
+#include "search.h"
 #include "yaml.h"
 #include <stdint.h>
 #include <stdio.h>
@@ -39,6 +40,7 @@
 char *ConfigurationName = "default";
 
 static void configure_name(struct Node *);
+static void configure_search(struct Node *);
 static void configure_pawn_scores(struct Node *);
 static void configure_knight_scores(struct Node *);
 static void configure_bishop_scores(struct Node *);
@@ -66,7 +68,7 @@ void LoadEvaluationConfig(char *file_name) {
     }
 
     configure_name(node);
-
+    configure_search(node);
     configure_pawn_scores(node);
     configure_knight_scores(node);
     configure_bishop_scores(node);
@@ -89,6 +91,18 @@ void SaveEvaluationConfig(char *file_name) {
     }
 
     fprintf(fout, "name: %s\n\n", ConfigurationName);
+
+    fprintf(fout, "search:\n");
+    fprintf(fout, "  extend_in_check: %d\n", ExtendInCheck);
+    fprintf(fout, "  extend_double_check: %d\n", ExtendDoubleCheck);
+    fprintf(fout, "  extend_discovered_check: %d\n", ExtendDiscoveredCheck);
+    fprintf(fout, "  extend_singular_reply: %d\n", ExtendSingularReply);
+    fprintf(fout, "  extend_passed_pawn: %d\n", ExtendPassedPawn);
+    fprintf(fout, "  extend_zugzwang: %d\n", ExtendZugzwang);
+    fprintf(fout, "  reduce_null_move: %d\n", ReduceNullMove);
+    fprintf(fout, "  reduce_null_move_deep: %d\n", ReduceNullMoveDeep);
+    print_array(fout, "extend_recapture", ExtendRecapture + 1, 5);
+    fprintf(fout, "\n");
 
     fprintf(fout, "pawn:\n");
     fprintf(fout, "  doubled: %d\n", DoubledPawn);
@@ -279,6 +293,19 @@ static void configure_name(struct Node *node) {
         abort_if_allocation_failed(ConfigurationName);
         Print(0, "Using configuration name: %s\n", ConfigurationName);
     }
+}
+
+static void configure_search(struct Node *node) {
+    set_parameter(node, "search.extend_in_check", &ExtendInCheck);
+    set_parameter(node, "search.extend_double_check", &ExtendDoubleCheck);
+    set_parameter(node, "search.extend_discovered_check",
+                  &ExtendDiscoveredCheck);
+    set_parameter(node, "search.extend_singular_reply", &ExtendSingularReply);
+    set_parameter(node, "search.extend_passed_pawn", &ExtendPassedPawn);
+    set_parameter(node, "search.extend_zugzwang", &ExtendZugzwang);
+    set_parameter(node, "search.reduce_null_move", &ReduceNullMove);
+    set_parameter(node, "search.reduce_null_move_deep", &ReduceNullMoveDeep);
+    set_array(node, "search.extend_recapture", ExtendRecapture + 1, 5);
 }
 
 static void configure_pawn_scores(struct Node *node) {

@@ -107,4 +107,8 @@ extern int16_t ScaleHalfOpenFilesMine[];
 extern int16_t ScaleHalfOpenFilesYours[];
 extern int16_t ScaleOpenFiles[];
 
+int EvaluatePosition(const struct Position *);
+void InitEvaluation(const struct Position *);
+int MaterialBalance(const struct Position *);
+
 #endif /* EVALUATION_H */

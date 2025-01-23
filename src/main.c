@@ -45,6 +45,8 @@ int NumberOfCPUs;
 
 static char EGTBPath[1024] = "TB";
 
+static char *ConfigFileName = NULL;
+
 static void RunAllTests(void) {
     test_all_yaml();
     test_all_dbase();
@@ -64,7 +66,7 @@ static void ProcessOptions(int argc, char *argv[]) {
         if (!strcmp(argv[i], "-conf")) {
             i++;
             if (i < argc) {
-                LoadEvaluationConfig(argv[i]);
+                ConfigFileName = argv[i];
             }
         }
 
@@ -143,8 +145,6 @@ int main(int argc, char *argv[]) {
     InitAll();
     HashInit();
 
-    ShowVersion();
-
     /*
      * Process rc file first, then command line options. This way command
      * line options can override rc file settings.
@@ -152,6 +152,12 @@ int main(int argc, char *argv[]) {
 
     ProcessRCFile();
     ProcessOptions(argc, argv);
+
+    ShowVersion();
+
+    if (ConfigFileName) {
+        LoadEvaluationConfig(ConfigFileName);
+    }
 
     AllocateHT();
     InitEGTB(EGTBPath);
