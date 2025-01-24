@@ -33,13 +33,7 @@
  * pgn.c - pgn handling routines
  */
 
-#include "pgn.h"
-#include "amy.h"
 #include "config.h"
-#include "dbase.h"
-#include "eco.h"
-#include "state_machine.h"
-#include "utils.h"
 
 #include <string.h>
 
@@ -51,6 +45,12 @@
 #if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+
+#include "dbase.h"
+#include "eco.h"
+#include "pgn.h"
+#include "state_machine.h"
+#include "utils.h"
 
 #define AMY_NAME "Amy " VERSION
 

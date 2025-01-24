@@ -34,7 +34,6 @@
  */
 
 #include "state_machine.h"
-#include "amy.h"
 #include "commands.h"
 #include "dbase.h"
 #include "pgn.h"
@@ -43,7 +42,7 @@
 
 static char InputBuffer[1024];
 
-int State = STATE_WAITING;
+ui_state_t State = STATE_WAITING;
 bool XBoardMode = false;
 bool ForceMode = false;
 bool EasyMode = false;
@@ -119,6 +118,8 @@ void StateMachine(void) {
             break;
         case STATE_ANALYZING:
             AnalysisMode(CurrentPosition);
+            break;
+        case STATE_END:
             break;
         }
 

@@ -33,12 +33,12 @@
  * time_ctl.c - time management routines
  */
 
-#include "time_ctl.h"
-#include "amy.h"
-#include "dbase.h"
-#include "utils.h"
 #include <stdio.h>
 #include <string.h>
+
+#include "dbase.h"
+#include "time_ctl.h"
+#include "utils.h"
 
 int TMoves = 60, TTime = 5 * 60;
 int Moves[3] = {60, 60}, Time[3] = {5 * 60, 5 * 60};

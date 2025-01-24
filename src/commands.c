@@ -33,9 +33,12 @@
  * commands.c - Command interpreter
  */
 
-#include "commands.h"
+#include <signal.h>
+#include <string.h>
+
 #include "amy.h"
 #include "bookup.h"
+#include "commands.h"
 #include "dbase.h"
 #include "eco.h"
 #include "evaluation.h"
@@ -48,9 +51,6 @@
 #include "state_machine.h"
 #include "time_ctl.h"
 #include "utils.h"
-
-#include <signal.h>
-#include <string.h>
 
 static void Quit(char *);
 static void Show(char *);

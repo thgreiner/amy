@@ -34,7 +34,6 @@
  */
 
 #include "next.h"
-#include "amy.h"
 #include "dbase.h"
 #include "evaluation.h"
 #include "hashtable.h"

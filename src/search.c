@@ -34,7 +34,6 @@
  */
 
 #include "search.h"
-#include "amy.h"
 #include "bookup.h"
 #include "commands.h"
 #include "config.h"

@@ -33,13 +33,13 @@
  * eco.c - ECO handling routines
  */
 
+#include <errno.h>
+#include <string.h>
+
 #include "amy.h"
 #include "dbase.h"
 #include "tree.h"
 #include "utils.h"
-
-#include <errno.h>
-#include <string.h>
 
 #define ECO_NAME "Eco.db"
 
