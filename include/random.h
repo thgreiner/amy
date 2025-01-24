@@ -39,4 +39,3 @@ double Random(void);
 void InitRandom(ran_t seed);
 
 #endif
-
