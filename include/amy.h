@@ -31,14 +31,12 @@
 
 /*
  * amy.h - Amy headerfile
- *
  */
 
 #ifndef AMY_H
 #define AMY_H
 
 #ifdef _WIN32
-
 /*
  * Windows stuff by Dann Corbit.
  */
@@ -47,17 +45,16 @@
 #define STDC_HEADERS 1
 #define HAVE_FCNTL_H 1
 
-#else
-#define CDECL
-#endif
-
-#ifdef _WIN32
 #include <conio.h>
 #include <io.h>
 #include <windows.h>
 #define PATH_SEPARATOR "\\"
+
 #else
+
+#define CDECL
 #define PATH_SEPARATOR "/"
-#endif
+
+#endif /* _WIN32 */
 
 #endif /* AMY_H */

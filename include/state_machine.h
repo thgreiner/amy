@@ -35,14 +35,16 @@
 #include "dbase.h"
 #include <stdbool.h>
 
-#define STATE_WAITING 0
-#define STATE_CALCULATING 1
-#define STATE_PONDERING 2
-#define STATE_ANALYZING 3
-#define STATE_END 4
+typedef enum {
+    STATE_WAITING = 0,
+    STATE_CALCULATING,
+    STATE_PONDERING,
+    STATE_ANALYZING,
+    STATE_END
+} ui_state_t;
 
 extern bool XBoardMode;
-extern int State;
+extern ui_state_t State;
 extern bool ForceMode;
 extern bool EasyMode;
 extern bool PostMode;

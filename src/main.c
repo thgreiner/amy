@@ -33,7 +33,8 @@
  * main.c - main program for Amy
  */
 
-#include "amy.h"
+#include <string.h>
+
 #include "evaluation_config.h"
 #include "hashtable.h"
 #include "init.h"
@@ -47,8 +48,6 @@
 #include "test_dbase.h"
 #include "test_yaml.h"
 #include "utils.h"
-
-#include <string.h>
 
 static char CopyrightNotice[] =
     "    Amy version " VERSION ", Copyright (c) 2002-2025, Thorsten Greiner\n"

@@ -29,14 +29,15 @@
 
 */
 
+#include <stdint.h>
+#include <stdio.h>
+
 #include "amy.h"
 #include "dbase.h"
 #include "evaluation.h"
 #include "search.h"
 #include "utils.h"
 #include "yaml.h"
-#include <stdint.h>
-#include <stdio.h>
 
 /** The name of the current configuration. */
 char *ConfigurationName = "default";

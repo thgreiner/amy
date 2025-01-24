@@ -29,12 +29,12 @@
 
 */
 
-#include "tree.h"
-#include "yaml.h"
-
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "tree.h"
+#include "yaml.h"
 
 static void test_simple_dict(void) {
     char *payload = "key: value\n";

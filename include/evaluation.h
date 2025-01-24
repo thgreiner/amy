@@ -32,8 +32,8 @@
 #ifndef EVALUATION_H
 #define EVALUATION_H
 
+#include "bitboard.h"
 #include "types.h"
-#include <bitboard.h>
 
 struct PawnFacts {
     BitBoard pf_WhitePassers;

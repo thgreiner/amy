@@ -33,13 +33,13 @@
  * hashtable.c - hashtable management routines
  */
 
-#include "hashtable.h"
+#include <string.h>
+
 #include "amy.h"
+#include "hashtable.h"
 #include "random.h"
 #include "search.h"
 #include "utils.h"
-
-#include <string.h>
 
 #define HT_AGE (0x3f)
 #define HT_NCPU ((0x3f) << 6)

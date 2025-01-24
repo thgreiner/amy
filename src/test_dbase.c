@@ -29,7 +29,6 @@
 
 */
 
-#include "amy.h"
 #include "inline.h"
 #include <assert.h>
 

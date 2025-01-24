@@ -33,7 +33,6 @@
  * mates.c - mate threat detection routines
  */
 
-#include "amy.h"
 #include "dbase.h"
 #include "init.h"
 

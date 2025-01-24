@@ -33,8 +33,9 @@
  * dbase.c - global database manipulation routines
  */
 
+#include <string.h>
+
 #include "dbase.h"
-#include "amy.h"
 #include "hashtable.h"
 #include "heap.h"
 #include "init.h"
@@ -44,8 +45,6 @@
 #include "recog.h"
 #include "swap.h"
 #include "utils.h"
-
-#include <string.h>
 
 #define INITIAL_GAME_LOG_SIZE 40 /* Initial size of game history */
 
