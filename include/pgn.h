@@ -29,47 +29,32 @@
 
 */
 
-#include "heap.h"
-#include "amy.h"
+#ifndef PGN_H
+#define PGN_H
 
-static const int DATA_SIZE = 1024;
-static const int SECTION_SIZE = 32;
+#include "dbase.h"
+#include "types.h"
+#include <stdio.h>
 
-heap_t allocate_heap(void) {
-    heap_t heap = (heap_t)malloc(sizeof(struct heap));
-    if (heap == NULL) {
-        perror("Cannot allocate heap:");
-        exit(1);
-    }
+#define OPP_NAME_LENGTH 1024
 
-    move_t *data = (move_t *)malloc(DATA_SIZE * sizeof(move_t));
-    if (data == NULL) {
-        perror("Cannot allocate heap:");
-        exit(1);
-    }
+struct PGNHeader {
+    char event[64];
+    char site[64];
+    char date[64];
+    char round[64];
+    char white[64];
+    char black[64];
+    char result[8];
+    int white_elo;
+    int black_elo;
+};
 
-    heap->data = data;
-    heap->capacity = DATA_SIZE;
+extern char OpponentName[OPP_NAME_LENGTH];
 
-    heap_section_t sections =
-        (heap_section_t)malloc(SECTION_SIZE * sizeof(struct heap_section));
-    if (sections == NULL) {
-        perror("Cannot allocate heap:");
-        exit(1);
-    }
+void SaveGame(struct Position *, char *);
+void LoadGame(struct Position *, char *);
+int scanHeader(FILE *, struct PGNHeader *);
+int scanMove(FILE *fin, char *nextMove);
 
-    heap->sections_start = sections;
-    heap->sections_end = sections + SECTION_SIZE;
-    heap->current_section = sections;
-
-    heap->current_section->start = 0;
-    heap->current_section->end = 0;
-
-    return heap;
-}
-
-void free_heap(heap_t heap) {
-    free(heap->data);
-    free(heap->sections_start);
-    free(heap);
-}
+#endif

@@ -29,47 +29,20 @@
 
 */
 
-#include "heap.h"
-#include "amy.h"
+#ifndef TIME_CTL_H
+#define TIME_CTL_H
 
-static const int DATA_SIZE = 1024;
-static const int SECTION_SIZE = 32;
+#include "dbase.h"
 
-heap_t allocate_heap(void) {
-    heap_t heap = (heap_t)malloc(sizeof(struct heap));
-    if (heap == NULL) {
-        perror("Cannot allocate heap:");
-        exit(1);
-    }
+extern int TMoves, TTime;
+extern int Moves[3], Time[3];
+extern int Increment;
+extern int TMoves2, TTime2;
+extern int TwoTimeControls;
 
-    move_t *data = (move_t *)malloc(DATA_SIZE * sizeof(move_t));
-    if (data == NULL) {
-        perror("Cannot allocate heap:");
-        exit(1);
-    }
+void DoTC(struct Position *, int);
+void CalcTime(struct Position *, float *, float *);
+void SetTimeControl(char **, bool);
+void ResetTimeControl(bool);
 
-    heap->data = data;
-    heap->capacity = DATA_SIZE;
-
-    heap_section_t sections =
-        (heap_section_t)malloc(SECTION_SIZE * sizeof(struct heap_section));
-    if (sections == NULL) {
-        perror("Cannot allocate heap:");
-        exit(1);
-    }
-
-    heap->sections_start = sections;
-    heap->sections_end = sections + SECTION_SIZE;
-    heap->current_section = sections;
-
-    heap->current_section->start = 0;
-    heap->current_section->end = 0;
-
-    return heap;
-}
-
-void free_heap(heap_t heap) {
-    free(heap->data);
-    free(heap->sections_start);
-    free(heap);
-}
+#endif

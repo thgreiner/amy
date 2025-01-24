@@ -29,47 +29,26 @@
 
 */
 
-#include "heap.h"
-#include "amy.h"
+#ifndef UTILS_H
+#define UTILS_H
 
-static const int DATA_SIZE = 1024;
-static const int SECTION_SIZE = 32;
+#include <stddef.h>
 
-heap_t allocate_heap(void) {
-    heap_t heap = (heap_t)malloc(sizeof(struct heap));
-    if (heap == NULL) {
-        perror("Cannot allocate heap:");
-        exit(1);
-    }
+#define ONE_SECOND 100u
 
-    move_t *data = (move_t *)malloc(DATA_SIZE * sizeof(move_t));
-    if (data == NULL) {
-        perror("Cannot allocate heap:");
-        exit(1);
-    }
+extern int Verbosity;
 
-    heap->data = data;
-    heap->capacity = DATA_SIZE;
+void OpenLogFile(char *name);
+void Print(int, char *, ...);
+void PrintNoLog(int, char *, ...);
+int InputReady(void);
+int ReadLine(char *buffer, int cnt);
+char *FormatTime(unsigned int, char *, size_t);
+char *FormatScore(int, char *, size_t);
+char *FormatCount(unsigned long, char *, size_t);
+unsigned int GetTime(void);
+void GetTmpFileName(char *, size_t);
+char *nextToken(char **, const char *);
+int Percentage(unsigned long, unsigned long);
 
-    heap_section_t sections =
-        (heap_section_t)malloc(SECTION_SIZE * sizeof(struct heap_section));
-    if (sections == NULL) {
-        perror("Cannot allocate heap:");
-        exit(1);
-    }
-
-    heap->sections_start = sections;
-    heap->sections_end = sections + SECTION_SIZE;
-    heap->current_section = sections;
-
-    heap->current_section->start = 0;
-    heap->current_section->end = 0;
-
-    return heap;
-}
-
-void free_heap(heap_t heap) {
-    free(heap->data);
-    free(heap->sections_start);
-    free(heap);
-}
+#endif

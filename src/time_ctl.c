@@ -33,7 +33,10 @@
  * time_ctl.c - time management routines
  */
 
+#include "time_ctl.h"
 #include "amy.h"
+#include "dbase.h"
+#include "utils.h"
 #include <stdio.h>
 #include <string.h>
 

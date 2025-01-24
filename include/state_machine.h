@@ -29,47 +29,28 @@
 
 */
 
-#include "heap.h"
-#include "amy.h"
+#ifndef STATE_MACHINE_H
+#define STATE_MACHINE_H
 
-static const int DATA_SIZE = 1024;
-static const int SECTION_SIZE = 32;
+#include "dbase.h"
+#include <stdbool.h>
 
-heap_t allocate_heap(void) {
-    heap_t heap = (heap_t)malloc(sizeof(struct heap));
-    if (heap == NULL) {
-        perror("Cannot allocate heap:");
-        exit(1);
-    }
+#define STATE_WAITING 0
+#define STATE_CALCULATING 1
+#define STATE_PONDERING 2
+#define STATE_ANALYZING 3
+#define STATE_END 4
 
-    move_t *data = (move_t *)malloc(DATA_SIZE * sizeof(move_t));
-    if (data == NULL) {
-        perror("Cannot allocate heap:");
-        exit(1);
-    }
+extern bool XBoardMode;
+extern int State;
+extern bool ForceMode;
+extern bool EasyMode;
+extern bool PostMode;
+extern bool SelfPlayMode;
+extern int ComputerSide;
+extern struct Position *CurrentPosition;
+extern bool AutoSave;
 
-    heap->data = data;
-    heap->capacity = DATA_SIZE;
+void StateMachine(void);
 
-    heap_section_t sections =
-        (heap_section_t)malloc(SECTION_SIZE * sizeof(struct heap_section));
-    if (sections == NULL) {
-        perror("Cannot allocate heap:");
-        exit(1);
-    }
-
-    heap->sections_start = sections;
-    heap->sections_end = sections + SECTION_SIZE;
-    heap->current_section = sections;
-
-    heap->current_section->start = 0;
-    heap->current_section->end = 0;
-
-    return heap;
-}
-
-void free_heap(heap_t heap) {
-    free(heap->data);
-    free(heap->sections_start);
-    free(heap);
-}
+#endif

@@ -8,7 +8,15 @@
  */
 
 #include "amy.h"
+#include "config.h"
+#include "dbase.h"
+#include "search.h"
+#include "utils.h"
 #include <stdlib.h>
+
+#if HAVE_LIBPTHREAD
+#include <pthread.h>
+#endif
 
 /*
  * This is from tbindex.cpp

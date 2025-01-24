@@ -32,7 +32,18 @@
 #ifndef EVALUATION_H
 #define EVALUATION_H
 
-#include <stdint.h>
+#include "types.h"
+#include <bitboard.h>
+
+struct PawnFacts {
+    BitBoard pf_WhitePassers;
+    BitBoard pf_BlackPassers;
+    int pf_Flags;
+    char pf_WhiteKingSide;
+    char pf_BlackKingSide;
+    char pf_WhiteQueenSide;
+    char pf_BlackQueenSide;
+};
 
 /**
  * Pawn evaluation parameters
@@ -106,6 +117,8 @@ extern int16_t KingPosEndgameQueenSide[64];
 extern int16_t ScaleHalfOpenFilesMine[];
 extern int16_t ScaleHalfOpenFilesYours[];
 extern int16_t ScaleOpenFiles[];
+
+extern int MaxPos;
 
 int EvaluatePosition(const struct Position *);
 void InitEvaluation(const struct Position *);

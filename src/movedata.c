@@ -33,7 +33,7 @@
  * movedata.c - move data precalculation stuff
  */
 
-#include "amy.h"
+#include "bitboard.h"
 
 static int conv[128];
 

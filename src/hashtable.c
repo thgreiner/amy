@@ -33,7 +33,13 @@
  * hashtable.c - hashtable management routines
  */
 
+#include "hashtable.h"
 #include "amy.h"
+#include "random.h"
+#include "search.h"
+#include "utils.h"
+
+#include <string.h>
 
 #define HT_AGE (0x3f)
 #define HT_NCPU ((0x3f) << 6)
@@ -50,7 +56,7 @@ hash_t HashKeysEP[64];
 hash_t HashKeysCastle[16];
 hash_t STMKey;
 
-int HT_Bits = 17;
+static int HT_Bits = 17;
 static int PT_Bits = 15;
 static int ST_Bits = 15;
 

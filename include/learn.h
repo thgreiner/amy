@@ -29,29 +29,9 @@
 
 */
 
-/*
- * version.c - version information
- */
+#ifndef LEARN_H
+#define LEARN_H
 
-#include "amy.h"
+void DoBookLearning(void);
 
-static char CopyrightNotice[] =
-    "    Amy version " VERSION ", Copyright (c) 2002-2025, Thorsten Greiner\n"
-    "    Amy comes with ABSOLUTELY NO WARRANTY; for details type 'warranty'.\n"
-    "    This is free software, and you are welcome to redistribute it\n"
-    "    under certain conditions; type 'distribution' for details.\n\n"
-    "    Amy contains table base access code which is copyrighted\n"
-    "    by Eugene Nalimov and not free software.\n\n";
-
-/**
- * Show the version of Amy.
- */
-void ShowVersion(void) {
-    Print(0, "\n");
-    Print(0, CopyrightNotice);
-#if MP
-    Print(0, "    Multiprocessor support (%d CPUs).\n\n", NumberOfCPUs);
-#else
-    Print(0, "    No multiprocessor support.\n\n");
 #endif
-}

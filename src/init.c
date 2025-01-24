@@ -34,6 +34,10 @@
  */
 
 #include "amy.h"
+#include "dbase.h"
+#include "inline.h"
+#include "magic.h"
+#include "utils.h"
 
 BitBoard ShiftUpMask, ShiftDownMask;
 BitBoard ShiftLeftMask, ShiftRightMask;
@@ -77,28 +81,6 @@ void PrintBitBoard(BitBoard x) {
         for (j = 0; j < 8; j++) {
             int k = i * 8 + j;
             if (TstBit(x, k))
-                Print(0, "*");
-            else
-                Print(0, ".");
-        }
-        Print(0, "\n");
-    }
-}
-
-void Print2BitBoards(BitBoard x1, BitBoard x2) {
-    int i, j;
-    for (i = 7; i >= 0; i--) {
-        for (j = 0; j < 8; j++) {
-            int k = i * 8 + j;
-            if (TstBit(x1, k))
-                Print(0, "*");
-            else
-                Print(0, ".");
-        }
-        printf("   ");
-        for (j = 0; j < 8; j++) {
-            int k = i * 8 + j;
-            if (TstBit(x2, k))
                 Print(0, "*");
             else
                 Print(0, ".");

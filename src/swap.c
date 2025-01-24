@@ -34,7 +34,9 @@
  */
 
 #include "amy.h"
-#include <stdio.h>
+#include "dbase.h"
+#include "init.h"
+#include "inline.h"
 
 static int SwapValue[] = {
     0,    100, /* Pawn */
