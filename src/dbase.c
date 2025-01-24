@@ -33,9 +33,24 @@
  * dbase.c - global database manipulation routines
  */
 
+#include "dbase.h"
 #include "amy.h"
+#include "hashtable.h"
 #include "heap.h"
+#include "init.h"
+#include "inline.h"
 #include "magic.h"
+#include "mates.h"
+#include "recog.h"
+#include "swap.h"
+#include "utils.h"
+
+#include <string.h>
+
+#define INITIAL_GAME_LOG_SIZE 40 /* Initial size of game history */
+
+/* Maximum number of EPD ops we attempt to parse */
+#define MAX_EPD_OPS 15
 
 /*
  * Names of pieces (language dependent)
@@ -46,8 +61,7 @@ char PieceName[] = {' ', 'P', 'N', 'B', 'R', 'Q', 'K'};
  * material Values of Pieces
  */
 
-int Value[] = {0,           PAWN_Value, KNIGHT_Value, BISHOP_Value, ROOK_Value,
-               QUEEN_Value, 0};
+int Value[] = {0, 1000, 3500, 3500, 5500, 11000, 0};
 
 /*
  * Masks for castle rights:
@@ -2465,10 +2479,18 @@ const char *GameEnd(struct Position *p) {
     return NULL;
 }
 
+/**
+ * Returns true if the given side only has a bishops and no other
+ * major pieces.
+ */
+static bool has_only_bishops(const struct Position *p, Color side) {
+    return (p->mask[side][Bishop] != 0ULL) &&
+           ((p->mask[side][Knight] | p->mask[side][Rook] |
+             p->mask[side][Queen]) == 0ULL);
+}
 /*
  * Check if this is a theoretical draw
  */
-
 bool CheckDraw(const struct Position *p) {
     if (p->material[Black] == 0) {
         if (p->nonPawn[White] == 0) {
@@ -2480,8 +2502,7 @@ bool CheckDraw(const struct Position *p) {
                 if (p->mask[Black][King] & CornerMaskH8)
                     return true;
             }
-        } else if (p->nonPawn[White] == BISHOP_Value &&
-                   p->mask[White][Bishop]) {
+        } else if (has_only_bishops(p, White)) {
             if (!(p->mask[White][Pawn] & NotAFileMask) &&
                 (p->mask[Black][King] & CornerMaskA8)) {
                 if (p->mask[White][Bishop] & BlackSquaresMask)
@@ -2504,8 +2525,7 @@ bool CheckDraw(const struct Position *p) {
                 if (p->mask[White][King] & CornerMaskH1)
                     return true;
             }
-        } else if (p->nonPawn[Black] == BISHOP_Value &&
-                   p->mask[Black][Bishop]) {
+        } else if (has_only_bishops(p, Black)) {
             if (!(p->mask[Black][Pawn] & NotAFileMask) &&
                 (p->mask[White][King] & CornerMaskA1)) {
                 if (p->mask[Black][Bishop] & WhiteSquaresMask)

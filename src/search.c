@@ -33,9 +33,37 @@
  * search.c - tree searching routines
  */
 
+#include "search.h"
 #include "amy.h"
+#include "bookup.h"
+#include "commands.h"
+#include "config.h"
+#include "dbase.h"
 #include "evaluation.h"
+#include "hashtable.h"
 #include "heap.h"
+#include "init.h"
+#include "inline.h"
+#include "mates.h"
+#include "next.h"
+#include "probe.h"
+#include "random.h"
+#include "recog.h"
+#include "search_io.h"
+#include "state_machine.h"
+#include "swap.h"
+#include "time_ctl.h"
+#include "utils.h"
+
+#include <string.h>
+
+#if HAVE_LIBPTHREAD
+#include <pthread.h>
+#endif
+
+#if HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 
 #define NULLMOVE 1
 #define FUTILITY 1
@@ -101,16 +129,20 @@ unsigned int HardLimit, SoftLimit, SoftLimit2;
 unsigned int StartTime, WallTimeStart;
 unsigned int CurTime;
 unsigned int FHTime;
-int AbortSearch;
+bool AbortSearch;
 bool NeedTime = false;
 int PrintOK;
-int MaxSearchDepth = MAX_TREE_SIZE - 1;
+static int MaxSearchDepth = MAX_TREE_SIZE - 1;
 int DoneAtRoot;
 static int EGTBDepth = 0;
 
 static int NodesPerCheck;
 
 static OPTIONAL_ATOMIC unsigned long TotalNodes;
+
+#if MP
+int NumberOfCPUs;
+#endif
 
 /*
  * Search stati
@@ -133,9 +165,9 @@ int PBMove, PBActMove;
 int PBHit;
 int PBAltMove;
 
-char BestLine[2048];
-char ShortBestLine[2048];
-char AnalysisLine[4096];
+static char BestLine[2048];
+static char ShortBestLine[2048];
+static char AnalysisLine[4096];
 
 OPTIONAL_ATOMIC unsigned long HTry, HHit, PTry, PHit, STry, SHit;
 
@@ -1781,7 +1813,7 @@ void SearchRoot(struct Position *p) {
 /**
  * Implements the permanent brain.
  */
-int PermanentBrain(struct Position *p) {
+pb_result_t PermanentBrain(struct Position *p) {
     if (!LegalMove(p, PBMove)) {
         struct Position *q;
 

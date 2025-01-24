@@ -32,6 +32,15 @@
 #ifndef INLINE_H
 #define INLINE_H
 
+#include "amy.h"
+#include "bitboard.h"
+#include "dbase.h"
+#include "types.h"
+
+#define ABS(x) ((x) < 0 ? -(x) : (x))
+#define MAX(x, y) ((x) > (y) ? (x) : (y))
+#define MIN(x, y) ((x) < (y) ? (x) : (y))
+
 extern BitBoard ShiftUpMask, ShiftDownMask;
 extern BitBoard ShiftLeftMask, ShiftRightMask;
 

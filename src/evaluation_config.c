@@ -30,8 +30,10 @@
 */
 
 #include "amy.h"
+#include "dbase.h"
 #include "evaluation.h"
 #include "search.h"
+#include "utils.h"
 #include "yaml.h"
 #include <stdint.h>
 #include <stdio.h>

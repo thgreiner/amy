@@ -38,7 +38,12 @@
  * ICCA Journal Volume 21, No. 3, pp 156-167
  */
 
+#include "recog.h"
 #include "amy.h"
+#include "dbase.h"
+#include "hashtable.h"
+#include "init.h"
+#include "inline.h"
 
 typedef int RECOGNIZER(const struct Position *, int *score);
 

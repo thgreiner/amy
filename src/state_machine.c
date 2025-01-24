@@ -33,8 +33,13 @@
  * state_machine.c - the state machine which handles program states
  */
 
+#include "state_machine.h"
 #include "amy.h"
+#include "commands.h"
+#include "dbase.h"
+#include "pgn.h"
 #include "search.h"
+#include "utils.h"
 
 static char InputBuffer[1024];
 
@@ -107,6 +112,8 @@ void StateMachine(void) {
                 if (EasyMode) {
                     State = STATE_WAITING;
                 }
+                break;
+            default:
                 break;
             }
             break;

@@ -33,7 +33,8 @@
  * bitboard.c - bitboard routines
  */
 
-#include "amy.h"
+#include "bitboard.h"
+#include "config.h"
 
 #define USE_8BIT 1
 

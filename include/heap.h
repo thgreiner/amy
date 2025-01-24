@@ -37,7 +37,26 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "amy.h"
+#include "types.h"
+
+typedef uint64_t ran_t;
+
+struct heap_section {
+    unsigned int start;
+    unsigned int end;
+};
+
+typedef struct heap_section *heap_section_t;
+
+struct heap {
+    move_t *data;
+    unsigned int capacity;
+    heap_section_t sections_start;
+    heap_section_t sections_end;
+    heap_section_t current_section;
+};
+
+typedef struct heap *heap_t;
 
 static inline void append_to_heap(heap_t heap, move_t data) {
     if (heap->current_section->end >= heap->capacity) {
@@ -78,5 +97,8 @@ static inline void pop_section(heap_t heap) {
     assert(heap->current_section > heap->sections_start);
     heap->current_section--;
 }
+
+heap_t allocate_heap(void);
+void free_heap(heap_t heap);
 
 #endif

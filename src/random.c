@@ -29,7 +29,8 @@
 
 */
 
-#include "amy.h"
+#include "types.h"
+#include <stddef.h>
 
 /**
    A C-program for MT19937-64 (2004/9/29 version).

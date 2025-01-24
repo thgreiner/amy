@@ -33,11 +33,24 @@
  * commands.c - Command interpreter
  */
 
+#include "commands.h"
 #include "amy.h"
+#include "bookup.h"
+#include "dbase.h"
+#include "eco.h"
 #include "evaluation.h"
+#include "evaluation_config.h"
 #include "heap.h"
+#include "inline.h"
+#include "next.h"
+#include "pgn.h"
 #include "search.h"
+#include "state_machine.h"
+#include "time_ctl.h"
+#include "utils.h"
+
 #include <signal.h>
+#include <string.h>
 
 static void Quit(char *);
 static void Show(char *);
@@ -126,6 +139,8 @@ static struct CommandEntry Commands[] = {
     {"?", &MoveNow, true, false, "move now", NULL},
     {"tn", &TestNext, false, false, "test the move generators", NULL},
     {NULL, NULL, false, false, NULL, NULL}};
+
+char AutoSaveFileName[64];
 
 struct Command *ParseInput(char *line) {
     static struct Command theCommand;

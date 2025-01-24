@@ -32,7 +32,25 @@
 #ifndef SEARCH_H
 #define SEARCH_H
 
+#include "config.h"
+#include "dbase.h"
 #include <stdint.h>
+
+#define INF 200000 /* max. score */
+#define CMLIMIT                                                                \
+    100000 /* scores above this (or below -CMLIMIT)                            \
+            * indicate checkmate */
+#define ON_EVALUATION (INF + 1)
+
+#define MAX_TREE_SIZE 64 /* maximum depth we will search to */
+
+typedef enum {
+    PB_NO_PB_MOVE = 0,
+    PB_NO_PB_HIT,
+    PB_HIT,
+    PB_ALT_COMMAND
+
+} pb_result_t;
 
 extern int ExtendInCheck;
 extern int ExtendDoubleCheck;
@@ -44,10 +62,17 @@ extern int ReduceNullMove;
 extern int ReduceNullMoveDeep;
 extern int16_t ExtendRecapture[];
 
+extern unsigned int FHTime;
+extern bool AbortSearch;
+
+#if MP
+extern int NumberOfCPUs;
+#endif
+
 int Iterate(struct Position *);
 void SearchRoot(struct Position *);
 void AnalysisMode(struct Position *);
-int PermanentBrain(struct Position *);
+pb_result_t PermanentBrain(struct Position *);
 #if MP
 void StopHelpers(void);
 #endif

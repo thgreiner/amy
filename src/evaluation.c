@@ -34,6 +34,12 @@
  */
 
 #include "amy.h"
+#include "dbase.h"
+#include "hashtable.h"
+#include "init.h"
+#include "inline.h"
+#include "recog.h"
+#include "utils.h"
 
 #define REFLECT_X(a) ((a) ^ 0x38)
 

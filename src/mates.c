@@ -34,11 +34,8 @@
  */
 
 #include "amy.h"
-#include <stdio.h>
-
-#define MT_BITS 14
-#define MT_SIZE (1 << MT_BITS)
-#define MT_MASK (MT_SIZE - 1)
+#include "dbase.h"
+#include "init.h"
 
 bool MateThreat(struct Position *p, int side) {
     int oside = !side;

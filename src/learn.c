@@ -33,7 +33,12 @@
  * learn.c - book learning routines
  */
 
-#include <amy.h>
+#include "amy.h"
+#include "bookup.h"
+#include "utils.h"
+
+#include <sys/stat.h>
+#include <sys/types.h>
 
 void DoBookLearning(void) {
     int cnt = 0;

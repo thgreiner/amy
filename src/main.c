@@ -34,14 +34,29 @@
  */
 
 #include "amy.h"
+#include "evaluation_config.h"
+#include "hashtable.h"
+#include "init.h"
+#include "learn.h"
+#include "movedata.h"
+#include "probe.h"
+#include "random.h"
+#include "recog.h"
+#include "search.h"
+#include "state_machine.h"
 #include "test_dbase.h"
 #include "test_yaml.h"
+#include "utils.h"
 
-char AutoSaveFileName[64];
+#include <string.h>
 
-#if MP
-int NumberOfCPUs;
-#endif
+static char CopyrightNotice[] =
+    "    Amy version " VERSION ", Copyright (c) 2002-2025, Thorsten Greiner\n"
+    "    Amy comes with ABSOLUTELY NO WARRANTY; for details type 'warranty'.\n"
+    "    This is free software, and you are welcome to redistribute it\n"
+    "    under certain conditions; type 'distribution' for details.\n\n"
+    "    Amy contains table base access code which is copyrighted\n"
+    "    by Eugene Nalimov and not free software.\n\n";
 
 static char EGTBPath[1024] = "TB";
 
@@ -131,6 +146,19 @@ static void ProcessRCFile(void) {
     }
 
     fclose(rcFile);
+}
+
+/**
+ * Show the version of Amy.
+ */
+static void ShowVersion(void) {
+    Print(0, "\n");
+    Print(0, CopyrightNotice);
+#if MP
+    Print(0, "    Multiprocessor support (%d CPUs).\n\n", NumberOfCPUs);
+#else
+    Print(0, "    No multiprocessor support.\n\n");
+#endif
 }
 
 int main(int argc, char *argv[]) {

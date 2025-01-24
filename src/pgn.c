@@ -33,7 +33,24 @@
  * pgn.c - pgn handling routines
  */
 
+#include "pgn.h"
 #include "amy.h"
+#include "config.h"
+#include "dbase.h"
+#include "eco.h"
+#include "state_machine.h"
+#include "utils.h"
+
+#include <string.h>
+
+#if HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif
+#include <time.h>
+
+#if HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 
 #define AMY_NAME "Amy " VERSION
 

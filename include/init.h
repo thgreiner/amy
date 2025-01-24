@@ -29,47 +29,36 @@
 
 */
 
-#include "heap.h"
-#include "amy.h"
+#ifndef INIT_H
+#define INIT_H
 
-static const int DATA_SIZE = 1024;
-static const int SECTION_SIZE = 32;
+#include "bitboard.h"
 
-heap_t allocate_heap(void) {
-    heap_t heap = (heap_t)malloc(sizeof(struct heap));
-    if (heap == NULL) {
-        perror("Cannot allocate heap:");
-        exit(1);
-    }
+extern BitBoard FileMask[8], IsoMask[8];
+extern BitBoard RankMask[8];
+extern BitBoard ForwardRayW[64], ForwardRayB[64];
+extern BitBoard PassedMaskW[64], PassedMaskB[64];
+extern BitBoard OutpostMaskW[64], OutpostMaskB[64];
+extern BitBoard InterPath[64][64];
+extern BitBoard Ray[64][64];
+extern BitBoard WPawnEPM[64], BPawnEPM[64];
+extern const BitBoard KnightEPM[64], KingEPM[64];
+extern const BitBoard PawnEPM[2][64];
+extern BitBoard BishopEPM[64], RookEPM[64], QueenEPM[64];
+extern BitBoard SeventhRank[2], ThirdRank[2], EighthRank[2];
+extern BitBoard LeftOf[8], RightOf[8], FarLeftOf[8], FarRightOf[8];
+extern BitBoard EdgeMask;
+extern BitBoard BlackSquaresMask, WhiteSquaresMask;
+extern BitBoard KingSquareW[64], KingSquareB[64];
+extern BitBoard NotAFileMask, NotHFileMask;
+extern BitBoard CornerMaskA1, CornerMaskA8, CornerMaskH1, CornerMaskH8;
+extern BitBoard WPawnBackwardMask[64], BPawnBackwardMask[64];
+extern BitBoard KingSideMask, QueenSideMask;
+extern BitBoard ConnectedMask[64];
 
-    move_t *data = (move_t *)malloc(DATA_SIZE * sizeof(move_t));
-    if (data == NULL) {
-        perror("Cannot allocate heap:");
-        exit(1);
-    }
+extern signed char NextSQ[64][64];
 
-    heap->data = data;
-    heap->capacity = DATA_SIZE;
+void InitAll(void);
+void PrintBitBoard(BitBoard);
 
-    heap_section_t sections =
-        (heap_section_t)malloc(SECTION_SIZE * sizeof(struct heap_section));
-    if (sections == NULL) {
-        perror("Cannot allocate heap:");
-        exit(1);
-    }
-
-    heap->sections_start = sections;
-    heap->sections_end = sections + SECTION_SIZE;
-    heap->current_section = sections;
-
-    heap->current_section->start = 0;
-    heap->current_section->end = 0;
-
-    return heap;
-}
-
-void free_heap(heap_t heap) {
-    free(heap->data);
-    free(heap->sections_start);
-    free(heap);
-}
+#endif

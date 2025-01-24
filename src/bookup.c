@@ -34,7 +34,15 @@
  */
 
 #include "amy.h"
+#include "dbase.h"
+#include "eco.h"
+#include "pgn.h"
+#include "random.h"
 #include "tree.h"
+#include "utils.h"
+
+#include <errno.h>
+#include <string.h>
 
 #define BOOK_NAME "Book.db"
 #define LEARN_NAME "Learn.db"
