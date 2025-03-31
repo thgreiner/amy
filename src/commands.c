@@ -47,6 +47,7 @@
 #include "filter.h"
 #include "heap.h"
 #include "inline.h"
+#include "neural_net.h"
 #include "next.h"
 #include "pgn.h"
 #include "search.h"
@@ -841,7 +842,7 @@ static void SaveConf(char *args) {
 static void ShowScore(char *args) {
     (void)args;
     InitEvaluation(CurrentPosition);
-    int score = EvaluatePosition(CurrentPosition);
+    int score = EvaluatePositionNeuralNetwork(CurrentPosition);
     Print(0, "Static evaluation: %d\n", score);
 }
 

@@ -2,13 +2,13 @@ bin_PROGRAMS = Amy
 
 Amy_SOURCES = bitboard.c blunder.c bookup.c commands.c dbase.c eco.c evaluation.c \
               evaluation_config.c filter.c hashtable.c heap.c init.c learn.c magic.c \
-              main.c mates.c movedata.c mytb.cpp next.c pgn.c probe.c random.c \
-              recog.c search.c search_io.c state_machine.c swap.c test_blunder.c \
-              test_dbase.c test_yaml.c time_ctl.c tree.c utils.c yaml.c
+              main.c mates.c movedata.c mytb.cpp neural_net.c next.c pgn.c probe.c \
+              random.c recog.c search.c search_io.c state_machine.c swap.c \
+              test_blunder.c test_dbase.c test_yaml.c time_ctl.c tree.c utils.c yaml.c
 
 Amy_DEPENDENCIES = bitboard.o blunder.o bookup.o commands.o dbase.o eco.o evaluation.o \
                    evaluation_config.o filter.c hashtable.o heap.o init.o learn.o \
-                   magic.o main.o mates.o movedata.o mytb.o next.o pgn.o \
+                   magic.o main.o mates.o movedata.o mytb.o neural_net.o next.o pgn.o \
                    probe.o random.o recog.o search.o search_io.o state_machine.o \
                    swap.o test_blunder.o test_dbase.o test_yaml.o time_ctl.o \
                    tree.o utils.o yaml.o

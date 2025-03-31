@@ -40,6 +40,7 @@
 #include "init.h"
 #include "learn.h"
 #include "movedata.h"
+#include "neural_net.h"
 #include "probe.h"
 #include "random.h"
 #include "recog.h"
@@ -181,6 +182,8 @@ int main(int argc, char *argv[]) {
 
     ProcessRCFile();
     ProcessOptions(argc, argv);
+
+    ReadWeights();
 
     ShowVersion();
 

@@ -44,6 +44,7 @@
 #include "init.h"
 #include "inline.h"
 #include "mates.h"
+#include "neural_net.h"
 #include "next.h"
 #include "probe.h"
 #include "random.h"
@@ -528,7 +529,8 @@ static int quies(struct SearchData *sd, int alpha, int beta, int depth) {
         }
         break;
     default:
-        best = EvaluatePosition(p);
+        // best = EvaluatePosition(p);
+        best = EvaluatePositionNeuralNetwork(p);
         break;
     }
 
