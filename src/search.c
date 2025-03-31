@@ -45,6 +45,7 @@
 #include "init.h"
 #include "inline.h"
 #include "mates.h"
+#include "neural_net.h"
 #include "next.h"
 #include "probe.h"
 #include "random.h"
@@ -173,7 +174,7 @@ static char BestLine[2048];
 static char ShortBestLine[2048];
 static char AnalysisLine[4096];
 
-OPTIONAL_ATOMIC unsigned long HTry, HHit, PTry, PHit, STry, SHit;
+OPTIONAL_ATOMIC unsigned long HTry, HHit, STry, SHit;
 
 /* prototypes for search routines */
 
@@ -539,7 +540,8 @@ static int search_quies(struct SearchData *sd, int alpha, int beta, int depth) {
         }
         break;
     default:
-        best = eval_position(p);
+        // best = eval_position(p);
+        best = nn_evaluate_position(p);
         break;
     }
 
@@ -1223,7 +1225,7 @@ static void search_init(struct SearchData *sd) {
 
     /* Initialize scoring tables */
 
-    HTry = HHit = PTry = PHit = STry = SHit = 0;
+    HTry = HHit = STry = SHit = 0;
 }
 
 // Marcin Ciura's gap sequence for shell sort
@@ -1640,17 +1642,12 @@ final:
               utils_format_count(PPExt, buf6, sizeof(buf6)),
               utils_format_count(ZZExt, buf7, sizeof(buf7)));
 
-        print(2,
-              "Hashing: Trans: %s/%s = %d %%   Pawn: %s/%s = %d %%\n"
-              "         Eval: %s/%s = %d %%\n",
+        print(2, "Hashing: Trans: %s/%s = %d %%  Eval: %s/%s = %d %%\n",
               utils_format_count(HHit, buf1, sizeof(buf1)),
               utils_format_count(HTry, buf2, sizeof(buf2)),
               utils_percentage(HHit, HTry),
-              utils_format_count(PHit, buf3, sizeof(buf3)),
-              utils_format_count(PTry, buf4, sizeof(buf4)),
-              utils_percentage(PHit, PTry),
-              utils_format_count(SHit, buf5, sizeof(buf5)),
-              utils_format_count(STry, buf6, sizeof(buf6)),
+              utils_format_count(SHit, buf3, sizeof(buf3)),
+              utils_format_count(STry, buf4, sizeof(buf4)),
               utils_percentage(SHit, STry));
 
         if (EGTBProbe != 0) {
