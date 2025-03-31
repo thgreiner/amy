@@ -47,6 +47,7 @@
 #include "filter.h"
 #include "heap.h"
 #include "inline.h"
+#include "neural_net.h"
 #include "next.h"
 #include "pgn_read.h"
 #include "pgn_write.h"
@@ -383,7 +384,7 @@ static void cmd_set_xboard(char *args) {
     Verbosity = 1;
 
     print(0, "\n");
-    print(0, "feature myname=\"Amy " VERSION "\"\n");
+    print(0, "feature myname=\"Amy " VERSION "-neural\"\n");
     print(0, "feature san=1\n");
     print(0, "feature name=1\n");
     print(0, "feature done=1\n");
@@ -847,7 +848,7 @@ static void cmd_save_conf(char *args) {
 static void cmd_show_score(char *args) {
     (void)args;
     eval_init(CurrentPosition);
-    int score = eval_position(CurrentPosition);
+    int score = nn_evaluate_position(CurrentPosition);
     print(0, "Static evaluation: %d\n", score);
 }
 

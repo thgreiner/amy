@@ -44,6 +44,7 @@
 #include "inline.h"
 #include "magic.h"
 #include "mates.h"
+#include "neural_net.h"
 #include "recog.h"
 #include "safe_malloc.h"
 #include "swap.h"
@@ -354,6 +355,10 @@ static void dbase_do_castle(struct Position *p, move_t move) {
     dbase_atk_set(p, Rook, p->turn, nr);
     p->kingSq[p->turn] = to;
 
+    nn_update_weights_for_piece(p, Rook, or, p->turn, false);
+    nn_update_weights_for_piece(p, Rook, nr, p->turn, true);
+    nn_update_weights_for_king(p);
+
     /* update hashkey */
     /* Das koennte ich vorher berechnen! Ist dann nur eine Anweisung! */
 
@@ -408,6 +413,10 @@ static void dbase_undo_castle(struct Position *p, move_t move) {
     dbase_atk_set(p, King, p->turn, from);
     dbase_atk_set(p, Rook, p->turn, or);
     p->kingSq[p->turn] = from;
+
+    nn_update_weights_for_piece(p, Rook, nr, p->turn, false);
+    nn_update_weights_for_piece(p, Rook, or, p->turn, true);
+    nn_update_weights_for_king(p);
 }
 
 /*
@@ -435,6 +444,8 @@ void dbase_do_move(struct Position *p, move_t move) {
 
         if (tp == King) {
             p->kingSq[p->turn] = to;
+        } else {
+            nn_update_weights_for_piece(p, tp, from, p->turn, false);
         }
 
         /* remove it from the board */
@@ -465,6 +476,7 @@ void dbase_do_move(struct Position *p, move_t move) {
 
             /* piece looses its attacks */
             dbase_atk_clr(p, to);
+            nn_update_weights_for_piece(p, sp, to, OPP(p->turn), false);
 
             /* remember type of captured piece */
             p->actLog->gl_Piece = p->piece[to];
@@ -499,6 +511,7 @@ void dbase_do_move(struct Position *p, move_t move) {
 
             /* piece looses its attacks */
             dbase_atk_clr(p, so);
+            nn_update_weights_for_piece(p, Pawn, so, OPP(p->turn), false);
 
             /* captured piece must be a pawn */
             p->actLog->gl_Piece = ((OPP(p->turn) == White) ? Pawn : -Pawn);
@@ -554,12 +567,19 @@ void dbase_do_move(struct Position *p, move_t move) {
 
         /* piece gains its attacks */
         dbase_atk_set(p, tp, p->turn, to);
+        if (tp == King) {
+            nn_update_weights_for_king(p);
+        } else {
+            nn_update_weights_for_piece(p, tp, to, p->turn, true);
+        }
 
         /* update hashkey */
         p->hkey ^= HashKeys[p->turn][tp][to];
         if (tp == Pawn)
             p->pkey ^= HashKeys[p->turn][Pawn][to];
     }
+
+    // nn_validate_weights(p);
 
     /* Check if loss of castling rights */
     if (p->castle != p->actLog->gl_Castle) {
@@ -633,6 +653,8 @@ void dbase_undo_move(struct Position *p, move_t move) {
 
         if (tp == King) {
             p->kingSq[p->turn] = from;
+        } else {
+            nn_update_weights_for_piece(p, tp, to, p->turn, false);
         }
 
         /* update masks */
@@ -663,6 +685,7 @@ void dbase_undo_move(struct Position *p, move_t move) {
 
             /* piece gains its attacks */
             dbase_atk_set(p, TYPE(sp), OPP(p->turn), to);
+            nn_update_weights_for_piece(p, sp, to, OPP(p->turn), true);
 
             p->piece[to] = sp;
             sp = TYPE(sp);
@@ -683,6 +706,7 @@ void dbase_undo_move(struct Position *p, move_t move) {
 
             /* piece looses its attacks */
             dbase_atk_set(p, Pawn, OPP(p->turn), so);
+            nn_update_weights_for_piece(p, Pawn, so, OPP(p->turn), true);
 
             bitboard_set_bit(p->mask[OPP(p->turn)][0], so);
             bitboard_set_bit(p->mask[OPP(p->turn)][Pawn], so);
@@ -711,6 +735,11 @@ void dbase_undo_move(struct Position *p, move_t move) {
 
         /* re-calculate attacks through from-square */
         dbase_loose_attacks(p, from);
+        if (tp == King) {
+            nn_update_weights_for_king(p);
+        } else {
+            nn_update_weights_for_piece(p, tp, from, p->turn, true);
+        }
 
         /* put it on the board again */
         p->piece[from] = (p->turn == White) ? tp : -tp;
@@ -722,6 +751,8 @@ void dbase_undo_move(struct Position *p, move_t move) {
         /* piece gains its attacks */
         dbase_atk_set(p, tp, p->turn, from);
     }
+
+    // nn_validate_weights(p);
 
     /* restore EnPassant and Castling */
     p->enPassant = p->actLog->gl_EnPassant;
@@ -2314,6 +2345,7 @@ static void dbase_read_epd(struct Position *p, char *x) {
         ;
 
     dbase_recalc_attacks(p);
+    nn_init_accumulator(p);
     p->ply = 0;
 
     i = 0;

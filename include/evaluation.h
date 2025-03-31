@@ -33,7 +33,7 @@
 #define EVALUATION_H
 
 #include "bitboard.h"
-#include "types.h"
+#include "dbase.h"
 
 struct PawnFacts {
     BitBoard pf_WhitePassers;
@@ -121,7 +121,7 @@ extern int16_t ScaleOpenFiles[];
 extern int MaxPos;
 
 int eval_position(const struct Position *);
-void eval_init(const struct Position *);
+void eval_init(struct Position *);
 int eval_material_balance(const struct Position *);
 
 #endif /* EVALUATION_H */

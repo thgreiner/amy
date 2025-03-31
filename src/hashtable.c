@@ -62,17 +62,14 @@ hash_t HashKeysCastle[16];
 hash_t STMKey;
 
 static int HT_Bits = 17;
-static int PT_Bits = 15;
 static int ST_Bits = 15;
 
 static unsigned int HT_Size, HT_Mask;
-static unsigned int PT_Size, PT_Mask;
 static unsigned int ST_Size, ST_Mask;
 
 int L_HT_Bits = 16, L_HT_Size, L_HT_Mask;
 
 static struct HTEntry *TranspositionTable = NULL;
-static struct PTEntry *PawnTable = NULL;
 static struct STEntry *ScoreTable = NULL;
 static int HTGeneration = 0;
 
@@ -84,7 +81,6 @@ static OPTIONAL_ATOMIC unsigned int HTStoreFailed = 0, HTStoreTried = 0;
 #define MUTEX_COUNT (1 << MUTEX_BITS)
 #define MUTEX_MASK (MUTEX_COUNT - 1)
 static atomic_int TranspositionMutex[MUTEX_COUNT];
-static atomic_int PawnMutex[MUTEX_COUNT];
 static atomic_int ScoreMutex[MUTEX_COUNT];
 
 /**
@@ -349,26 +345,6 @@ LookupResult ht_probe(const hash_t key, int *score, int depth, move_t *bestm,
     return result;
 }
 
-LookupResult ht_probe_pawn(hash_t key, int *score, struct PawnFacts *pf) {
-#if MP && HAVE_LIBPTHREAD
-    acquire_read_lock(PawnMutex + ((key >> 32) & MUTEX_MASK));
-#endif /* MP && HAVE_LIBPTHREAD */
-
-    struct PTEntry h = PawnTable[(key >> 32) & PT_Mask];
-
-#if MP && HAVE_LIBPTHREAD
-    release_read_lock(PawnMutex + ((key >> 32) & MUTEX_MASK));
-#endif /* MP && HAVE_LIBPTHREAD */
-
-    if (h.pt_Key == key && h.pt_Score != PT_INVALID) {
-        *score = h.pt_Score;
-        *pf = h.pt_PawnFacts;
-        return Useful;
-    }
-
-    return Useless;
-}
-
 LookupResult ht_probe_score(hash_t key, int *score) {
 #if MP && HAVE_LIBPTHREAD
     acquire_read_lock(ScoreMutex + ((key >> 32) & MUTEX_MASK));
@@ -468,20 +444,6 @@ void ht_store(hash_t key, int best, int alpha, int beta, int bestm, int depth,
     }
 }
 
-void ht_store_pawn(hash_t key, int score, struct PawnFacts *pf) {
-    struct PTEntry h = {.pt_Key = key, .pt_Score = score, .pt_PawnFacts = *pf};
-
-#if MP && HAVE_LIBPTHREAD
-    acquire_write_lock(PawnMutex + ((key >> 32) & MUTEX_MASK));
-#endif /* MP && HAVE_LIBPTHREAD */
-
-    PawnTable[(key >> 32) & PT_Mask] = h;
-
-#if MP && HAVE_LIBPTHREAD
-    release_write_lock(PawnMutex + ((key >> 32) & MUTEX_MASK));
-#endif /* MP && HAVE_LIBPTHREAD */
-}
-
 void ht_store_score(hash_t key, int score) {
     struct STEntry h = {.st_Key = key, .st_Score = score};
 
@@ -518,31 +480,10 @@ void ht_age(void) {
     HTStoreFailed = 0;
 }
 
-void ht_clear_pawn(void) {
-    unsigned int i;
-    struct PTEntry *ph;
-    struct STEntry *sh;
-
-    ph = PawnTable;
-    for (i = 0; i < PT_Size; i++, ph++) {
-        ph->pt_Score = PT_INVALID;
-    }
-
-    sh = ScoreTable;
-    for (i = 0; i < ST_Size; i++, sh++) {
-        sh->st_Score = PT_INVALID;
-    }
-}
-
 static void ht_free(void) {
     if (TranspositionTable) {
         free(TranspositionTable);
         TranspositionTable = NULL;
-    }
-
-    if (PawnTable) {
-        free(PawnTable);
-        PawnTable = NULL;
     }
 
     if (ScoreTable) {
@@ -572,26 +513,18 @@ void ht_allocate(void) {
     L_HT_Size = 1 << L_HT_Bits;
     L_HT_Mask = L_HT_Size - 1;
 
-    PT_Size = 1 << PT_Bits;
-    PT_Mask = PT_Size - 1;
-
-    PawnTable = safe_calloc(PT_Size, sizeof(struct PTEntry));
-
     ST_Size = 1 << ST_Bits;
     ST_Mask = ST_Size - 1;
 
     ScoreTable = safe_calloc(ST_Size, sizeof(struct STEntry));
 
-    print(0, "Hashtable sizes: %d k, %d k, %d k (%d, %d, %d bits)\n",
+    print(0, "Hashtable sizes: %d k, %d k (%d, %d bits)\n",
           ((1 << HT_Bits) * sizeof(struct HTEntry)) / 1024,
-          ((1 << PT_Bits) * sizeof(struct PTEntry)) / 1024,
-          ((1 << ST_Bits) * sizeof(struct STEntry)) / 1024, HT_Bits, PT_Bits,
-          ST_Bits);
+          ((1 << ST_Bits) * sizeof(struct STEntry)) / 1024, HT_Bits, ST_Bits);
 
 #if MP && HAVE_LIBPTHREAD
     for (int i = 0; i < MUTEX_COUNT; i++) {
         TranspositionMutex[i] = 0;
-        PawnMutex[i] = 0;
         ScoreMutex[i] = 0;
     }
 #endif
@@ -683,18 +616,8 @@ void ht_guess_sizes(char *size) {
 
     total_size -= (1LL << HT_Bits) * sizeof(struct HTEntry);
 
-    budget = total_size * 3 / 4;
-
     for (ST_Bits = 1; ST_Bits < 31; ST_Bits++) {
         if ((1ULL << (ST_Bits + 1)) * (uint64_t)sizeof(struct STEntry) >
-            (uint64_t)budget)
-            break;
-    }
-
-    total_size -= (1LL << ST_Bits) * sizeof(struct STEntry);
-
-    for (PT_Bits = 1; PT_Bits < 31; PT_Bits++) {
-        if ((1ULL << (PT_Bits + 1)) * (uint64_t)sizeof(struct PTEntry) >
             (uint64_t)total_size)
             break;
     }

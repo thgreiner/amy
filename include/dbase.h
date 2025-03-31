@@ -32,6 +32,7 @@
 #ifndef DBASE_H
 #define DBASE_H
 
+#include "amy.h"
 #include "bitboard.h"
 #include "config.h"
 #include "heap.h"
@@ -125,6 +126,8 @@ struct Position {
     struct GameLog *actLog;
     unsigned int gameLogSize;
     int material[2], nonPawn[2];
+    int16_t accumulator_w_q[ACCUMULATOR_SIZE];
+    int16_t accumulator_b_q[ACCUMULATOR_SIZE];
     uint16_t outOfBookCnt[2];
     uint16_t ply;
     int8_t piece[64];
