@@ -48,6 +48,7 @@
 #include "state_machine.h"
 #include "test_blunder.h"
 #include "test_dbase.h"
+#include "test_neural_net.h"
 #include "test_yaml.h"
 #include "utils.h"
 
@@ -67,6 +68,7 @@ static void RunAllTests(void) {
     test_all_blunder();
     test_all_yaml();
     test_all_dbase();
+    test_all_neural_net();
 }
 
 static void ProcessOptions(int argc, char *argv[]) {

@@ -36,6 +36,8 @@
 #ifndef AMY_H
 #define AMY_H
 
+#define ACCUMULATOR_SIZE 256
+
 #ifdef _WIN32
 /*
  * Windows stuff by Dann Corbit.

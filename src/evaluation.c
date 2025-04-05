@@ -37,6 +37,7 @@
 #include "hashtable.h"
 #include "init.h"
 #include "inline.h"
+#include "neural_net.h"
 #include "recog.h"
 #include <stdint.h>
 
@@ -1773,7 +1774,7 @@ int EvaluatePosition(const struct Position *p) {
  * Do the pre-search initialization of evaluation.
  */
 
-void InitEvaluation(const struct Position *p) {
+void InitEvaluation(struct Position *p) {
     int sq;
 
     int eg_threshold = Value[Queen] + Value[Bishop];
@@ -1870,7 +1871,7 @@ void InitEvaluation(const struct Position *p) {
             RootGamePhase = Opening;
     }
 
-    // Print(2, "GamePhase: %s\n", GamePhaseName[RootGamePhase]);
+    InitAccumulator(p);
 
     MaxPos = MaxPosInit;
 }

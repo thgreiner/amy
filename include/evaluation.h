@@ -121,7 +121,7 @@ extern int16_t ScaleOpenFiles[];
 extern int MaxPos;
 
 int EvaluatePosition(const struct Position *);
-void InitEvaluation(const struct Position *);
+void InitEvaluation(struct Position *);
 int MaterialBalance(const struct Position *);
 
 #endif /* EVALUATION_H */

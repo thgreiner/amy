@@ -43,6 +43,7 @@
 #include "inline.h"
 #include "magic.h"
 #include "mates.h"
+#include "neural_net.h"
 #include "recog.h"
 #include "safe_malloc.h"
 #include "swap.h"
@@ -349,7 +350,12 @@ static void DoCastle(struct Position *p, move_t move) {
 
     AtkSet(p, King, p->turn, to);
     AtkSet(p, Rook, p->turn, nr);
+
     p->kingSq[p->turn] = to;
+
+    UpdateWeightsForPiece(p, Rook, or, p->turn, false);
+    UpdateWeightsForPiece(p, Rook, nr, p->turn, true);
+    UpdateWeightsForKing(p);
 
     /* update hashkey */
     /* Das koennte ich vorher berechnen! Ist dann nur eine Anweisung! */
@@ -404,7 +410,12 @@ static void UndoCastle(struct Position *p, move_t move) {
 
     AtkSet(p, King, p->turn, from);
     AtkSet(p, Rook, p->turn, or);
+
     p->kingSq[p->turn] = from;
+
+    UpdateWeightsForPiece(p, Rook, nr, p->turn, false);
+    UpdateWeightsForPiece(p, Rook, or, p->turn, true);
+    UpdateWeightsForKing(p);
 }
 
 /*
@@ -432,6 +443,8 @@ void DoMove(struct Position *p, move_t move) {
 
         if (tp == King) {
             p->kingSq[p->turn] = to;
+        } else {
+            UpdateWeightsForPiece(p, tp, from, p->turn, false);
         }
 
         /* remove it from the board */
@@ -462,6 +475,7 @@ void DoMove(struct Position *p, move_t move) {
 
             /* piece looses its attacks */
             AtkClr(p, to);
+            UpdateWeightsForPiece(p, sp, to, OPP(p->turn), false);
 
             /* remember type of captured piece */
             p->actLog->gl_Piece = p->piece[to];
@@ -496,6 +510,7 @@ void DoMove(struct Position *p, move_t move) {
 
             /* piece looses its attacks */
             AtkClr(p, so);
+            UpdateWeightsForPiece(p, Pawn, so, OPP(p->turn), false);
 
             /* captured piece must be a pawn */
             p->actLog->gl_Piece = ((OPP(p->turn) == White) ? Pawn : -Pawn);
@@ -551,12 +566,19 @@ void DoMove(struct Position *p, move_t move) {
 
         /* piece gains its attacks */
         AtkSet(p, tp, p->turn, to);
+        if (tp == King) {
+            UpdateWeightsForKing(p);
+        } else {
+            UpdateWeightsForPiece(p, tp, to, p->turn, true);
+        }
 
         /* update hashkey */
         p->hkey ^= HashKeys[p->turn][tp][to];
         if (tp == Pawn)
             p->pkey ^= HashKeys[p->turn][Pawn][to];
     }
+
+    ValidateWeights(p);
 
     /* Check if loss of castling rights */
     if (p->castle != p->actLog->gl_Castle) {
@@ -630,6 +652,8 @@ void UndoMove(struct Position *p, move_t move) {
 
         if (tp == King) {
             p->kingSq[p->turn] = from;
+        } else {
+            UpdateWeightsForPiece(p, tp, to, p->turn, false);
         }
 
         /* update masks */
@@ -660,6 +684,7 @@ void UndoMove(struct Position *p, move_t move) {
 
             /* piece gains its attacks */
             AtkSet(p, TYPE(sp), OPP(p->turn), to);
+            UpdateWeightsForPiece(p, sp, to, OPP(p->turn), true);
 
             p->piece[to] = sp;
             sp = TYPE(sp);
@@ -680,6 +705,7 @@ void UndoMove(struct Position *p, move_t move) {
 
             /* piece looses its attacks */
             AtkSet(p, Pawn, OPP(p->turn), so);
+            UpdateWeightsForPiece(p, Pawn, so, OPP(p->turn), true);
 
             SetBit(p->mask[OPP(p->turn)][0], so);
             SetBit(p->mask[OPP(p->turn)][Pawn], so);
@@ -708,6 +734,11 @@ void UndoMove(struct Position *p, move_t move) {
 
         /* re-calculate attacks through from-square */
         LooseAttacks(p, from);
+        if (tp == King) {
+            UpdateWeightsForKing(p);
+        } else {
+            UpdateWeightsForPiece(p, tp, from, p->turn, true);
+        }
 
         /* put it on the board again */
         p->piece[from] = (p->turn == White) ? tp : -tp;
@@ -719,6 +750,8 @@ void UndoMove(struct Position *p, move_t move) {
         /* piece gains its attacks */
         AtkSet(p, tp, p->turn, from);
     }
+
+    ValidateWeights(p);
 
     /* restore EnPassant and Castling */
     p->enPassant = p->actLog->gl_EnPassant;
@@ -2307,6 +2340,8 @@ static void ReadEPD(struct Position *p, char *x) {
         ;
 
     RecalcAttacks(p);
+    InitAccumulator(p);
+
     p->ply = 0;
 
     i = 0;
