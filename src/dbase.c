@@ -578,7 +578,7 @@ void DoMove(struct Position *p, move_t move) {
             p->pkey ^= HashKeys[p->turn][Pawn][to];
     }
 
-    ValidateWeights(p);
+    // ValidateWeights(p);
 
     /* Check if loss of castling rights */
     if (p->castle != p->actLog->gl_Castle) {
@@ -751,7 +751,7 @@ void UndoMove(struct Position *p, move_t move) {
         AtkSet(p, tp, p->turn, from);
     }
 
-    ValidateWeights(p);
+    // ValidateWeights(p);
 
     /* restore EnPassant and Castling */
     p->enPassant = p->actLog->gl_EnPassant;

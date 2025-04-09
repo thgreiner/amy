@@ -8,11 +8,12 @@ static void test_knight_move(void) {
     InitAccumulator(p);
     ValidateWeights(p);
 
-    printf("DoMove\n");
     int move = make_move(b1, a3, 0);
     DoMove(p, move);
-    printf("Undo\n");
+    ValidateWeights(p);
+
     UndoMove(p, move);
+    ValidateWeights(p);
 
     FreePosition(p);
 }
@@ -24,11 +25,12 @@ static void test_promotion(void) {
     InitAccumulator(p);
     ValidateWeights(p);
 
-    printf("DoMove\n");
     int move = make_promotion(h7, h8, Queen, 0);
     DoMove(p, move);
-    printf("Undo\n");
+    ValidateWeights(p);
+
     UndoMove(p, move);
+    ValidateWeights(p);
 }
 
 static void test_castle(void) {
@@ -38,11 +40,12 @@ static void test_castle(void) {
     InitAccumulator(p);
     ValidateWeights(p);
 
-    printf("DoMove\n");
     int move = make_move(e1, g1, M_SCASTLE);
     DoMove(p, move);
-    printf("Undo\n");
+    ValidateWeights(p);
+
     UndoMove(p, move);
+    ValidateWeights(p);
 }
 
 static void test_en_passant(void) {
@@ -52,15 +55,16 @@ static void test_en_passant(void) {
     InitAccumulator(p);
     ValidateWeights(p);
 
-    printf("DoMove\n");
     int move = make_move(e5, d6, M_ENPASSANT);
     DoMove(p, move);
-    printf("Undo\n");
+    ValidateWeights(p);
+
     UndoMove(p, move);
+    ValidateWeights(p);
 }
 
 void test_all_neural_net(void) {
-    ReadWeights();
+    RandomizeWeights();
 
     test_knight_move();
     test_promotion();

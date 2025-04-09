@@ -128,6 +128,8 @@ struct Position {
     int material[2], nonPawn[2];
     float accumulator_w[ACCUMULATOR_SIZE];
     float accumulator_b[ACCUMULATOR_SIZE];
+    int16_t accumulator_w_q[ACCUMULATOR_SIZE];
+    int16_t accumulator_b_q[ACCUMULATOR_SIZE];
     uint16_t outOfBookCnt[2];
     uint16_t ply;
     int8_t piece[64];
