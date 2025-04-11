@@ -63,12 +63,6 @@ struct HTEntry {
     short ht_Depth;
 };
 
-struct PTEntry {
-    unsigned int pt_Signature;
-    int pt_Score;
-    struct PawnFacts pt_PawnFacts;
-};
-
 struct STEntry {
     unsigned int st_Signature;
     int st_Score;
@@ -84,7 +78,6 @@ extern int L_HT_Bits, L_HT_Size, L_HT_Mask;
 
 void ClearHashTable(void);
 void AgeHashTable(void);
-void ClearPawnHashTable(void);
 void AllocateHT(void);
 #if MP
 LookupResult ProbeHT(hash_t, int *, int, move_t *, bool *, int, int,
@@ -94,8 +87,6 @@ void StoreHT(hash_t, int, int, int, int, int, int, int, struct HTEntry *);
 LookupResult ProbeHT(hash_t, int *, int, move_t *, bool *, int);
 void StoreHT(hash_t, int, int, int, int, int, int, int);
 #endif
-LookupResult ProbePT(hash_t, int *, struct PawnFacts *);
-void StorePT(hash_t, int, struct PawnFacts *);
 LookupResult ProbeST(hash_t, int *);
 void StoreST(hash_t, int);
 void ShowHashStatistics(void);

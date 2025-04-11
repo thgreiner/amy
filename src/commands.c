@@ -380,7 +380,7 @@ static void SetXBoard(char *args) {
     Verbosity = 1;
 
     Print(0, "\n");
-    Print(0, "feature myname=\"Amy " VERSION "\"\n");
+    Print(0, "feature myname=\"Amy " VERSION "-neural\"\n");
     Print(0, "feature san=1\n");
     Print(0, "feature name=1\n");
     Print(0, "feature done=1\n");

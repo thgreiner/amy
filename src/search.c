@@ -173,7 +173,7 @@ static char BestLine[2048];
 static char ShortBestLine[2048];
 static char AnalysisLine[4096];
 
-OPTIONAL_ATOMIC unsigned long HTry, HHit, PTry, PHit, STry, SHit;
+OPTIONAL_ATOMIC unsigned long HTry, HHit, STry, SHit;
 
 /* prototypes for search routines */
 
@@ -1204,7 +1204,7 @@ static void InitSearch(struct SearchData *sd) {
 
     /* Initialize scoring tables */
 
-    HTry = HHit = PTry = PHit = STry = SHit = 0;
+    HTry = HHit = STry = SHit = 0;
 }
 
 // Marcin Ciura's gap sequence for shell sort
@@ -1611,15 +1611,11 @@ final:
               FormatCount(PPExt, buf6, sizeof(buf6)),
               FormatCount(ZZExt, buf7, sizeof(buf7)));
 
-        Print(2,
-              "Hashing: Trans: %s/%s = %d %%   Pawn: %s/%s = %d %%\n"
-              "         Eval: %s/%s = %d %%\n",
+        Print(2, "Hashing: Trans: %s/%s = %d %%  Eval: %s/%s = %d %%\n",
               FormatCount(HHit, buf1, sizeof(buf1)),
               FormatCount(HTry, buf2, sizeof(buf2)), Percentage(HHit, HTry),
-              FormatCount(PHit, buf3, sizeof(buf3)),
-              FormatCount(PTry, buf4, sizeof(buf4)), Percentage(PHit, PTry),
-              FormatCount(SHit, buf5, sizeof(buf5)),
-              FormatCount(STry, buf6, sizeof(buf6)), Percentage(SHit, STry));
+              FormatCount(SHit, buf3, sizeof(buf3)),
+              FormatCount(STry, buf4, sizeof(buf4)), Percentage(SHit, STry));
 
         if (EGTBProbe != 0) {
             Print(2, "EGTB Hits/Probes = %s/%s\n",
