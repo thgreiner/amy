@@ -215,6 +215,12 @@ int scanHeader(FILE *fin, struct PGNHeader *header) {
             if (!strcmp("BlackElo", key)) {
                 header->black_elo = atoi(value);
             }
+            if (!strcmp("FEN", key)) {
+                strncpy(header->fen, value, sizeof(header->fen) - 1);
+            }
+            if (!strcmp("SetUp", key)) {
+                header->is_setup = atoi(value);
+            }
 
             state = 1;
 
@@ -227,10 +233,14 @@ int scanHeader(FILE *fin, struct PGNHeader *header) {
     return 1;
 }
 
+static char comment_buffer[2048] = "";
+static char *comment_ptr = comment_buffer;
+
 int scanMove(FILE *fin, char *nextMove) {
     static char buffer[1024];
     static int haveLine = 0;
     static char *x;
+
     char *token;
 
     int braces = 0;
@@ -248,9 +258,16 @@ int scanMove(FILE *fin, char *nextMove) {
             if (*x == '\0') {
                 haveLine = 0;
                 continue;
-            } else if (*(x++) == '}') {
+            }
+
+            *(comment_ptr) = *x;
+
+            if (*(x++) == '}') {
+                *comment_ptr = 0;
                 braces = 0;
             }
+
+            comment_ptr++;
 
             continue;
         } else if (parens) {
@@ -272,6 +289,7 @@ int scanMove(FILE *fin, char *nextMove) {
             if (x && *x == '{') {
                 braces = 1;
                 x++;
+                comment_ptr = comment_buffer;
                 continue;
             }
             if (x && *x == '(') {
@@ -303,4 +321,11 @@ int scanMove(FILE *fin, char *nextMove) {
     } while (1);
 
     return 1;
+}
+
+void get_and_reset_comment(char *destination, unsigned int length) {
+    strncpy(destination, comment_buffer, length);
+
+    comment_ptr = comment_buffer;
+    *comment_buffer = 0;
 }

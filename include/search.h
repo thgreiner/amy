@@ -73,6 +73,8 @@ int Iterate(struct Position *);
 void SearchRoot(struct Position *);
 void AnalysisMode(struct Position *);
 pb_result_t PermanentBrain(struct Position *);
+int QuiescenceSearch(struct Position *);
+
 #if MP
 void StopHelpers(void);
 #endif

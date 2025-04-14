@@ -43,6 +43,7 @@
 #include "eco.h"
 #include "evaluation.h"
 #include "evaluation_config.h"
+#include "filter.h"
 #include "heap.h"
 #include "inline.h"
 #include "next.h"
@@ -109,6 +110,8 @@ static struct CommandEntry Commands[] = {
     {"epd", &SetEPD, false, false, "set position in EPD", NULL},
     {"edit", &Edit, false, false, "edit position (xboard!)", NULL},
     {"exit", &StopAnalyze, true, true, "exit analyze mode (xboard)", NULL},
+    {"filter", &FilterQuiescentPositions, false, false,
+     "filter quiescent positions", NULL},
     {"flatten", &Flatten, true, false, "flatten book", NULL},
     {"force", &Force, true, false, "switch force mode (xboard)", NULL},
     {"go", &Go, false, false, "start searching", NULL},

@@ -557,6 +557,7 @@ static int quies(struct SearchData *sd, int alpha, int beta, int depth) {
 EXIT:
 
     LeaveNode(sd);
+
     return best;
 }
 
@@ -1807,6 +1808,25 @@ void SearchRoot(struct Position *p) {
 
         DoMove(p, move);
     }
+}
+
+/**
+ * Do a quiescence search only. Returns the score.
+ */
+int QuiescenceSearch(struct Position *p) {
+    struct SearchData *sd;
+
+    InitEvaluation(p);
+    MaxDepth = MAX_TREE_SIZE - 1;
+
+    sd = CreateSearchData(p);
+    sd->master = true;
+    InitSearch(sd);
+
+    int score = quies(sd, -INF, INF, 0);
+    FreeSearchData(sd);
+
+    return score;
 }
 
 /**

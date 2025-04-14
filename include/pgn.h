@@ -46,8 +46,10 @@ struct PGNHeader {
     char white[64];
     char black[64];
     char result[8];
+    char fen[128];
     int white_elo;
     int black_elo;
+    bool is_setup;
 };
 
 extern char OpponentName[OPP_NAME_LENGTH];
@@ -56,5 +58,6 @@ void SaveGame(struct Position *, char *);
 void LoadGame(struct Position *, char *);
 int scanHeader(FILE *, struct PGNHeader *);
 int scanMove(FILE *fin, char *nextMove);
+void get_and_reset_comment(char *, unsigned int);
 
 #endif
