@@ -1870,7 +1870,7 @@ void InitEvaluation(const struct Position *p) {
             RootGamePhase = Opening;
     }
 
-    Print(2, "GamePhase: %s\n", GamePhaseName[RootGamePhase]);
+    // Print(2, "GamePhase: %s\n", GamePhaseName[RootGamePhase]);
 
     MaxPos = MaxPosInit;
 }

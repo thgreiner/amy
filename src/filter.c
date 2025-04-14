@@ -19,8 +19,8 @@ void print_header(FILE *fout, struct PGNHeader *header) {
     fprintf(fout, "[Black \"%s\"]\n", header->black);
     fprintf(fout, "[Result \"%s\"]\n", header->result);
     if (header->is_setup) {
-        fprintf(fout, "[White \"%s\"]\n", header->white);
-        fprintf(fout, "[White \"%s\"]\n", header->white);
+        fprintf(fout, "[SetUp \"1\"]\n");
+        fprintf(fout, "[FEN \"%s\"]\n", header->fen);
     }
     fprintf(fout, "\n");
 }
@@ -99,9 +99,9 @@ void FilterQuiescentPositions(char *file_name) {
 
                 int diff = ABS(static_evaluation - dynamic_evaluation);
                 if (diff > THRESHOLD) {
-                    ShowPosition(p);
-                    Print(0, "Static: %d Dynamic: %d\n", static_evaluation,
-                          dynamic_evaluation);
+                    // ShowPosition(p);
+                    // Print(0, "Static: %d Dynamic: %d\n", static_evaluation,
+                    //      dynamic_evaluation);
                     last_position_was_not_quiet = true;
                 }
             }
