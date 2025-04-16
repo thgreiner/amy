@@ -86,6 +86,9 @@ void FilterQuiescentPositions(char *file_name) {
 
             move_t themove = ParseSAN(p, move);
 
+            if (themove == M_NONE)
+                break;
+
             if ((p->ply % 2) == 0) {
                 fprintf(fout, "%d. ", 1 + p->ply / 2);
             }
@@ -94,15 +97,24 @@ void FilterQuiescentPositions(char *file_name) {
             last_position_was_not_quiet = false;
 
             if (!GameEnd(p)) {
-                int static_evaluation = EvaluatePosition(p);
-                int dynamic_evaluation = QuiescenceSearch(p);
+                const int static_evaluation = EvaluatePosition(p);
+                const int dynamic_evaluation = QuiescenceSearch(p);
 
-                int diff = ABS(static_evaluation - dynamic_evaluation);
+                const int diff = ABS(static_evaluation - dynamic_evaluation);
                 if (diff > THRESHOLD) {
                     // ShowPosition(p);
                     // Print(0, "Static: %d Dynamic: %d\n", static_evaluation,
                     //      dynamic_evaluation);
                     last_position_was_not_quiet = true;
+                } else {
+                    int search_evaluation;
+                    Iterate(p, &search_evaluation);
+                    const int search_diff =
+                        ABS(static_evaluation - search_evaluation);
+
+                    if (search_diff > THRESHOLD) {
+                        last_position_was_not_quiet = true;
+                    }
                 }
             }
 

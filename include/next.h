@@ -91,6 +91,7 @@ struct SearchData {
     unsigned long nodes_cnt, qnodes_cnt, check_nodes_cnt;
 
     move_t best_move;
+    int best_score;
     uint16_t depth;
 
     uint16_t nrootmoves;

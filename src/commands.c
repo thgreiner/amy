@@ -37,6 +37,7 @@
 #include <string.h>
 
 #include "amy.h"
+#include "bitboard.h"
 #include "bookup.h"
 #include "commands.h"
 #include "dbase.h"
@@ -91,6 +92,7 @@ static void Conf(char *);
 static void SaveConf(char *);
 static void ShowScore(char *);
 static void TestScore(char *);
+static void SetSearchDepth(char *);
 
 static struct CommandEntry Commands[] = {
     {"analyze", &Analyze, false, false, "enter analyze mode (xboard)", NULL},
@@ -102,6 +104,7 @@ static struct CommandEntry Commands[] = {
     {"conf", &Conf, false, false, "load scoring config", NULL},
     {"conf-save", &SaveConf, false, false, "save scoring config", NULL},
     {"d", &Show, true, false, "display current position", NULL},
+    {"depth", &SetSearchDepth, false, false, "set maximum search depth", NULL},
     {"distribution", &ShowDistribution, true, false,
      "show terms of distribution", NULL},
     {"e", &ShowEco, false, false, "show ECO code", NULL},
@@ -256,7 +259,7 @@ static void Test(char *fname) {
 
         /* TestSwap(); */
 
-        move = Iterate(p);
+        move = Iterate(p, NULL);
         for (j = 0; goodmove[j] != M_NONE; j++)
             if (move == goodmove[j])
                 correct = true;
@@ -555,7 +558,7 @@ static void RunAnnotate(char *fname, int side) {
                           (p->ply / 2) + 1);
                     Print(0, "%s\n", SAN(p, themove, san_buffer));
                     if (side == -1 || (side == p->turn)) {
-                        Iterate(p);
+                        Iterate(p, NULL);
                     }
                     DoMove(p, themove);
                 }
@@ -839,4 +842,13 @@ static void ShowScore(char *args) {
     InitEvaluation(CurrentPosition);
     int score = EvaluatePosition(CurrentPosition);
     Print(0, "Static evaluation: %d\n", score);
+}
+
+static void SetSearchDepth(char *args) {
+    if (args == NULL) {
+        Print(0, "Usage: depth <depth>");
+        return;
+    }
+
+    setMaxSearchDepth(atoi(args));
 }

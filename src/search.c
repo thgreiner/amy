@@ -586,7 +586,6 @@ static int negascout(struct SearchData *sd, int alpha, int beta,
     move_t bestm = M_NONE;
     int tmp;
     int talpha;
-    int incheck;
     int lmove;
     move_t move;
     int extend = 0;
@@ -627,7 +626,7 @@ static int negascout(struct SearchData *sd, int alpha, int beta,
      * check extension
      */
 
-    incheck = InCheck(p, p->turn);
+    const bool incheck = InCheck(p, p->turn);
     if (incheck && p->material[p->turn] > 0) {
         extend += CheckExtend(p);
         ChkExt++;
@@ -1242,7 +1241,6 @@ static void ResortMovesList(int cnt, move_t *mvs, unsigned long *nodes) {
  */
 
 static void *IterateInt(void *x) {
-    int best;
     unsigned long nodes[256];
     int last = 0;
     double elapsed;
@@ -1261,7 +1259,7 @@ static void *IterateInt(void *x) {
 
     move_t *mvs = sd->heap->data + sd->heap->current_section->start;
 
-    best = p->material[p->turn] - p->material[OPP(p->turn)];
+    sd->best_score = p->material[p->turn] - p->material[OPP(p->turn)];
 
     if (!(mvs[0] & M_TACTICAL))
         PutKiller(sd, mvs[0]);
@@ -1269,8 +1267,8 @@ static void *IterateInt(void *x) {
     MaxDepth = MAX_TREE_SIZE - 1;
 
     for (sd->depth = 1; sd->depth < MaxSearchDepth; sd->depth++) {
-        int alpha = best - PVWindow;
-        int beta = best + PVWindow;
+        int alpha = sd->best_score - PVWindow;
+        int beta = sd->best_score + PVWindow;
         bool is_pv = true;
         bool pv_stable = true;
 
@@ -1449,30 +1447,31 @@ static void *IterateInt(void *x) {
                 goto final;
 
             if (is_pv) {
-                best = tmp;
+                sd->best_score = tmp;
 
                 if (sd->master) {
                     char score_as_text[16];
                     AnalyzeHT(p, mvs[0]);
                     pv_valid = true;
 
-                    snprintf(
-                        AnalysisLine, sizeof(AnalysisLine), "%2d: (%7s) %s",
-                        sd->depth,
-                        FormatScore(best, score_as_text, sizeof(score_as_text)),
-                        BestLine);
+                    snprintf(AnalysisLine, sizeof(AnalysisLine),
+                             "%2d: (%7s) %s", sd->depth,
+                             FormatScore(sd->best_score, score_as_text,
+                                         sizeof(score_as_text)),
+                             BestLine);
 
                     if (PrintOK) {
                         SearchOutput(sd->depth, CurTime - StartTime,
-                                     (p->turn) ? -best : best, BestLine,
-                                     sd->nodes_cnt + sd->qnodes_cnt);
+                                     (p->turn) ? -sd->best_score
+                                               : sd->best_score,
+                                     BestLine, sd->nodes_cnt + sd->qnodes_cnt);
 
                         any_pv_printed = true;
                     }
                 }
 
-                alpha = best;
-                beta = best + 1;
+                alpha = sd->best_score;
+                beta = sd->best_score + 1;
                 is_pv = false;
             }
 
@@ -1488,25 +1487,27 @@ static void *IterateInt(void *x) {
         }
 
         if (sd->master && (PrintOK || (sd->depth > MateDepth &&
-                                       (best < -CMLIMIT || best > CMLIMIT)))) {
+                                       (sd->best_score < -CMLIMIT ||
+                                        sd->best_score > CMLIMIT)))) {
             SearchOutput(sd->depth, CurTime - StartTime,
-                         (p->turn) ? -best : best, BestLine,
+                         (p->turn) ? -sd->best_score : sd->best_score, BestLine,
                          sd->nodes_cnt + sd->qnodes_cnt);
 
             any_pv_printed = true;
         }
 
-        if (best < -CMLIMIT || best > CMLIMIT) {
-            if (last > CMLIMIT && best >= last && sd->depth > MateDepth) {
+        if (sd->best_score < -CMLIMIT || sd->best_score > CMLIMIT) {
+            if (last > CMLIMIT && sd->best_score >= last &&
+                sd->depth > MateDepth) {
                 if (SearchMode == Searching)
                     break;
                 else
                     DoneAtRoot = true;
             }
-            if (SearchMode == Searching && last < CMLIMIT && best <= last &&
-                sd->depth > MateDepth)
+            if (SearchMode == Searching && last < CMLIMIT &&
+                sd->best_score <= last && sd->depth > MateDepth)
                 break;
-            last = best;
+            last = sd->best_score;
         }
 
         NeedTime = false;
@@ -1573,7 +1574,7 @@ final:
         if (pv_valid && !any_pv_printed) {
             // Make sure there is a PV printed
             SearchOutput(sd->depth, CurTime - StartTime,
-                         (p->turn) ? -best : best, BestLine,
+                         (p->turn) ? -sd->best_score : sd->best_score, BestLine,
                          sd->nodes_cnt + sd->qnodes_cnt);
         }
 
@@ -1698,7 +1699,7 @@ static void StartHelpers(struct Position *p) {
 /**
  * The basic root iteration procedure.
  */
-int Iterate(struct Position *p) {
+int Iterate(struct Position *p, int *score_ptr) {
     float soft, hard;
     int cnt;
     struct SearchData *sd;
@@ -1756,6 +1757,10 @@ int Iterate(struct Position *p) {
     IterateInt(sd);
 
     move_t best_move = sd->best_move;
+    if (score_ptr != NULL) {
+        *score_ptr = sd->best_score;
+    }
+
     FreeSearchData(sd);
 
 #if MP
@@ -1790,7 +1795,7 @@ void SearchRoot(struct Position *p) {
 
     if (move == M_NONE) {
         q = ClonePosition(p);
-        move = Iterate(q);
+        move = Iterate(q, NULL);
         FreePosition(q);
     }
 
@@ -1841,7 +1846,7 @@ pb_result_t PermanentBrain(struct Position *p) {
         PBAltMove = M_NONE;
 
         Print(2, "Puzzling over a move to ponder on...\n");
-        PBMove = Iterate(q);
+        PBMove = Iterate(q, NULL);
         FreePosition(q);
 
         if (SearchMode == Interrupted) {
@@ -1889,7 +1894,7 @@ pb_result_t PermanentBrain(struct Position *p) {
         SearchMode = Pondering;
 
         if (!inbook) {
-            move = Iterate(q);
+            move = Iterate(q, NULL);
         }
 
         FreePosition(q);
@@ -1942,6 +1947,15 @@ void AnalysisMode(struct Position *p) {
     SearchMode = Analyzing;
 
     q = ClonePosition(p);
-    Iterate(q);
+    Iterate(q, NULL);
     FreePosition(q);
+}
+
+/**
+ * Set the maximum depth for the root search.
+ */
+void setMaxSearchDepth(int max_search_depth) {
+    if (max_search_depth > 0 && max_search_depth < (MAX_TREE_SIZE - 1)) {
+        MaxSearchDepth = max_search_depth;
+    }
 }
