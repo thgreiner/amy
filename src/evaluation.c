@@ -311,19 +311,6 @@ static const int MaxPosInit = 2000;
 static int RootGamePhase;
 
 /**
- * Masks used in EvaluatePawns.
- */
-
-static const BitBoard FianchettoMaskWhiteKingSide =
-    SetMask(f2) | SetMask(g3) | SetMask(h2);
-static const BitBoard FianchettoMaskBlackKingSide =
-    SetMask(f7) | SetMask(g6) | SetMask(h7);
-static const BitBoard FianchettoMaskWhiteQueenSide =
-    SetMask(c2) | SetMask(b3) | SetMask(a2);
-static const BitBoard FianchettoMaskBlackQueenSide =
-    SetMask(c7) | SetMask(b6) | SetMask(a7);
-
-/**
  * Masks used in EvaluateDevelopment.
  */
 static const BitBoard WKingOpeningMask = SetMask(e1) | SetMask(d1);
