@@ -69,7 +69,7 @@ extern bool AbortSearch;
 extern int NumberOfCPUs;
 #endif
 
-int Iterate(struct Position *, int *);
+int Iterate(struct Position *, int *, move_t, int *);
 void SearchRoot(struct Position *);
 void AnalysisMode(struct Position *);
 pb_result_t PermanentBrain(struct Position *);

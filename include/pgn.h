@@ -57,7 +57,8 @@ extern char OpponentName[OPP_NAME_LENGTH];
 void SaveGame(struct Position *, char *);
 void LoadGame(struct Position *, char *);
 int scanHeader(FILE *, struct PGNHeader *);
-int scanMove(FILE *fin, char *nextMove);
+int scanMove(FILE *, char *);
 void get_and_reset_comment(char *, unsigned int);
+void print_header(FILE *, struct PGNHeader *);
 
 #endif

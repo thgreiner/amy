@@ -329,3 +329,18 @@ void get_and_reset_comment(char *destination, unsigned int length) {
     comment_ptr = comment_buffer;
     *comment_buffer = 0;
 }
+
+void print_header(FILE *fout, struct PGNHeader *header) {
+    fprintf(fout, "[Event \"%s\"]\n", header->event);
+    fprintf(fout, "[Site \"%s\"]\n", header->site);
+    fprintf(fout, "[Date \"%s\"]\n", header->date);
+    fprintf(fout, "[Round \"%s\"]\n", header->round);
+    fprintf(fout, "[White \"%s\"]\n", header->white);
+    fprintf(fout, "[Black \"%s\"]\n", header->black);
+    fprintf(fout, "[Result \"%s\"]\n", header->result);
+    if (header->is_setup) {
+        fprintf(fout, "[SetUp \"1\"]\n");
+        fprintf(fout, "[FEN \"%s\"]\n", header->fen);
+    }
+    fprintf(fout, "\n");
+}

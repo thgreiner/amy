@@ -1,6 +1,5 @@
 #include "dbase.h"
 #include "evaluation.h"
-#include "heap.h"
 #include "inline.h"
 #include "pgn.h"
 #include "search.h"
@@ -10,44 +9,11 @@
 
 #define THRESHOLD 600
 
-void print_header(FILE *fout, struct PGNHeader *header) {
-    fprintf(fout, "[Event \"%s\"]\n", header->event);
-    fprintf(fout, "[Site \"%s\"]\n", header->site);
-    fprintf(fout, "[Date \"%s\"]\n", header->date);
-    fprintf(fout, "[Round \"%s\"]\n", header->round);
-    fprintf(fout, "[White \"%s\"]\n", header->white);
-    fprintf(fout, "[Black \"%s\"]\n", header->black);
-    fprintf(fout, "[Result \"%s\"]\n", header->result);
-    if (header->is_setup) {
-        fprintf(fout, "[SetUp \"1\"]\n");
-        fprintf(fout, "[FEN \"%s\"]\n", header->fen);
-    }
-    fprintf(fout, "\n");
-}
-
-char *strip(char *buffer) {
-    char *start = buffer;
-    while (*start == ' ') {
-        start++;
-    }
-
-    int l = strlen(start) - 1;
-    char *end = start + l;
-    ;
-
-    while (end > start && *end == ' ') {
-        *end = 0;
-        end--;
-    }
-
-    return start;
-}
 void FilterQuiescentPositions(char *file_name) {
     struct PGNHeader header;
     char move[12];
     char comment[2048];
     char san_buffer[16];
-    bool last_position_was_not_quiet = false;
 
     FILE *fin = fopen(file_name, "r");
     if (fin == NULL) {
@@ -68,6 +34,8 @@ void FilterQuiescentPositions(char *file_name) {
 
         print_header(fout, &header);
 
+        bool last_position_was_quiet = true;
+
         while (!scanMove(fin, move)) {
             if (!(strlen(move) < 12)) {
                 printf("\n<%s>\n", move);
@@ -75,13 +43,9 @@ void FilterQuiescentPositions(char *file_name) {
             }
 
             get_and_reset_comment(comment, sizeof(comment) - 1);
-            char *comment_ptr = strip(comment);
 
-            if (strlen(comment)) {
-                if (last_position_was_not_quiet) {
-                    strncat(comment_ptr, "; quiet=0", sizeof(comment) - 1);
-                }
-                fprintf(fout, "{ %s }\n", comment_ptr);
+            if (last_position_was_quiet) {
+                fprintf(fout, "{ %s }\n", strip(comment));
             }
 
             move_t themove = ParseSAN(p, move);
@@ -94,26 +58,28 @@ void FilterQuiescentPositions(char *file_name) {
             }
             fprintf(fout, "%s ", SAN(p, themove, san_buffer));
 
-            last_position_was_not_quiet = false;
+            last_position_was_quiet = true;
 
             if (!GameEnd(p)) {
                 const int static_evaluation = EvaluatePosition(p);
                 const int dynamic_evaluation = QuiescenceSearch(p);
 
                 const int diff = ABS(static_evaluation - dynamic_evaluation);
+
                 if (diff > THRESHOLD) {
                     // ShowPosition(p);
                     // Print(0, "Static: %d Dynamic: %d\n", static_evaluation,
                     //      dynamic_evaluation);
-                    last_position_was_not_quiet = true;
+                    last_position_was_quiet = false;
                 } else {
                     int search_evaluation;
-                    Iterate(p, &search_evaluation);
+                    Iterate(p, &search_evaluation, M_NONE, NULL);
+
                     const int search_diff =
                         ABS(static_evaluation - search_evaluation);
 
                     if (search_diff > THRESHOLD) {
-                        last_position_was_not_quiet = true;
+                        last_position_was_quiet = false;
                     }
                 }
             }

@@ -74,6 +74,8 @@
 
 #define DEFERRED_DEPTH_OFFSET 32768
 
+#define ALTERNATE_DELTA 1500
+
 /*
  * We use fractional ply extensions.
  * See D. Levy, D. Broughton and M. Taylor: The SEX Algorithm in Computer Chess
@@ -1276,6 +1278,7 @@ static void *IterateInt(void *x) {
             int tmp;
             int next_depth = (sd->depth - 2) * OnePly;
             move_t move = mvs[sd->movenum];
+            bool is_alternate = !is_pv && move == sd->alternate_move;
 
             nodes[sd->movenum] = sd->nodes_cnt;
 
@@ -1296,13 +1299,18 @@ static void *IterateInt(void *x) {
                 next_depth += ExtendInCheck;
 
             if (next_depth >= 0) {
+                int effective_alpha =
+                    is_alternate ? (alpha - ALTERNATE_DELTA) : alpha;
 #if MP
-                tmp = -negascout(sd, -beta, -alpha, next_depth,
+                tmp = -negascout(sd, -beta, -effective_alpha, next_depth,
                                  is_pv ? PVNode : CutNode, 0);
 #else
-                tmp = -negascout(sd, -beta, -alpha, next_depth,
+                tmp = -negascout(sd, -beta, -effective_alpha, next_depth,
                                  is_pv ? PVNode : CutNode);
 #endif
+                if (is_alternate) {
+                    sd->alternate_score = tmp;
+                }
             } else {
                 tmp = -quies(sd, -beta, -alpha, 0);
             }
@@ -1698,8 +1706,15 @@ static void StartHelpers(struct Position *p) {
 
 /**
  * The basic root iteration procedure.
+ *
+ * Parameters:
+ *  p: the position to search
+ *  score_ptr: pointer to return the root score in
+ *  alternate_move: an alternate move to search
+ *  alternate_score_ptr: a pointer to return the alternate score in
  */
-int Iterate(struct Position *p, int *score_ptr) {
+int Iterate(struct Position *p, int *score_ptr, move_t alternate_move,
+            int *alternate_score_ptr) {
     float soft, hard;
     int cnt;
     struct SearchData *sd;
@@ -1754,11 +1769,16 @@ int Iterate(struct Position *p, int *score_ptr) {
 
     sd = CreateSearchData(p);
     sd->master = true;
+    sd->alternate_move = alternate_move;
     IterateInt(sd);
 
     move_t best_move = sd->best_move;
     if (score_ptr != NULL) {
         *score_ptr = sd->best_score;
+    }
+
+    if (alternate_move != M_NONE && alternate_score_ptr != NULL) {
+        *alternate_score_ptr = sd->alternate_score;
     }
 
     FreeSearchData(sd);
@@ -1795,7 +1815,7 @@ void SearchRoot(struct Position *p) {
 
     if (move == M_NONE) {
         q = ClonePosition(p);
-        move = Iterate(q, NULL);
+        move = Iterate(q, NULL, M_NONE, NULL);
         FreePosition(q);
     }
 
@@ -1846,7 +1866,7 @@ pb_result_t PermanentBrain(struct Position *p) {
         PBAltMove = M_NONE;
 
         Print(2, "Puzzling over a move to ponder on...\n");
-        PBMove = Iterate(q, NULL);
+        PBMove = Iterate(q, NULL, M_NONE, NULL);
         FreePosition(q);
 
         if (SearchMode == Interrupted) {
@@ -1894,7 +1914,7 @@ pb_result_t PermanentBrain(struct Position *p) {
         SearchMode = Pondering;
 
         if (!inbook) {
-            move = Iterate(q, NULL);
+            move = Iterate(q, NULL, M_NONE, NULL);
         }
 
         FreePosition(q);
@@ -1947,7 +1967,7 @@ void AnalysisMode(struct Position *p) {
     SearchMode = Analyzing;
 
     q = ClonePosition(p);
-    Iterate(q, NULL);
+    Iterate(q, NULL, M_NONE, NULL);
     FreePosition(q);
 }
 

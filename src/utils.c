@@ -36,6 +36,7 @@
 
 #include <limits.h>
 #include <stdarg.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -336,4 +337,20 @@ int Percentage(unsigned long dividend, unsigned long divisor) {
 
     double ratio = (double)dividend / (double)divisor;
     return (int)(ratio * 100.0 + 0.5);
+}
+
+char *strip(char *buffer) {
+    char *start = buffer;
+    while (*start == ' ') {
+        start++;
+    }
+
+    char *end = start + strlen(start) - 1;
+
+    while (end > start && *end == ' ') {
+        *end = 0;
+        end--;
+    }
+
+    return start;
 }

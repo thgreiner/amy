@@ -50,5 +50,6 @@ unsigned int GetTime(void);
 void GetTmpFileName(char *, size_t);
 char *nextToken(char **, const char *);
 int Percentage(unsigned long, unsigned long);
+char *strip(char *);
 
 #endif

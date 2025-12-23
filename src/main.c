@@ -45,6 +45,7 @@
 #include "recog.h"
 #include "search.h"
 #include "state_machine.h"
+#include "test_blunder.h"
 #include "test_dbase.h"
 #include "test_yaml.h"
 #include "utils.h"
@@ -62,6 +63,7 @@ static char EGTBPath[1024] = "TB";
 static char *ConfigFileName = NULL;
 
 static void RunAllTests(void) {
+    test_all_blunder();
     test_all_yaml();
     test_all_dbase();
 }

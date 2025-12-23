@@ -38,6 +38,7 @@
 
 #include "amy.h"
 #include "bitboard.h"
+#include "blunder.h"
 #include "bookup.h"
 #include "commands.h"
 #include "dbase.h"
@@ -98,6 +99,7 @@ static struct CommandEntry Commands[] = {
     {"analyze", &Analyze, false, false, "enter analyze mode (xboard)", NULL},
     {"anno", &Anno, false, false, "annotate a game", NULL},
     {"bench", &Benchmark, false, false, "run a benchmark", NULL},
+    {"blunder", &BlunderCheck, false, false, "check for blunders", NULL},
     {"book", &Book, false, false, "display book moves", NULL},
     {"bk", &Book, false, false, "display book moves (xboard)", NULL},
     {"bookup", &Bookup, false, false, "create a book", NULL},
@@ -259,7 +261,7 @@ static void Test(char *fname) {
 
         /* TestSwap(); */
 
-        move = Iterate(p, NULL);
+        move = Iterate(p, NULL, M_NONE, NULL);
         for (j = 0; goodmove[j] != M_NONE; j++)
             if (move == goodmove[j])
                 correct = true;
@@ -558,7 +560,7 @@ static void RunAnnotate(char *fname, int side) {
                           (p->ply / 2) + 1);
                     Print(0, "%s\n", SAN(p, themove, san_buffer));
                     if (side == -1 || (side == p->turn)) {
-                        Iterate(p, NULL);
+                        Iterate(p, NULL, M_NONE, NULL);
                     }
                     DoMove(p, themove);
                 }

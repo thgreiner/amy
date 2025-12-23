@@ -94,6 +94,9 @@ struct SearchData {
     int best_score;
     uint16_t depth;
 
+    move_t alternate_move;
+    int alternate_score;
+
     uint16_t nrootmoves;
     uint16_t movenum;
 };
