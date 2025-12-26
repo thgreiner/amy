@@ -33,7 +33,6 @@
  * init.c - initialization routines
  */
 
-#include "amy.h"
 #include "dbase.h"
 #include "inline.h"
 #include "magic.h"

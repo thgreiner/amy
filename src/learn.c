@@ -36,7 +36,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include "amy.h"
 #include "bookup.h"
 #include "utils.h"
 
