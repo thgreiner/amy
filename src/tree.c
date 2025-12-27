@@ -101,7 +101,7 @@ static int cmp_keys(char *key1, size_t len1, char *key2, size_t len2) {
         return result;
     }
 
-    return len1 - len2;
+    return (int)(len1 - len2);
 }
 
 /**
@@ -322,7 +322,7 @@ static void save_tree_recursive(tree_node_t *node, FILE *fout) {
  * Save the tree to a file.
  */
 void save_tree(tree_node_t *node, FILE *fout) {
-    int records_written = fwrite(MAGIC, 4, 1, fout);
+    unsigned long records_written = fwrite(MAGIC, 4, 1, fout);
     if (records_written != 1)
         return;
     save_tree_recursive(node, fout);
@@ -362,7 +362,7 @@ static tree_node_t *load_tree_internal(FILE *fin) {
             break;
 
         key_data = realloc(key_data, key_len);
-        int amount_read = fread(key_data, key_len, 1, fin);
+        unsigned long amount_read = fread(key_data, key_len, 1, fin);
         if (amount_read != 1)
             break;
 
@@ -389,7 +389,7 @@ static tree_node_t *load_tree_internal(FILE *fin) {
  */
 tree_node_t *load_tree(FILE *fin) {
     char buffer[4];
-    int records_read = fread(buffer, 4, 1, fin);
+    unsigned long records_read = fread(buffer, 4, 1, fin);
     if (records_read != 1)
         return NULL;
 

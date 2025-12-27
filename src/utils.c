@@ -105,24 +105,24 @@ int ReadLine(char *buffer, int cnt) {
 /**
  * Convert an int representing a time in seconds to a string.
  */
-char *FormatTime(unsigned int secs, char *buffer, size_t len) {
+char *FormatTime(unsigned long secs, char *buffer, size_t len) {
     if (secs >= 60 * ONE_SECOND) {
-        int mins;
+        long mins;
         secs = secs / ONE_SECOND;
         mins = secs / 60;
         secs -= mins * 60;
 
         if (mins >= 100)
-            snprintf(buffer, len, "%d:%02d", mins, secs);
+            snprintf(buffer, len, "%ld:%02ld", mins, secs);
         else if (mins >= 10)
-            snprintf(buffer, len, " %d:%02d", mins, secs);
+            snprintf(buffer, len, " %ld:%02ld", mins, secs);
         else
-            snprintf(buffer, len, "  %d:%02d", mins, secs);
+            snprintf(buffer, len, "  %ld:%02ld", mins, secs);
     } else {
         int tsecs = (secs % ONE_SECOND) / 10;
         secs = secs / ONE_SECOND;
 
-        snprintf(buffer, len, "  %2d.%d", secs, tsecs);
+        snprintf(buffer, len, "  %2ld.%d", secs, tsecs);
     }
     return buffer;
 }
@@ -189,17 +189,15 @@ char *FormatCount(unsigned long count, char *buffer, size_t len) {
 /**
  * Get the current time.
  */
-unsigned int GetTime(void) {
+unsigned long GetTime(void) {
 #if HAVE_GETTIMEOFDAY
     static struct timeval timeval;
-    unsigned int now;
 
     gettimeofday(&timeval, NULL);
-    now = timeval.tv_sec * 100 + (timeval.tv_usec / 10000L);
-    return now;
+    return timeval.tv_sec * 100 + (timeval.tv_usec / 10000L);
 #else
 #ifdef _WIN32
-    return ((unsigned int)GetTickCount() / 10);
+    return ((unsigned long)GetTickCount() / 10);
 #else
 #error TIME COUNTING MUST BE IMPLEMENTED
 #endif

@@ -36,13 +36,15 @@
 #include "next.h"
 #include "dbase.h"
 #include "evaluation.h"
-#include "hashtable.h"
 #include "heap.h"
 #include "init.h"
 #include "inline.h"
 #include "search.h"
 #include "swap.h"
 #include "utils.h"
+#if MP
+#include "hashtable.h"
+#endif
 
 struct SearchData *CreateSearchData(struct Position *p) {
     struct SearchData *sd = calloc(1, sizeof(struct SearchData));

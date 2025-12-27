@@ -36,9 +36,9 @@
 #include "bitboard.h"
 #include "config.h"
 
-#define USE_8BIT 1
-
 #if !HAVE___BUILTIN_CTZLL
+#include <strings.h>
+
 int FindSetBit(BitBoard b) {
 #if HAVE_FFSLL
     return 64 - ffsll(b);

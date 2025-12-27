@@ -35,6 +35,7 @@
 
 #include "assert.h"
 #include "inline.h"
+#include <stdint.h>
 
 uint16_t rook_table_offsets[64];
 uint64_t rook_table[102400];
@@ -237,12 +238,12 @@ static void init_rook_table(void) {
     for (int sq = 0; sq < 64; sq++) {
         int bits = rook_index_bits[sq];
 
-        rook_table_offsets[sq] = offset >> 1;
+        rook_table_offsets[sq] = (uint16_t)(offset >> 1);
 
         for (int index = 0; index < (1 << bits); index++) {
             uint64_t blockers =
                 blockers_from_index(index, rook_blocker_mask[sq]);
-            int magic_index =
+            uint64_t magic_index =
                 (blockers * rook_magics[sq]) >> (64 - rook_index_bits[sq]);
             rook_table[offset + magic_index] = rook_attack_mask(sq, blockers);
         }
@@ -259,12 +260,12 @@ static void init_bishop_table(void) {
     for (int sq = 0; sq < 64; sq++) {
         int bits = bishop_index_bits[sq];
 
-        bishop_table_offsets[sq] = offset;
+        bishop_table_offsets[sq] = (uint16_t)offset;
 
         for (int index = 0; index < (1 << bits); index++) {
             uint64_t blockers =
                 blockers_from_index(index, bishop_blocker_mask[sq]);
-            int magic_index =
+            uint64_t magic_index =
                 (blockers * bishop_magics[sq]) >> (64 - bishop_index_bits[sq]);
             bishop_table[offset + magic_index] =
                 bishop_attack_mask(sq, blockers);

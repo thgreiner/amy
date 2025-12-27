@@ -65,7 +65,7 @@ extern const uint8_t bishop_index_bits[];
  */
 static inline uint64_t rook_attacks(int sq, uint64_t occupied) {
     uint64_t blockers = occupied & rook_blocker_mask[sq];
-    int magic_index =
+    uint64_t magic_index =
         (blockers * rook_magics[sq]) >> (64 - rook_index_bits[sq]);
     return rook_table[2 * rook_table_offsets[sq] + magic_index];
 }
@@ -82,7 +82,7 @@ static inline uint64_t rook_attacks(int sq, uint64_t occupied) {
  */
 static inline uint64_t bishop_attacks(int sq, uint64_t occupied) {
     uint64_t blockers = occupied & bishop_blocker_mask[sq];
-    int magic_index =
+    uint64_t magic_index =
         (blockers * bishop_magics[sq]) >> (64 - bishop_index_bits[sq]);
     return bishop_table[bishop_table_offsets[sq] + magic_index];
 }

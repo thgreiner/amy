@@ -62,7 +62,7 @@ extern int ReduceNullMove;
 extern int ReduceNullMoveDeep;
 extern int16_t ExtendRecapture[];
 
-extern unsigned int FHTime;
+extern unsigned long FHTime;
 extern bool AbortSearch;
 
 #if MP

@@ -33,6 +33,7 @@
 #define HEAP_H
 
 #include <assert.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -78,7 +79,7 @@ static inline void push_section(heap_t heap) {
     heap->current_section++;
     if (heap->current_section == heap->sections_end) {
         // printf("Reallocating sections.\n");
-        int nsections = heap->sections_end - heap->sections_start;
+        ptrdiff_t nsections = heap->sections_end - heap->sections_start;
         heap_section_t new_sections = (heap_section_t)realloc(
             heap->sections_start, 2 * nsections * sizeof(struct heap_section));
         if (new_sections == NULL) {

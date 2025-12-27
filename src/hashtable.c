@@ -33,9 +33,9 @@
  * hashtable.c - hashtable management routines
  */
 
+#include <stddef.h>
 #include <string.h>
 
-#include "amy.h"
 #include "hashtable.h"
 #include "random.h"
 #include "search.h"
@@ -311,7 +311,7 @@ LookupResult ProbeHT(hash_t key, int *score, int depth, move_t *bestm,
     }
 #if MP
     else {
-        h.ht_Depth = depth;
+        h.ht_Depth = (short)depth;
         h.ht_Flags = HT_NCPU_INCREMENT;
         h.ht_Signature = (int)key;
         PutHTEntryBestEffort(key, h, depth);
@@ -414,12 +414,12 @@ void StoreHT(hash_t key, int best, int alpha, int beta, int bestm, int depth,
 #endif /* MP */
 
     entry.ht_Move = bestm;
-    entry.ht_Depth = depth;
+    entry.ht_Depth = (short)depth;
     entry.ht_Score = reduced;
 #if MP
-    entry.ht_Flags |= HTGeneration;
+    entry.ht_Flags |= (short)HTGeneration;
 #else
-    entry.ht_Flags = HTGeneration;
+    entry.ht_Flags = (short)HTGeneration;
 #endif /* MP */
     if (best <= alpha)
         entry.ht_Flags |= HT_UBOUND;
@@ -592,7 +592,7 @@ void ShowHashStatistics(void) {
 }
 
 void GuessHTSizes(char *size) {
-    int last = strlen(size) - 1;
+    size_t last = strlen(size) - 1;
     int64_t total_size;
     int64_t tmp;
 

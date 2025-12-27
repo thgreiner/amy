@@ -38,7 +38,7 @@
 #include "init.h"
 #include "inline.h"
 #include "recog.h"
-#include "utils.h"
+#include <stdint.h>
 
 #define REFLECT_X(a) ((a) ^ 0x38)
 
@@ -602,25 +602,25 @@ static int EvaluatePawns(const struct Position *p,
     }
 #endif /* DEBUG */
 
-    pawnFacts->pf_WhiteKingSide = kside_pawns_w +
-                                  ScaleHalfOpenFilesMine[kside_hopen_files_w] +
-                                  ScaleHalfOpenFilesYours[kside_hopen_files_b] +
-                                  ScaleOpenFiles[kside_open_files];
+    pawnFacts->pf_WhiteKingSide =
+        (char)(kside_pawns_w + ScaleHalfOpenFilesMine[kside_hopen_files_w] +
+               ScaleHalfOpenFilesYours[kside_hopen_files_b] +
+               ScaleOpenFiles[kside_open_files]);
 
-    pawnFacts->pf_BlackKingSide = kside_pawns_b +
-                                  ScaleHalfOpenFilesMine[kside_hopen_files_b] +
-                                  ScaleHalfOpenFilesYours[kside_hopen_files_w] +
-                                  ScaleOpenFiles[kside_open_files];
+    pawnFacts->pf_BlackKingSide =
+        (char)(kside_pawns_b + ScaleHalfOpenFilesMine[kside_hopen_files_b] +
+               ScaleHalfOpenFilesYours[kside_hopen_files_w] +
+               ScaleOpenFiles[kside_open_files]);
 
     pawnFacts->pf_WhiteQueenSide =
-        qside_pawns_w + ScaleHalfOpenFilesMine[qside_hopen_files_w] +
-        ScaleHalfOpenFilesYours[qside_hopen_files_b] +
-        ScaleOpenFiles[qside_open_files];
+        (char)(qside_pawns_w + ScaleHalfOpenFilesMine[qside_hopen_files_w] +
+               ScaleHalfOpenFilesYours[qside_hopen_files_b] +
+               ScaleOpenFiles[qside_open_files]);
 
     pawnFacts->pf_BlackQueenSide =
-        qside_pawns_b + ScaleHalfOpenFilesMine[qside_hopen_files_b] +
-        ScaleHalfOpenFilesYours[qside_hopen_files_w] +
-        ScaleOpenFiles[qside_open_files];
+        (char)(qside_pawns_b + ScaleHalfOpenFilesMine[qside_hopen_files_b] +
+               ScaleHalfOpenFilesYours[qside_hopen_files_w] +
+               ScaleOpenFiles[qside_open_files]);
 
 #ifdef DEBUG
     if (DebugWhat & DebugPawnStructure) {
@@ -1806,11 +1806,11 @@ void InitEvaluation(const struct Position *p) {
             bfile = 7 - bfile;
 
         if (p->nonPawn[Black] < eg_threshold) {
-            WPawnPos[sq] = PawnAdvanceEndgame[wfile] * wrank;
+            WPawnPos[sq] = (int16_t)(PawnAdvanceEndgame[wfile] * wrank);
         } else if (p->castle & 3) {
-            WPawnPos[sq] = PawnAdvanceOpening[wfile] * wrank;
+            WPawnPos[sq] = (int16_t)(PawnAdvanceOpening[wfile] * wrank);
         } else {
-            WPawnPos[sq] = PawnAdvanceMiddlegame[wfile] * wrank;
+            WPawnPos[sq] = (int16_t)(PawnAdvanceMiddlegame[wfile] * wrank);
             if (pawnstorm == 1 && wfile > 4) {
                 WPawnPos[sq] += PawnStorm * wrank;
             } else if (pawnstorm == 2 && wfile < 3) {
@@ -1819,11 +1819,11 @@ void InitEvaluation(const struct Position *p) {
         }
 
         if (p->nonPawn[White] < eg_threshold) {
-            BPawnPos[sq] = PawnAdvanceEndgame[bfile] * brank;
+            BPawnPos[sq] = (int16_t)(PawnAdvanceEndgame[bfile] * brank);
         } else if (p->castle & 12) {
-            BPawnPos[sq] = PawnAdvanceOpening[bfile] * brank;
+            BPawnPos[sq] = (int16_t)(PawnAdvanceOpening[bfile] * brank);
         } else {
-            BPawnPos[sq] = PawnAdvanceMiddlegame[bfile] * brank;
+            BPawnPos[sq] = (int16_t)(PawnAdvanceMiddlegame[bfile] * brank);
             if (pawnstorm == 1 && bfile < 3) {
                 BPawnPos[sq] += PawnStorm * brank;
             } else if (pawnstorm == 2 && bfile > 4) {

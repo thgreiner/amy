@@ -35,6 +35,7 @@
 
 #include "state_machine.h"
 #include "utils.h"
+#include <stddef.h>
 #include <string.h>
 
 #define PV_BUFFER_SIZE 512
@@ -42,7 +43,7 @@
 static void PrintPV(char *pv) {
     char PVBuffer[512];
     char *x;
-    int len = 21;
+    size_t len = 21;
 
     strncpy(PVBuffer, pv, sizeof(PVBuffer) - 1);
 
@@ -72,7 +73,8 @@ void SearchHeader(void) {
     Print(1, "It    Time   Score  principal Variation\n");
 }
 
-void SearchOutput(int depth, int time, int score, char *line, int nodes) {
+void SearchOutput(int depth, unsigned long time, int score, char *line,
+                  unsigned long nodes) {
     char time_as_text[16];
     char score_as_text[16];
 
@@ -101,28 +103,28 @@ void SearchOutput(int depth, int time, int score, char *line, int nodes) {
                 }
                 short_line[idx] = '\0';
             }
-            PrintNoLog(0, "%d %d %d %d %s\n", depth, s, time, nodes,
+            PrintNoLog(0, "%d %d %d %lu %s\n", depth, s, time, nodes,
                        short_line);
             free(short_line);
         }
     }
 }
 
-void SearchOutputFailHighLow(int depth, int time, int isfailhigh, char *move,
-                             int nodes) {
+void SearchOutputFailHighLow(int depth, unsigned long time, int isfailhigh,
+                             char *move, unsigned long nodes) {
     char time_as_text[16];
 
     if (isfailhigh) {
         Print(1, "%2d  %s     +++  %s\n", depth,
               FormatTime(time, time_as_text, sizeof(time_as_text)), move);
         if (PostMode) {
-            PrintNoLog(0, "%d 0 %d %d %s!\n", depth, time, nodes, move);
+            PrintNoLog(0, "%d 0 %d %lu %s!\n", depth, time, nodes, move);
         }
     } else {
         Print(1, "%2d  %s     ---  %s\n", depth,
               FormatTime(time, time_as_text, sizeof(time_as_text)), move);
         if (PostMode) {
-            PrintNoLog(0, "%d 0 %d %d %s?\n", depth, time, nodes, move);
+            PrintNoLog(0, "%d 0 %d %lu %s?\n", depth, time, nodes, move);
         }
     }
 }

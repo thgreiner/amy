@@ -32,7 +32,6 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include "amy.h"
 #include "dbase.h"
 #include "evaluation.h"
 #include "search.h"
@@ -265,7 +264,7 @@ static void set_piece_square_table(struct Node *node, char *name,
 }
 
 static void set_array(struct Node *node, char *name, int16_t *target_array,
-                      size_t count) {
+                      unsigned int count) {
     int *destination = malloc(sizeof(int) * count);
     abort_if_allocation_failed(destination);
 

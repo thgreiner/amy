@@ -36,7 +36,6 @@
 #include <signal.h>
 #include <string.h>
 
-#include "amy.h"
 #include "bitboard.h"
 #include "blunder.h"
 #include "bookup.h"
@@ -344,7 +343,7 @@ static void TestScore(char *fname) {
         int score = EvaluatePosition(p);
 
         if (fout) {
-            int l = strlen(line);
+            size_t l = strlen(line);
             l--;
             line[l] = '\0';
             l--;
@@ -671,7 +670,7 @@ static void Benchmark(char *args) {
     int move = g1 | (f3 << 6);
     int i;
     const int cycles = 10000000;
-    int start, end;
+    unsigned long start, end;
     double elapsed;
     struct Position *p;
 
@@ -733,9 +732,9 @@ static void Perft(char *args) {
     BitBoard cnt = 0;
     heap_t heap = allocate_heap();
 
-    int start = GetTime();
+    unsigned long start = GetTime();
     cnt = SearchFully(CurrentPosition, cnt, depth, heap);
-    int end = GetTime();
+    unsigned long end = GetTime();
 
     free_heap(heap);
 

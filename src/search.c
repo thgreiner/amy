@@ -54,6 +54,7 @@
 #include "time_ctl.h"
 #include "utils.h"
 
+#include <stdint.h>
 #include <string.h>
 
 #if HAVE_LIBPTHREAD
@@ -126,10 +127,10 @@ static const int MateDepth = 3;
 int MaxDepth;
 
 unsigned long RCExt, ChkExt, DiscExt, DblExt, SingExt, PPExt, ZZExt;
-unsigned int HardLimit, SoftLimit, SoftLimit2;
-unsigned int StartTime, WallTimeStart;
-unsigned int CurTime;
-unsigned int FHTime;
+unsigned long HardLimit, SoftLimit, SoftLimit2;
+unsigned long StartTime, WallTimeStart;
+unsigned long CurTime;
+unsigned long FHTime;
 bool AbortSearch;
 bool NeedTime = false;
 int PrintOK;
@@ -192,7 +193,7 @@ static int negascout(struct SearchData *, int, int, int, int);
  */
 static bool TerminateSearch(struct SearchData *sd) {
     if ((sd->nodes_cnt + sd->qnodes_cnt) > sd->check_nodes_cnt) {
-        unsigned int now = GetTime();
+        unsigned long now = GetTime();
 
         sd->check_nodes_cnt = sd->nodes_cnt + sd->qnodes_cnt + NodesPerCheck;
         if (AbortSearch)
@@ -1252,12 +1253,12 @@ static void *IterateInt(void *x) {
     bool pv_valid = false;
 
     if (!sd->master) {
-        usleep(50 + 100 * Random());
+        usleep((useconds_t)(50 + 100 * Random()));
     }
     p = sd->position;
 
     InitSearch(sd);
-    sd->nrootmoves = LegalMoves(p, sd->heap);
+    sd->nrootmoves = (uint16_t)LegalMoves(p, sd->heap);
 
     move_t *mvs = sd->heap->data + sd->heap->current_section->start;
 
@@ -1384,7 +1385,7 @@ static void *IterateInt(void *x) {
                 pv_stable = false;
 
                 if (sd->movenum != 0) {
-                    int tn = nodes[sd->movenum];
+                    unsigned long tn = nodes[sd->movenum];
                     int j;
 
                     for (j = sd->movenum; j > 0; j--) {

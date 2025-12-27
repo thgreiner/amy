@@ -35,6 +35,7 @@
 #include "types.h"
 #include "utils.h"
 #include "yaml.h"
+#include <stddef.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -59,7 +60,7 @@ move_t get_best_move_from_comment(char *comment, struct Position *p,
     }
     ptr++;
 
-    int eval_len = ptr - start_eval - 1;
+    size_t eval_len = ptr - start_eval - 1;
     strncpy(eval_buf, start_eval, eval_len);
     eval_buf[eval_len] = '\0';
 

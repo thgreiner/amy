@@ -32,10 +32,10 @@
 #ifndef INLINE_H
 #define INLINE_H
 
-#include "amy.h"
 #include "bitboard.h"
 #include "dbase.h"
 #include "types.h"
+#include <stdint.h>
 
 #define ABS(x) ((x) < 0 ? -(x) : (x))
 #define MAX(x, y) ((x) > (y) ? (x) : (y))
@@ -107,14 +107,14 @@ static inline int EdgeDist(int sq) {
 /**
  * Create a move from from square, to square and flags.
  */
-static inline int make_move(int from, int to, int flags) {
+static inline move_t make_move(int from, int to, int flags) {
     return (move_t)(from | (to << 6) | flags);
 }
 
 /**
  * Create a promotion move from from square, to square and flags.
  */
-static inline int make_promotion(int from, int to, int type, int flags) {
+static inline move_t make_promotion(int from, int to, int type, int flags) {
     return (move_t)(from | (to << 6) | (type << M_PROMOTION_OFFSET) | flags);
 }
 
@@ -129,7 +129,6 @@ static inline bool is_promo_square(int sq) {
 /*
  * Test whether a side is in check
  */
-
 static inline bool InCheck(struct Position *p, int side) {
     int sq = p->kingSq[side];
     return (p->atkFr[sq] & p->mask[!side][0]);
@@ -138,8 +137,7 @@ static inline bool InCheck(struct Position *p, int side) {
 /*
  * Determine type of promotion from move
  */
-
-static inline int PromoType(move_t move) {
+static inline int8_t PromoType(move_t move) {
     return (move & M_PROMOTION_MASK) >> M_PROMOTION_OFFSET;
 }
 

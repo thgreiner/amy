@@ -33,7 +33,8 @@
 #define SEARCH_IO_H
 
 void SearchHeader(void);
-void SearchOutput(int depth, int time, int score, char *line, int nodes);
-void SearchOutputFailHighLow(int, int, int, char *, int);
+void SearchOutput(int depth, unsigned long time, int score, char *line,
+                  unsigned long nodes);
+void SearchOutputFailHighLow(int, unsigned long, int, char *, unsigned long);
 
 #endif

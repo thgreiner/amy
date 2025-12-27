@@ -515,7 +515,7 @@ struct IntArrayLookupResult get_as_int_array(struct Node *node, char *path,
                 .result_code = FORMAT_ERROR, .elements_read = 0};
             return lookup_result;
         }
-        buffer[index] = value;
+        buffer[index] = (int)value;
         list_node = list_node->next;
     }
 
