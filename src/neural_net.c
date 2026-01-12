@@ -1,3 +1,34 @@
+/*
+
+    Amy - a chess playing program
+
+    Copyright (c) 2002-2026, Thorsten Greiner
+    All rights reserved.
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright notice,
+      this list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above copyright notice,
+      this list of conditions and the following disclaimer in the documentation
+      and/or other materials provided with the distribution.
+
+   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+   ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+   LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+   CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+   SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+   INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+   POSSIBILITY OF SUCH DAMAGE.
+
+*/
+
 #include "neural_net.h"
 #include "amy.h"
 #include "bitboard.h"
@@ -6,6 +37,7 @@
 #include "hashtable.h"
 #include "inline.h"
 #include "random.h"
+#include "safe_malloc.h"
 #include "utils.h"
 #include <stdint.h>
 #include <stdio.h>
@@ -84,11 +116,7 @@ void ReadWeightsCompressed(void) {
     long file_size = ftell(fin);
     fseek(fin, 0, SEEK_SET);
 
-    char *buffer = malloc(file_size);
-    if (buffer == NULL) {
-        fclose(fin);
-        return;
-    }
+    char *buffer = safe_malloc(file_size);
 
     size_t items_read = fread(buffer, file_size, 1, fin);
     assert(items_read == 1);
@@ -100,8 +128,7 @@ void ReadWeightsCompressed(void) {
         sizeof(hidden_layer_2_weights_q) + sizeof(hidden_layer_2_bias_q) +
         sizeof(output_layer_weights_q) + sizeof(output_layer_bias_q) + 8;
 
-    int16_t *decompressed = malloc(total_network_size);
-    assert(decompressed);
+    int16_t *decompressed = safe_malloc(total_network_size);
 
     uint8_t *src = (uint8_t *)buffer;
     uint8_t *src_end = src + file_size;
@@ -115,17 +142,16 @@ void ReadWeightsCompressed(void) {
 
             if (descriptor & 0x80) {
                 // 16 bit value
-                int16_t *x = (int16_t *)src;
-                *dest = *x;
-                src += 2;
+                int16_t tmp = (int16_t)*src;
+                tmp |= ((int16_t)*(++src)) << 8;
+                *dest = tmp;
             } else {
                 // 8 bit value
                 int8_t *x = (int8_t *)src;
                 *dest = *x;
-                src += 1;
             }
             // printf("Read %d\n", *dest);
-
+            src++;
             dest++;
             descriptor <<= 1;
         }
@@ -370,7 +396,8 @@ int EvaluatePositionNeuralNetwork(struct Position *p) {
         if (hidden_layer_1_q[i] < 0) {
             hidden_layer_1_q16[i] = 0;
         } else {
-            hidden_layer_1_q16[i] = (hidden_layer_1_q[i] + SCALE_HALF) / SCALE;
+            hidden_layer_1_q16[i] =
+                (int16_t)((hidden_layer_1_q[i] + SCALE_HALF) / SCALE);
         }
     }
 
@@ -398,7 +425,8 @@ int EvaluatePositionNeuralNetwork(struct Position *p) {
         if (hidden_layer_2_q[i] < 0) {
             hidden_layer_2_q16[i] = 0;
         } else {
-            hidden_layer_2_q16[i] = (hidden_layer_2_q[i] + SCALE_HALF) / SCALE;
+            hidden_layer_2_q16[i] =
+                (int16_t)((hidden_layer_2_q[i] + SCALE_HALF) / SCALE);
         }
     }
 
@@ -632,11 +660,11 @@ void ReadWeights(void) {
 void RandomizeWeights(void) {
     for (int i = 0; i < N_FEATURES; i++) {
         for (int j = 0; j < ACCUMULATOR_SIZE; j++) {
-            input_layer_weights_q[i][j] = Random() * (SCALE / 16);
+            input_layer_weights_q[i][j] = (int16_t)(Random() * (SCALE / 16));
         }
     }
 
     for (int i = 0; i < ACCUMULATOR_SIZE; i++) {
-        input_layer_bias_q[i] = Random() * (SCALE / 16);
+        input_layer_bias_q[i] = (int16_t)(Random() * (SCALE / 16));
     }
 }
