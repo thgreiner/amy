@@ -36,6 +36,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "safe_malloc.h"
 #include "tree.h"
 #include "yaml.h"
 
@@ -50,13 +51,6 @@ struct TokenizerState {
 void free_yaml_node(struct Node *);
 void free_list_node(struct ListNode *);
 void free_tree_node(tree_node_t *tree);
-
-void abort_if_allocation_failed(void *x) {
-    if (!x) {
-        perror("Cannot allocate buffer");
-        exit(1);
-    }
-}
 
 static bool is_word_char(char c) { return isalnum(c) || c == '_' || c == '-'; }
 
@@ -83,8 +77,7 @@ struct Token parse_word(struct TokenizerState *state) {
 
     length -= trailing_blanks;
 
-    char *buffer = malloc(length + 1);
-    abort_if_allocation_failed(buffer);
+    char *buffer = safe_malloc(length + 1);
 
     memcpy(buffer, begin, length);
     buffer[length] = '\0';
@@ -218,15 +211,13 @@ struct ListNode *parse_list(struct TokenizerState *state) {
 
     for (;;) {
         if (token.type == WORD) {
-            struct Node *value = malloc(sizeof(struct Node));
-            abort_if_allocation_failed(value);
+            struct Node *value = safe_malloc(sizeof(struct Node));
 
             value->type = SCALAR;
             value->payload = token.text;
             // printf("Parsed list element: %s\n", token.text);
 
-            struct ListNode *next_node = malloc(sizeof(struct ListNode));
-            abort_if_allocation_failed(next_node);
+            struct ListNode *next_node = safe_malloc(sizeof(struct ListNode));
 
             next_node->value = value;
             next_node->next = NULL;
@@ -315,8 +306,7 @@ struct Node *parse_dict(struct TokenizerState *state) {
 
     // printf("Finished parsing dict.\n");
 
-    struct Node *result = malloc(sizeof(struct Node));
-    abort_if_allocation_failed(result);
+    struct Node *result = safe_malloc(sizeof(struct Node));
 
     result->type = DICT;
     result->payload = result_dict;
@@ -335,8 +325,7 @@ struct Node *parse_yaml(char *text) {
 
 struct Node *get_node(struct Node *node, char *path) {
     // Make a copy of path because strtok will clobber it
-    char *path_buffer = malloc(strlen(path) + 1);
-    abort_if_allocation_failed(path_buffer);
+    char *path_buffer = safe_malloc(strlen(path) + 1);
     memcpy(path_buffer, path, strlen(path) + 1);
 
     char *x = path_buffer;
@@ -369,8 +358,7 @@ struct Node *get_node(struct Node *node, char *path) {
     }
     free(path_buffer);
 
-    struct Node *result = malloc(sizeof(struct Node));
-    abort_if_allocation_failed(result);
+    struct Node *result = safe_malloc(sizeof(struct Node));
     memcpy(result, &current_node, sizeof(struct Node));
 
     return result;

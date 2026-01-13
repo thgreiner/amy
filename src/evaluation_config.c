@@ -34,6 +34,7 @@
 
 #include "dbase.h"
 #include "evaluation.h"
+#include "safe_malloc.h"
 #include "search.h"
 #include "utils.h"
 #include "yaml.h"
@@ -265,8 +266,7 @@ static void set_piece_square_table(struct Node *node, char *name,
 
 static void set_array(struct Node *node, char *name, int16_t *target_array,
                       unsigned int count) {
-    int *destination = malloc(sizeof(int) * count);
-    abort_if_allocation_failed(destination);
+    int *destination = safe_malloc(sizeof(int) * count);
 
     struct IntArrayLookupResult array_result =
         get_as_int_array(node, name, destination, count);
@@ -292,7 +292,6 @@ static void configure_name(struct Node *node) {
 
     if (result.result_code == OK) {
         ConfigurationName = result.result;
-        abort_if_allocation_failed(ConfigurationName);
         Print(0, "Using configuration name: %s\n", ConfigurationName);
     }
 }
@@ -403,8 +402,7 @@ static char *read_file(char *file_name) {
     size_t buf_size = page_size;
     size_t total_bytes_read = 0;
 
-    char *buffer = malloc(buf_size);
-    abort_if_allocation_failed(buffer);
+    char *buffer = safe_malloc(buf_size);
 
     char *ptr = buffer;
 
@@ -419,8 +417,7 @@ static char *read_file(char *file_name) {
 
         if ((total_bytes_read + page_size) >= buf_size) {
             buf_size *= 2;
-            buffer = realloc(buffer, buf_size);
-            abort_if_allocation_failed(buffer);
+            buffer = safe_realloc(buffer, buf_size);
             ptr = buffer + total_bytes_read;
         }
     }
@@ -429,8 +426,7 @@ static char *read_file(char *file_name) {
 
     if ((total_bytes_read + 1) >= buf_size) {
         buf_size += 1;
-        buffer = realloc(buffer, buf_size);
-        abort_if_allocation_failed(buffer);
+        buffer = safe_realloc(buffer, buf_size);
     }
     *ptr = '\0';
 

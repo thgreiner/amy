@@ -9,6 +9,7 @@
 
 #include "config.h"
 #include "dbase.h"
+#include "safe_malloc.h"
 #include "search.h"
 #include "utils.h"
 #include <stdlib.h>
@@ -68,7 +69,7 @@ void InitEGTB(char *tbpath) {
     TB_CRC_CHECK = 0;
     EGTBMenCount = IInitializeTb(tbpath);
     if (EGTBMenCount != 0) {
-        void *egtb_cache = malloc(EGTB_CACHE_SIZE);
+        void *egtb_cache = safe_malloc(EGTB_CACHE_SIZE);
         Print(0, "Found %d-men endgame table bases.\n", EGTBMenCount);
         FTbSetCacheSize(egtb_cache, EGTB_CACHE_SIZE);
     }

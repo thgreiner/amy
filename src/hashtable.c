@@ -38,6 +38,7 @@
 
 #include "hashtable.h"
 #include "random.h"
+#include "safe_malloc.h"
 #include "search.h"
 #include "utils.h"
 
@@ -540,7 +541,7 @@ void AllocateHT(void) {
     HT_Size = 1 << HT_Bits;
     HT_Mask = HT_Size - 1;
 
-    TranspositionTable = calloc(HT_Size, sizeof(struct HTEntry));
+    TranspositionTable = safe_calloc(HT_Size, sizeof(struct HTEntry));
 
     /* Thread-local hash table - only calculate sizes and bits here...*/
     L_HT_Size = 1 << L_HT_Bits;
@@ -549,12 +550,12 @@ void AllocateHT(void) {
     PT_Size = 1 << PT_Bits;
     PT_Mask = PT_Size - 1;
 
-    PawnTable = calloc(PT_Size, sizeof(struct PTEntry));
+    PawnTable = safe_calloc(PT_Size, sizeof(struct PTEntry));
 
     ST_Size = 1 << ST_Bits;
     ST_Mask = ST_Size - 1;
 
-    ScoreTable = calloc(ST_Size, sizeof(struct STEntry));
+    ScoreTable = safe_calloc(ST_Size, sizeof(struct STEntry));
 
     Print(0, "Hashtable sizes: %d k, %d k, %d k (%d, %d, %d bits)\n",
           ((1 << HT_Bits) * sizeof(struct HTEntry)) / 1024,

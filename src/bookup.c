@@ -41,6 +41,7 @@
 #include "eco.h"
 #include "pgn.h"
 #include "random.h"
+#include "safe_malloc.h"
 #include "tree.h"
 #include "utils.h"
 
@@ -91,7 +92,7 @@ static tree_node_t *PutBookEntry(tree_node_t *database, hash_t hk, int result,
     }
 
     if (entry == NULL) {
-        entry = calloc(1, sizeof(struct BookEntry));
+        entry = safe_calloc(1, sizeof(struct BookEntry));
     }
 
     if (result == 1) {

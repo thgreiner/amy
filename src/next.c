@@ -39,6 +39,7 @@
 #include "heap.h"
 #include "init.h"
 #include "inline.h"
+#include "safe_malloc.h"
 #include "search.h"
 #include "swap.h"
 #include "utils.h"
@@ -47,26 +48,12 @@
 #endif
 
 struct SearchData *CreateSearchData(struct Position *p) {
-    struct SearchData *sd = calloc(1, sizeof(struct SearchData));
-    if (!sd) {
-        Print(0, "Cannot allocate SearchData.\n");
-        exit(1);
-    }
+    struct SearchData *sd = safe_calloc(1, sizeof(struct SearchData));
 
     sd->position = p;
-
-    sd->statusTable = calloc(MAX_TREE_SIZE, sizeof(struct SearchStatus));
-    if (!sd->statusTable) {
-        Print(0, "Cannot allocate SearchStatus.\n");
-        exit(1);
-    }
+    sd->statusTable = safe_calloc(MAX_TREE_SIZE, sizeof(struct SearchStatus));
     sd->current = sd->statusTable;
-
-    sd->killerTable = calloc(MAX_TREE_SIZE, sizeof(struct KillerEntry));
-    if (!sd->killerTable) {
-        Print(0, "Cannot allocate KillerEntry.\n");
-        exit(1);
-    }
+    sd->killerTable = safe_calloc(MAX_TREE_SIZE, sizeof(struct KillerEntry));
     sd->killer = sd->killerTable;
 
     sd->heap = allocate_heap();
@@ -75,11 +62,7 @@ struct SearchData *CreateSearchData(struct Position *p) {
     sd->data_heap_size = 0;
 
 #if MP
-    sd->localHashTable = calloc(sizeof(struct HTEntry), L_HT_Size);
-    if (!sd->localHashTable) {
-        Print(0, "Cannot allocate thread-local hashtable.\n");
-        exit(1);
-    }
+    sd->localHashTable = safe_calloc(sizeof(struct HTEntry), L_HT_Size);
     sd->deferred_heap = allocate_heap();
 #endif
 

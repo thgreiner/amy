@@ -29,35 +29,37 @@
 
 */
 
-#include "heap.h"
-#include "safe_malloc.h"
+#ifndef SAFE_MALLOC_H
+#define SAFE_MALLOC_H
 
-static const int DATA_SIZE = 1024;
-static const int SECTION_SIZE = 32;
+#include <stdio.h>
+#include <stdlib.h>
 
-heap_t allocate_heap(void) {
-    heap_t heap = (heap_t)safe_malloc(sizeof(struct heap));
-
-    move_t *data = (move_t *)safe_malloc(DATA_SIZE * sizeof(move_t));
-
-    heap->data = data;
-    heap->capacity = DATA_SIZE;
-
-    heap_section_t sections =
-        (heap_section_t)safe_malloc(SECTION_SIZE * sizeof(struct heap_section));
-
-    heap->sections_start = sections;
-    heap->sections_end = sections + SECTION_SIZE;
-    heap->current_section = sections;
-
-    heap->current_section->start = 0;
-    heap->current_section->end = 0;
-
-    return heap;
+static void *safe_malloc(size_t size) {
+    void *ptr = malloc(size);
+    if (ptr == NULL) {
+        perror(NULL);
+        exit(1);
+    }
+    return ptr;
 }
 
-void free_heap(heap_t heap) {
-    free(heap->data);
-    free(heap->sections_start);
-    free(heap);
+static void *safe_calloc(size_t count, size_t size) {
+    void *ptr = calloc(count, size);
+    if (ptr == NULL) {
+        perror(NULL);
+        exit(1);
+    }
+    return ptr;
 }
+
+static void *safe_realloc(void *old_ptr, size_t size) {
+    void *ptr = realloc(old_ptr, size);
+    if (ptr == NULL) {
+        perror(NULL);
+        exit(1);
+    }
+    return ptr;
+}
+
+#endif

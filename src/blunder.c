@@ -31,10 +31,10 @@
 
 #include "dbase.h"
 #include "pgn.h"
+#include "safe_malloc.h"
 #include "search.h"
 #include "types.h"
 #include "utils.h"
-#include "yaml.h"
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
@@ -71,8 +71,7 @@ move_t get_best_move_from_comment(char *comment, struct Position *p,
 
     size_t len = strlen(ptr);
 
-    char *buffer = malloc(len + 1);
-    abort_if_allocation_failed(buffer);
+    char *buffer = safe_malloc(len + 1);
 
     strncpy(buffer, ptr, len + 1);
 

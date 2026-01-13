@@ -44,6 +44,7 @@
 #include "magic.h"
 #include "mates.h"
 #include "recog.h"
+#include "safe_malloc.h"
 #include "swap.h"
 #include "types.h"
 #include "utils.h"
@@ -2164,7 +2165,7 @@ static void ReadEPD(struct Position *p, char *x) {
      * due to the use of strtok, sorry :-)
      */
 
-    line = malloc(strlen(x) + 1);
+    line = safe_malloc(strlen(x) + 1);
     strcpy(line, x);
     x = line;
 
@@ -2558,17 +2559,9 @@ bool IsPassed(const struct Position *p, int sq, int side) {
  */
 
 struct Position *CreatePositionFromEPD(char *epd) {
-    struct Position *p = calloc(1, sizeof(struct Position));
-    if (!p) {
-        Print(0, "Cannot allocate Position.\n");
-        exit(1);
-    }
+    struct Position *p = safe_calloc(1, sizeof(struct Position));
     p->gameLogSize = INITIAL_GAME_LOG_SIZE;
-    p->gameLog = calloc(p->gameLogSize, sizeof(struct GameLog));
-    if (!p->gameLog) {
-        Print(0, "Cannot allocate GameLog.\n");
-        exit(1);
-    }
+    p->gameLog = safe_calloc(p->gameLogSize, sizeof(struct GameLog));
     p->actLog = p->gameLog;
     ReadEPD(p, epd);
     p->actLog->gl_IrrevCount = 0;
@@ -2594,19 +2587,11 @@ struct Position *InitialPosition(void) {
 }
 
 struct Position *ClonePosition(struct Position *src) {
-    struct Position *p = calloc(1, sizeof(struct Position));
-    if (!p) {
-        Print(0, "Cannot allocated Position.\n");
-        exit(1);
-    }
+    struct Position *p = safe_calloc(1, sizeof(struct Position));
     memcpy(p, src, sizeof(struct Position));
 
     p->gameLogSize = src->gameLogSize;
-    p->gameLog = calloc(p->gameLogSize, sizeof(struct GameLog));
-    if (!p->gameLog) {
-        Print(0, "Cannot allocate GameLog.\n");
-        exit(1);
-    }
+    p->gameLog = safe_calloc(p->gameLogSize, sizeof(struct GameLog));
     memcpy(p->gameLog, src->gameLog, sizeof(struct GameLog) * p->gameLogSize);
 
     p->actLog = p->gameLog + (src->actLog - src->gameLog);

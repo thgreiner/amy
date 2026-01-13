@@ -48,6 +48,7 @@
 #include "probe.h"
 #include "random.h"
 #include "recog.h"
+#include "safe_malloc.h"
 #include "search_io.h"
 #include "state_machine.h"
 #include "swap.h"
@@ -1679,13 +1680,7 @@ static void StartHelpers(struct Position *p) {
     if (NumberOfCPUs < 2)
         return;
 
-    tids = calloc(NumberOfCPUs - 1, sizeof(pthread_t));
-
-    if (tids == NULL) {
-        Print(0, "Cannot allocate memory for helpers.\n");
-        Print(0, "Will try to search sequential.\n");
-        return;
-    }
+    tids = safe_calloc(NumberOfCPUs - 1, sizeof(pthread_t));
 
     pthread_attr_init(&attr);
     pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM);
