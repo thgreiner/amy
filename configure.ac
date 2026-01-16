@@ -47,7 +47,7 @@ AC_C_BIGENDIAN
 AC_C_CONST
 
 AC_FUNC_MEMCMP
-AC_CHECK_FUNCS(gettimeofday select strerror strstr setbuf gethostname ffsll)
+AC_CHECK_FUNCS(gettimeofday select strerror strstr setbuf gethostname ffsll getline)
 
 AX_GCC_BUILTIN(__builtin_ctzll)
 AX_GCC_BUILTIN(__builtin_popcountll)

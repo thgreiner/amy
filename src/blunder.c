@@ -30,7 +30,8 @@
 */
 
 #include "dbase.h"
-#include "pgn.h"
+#include "pgn_read.h"
+#include "pgn_write.h"
 #include "safe_malloc.h"
 #include "search.h"
 #include "types.h"
@@ -41,9 +42,9 @@
 
 #define THRESHOLD 2000
 
-move_t get_best_move_from_comment(char *comment, struct Position *p,
+move_t get_best_move_from_comment(const char *comment, struct Position *p,
                                   char *eval_buf) {
-    char *ptr = comment;
+    const char *ptr = comment;
 
     move_t best_move = M_NONE;
     int best_count = -1;
@@ -53,7 +54,7 @@ move_t get_best_move_from_comment(char *comment, struct Position *p,
     }
     ptr++;
 
-    char *start_eval = ptr;
+    const char *start_eval = ptr;
 
     while (*ptr && *ptr != ';') {
         ptr++;
@@ -86,7 +87,7 @@ move_t get_best_move_from_comment(char *comment, struct Position *p,
 
         move_t parsed_move = ParseSAN(p, move);
 
-        if (parsed_move != M_NONE) {
+        if (parsed_move != M_NONE && count != NULL) {
             int parsed_count = atoi(count);
             if (parsed_count > best_count) {
                 best_move = parsed_move;
@@ -114,10 +115,18 @@ void BlunderCheck(char *file_name) {
 
     FILE *fout = fopen("filtered.pgn", "w");
 
+    int verbosity_safe = Verbosity;
+    Verbosity = 0;
+
+    unsigned int count_games = 0;
+    unsigned int count_blunders = 0;
+
     while (!scanHeader(fin, &header)) {
         struct Position *p;
 
-        if (header.is_setup) {
+        count_games++;
+
+        if (header.fen != NULL) {
             p = CreatePositionFromEPD(header.fen);
         } else {
             p = InitialPosition();
@@ -126,6 +135,7 @@ void BlunderCheck(char *file_name) {
         print_header(fout, &header);
 
         move_t last_move = M_NONE;
+        int width = 0;
 
         while (!scanMove(fin, move)) {
             if (!(strlen(move) < 12)) {
@@ -151,6 +161,8 @@ void BlunderCheck(char *file_name) {
                 int score_diff = search_evaluation - alternate_evaluation;
 
                 if (optimal_move != best_move && score_diff >= 1500) {
+                    count_blunders++;
+
                     ShowPosition(p);
                     Print(1, ">>> best move from comment: %s\n",
                           SAN(p, best_move, sanbuf));
@@ -161,10 +173,19 @@ void BlunderCheck(char *file_name) {
 
                     fprintf(fout, "{ q=%s; p=[%s:100] } ", evalbuf,
                             SAN(p, optimal_move, sanbuf));
+
+                    width += strlen(evalbuf) + strlen(sanbuf) + 14;
+
+                    if (width > 72) {
+                        fprintf(fout, "\n");
+                        width = 0;
+                    }
                 }
 
                 DoMove(p, last_move);
             }
+
+            Print(0, ">>>> %s\n", move);
 
             move_t themove = ParseSAN(p, move);
 
@@ -172,9 +193,19 @@ void BlunderCheck(char *file_name) {
                 break;
 
             if ((p->ply % 2) == 0) {
-                fprintf(fout, "%d. ", 1 + p->ply / 2);
+                char num_buf[16];
+                snprintf(num_buf, 15, "%d. ", 1 + p->ply / 2);
+                fprintf(fout, "%s", num_buf);
+                width += strlen(num_buf);
             }
+
             fprintf(fout, "%s ", SAN(p, themove, san_buffer));
+            width += strlen(san_buffer) + 1;
+
+            if (width > 72) {
+                fprintf(fout, "\n");
+                width = 0;
+            }
 
             if (themove != M_NONE) {
                 DoMove(p, themove);
@@ -188,8 +219,13 @@ void BlunderCheck(char *file_name) {
         get_and_reset_comment(comment, sizeof(comment) - 1);
 
         FreePosition(p);
+        free_header(&header);
     }
 
     Print(0, "\n");
     fclose(fin);
+
+    Verbosity = verbosity_safe;
+
+    Print(0, "Games: %u Blunders: %u\n", count_games, count_blunders);
 }

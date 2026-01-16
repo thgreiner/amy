@@ -32,13 +32,15 @@
 #include "dbase.h"
 #include "evaluation.h"
 #include "inline.h"
-#include "pgn.h"
+#include "pgn_read.h"
+#include "pgn_write.h"
 #include "search.h"
 #include "utils.h"
 
+#include <stdio.h>
 #include <string.h>
 
-#define THRESHOLD 600
+#define THRESHOLD 200
 
 void FilterQuiescentPositions(char *file_name) {
     struct PGNHeader header;
@@ -54,8 +56,19 @@ void FilterQuiescentPositions(char *file_name) {
 
     FILE *fout = fopen("filtered.pgn", "w");
 
+    FILE *dout = fopen("evaluation_data.csv", "w");
+    fprintf(dout, "eval,prob\n");
+
+    int verbosity_safe = Verbosity;
+    Verbosity = 0;
+
+    unsigned int count_games = 0;
+    unsigned int count_comments = 0;
+
     while (!scanHeader(fin, &header)) {
         struct Position *p;
+
+        count_games++;
 
         if (header.is_setup) {
             p = CreatePositionFromEPD(header.fen);
@@ -65,7 +78,10 @@ void FilterQuiescentPositions(char *file_name) {
 
         print_header(fout, &header);
 
-        bool last_position_was_quiet = true;
+        bool last_position_was_quiet = false;
+        int last_position_evaluation = 0;
+
+        int width = 0;
 
         while (!scanMove(fin, move)) {
             if (!(strlen(move) < 12)) {
@@ -76,7 +92,23 @@ void FilterQuiescentPositions(char *file_name) {
             get_and_reset_comment(comment, sizeof(comment) - 1);
 
             if (last_position_was_quiet) {
-                fprintf(fout, "{ %s }\n", strip(comment));
+                count_comments++;
+
+                char *stripped_comment = strip(comment);
+                fprintf(fout, "{ %s }", strip(stripped_comment));
+
+                char eval_buf[16];
+                memcpy(eval_buf, stripped_comment + 2, 6);
+                eval_buf[6] = '\0';
+
+                fprintf(dout, "%d,%s\n", last_position_evaluation, eval_buf);
+
+                width += strlen(stripped_comment) + 4;
+
+                if (width > 72) {
+                    fprintf(fout, "\n");
+                    width = 0;
+                }
             }
 
             move_t themove = ParseSAN(p, move);
@@ -85,9 +117,19 @@ void FilterQuiescentPositions(char *file_name) {
                 break;
 
             if ((p->ply % 2) == 0) {
-                fprintf(fout, "%d. ", 1 + p->ply / 2);
+                char num_buf[16];
+                snprintf(num_buf, 15, "%d. ", 1 + p->ply / 2);
+                fprintf(fout, "%s", num_buf);
+                width += strlen(num_buf);
             }
+
             fprintf(fout, "%s ", SAN(p, themove, san_buffer));
+            width += strlen(san_buffer);
+
+            if (width > 72) {
+                fprintf(fout, "\n");
+                width = 0;
+            }
 
             last_position_was_quiet = true;
 
@@ -96,6 +138,8 @@ void FilterQuiescentPositions(char *file_name) {
                 const int dynamic_evaluation = QuiescenceSearch(p);
 
                 const int diff = ABS(static_evaluation - dynamic_evaluation);
+
+                last_position_evaluation = static_evaluation;
 
                 if (diff > THRESHOLD) {
                     // ShowPosition(p);
@@ -126,8 +170,15 @@ void FilterQuiescentPositions(char *file_name) {
         get_and_reset_comment(comment, sizeof(comment) - 1);
 
         FreePosition(p);
+        free_header(&header);
     }
 
-    Print(0, "\n");
+    fclose(dout);
+    fclose(fout);
+
     fclose(fin);
+
+    Verbosity = verbosity_safe;
+
+    Print(0, "Games: %u Comments: %u\n", count_games, count_comments);
 }

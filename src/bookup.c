@@ -39,7 +39,8 @@
 #include "amy.h"
 #include "dbase.h"
 #include "eco.h"
-#include "pgn.h"
+#include "pgn_read.h"
+#include "pgn_write.h"
 #include "random.h"
 #include "safe_malloc.h"
 #include "tree.h"
@@ -240,6 +241,7 @@ static void BookupInternal(char *file_name, int verbosity) {
         }
 
         FreePosition(p);
+        free_header(&header);
 
         lines++;
         if ((lines % 100) == 0) {

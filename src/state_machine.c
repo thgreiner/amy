@@ -36,7 +36,7 @@
 #include "state_machine.h"
 #include "commands.h"
 #include "dbase.h"
-#include "pgn.h"
+#include "pgn_write.h"
 #include "search.h"
 #include "utils.h"
 

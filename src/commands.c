@@ -48,7 +48,8 @@
 #include "heap.h"
 #include "inline.h"
 #include "next.h"
-#include "pgn.h"
+#include "pgn_read.h"
+#include "pgn_write.h"
 #include "search.h"
 #include "state_machine.h"
 #include "time_ctl.h"
@@ -565,6 +566,7 @@ static void RunAnnotate(char *fname, int side) {
                 }
             }
             FreePosition(p);
+            free_header(&header);
         }
         fclose(fin);
     } else

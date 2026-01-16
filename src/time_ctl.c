@@ -106,7 +106,7 @@ void CalcTime(struct Position *p, float *soft, float *hard) {
                 soft2 = TTime2 / moves;
                 /*    *soft = ((*soft)+(float)soft2)/2;    */
                 *soft = 0.5f * ((*soft) + (float)soft2);
-                Print(1, "Adjusted timing to %.4f secs\n", *soft);
+                Print(1, "Adjusted timing to %.4f secs\n", (double)*soft);
             }
             *hard = 4.0f * (*soft);
         } else {
@@ -131,7 +131,7 @@ void CalcTime(struct Position *p, float *soft, float *hard) {
         if (*soft > *hard)
             *soft = 0.67f * (*hard);
 
-        Print(1, "TL: %.2f/%.2f\n", *soft, *hard);
+        Print(1, "TL: %.2f/%.2f\n", (double)*soft, (double)*hard);
     } else {
         *soft = *hard = (float)TTime;
     }
