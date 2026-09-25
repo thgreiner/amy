@@ -41,8 +41,10 @@
 #define MAX(x, y) ((x) > (y) ? (x) : (y))
 #define MIN(x, y) ((x) < (y) ? (x) : (y))
 
-extern BitBoard ShiftUpMask, ShiftDownMask;
-extern BitBoard ShiftLeftMask, ShiftRightMask;
+static const BitBoard ShiftUpMask = 0xffffffffffffff00;
+static const BitBoard ShiftDownMask = 0xffffffffffffff;
+static const BitBoard ShiftLeftMask = 0xfefefefefefefefe;
+static const BitBoard ShiftRightMask = 0x7f7f7f7f7f7f7f7f;
 
 static inline BitBoard ShiftUp(BitBoard x) { return (x << 8) & ShiftUpMask; }
 
