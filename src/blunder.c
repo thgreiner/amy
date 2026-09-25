@@ -144,6 +144,7 @@ void BlunderCheck(char *file_name) {
             }
 
             get_and_reset_comment(comment, sizeof(comment) - 1);
+            Print(1, "**** %s\n", comment);
 
             if (last_move != M_NONE && strlen(comment) != 0) {
                 char sanbuf[16], evalbuf[16];
@@ -175,11 +176,14 @@ void BlunderCheck(char *file_name) {
                             SAN(p, optimal_move, sanbuf));
 
                     width += strlen(evalbuf) + strlen(sanbuf) + 14;
+                } else {
+                    fprintf(fout, "{%s} ", comment);
+                    width += strlen(comment) + 3;
+                }
 
-                    if (width > 72) {
-                        fprintf(fout, "\n");
-                        width = 0;
-                    }
+                if (width > 72) {
+                    fprintf(fout, "\n");
+                    width = 0;
                 }
 
                 DoMove(p, last_move);
@@ -189,8 +193,16 @@ void BlunderCheck(char *file_name) {
 
             move_t themove = ParseSAN(p, move);
 
-            if (themove == M_NONE)
+            if (themove == M_NONE) {
+                get_and_reset_comment(comment, sizeof(comment) - 1);
+                Print(1, "**** %s\n", comment);
+
+                if (strlen(comment) != 0) {
+                    fprintf(fout, "{%s} ", comment);
+                    width += strlen(comment) + 3;
+                }
                 break;
+            }
 
             if ((p->ply % 2) == 0) {
                 char num_buf[16];
@@ -207,16 +219,17 @@ void BlunderCheck(char *file_name) {
                 width = 0;
             }
 
-            if (themove != M_NONE) {
-                DoMove(p, themove);
-                last_move = themove;
-            } else {
-                break;
-            }
+            DoMove(p, themove);
+            last_move = themove;
         }
 
-        fprintf(fout, "%s\n\n", header.result);
         get_and_reset_comment(comment, sizeof(comment) - 1);
+        if (strlen(comment) != 0) {
+            fprintf(fout, "{%s} ", comment);
+        }
+        Print(1, "**** %s\n", comment);
+
+        fprintf(fout, "%s\n\n", header.result);
 
         FreePosition(p);
         free_header(&header);
