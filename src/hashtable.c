@@ -261,11 +261,11 @@ static inline bool PutHTEntryBestEffort(const hash_t key, struct HTEntry entry,
 }
 
 #if MP
-LookupResult ProbeHT(const hash_t key, int *score, int depth, move_t *bestm,
+LookupResult ht_probe(const hash_t key, int *score, int depth, move_t *bestm,
                      bool *threat, int ply, int exclusiveP,
                      struct HTEntry *localHT)
 #else
-LookupResult ProbeHT(const hash_t key, int *score, int depth, move_t *bestm,
+LookupResult ht_probe(const hash_t key, int *score, int depth, move_t *bestm,
                      bool *threat, int ply)
 #endif
 {
@@ -305,7 +305,7 @@ LookupResult ProbeHT(const hash_t key, int *score, int depth, move_t *bestm,
             *score = h.ht_Score;
 
             /*
-             * Correct a mate score. See comment in 'StoreHT'.
+             * Correct a mate score. See comment in 'ht_store'.
              */
 
             if (*score > CMLIMIT) {
@@ -349,7 +349,7 @@ LookupResult ProbeHT(const hash_t key, int *score, int depth, move_t *bestm,
     return result;
 }
 
-LookupResult ProbePT(hash_t key, int *score, struct PawnFacts *pf) {
+LookupResult ht_probe_pawn(hash_t key, int *score, struct PawnFacts *pf) {
 #if MP && HAVE_LIBPTHREAD
     acquire_read_lock(PawnMutex + ((key >> 32) & MUTEX_MASK));
 #endif /* MP && HAVE_LIBPTHREAD */
@@ -369,7 +369,7 @@ LookupResult ProbePT(hash_t key, int *score, struct PawnFacts *pf) {
     return Useless;
 }
 
-LookupResult ProbeST(hash_t key, int *score) {
+LookupResult ht_probe_score(hash_t key, int *score) {
 #if MP && HAVE_LIBPTHREAD
     acquire_read_lock(ScoreMutex + ((key >> 32) & MUTEX_MASK));
 #endif /* MP && HAVE_LIBPTHREAD */
@@ -388,7 +388,7 @@ LookupResult ProbeST(hash_t key, int *score) {
     return Useless;
 }
 
-void StoreHT(hash_t key, int best, int alpha, int beta, int bestm, int depth,
+void ht_store(hash_t key, int best, int alpha, int beta, int bestm, int depth,
              int threat, int ply
 #if MP
              ,
@@ -468,7 +468,7 @@ void StoreHT(hash_t key, int best, int alpha, int beta, int bestm, int depth,
     }
 }
 
-void StorePT(hash_t key, int score, struct PawnFacts *pf) {
+void ht_store_pawn(hash_t key, int score, struct PawnFacts *pf) {
     struct PTEntry h = {.pt_Key = key, .pt_Score = score, .pt_PawnFacts = *pf};
 
 #if MP && HAVE_LIBPTHREAD
@@ -482,7 +482,7 @@ void StorePT(hash_t key, int score, struct PawnFacts *pf) {
 #endif /* MP && HAVE_LIBPTHREAD */
 }
 
-void StoreST(hash_t key, int score) {
+void ht_store_score(hash_t key, int score) {
     struct STEntry h = {.st_Key = key, .st_Score = score};
 
 #if MP && HAVE_LIBPTHREAD
@@ -500,7 +500,7 @@ void StoreST(hash_t key, int score) {
  * selection work better..
  */
 
-void ClearHashTable(void) {
+void ht_clear(void) {
     unsigned int i;
     struct HTEntry *h = TranspositionTable;
 
@@ -510,7 +510,7 @@ void ClearHashTable(void) {
     }
 }
 
-void AgeHashTable(void) {
+void ht_age(void) {
     HTGeneration++;
     HTGeneration &= HT_AGE;
 
@@ -518,7 +518,7 @@ void AgeHashTable(void) {
     HTStoreFailed = 0;
 }
 
-void ClearPawnHashTable(void) {
+void ht_clear_pawn(void) {
     unsigned int i;
     struct PTEntry *ph;
     struct STEntry *sh;
@@ -551,7 +551,7 @@ static void FreeHT(void) {
     }
 }
 
-void AllocateHT(void) {
+void ht_allocate(void) {
     static bool registered_free_ht = false;
 
     /*
@@ -597,7 +597,7 @@ void AllocateHT(void) {
 #endif
 }
 
-void ShowHashStatistics(void) {
+void ht_show_statistics(void) {
     unsigned int i;
     unsigned int cnt = 0;
     struct HTEntry *h = TranspositionTable;
@@ -617,7 +617,7 @@ void ShowHashStatistics(void) {
           percentage(HTStoreFailed, HTStoreTried));
 }
 
-void GuessHTSizes(char *size) {
+void ht_guess_sizes(char *size) {
     const int64_t min_size = 64LL * 1024LL;
     const int64_t max_size = 1024LL * 1024LL * 1024LL; /* 1 TB is plenty */
     int64_t total_size = min_size;
@@ -699,7 +699,7 @@ void GuessHTSizes(char *size) {
     }
 }
 
-void HashInit(void) {
+void ht_init(void) {
     random_init(0);
 
     for (int i = 0; i < 2; i++) {

@@ -78,7 +78,7 @@ static void ProcessOptions(int argc, char *argv[]) {
         if (!strcmp(argv[i], "-ht")) {
             i++;
             if (i < argc) {
-                GuessHTSizes(argv[i]);
+                ht_guess_sizes(argv[i]);
             }
         }
 
@@ -137,7 +137,7 @@ static void ProcessRCFile(void) {
             continue;
 
         if (!strcmp(key, "ht")) {
-            GuessHTSizes(value);
+            ht_guess_sizes(value);
         } else if (!strcmp(key, "tbpath")) {
             strncpy(EGTBPath, value, sizeof(EGTBPath) - 1);
         } else if (!strcmp(key, "cpu")) {
@@ -175,7 +175,7 @@ int main(int argc, char *argv[]) {
     movedata_init();
 
     InitAll();
-    HashInit();
+    ht_init();
 
     /*
      * Process rc file first, then command line options. This way command
@@ -191,7 +191,7 @@ int main(int argc, char *argv[]) {
         LoadEvaluationConfig(ConfigFileName);
     }
 
-    AllocateHT();
+    ht_allocate();
     InitEGTB(EGTBPath);
     recog_init();
 

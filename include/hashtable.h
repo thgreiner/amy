@@ -82,24 +82,24 @@ extern hash_t STMKey;
 extern OPTIONAL_ATOMIC unsigned long PHit, PTry, SHit, STry, HHit, HTry;
 extern int L_HT_Bits, L_HT_Size, L_HT_Mask;
 
-void ClearHashTable(void);
-void AgeHashTable(void);
-void ClearPawnHashTable(void);
-void AllocateHT(void);
+void ht_clear(void);
+void ht_age(void);
+void ht_clear_pawn(void);
+void ht_allocate(void);
 #if MP
-LookupResult ProbeHT(hash_t, int *, int, move_t *, bool *, int, int,
+LookupResult ht_probe(hash_t, int *, int, move_t *, bool *, int, int,
                      struct HTEntry *);
-void StoreHT(hash_t, int, int, int, int, int, int, int, struct HTEntry *);
+void ht_store(hash_t, int, int, int, int, int, int, int, struct HTEntry *);
 #else
-LookupResult ProbeHT(hash_t, int *, int, move_t *, bool *, int);
-void StoreHT(hash_t, int, int, int, int, int, int, int);
+LookupResult ht_probe(hash_t, int *, int, move_t *, bool *, int);
+void ht_store(hash_t, int, int, int, int, int, int, int);
 #endif
-LookupResult ProbePT(hash_t, int *, struct PawnFacts *);
-void StorePT(hash_t, int, struct PawnFacts *);
-LookupResult ProbeST(hash_t, int *);
-void StoreST(hash_t, int);
-void ShowHashStatistics(void);
-void GuessHTSizes(char *);
-void HashInit(void);
+LookupResult ht_probe_pawn(hash_t, int *, struct PawnFacts *);
+void ht_store_pawn(hash_t, int, struct PawnFacts *);
+LookupResult ht_probe_score(hash_t, int *);
+void ht_store_score(hash_t, int);
+void ht_show_statistics(void);
+void ht_guess_sizes(char *);
+void ht_init(void);
 
 #endif

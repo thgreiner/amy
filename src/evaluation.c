@@ -689,9 +689,9 @@ static int EvaluatePawnsHashed(const struct Position *p,
     int score;
 
     PTry++;
-    if (ProbePT(p->pkey, &score, pawnFacts) != Useful) {
+    if (ht_probe_pawn(p->pkey, &score, pawnFacts) != Useful) {
         score = EvaluatePawns(p, pawnFacts);
-        StorePT(p->pkey, score, pawnFacts);
+        ht_store_pawn(p->pkey, score, pawnFacts);
     } else {
         PHit++;
     }
@@ -1271,7 +1271,7 @@ static int EvaluatePositionForWhite(const struct Position *p) {
 
 #ifndef DEBUG
     STry++;
-    if (ProbeST(p->hkey, &score) == Useful) {
+    if (ht_probe_score(p->hkey, &score) == Useful) {
         SHit++;
         return score;
     }
@@ -1752,7 +1752,7 @@ static int EvaluatePositionForWhite(const struct Position *p) {
         score = -((-score + 7) & ~15);
     }
 
-    StoreST(p->hkey, score);
+    ht_store_score(p->hkey, score);
 
     return score;
 }
@@ -1837,7 +1837,7 @@ void InitEvaluation(const struct Position *p) {
     BPawnPos[d7] += CrampingPawn;
     BPawnPos[e7] += CrampingPawn;
 
-    ClearPawnHashTable();
+    ht_clear_pawn();
 
     /*
      * Set up King piece square table.

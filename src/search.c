@@ -470,7 +470,7 @@ static void StoreResult(struct SearchData *sd, int score, int alpha, int beta,
         sd->historyTab[p->turn][move & 4095] += depth * depth;
     }
 
-    StoreHT(p->hkey, score, alpha, beta, move, depth, threat, sd->ply
+    ht_store(p->hkey, score, alpha, beta, move, depth, threat, sd->ply
 #if MP
             ,
             sd->localHashTable
@@ -644,10 +644,10 @@ static int negascout(struct SearchData *sd, int alpha, int beta,
 
     HTry++;
 #if MP
-    switch (ProbeHT(p->hkey, &tmp, depth, &(st->st_hashmove), &threat, sd->ply,
+    switch (ht_probe(p->hkey, &tmp, depth, &(st->st_hashmove), &threat, sd->ply,
                     exclusiveP, sd->localHashTable))
 #else
-    switch (ProbeHT(p->hkey, &tmp, depth, &(st->st_hashmove), &threat, sd->ply))
+    switch (ht_probe(p->hkey, &tmp, depth, &(st->st_hashmove), &threat, sd->ply))
 #endif /* MP */
     {
     case ExactScore:
@@ -1127,10 +1127,10 @@ static void AnaLoop(struct Position *p, int depth) {
     int score;
 
 #if MP
-    if (ProbeHT(p->hkey, &score, 0, &move, &dummy, 0, 0, NULL) == Useless)
+    if (ht_probe(p->hkey, &score, 0, &move, &dummy, 0, 0, NULL) == Useless)
         return;
 #else
-    if (ProbeHT(p->hkey, &score, 0, &move, &dummy, 0) == Useless)
+    if (ht_probe(p->hkey, &score, 0, &move, &dummy, 0) == Useless)
         return;
 #endif
 
@@ -1625,7 +1625,7 @@ final:
                   FormatCount(EGTBProbe, buf2, sizeof(buf2)));
         }
 
-        ShowHashStatistics();
+        ht_show_statistics();
     }
 
     sd->best_move = mvs[0];
@@ -1756,7 +1756,7 @@ int Iterate(struct Position *p, int *score_ptr, move_t alternate_move,
     HardLimit = StartTime + (int)(hard * ONE_SECOND);
 
     InitEvaluation(p);
-    AgeHashTable();
+    ht_age();
     SearchHeader();
 
 #if MP
