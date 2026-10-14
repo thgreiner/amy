@@ -276,7 +276,7 @@ static void GetAllBookMoves(struct Position *p, int *cnt, move_t *book_moves,
                             struct BookQuery *entries) {
     unsigned int i;
 
-    heap_t heap = allocate_heap();
+    heap_t heap = heap_allocate();
     LegalMoves(p, heap);
 
     for (i = heap->current_section->start; i < heap->current_section->end;
@@ -306,7 +306,7 @@ static void GetAllBookMoves(struct Position *p, int *cnt, move_t *book_moves,
         }
     }
 
-    free_heap(heap);
+    heap_free(heap);
 }
 
 static void SortBook(int cnt, move_t *mvs, struct BookQuery *entries) {

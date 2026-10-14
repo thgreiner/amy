@@ -35,7 +35,7 @@
 static const int DATA_SIZE = 1024;
 static const int SECTION_SIZE = 32;
 
-heap_t allocate_heap(void) {
+heap_t heap_allocate(void) {
     heap_t heap = (heap_t)safe_malloc(sizeof(struct heap));
 
     move_t *data = (move_t *)safe_malloc(DATA_SIZE * sizeof(move_t));
@@ -56,7 +56,7 @@ heap_t allocate_heap(void) {
     return heap;
 }
 
-void free_heap(heap_t heap) {
+void heap_free(heap_t heap) {
     free(heap->data);
     free(heap->sections_start);
     free(heap);

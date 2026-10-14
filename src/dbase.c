@@ -884,12 +884,12 @@ void GenTo(struct Position *p, Square square, heap_t heap) {
         int i = FindSetBit(tmp);
         tmp &= tmp - 1;
         if (TYPE(p->piece[i]) == Pawn && is_promo_square(square)) {
-            append_to_heap(heap, make_promotion(i, square, Queen, M_CAPTURE));
-            append_to_heap(heap, make_promotion(i, square, Knight, M_CAPTURE));
-            append_to_heap(heap, make_promotion(i, square, Rook, M_CAPTURE));
-            append_to_heap(heap, make_promotion(i, square, Bishop, M_CAPTURE));
+            heap_append(heap, make_promotion(i, square, Queen, M_CAPTURE));
+            heap_append(heap, make_promotion(i, square, Knight, M_CAPTURE));
+            heap_append(heap, make_promotion(i, square, Rook, M_CAPTURE));
+            heap_append(heap, make_promotion(i, square, Bishop, M_CAPTURE));
         } else {
-            append_to_heap(heap, make_move(i, square, M_CAPTURE));
+            heap_append(heap, make_move(i, square, M_CAPTURE));
         }
     }
 }
@@ -904,7 +904,7 @@ void GenEnpas(struct Position *p, heap_t heap) {
     while (tmp) {
         int i = FindSetBit(tmp);
         tmp &= tmp - 1;
-        append_to_heap(heap, make_move(i, p->enPassant, M_ENPASSANT));
+        heap_append(heap, make_move(i, p->enPassant, M_ENPASSANT));
     }
 }
 
@@ -921,7 +921,7 @@ void GenFrom(struct Position *p, Square square, heap_t heap) {
         while (tmp) {
             int i = FindSetBit(tmp);
             tmp &= tmp - 1;
-            append_to_heap(heap, make_move(square, i, 0));
+            heap_append(heap, make_move(square, i, 0));
         }
 
         /* Generate castling moves
@@ -931,12 +931,12 @@ void GenFrom(struct Position *p, Square square, heap_t heap) {
         if (TYPE(p->piece[square]) == King) {
             if (p->castle & CastleMask[p->turn][0]) {
                 /* OK, we might castle king p->turn */
-                append_to_heap(heap, make_move(p->turn == White ? e1 : e8,
+                heap_append(heap, make_move(p->turn == White ? e1 : e8,
                                                p->turn == White ? g1 : g8,
                                                M_SCASTLE));
             }
             if (p->castle & CastleMask[p->turn][1]) {
-                append_to_heap(heap, make_move(p->turn == White ? e1 : e8,
+                heap_append(heap, make_move(p->turn == White ? e1 : e8,
                                                p->turn == White ? c1 : c8,
                                                M_LCASTLE));
             }
@@ -946,18 +946,18 @@ void GenFrom(struct Position *p, Square square, heap_t heap) {
 
         if (p->piece[sq] == Neutral) {
             if (is_promo_square(sq)) {
-                append_to_heap(heap, make_promotion(square, sq, Queen, 0));
-                append_to_heap(heap, make_promotion(square, sq, Knight, 0));
-                append_to_heap(heap, make_promotion(square, sq, Rook, 0));
-                append_to_heap(heap, make_promotion(square, sq, Bishop, 0));
+                heap_append(heap, make_promotion(square, sq, Queen, 0));
+                heap_append(heap, make_promotion(square, sq, Knight, 0));
+                heap_append(heap, make_promotion(square, sq, Rook, 0));
+                heap_append(heap, make_promotion(square, sq, Bishop, 0));
             } else {
-                append_to_heap(heap, make_move(square, sq, 0));
+                heap_append(heap, make_move(square, sq, 0));
 
                 if ((p->turn == White && square <= h2) ||
                     (p->turn == Black && square >= a7)) {
                     sq = (p->turn == White ? sq + 8 : sq - 8);
                     if (p->piece[sq] == Neutral) {
-                        append_to_heap(heap, make_move(square, sq, M_PAWND));
+                        heap_append(heap, make_move(square, sq, M_PAWND));
                     }
                 }
             }
@@ -1253,7 +1253,7 @@ void GenChecks(struct Position *p, heap_t heap) {
             tmp2 &= tmp2 - 1;
             if (InterPath[kp][sq2] & all)
                 continue;
-            append_to_heap(heap, make_move(sq, sq2, 0));
+            heap_append(heap, make_move(sq, sq2, 0));
         }
     }
 
@@ -1274,7 +1274,7 @@ void GenChecks(struct Position *p, heap_t heap) {
             tmp2 &= tmp2 - 1;
             if (InterPath[kp][sq2] & all)
                 continue;
-            append_to_heap(heap, make_move(sq, sq2, 0));
+            heap_append(heap, make_move(sq, sq2, 0));
         }
     }
 
@@ -1295,7 +1295,7 @@ void GenChecks(struct Position *p, heap_t heap) {
         while (tmp2) {
             int sq2 = FindSetBit(tmp2);
             tmp2 &= tmp2 - 1;
-            append_to_heap(heap, make_move(sq, sq2, 0));
+            heap_append(heap, make_move(sq, sq2, 0));
         }
     }
 
@@ -1312,11 +1312,11 @@ void GenChecks(struct Position *p, heap_t heap) {
 
         if (p->turn == White) {
             if (p->piece[sq - 8] == Pawn) {
-                append_to_heap(heap, make_move(sq - 8, sq, 0));
+                heap_append(heap, make_move(sq - 8, sq, 0));
             }
         } else {
             if (p->piece[sq + 8] == -Pawn) {
-                append_to_heap(heap, make_move(sq + 8, sq, 0));
+                heap_append(heap, make_move(sq + 8, sq, 0));
             }
         }
     }
@@ -1546,9 +1546,9 @@ move_t parse_gsan_internal(struct Position *p, char *san, heap_t heap) {
 }
 
 move_t ParseGSAN(struct Position *p, char *san) {
-    heap_t heap = allocate_heap();
+    heap_t heap = heap_allocate();
     move_t move = parse_gsan_internal(p, san, heap);
-    free_heap(heap);
+    heap_free(heap);
 
     return move;
 }
@@ -1767,9 +1767,9 @@ static move_t parse_san_with_heap(struct Position *p, char *san, heap_t heap) {
 }
 
 move_t ParseSAN(struct Position *p, char *san) {
-    heap_t heap = allocate_heap();
+    heap_t heap = heap_allocate();
     move_t move = parse_san_with_heap(p, san, heap);
-    free_heap(heap);
+    heap_free(heap);
     return move;
 }
 
@@ -1951,7 +1951,7 @@ void legal_moves_internal(struct Position *p, heap_t heap, heap_t tmp_heap) {
         unsigned int i;
         tmp &= tmp - 1;
 
-        push_section(tmp_heap);
+        heap_push_section(tmp_heap);
         GenTo(p, j, tmp_heap);
 
         for (i = tmp_heap->current_section->start;
@@ -1959,12 +1959,12 @@ void legal_moves_internal(struct Position *p, heap_t heap, heap_t tmp_heap) {
             move_t move = tmp_heap->data[i];
             DoMove(p, move);
             if (!InCheck(p, OPP(p->turn))) {
-                append_to_heap(heap, move);
+                heap_append(heap, move);
             }
             UndoMove(p, move);
         }
 
-        pop_section(tmp_heap);
+        heap_pop_section(tmp_heap);
     }
 
     tmp = p->mask[p->turn][0];
@@ -1973,7 +1973,7 @@ void legal_moves_internal(struct Position *p, heap_t heap, heap_t tmp_heap) {
         unsigned int i;
         tmp &= tmp - 1;
 
-        push_section(tmp_heap);
+        heap_push_section(tmp_heap);
         GenFrom(p, j, tmp_heap);
 
         for (i = tmp_heap->current_section->start;
@@ -1984,15 +1984,15 @@ void legal_moves_internal(struct Position *p, heap_t heap, heap_t tmp_heap) {
 
             DoMove(p, move);
             if (!InCheck(p, OPP(p->turn))) {
-                append_to_heap(heap, move);
+                heap_append(heap, move);
             }
             UndoMove(p, move);
         }
 
-        pop_section(tmp_heap);
+        heap_pop_section(tmp_heap);
     }
 
-    push_section(tmp_heap);
+    heap_push_section(tmp_heap);
     GenEnpas(p, tmp_heap);
     {
         unsigned int i;
@@ -2001,20 +2001,20 @@ void legal_moves_internal(struct Position *p, heap_t heap, heap_t tmp_heap) {
             move_t move = tmp_heap->data[i];
             DoMove(p, move);
             if (!InCheck(p, OPP(p->turn))) {
-                append_to_heap(heap, move);
+                heap_append(heap, move);
             }
             UndoMove(p, move);
         }
     }
-    pop_section(tmp_heap);
+    heap_pop_section(tmp_heap);
 }
 
 int LegalMoves(struct Position *p, heap_t heap) {
-    heap_t tmp_heap = allocate_heap();
+    heap_t tmp_heap = heap_allocate();
     heap_t destination = heap;
 
     if (heap == NULL) {
-        destination = allocate_heap();
+        destination = heap_allocate();
     }
 
     legal_moves_internal(p, destination, tmp_heap);
@@ -2023,10 +2023,10 @@ int LegalMoves(struct Position *p, heap_t heap) {
         destination->current_section->end - destination->current_section->start;
 
     if (heap == NULL) {
-        free_heap(destination);
+        heap_free(destination);
     }
 
-    free_heap(tmp_heap);
+    heap_free(tmp_heap);
 
     return cnt;
 }
@@ -2106,9 +2106,9 @@ void ShowMoves(struct Position *p) {
     unsigned int i;
     char san_buffer[16];
 
-    heap_t heap = allocate_heap();
+    heap_t heap = heap_allocate();
 
-    push_section(heap);
+    heap_push_section(heap);
     LegalMoves(p, heap);
 
     for (i = heap->current_section->start; i < heap->current_section->end;
@@ -2126,9 +2126,9 @@ void ShowMoves(struct Position *p) {
     }
     print(0, "\n");
 
-    pop_section(heap);
+    heap_pop_section(heap);
 
-    push_section(heap);
+    heap_push_section(heap);
     GenChecks(p, heap);
 
     if (heap->current_section->end > heap->current_section->start) {
@@ -2141,7 +2141,7 @@ void ShowMoves(struct Position *p) {
         print(0, "\n");
     }
 
-    free_heap(heap);
+    heap_free(heap);
 }
 
 /*

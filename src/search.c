@@ -973,8 +973,8 @@ static int negascout(struct SearchData *sd, int alpha, int beta,
                  * This child is ON_EVALUATION. Remember move and
                  * depth.
                  */
-                append_to_heap(sd->deferred_heap, move);
-                append_to_heap(sd->deferred_heap,
+                heap_append(sd->deferred_heap, move);
+                heap_append(sd->deferred_heap,
                                next_depth + DEFERRED_DEPTH_OFFSET);
             } else {
 #endif /* MP */
@@ -1723,7 +1723,7 @@ int Iterate(struct Position *p, int *score_ptr, move_t alternate_move,
 
     calc_time(p, &soft, &hard);
 
-    heap_t heap = allocate_heap();
+    heap_t heap = heap_allocate();
     cnt = LegalMoves(p, heap);
 
     AbortSearch = false;
@@ -1736,7 +1736,7 @@ int Iterate(struct Position *p, int *score_ptr, move_t alternate_move,
      */
 
     if (cnt == 0) {
-        free_heap(heap);
+        heap_free(heap);
         if (!InCheck(p, p->turn))
             strcpy(AnalysisLine, "stalemate");
         else
@@ -1744,12 +1744,12 @@ int Iterate(struct Position *p, int *score_ptr, move_t alternate_move,
         return M_NONE;
     } else if (cnt == 1 && SearchMode != Analyzing) {
         move_t only_move = heap->data[heap->current_section->start];
-        free_heap(heap);
+        heap_free(heap);
         strcpy(AnalysisLine, "forced move");
         return only_move;
     }
 
-    free_heap(heap);
+    heap_free(heap);
 
     SoftLimit = StartTime + (int)(soft * ONE_SECOND);
     SoftLimit2 = StartTime + (int)(85 * soft);

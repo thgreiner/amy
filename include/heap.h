@@ -59,7 +59,7 @@ struct heap {
 
 typedef struct heap *heap_t;
 
-static inline void append_to_heap(heap_t heap, move_t data) {
+static inline void heap_append(heap_t heap, move_t data) {
     if (heap->current_section->end >= heap->capacity) {
         // printf("Reallocating heap.\n");
         move_t *new_data =
@@ -75,7 +75,7 @@ static inline void append_to_heap(heap_t heap, move_t data) {
     heap->data[heap->current_section->end++] = data;
 }
 
-static inline void push_section(heap_t heap) {
+static inline void heap_push_section(heap_t heap) {
     heap->current_section++;
     if (heap->current_section == heap->sections_end) {
         // printf("Reallocating sections.\n");
@@ -94,12 +94,12 @@ static inline void push_section(heap_t heap) {
     heap->current_section->end = heap->current_section->start;
 }
 
-static inline void pop_section(heap_t heap) {
+static inline void heap_pop_section(heap_t heap) {
     assert(heap->current_section > heap->sections_start);
     heap->current_section--;
 }
 
-heap_t allocate_heap(void);
-void free_heap(heap_t heap);
+heap_t heap_allocate(void);
+void heap_free(heap_t heap);
 
 #endif

@@ -702,7 +702,7 @@ static BitBoard SearchFully(struct Position *p, BitBoard cnt, int depth,
         return cnt + 1;
     }
 
-    push_section(heap);
+    heap_push_section(heap);
     PLegalMoves(p, heap);
 
     for (i = heap->current_section->start; i < heap->current_section->end;
@@ -717,7 +717,7 @@ static BitBoard SearchFully(struct Position *p, BitBoard cnt, int depth,
         }
         UndoMove(p, move);
     }
-    pop_section(heap);
+    heap_pop_section(heap);
 
     return cnt;
 }
@@ -732,13 +732,13 @@ static void Perft(char *args) {
     sscanf(args, "%d", &depth);
 
     BitBoard cnt = 0;
-    heap_t heap = allocate_heap();
+    heap_t heap = heap_allocate();
 
     unsigned long start = get_time();
     cnt = SearchFully(CurrentPosition, cnt, depth, heap);
     unsigned long end = get_time();
 
-    free_heap(heap);
+    heap_free(heap);
 
     double elapsed = (end - start) / 100.0;
     double nps = cnt / elapsed;
