@@ -32,6 +32,7 @@
 #include "pgn_write.h"
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 /* Fresh in-memory FILE with a zeroed buffer, so each test is independent. */
@@ -40,30 +41,36 @@ typedef struct {
     FILE *f;
 } emit_buf_t;
 
-static emit_buf_t new_emit_buf(void) {
-    emit_buf_t b;
-    memset(b.data, 0, sizeof(b.data));
-    b.f = fmemopen(b.data, sizeof(b.data), "w");
-    assert(b.f != NULL);
+/* Heap-allocated so the fmemopen FILE keeps a valid buffer past the call. */
+static emit_buf_t *new_emit_buf(void) {
+    emit_buf_t *b = calloc(1, sizeof(emit_buf_t));
+    assert(b != NULL);
+    b->f = fmemopen(b->data, sizeof(b->data), "w");
+    assert(b->f != NULL);
     return b;
+}
+
+static void close_emit_buf(emit_buf_t *buf) {
+    fclose(buf->f);
+    free(buf);
 }
 
 /* EmitPgnLine writes the message and tracks the characters written */
 static void test_emit_pgn_line_writes_and_tracks_width(void) {
-    emit_buf_t buf = new_emit_buf();
+    emit_buf_t *buf = new_emit_buf();
     int width = 0;
 
-    EmitPgnLine(buf.f, &width, "%s ", "hello");
-    fflush(buf.f);
+    EmitPgnLine(buf->f, &width, "%s ", "hello");
+    fflush(buf->f);
 
     assert(width == 6);
-    assert(strcmp(buf.data, "hello ") == 0);
-    fclose(buf.f);
+    assert(strcmp(buf->data, "hello ") == 0);
+    close_emit_buf(buf);
 }
 
 /* reaching exactly 72 characters must not wrap */
 static void test_emit_pgn_line_no_wrap_at_72(void) {
-    emit_buf_t buf = new_emit_buf();
+    emit_buf_t *buf = new_emit_buf();
     int width = 0;
 
     char token[41], token2[33];
@@ -72,18 +79,18 @@ static void test_emit_pgn_line_no_wrap_at_72(void) {
     memset(token2, 'b', 32);
     token2[32] = '\0';
 
-    EmitPgnLine(buf.f, &width, "%s", token);  /* 40 */
-    EmitPgnLine(buf.f, &width, "%s", token2); /* 32 */
-    fflush(buf.f);
+    EmitPgnLine(buf->f, &width, "%s", token);  /* 40 */
+    EmitPgnLine(buf->f, &width, "%s", token2); /* 32 */
+    fflush(buf->f);
 
     assert(width == 72);
-    assert(strlen(buf.data) == 72); /* no trailing newline */
-    fclose(buf.f);
+    assert(strlen(buf->data) == 72); /* no trailing newline */
+    close_emit_buf(buf);
 }
 
 /* crossing 72 characters emits a newline and resets the width */
 static void test_emit_pgn_line_wraps_over_72(void) {
-    emit_buf_t buf = new_emit_buf();
+    emit_buf_t *buf = new_emit_buf();
     int width = 0;
 
     char token[71], token2[6];
@@ -92,45 +99,45 @@ static void test_emit_pgn_line_wraps_over_72(void) {
     memset(token2, 'b', 5);
     token2[5] = '\0';
 
-    EmitPgnLine(buf.f, &width, "%s", token);  /* 70 */
-    EmitPgnLine(buf.f, &width, "%s", token2); /*  5 -> 75, wraps */
-    fflush(buf.f);
+    EmitPgnLine(buf->f, &width, "%s", token);  /* 70 */
+    EmitPgnLine(buf->f, &width, "%s", token2); /*  5 -> 75, wraps */
+    fflush(buf->f);
 
     assert(width == 0);
-    assert(strlen(buf.data) == 76); /* 75 chars + newline */
-    assert(buf.data[75] == '\n');
-    fclose(buf.f);
+    assert(strlen(buf->data) == 76); /* 75 chars + newline */
+    assert(buf->data[75] == '\n');
+    close_emit_buf(buf);
 }
 
 /* a single over-long message is still fully written before wrapping */
 static void test_emit_pgn_line_long_message_wraps(void) {
-    emit_buf_t buf = new_emit_buf();
+    emit_buf_t *buf = new_emit_buf();
     int width = 0;
 
     char token[101];
     memset(token, 'b', 100);
     token[100] = '\0';
 
-    EmitPgnLine(buf.f, &width, "%s", token);
-    fflush(buf.f);
+    EmitPgnLine(buf->f, &width, "%s", token);
+    fflush(buf->f);
 
     assert(width == 0);
-    assert(strlen(buf.data) == 101);
-    assert(buf.data[100] == '\n');
-    fclose(buf.f);
+    assert(strlen(buf->data) == 101);
+    assert(buf->data[100] == '\n');
+    close_emit_buf(buf);
 }
 
 /* an empty message writes nothing and leaves the width untouched */
 static void test_emit_pgn_line_empty_is_noop(void) {
-    emit_buf_t buf = new_emit_buf();
+    emit_buf_t *buf = new_emit_buf();
     int width = 5;
 
-    EmitPgnLine(buf.f, &width, "%s", "");
-    fflush(buf.f);
+    EmitPgnLine(buf->f, &width, "%s", "");
+    fflush(buf->f);
 
     assert(width == 5);
-    assert(buf.data[0] == '\0');
-    fclose(buf.f);
+    assert(buf->data[0] == '\0');
+    close_emit_buf(buf);
 }
 
 void test_all_pgn_write(void) {

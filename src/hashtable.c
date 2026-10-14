@@ -38,8 +38,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "hashtable.h"
 #include "dbase.h"
+#include "hashtable.h"
 #include "random.h"
 #include "safe_malloc.h"
 #include "search.h"
@@ -469,9 +469,7 @@ void StoreHT(hash_t key, int best, int alpha, int beta, int bestm, int depth,
 }
 
 void StorePT(hash_t key, int score, struct PawnFacts *pf) {
-    struct PTEntry h = {.pt_Key = key,
-                        .pt_Score = score,
-                        .pt_PawnFacts = *pf};
+    struct PTEntry h = {.pt_Key = key, .pt_Score = score, .pt_PawnFacts = *pf};
 
 #if MP && HAVE_LIBPTHREAD
     acquire_write_lock(PawnMutex + ((key >> 32) & MUTEX_MASK));
@@ -651,9 +649,9 @@ void GuessHTSizes(char *size) {
                 break; /* invalid suffix */
             }
 
-            if (*endptr == '\0' || *endptr == 'k' || *endptr == 'K'
-                || *endptr == 'm' || *endptr == 'M'
-                || *endptr == 'g' || *endptr == 'G') {
+            if (*endptr == '\0' || *endptr == 'k' || *endptr == 'K' ||
+                *endptr == 'm' || *endptr == 'M' || *endptr == 'g' ||
+                *endptr == 'G') {
                 /* Avoid overflowing int64_t when multiplying. */
                 if (value > max_size / multiplier)
                     value = max_size / multiplier;
@@ -677,8 +675,8 @@ void GuessHTSizes(char *size) {
     budget = total_size * 4 / 5;
 
     for (HT_Bits = 1; HT_Bits < 31; HT_Bits++) {
-        if ((1ULL << (HT_Bits + 1)) * (uint64_t)sizeof(struct HTEntry)
-            > (uint64_t)budget)
+        if ((1ULL << (HT_Bits + 1)) * (uint64_t)sizeof(struct HTEntry) >
+            (uint64_t)budget)
             break;
     }
 
@@ -687,16 +685,16 @@ void GuessHTSizes(char *size) {
     budget = total_size * 3 / 4;
 
     for (ST_Bits = 1; ST_Bits < 31; ST_Bits++) {
-        if ((1ULL << (ST_Bits + 1)) * (uint64_t)sizeof(struct STEntry)
-            > (uint64_t)budget)
+        if ((1ULL << (ST_Bits + 1)) * (uint64_t)sizeof(struct STEntry) >
+            (uint64_t)budget)
             break;
     }
 
     total_size -= (1LL << ST_Bits) * sizeof(struct STEntry);
 
     for (PT_Bits = 1; PT_Bits < 31; PT_Bits++) {
-        if ((1ULL << (PT_Bits + 1)) * (uint64_t)sizeof(struct PTEntry)
-            > (uint64_t)total_size)
+        if ((1ULL << (PT_Bits + 1)) * (uint64_t)sizeof(struct PTEntry) >
+            (uint64_t)total_size)
             break;
     }
 }
