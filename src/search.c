@@ -176,11 +176,11 @@ OPTIONAL_ATOMIC unsigned long HTry, HHit, PTry, PHit, STry, SHit;
 
 /* prototypes for search routines */
 
-static int quies(struct SearchData *, int, int, int);
+static int search_quies(struct SearchData *, int, int, int);
 #if MP
-static int negascout(struct SearchData *, int, int, int, int, int);
+static int search_negascout(struct SearchData *, int, int, int, int, int);
 #else
-static int negascout(struct SearchData *, int, int, int, int);
+static int search_negascout(struct SearchData *, int, int, int, int);
 #endif
 
 /* search routines */
@@ -486,7 +486,7 @@ static void search_store_result(struct SearchData *sd, int score, int alpha, int
  *
  */
 
-static int quies(struct SearchData *sd, int alpha, int beta, int depth) {
+static int search_quies(struct SearchData *sd, int alpha, int beta, int depth) {
     struct Position *p = sd->position;
     int best;
     move_t move;
@@ -543,7 +543,7 @@ static int quies(struct SearchData *sd, int alpha, int beta, int depth) {
         if (dbase_in_check(p, OPP(p->turn)))
             dbase_undo_move(p, move);
         else {
-            tmp = -quies(sd, -beta, -talpha, depth - 1);
+            tmp = -search_quies(sd, -beta, -talpha, depth - 1);
             dbase_undo_move(p, move);
             if (tmp >= beta) {
                 best = tmp;
@@ -566,18 +566,18 @@ EXIT:
 }
 
 /*
- * The main negascout routine with handles things like
+ * The main search_negascout routine with handles things like
  * search extensions, hash table lookup etc.
  *
  * It recursively calls itself until depth is exhausted.
- * Than `quies` is called.
+ * Than `search_quies` is called.
  *
  * This is modified to perform an 'ABDADA' search if MP is defined.
  * See Jean-Christophe Weill, "The ABDADA Distributed Minimax-Search Algorithm"
  * ICCA Journal, Volume 19, No. 1, pp. 3-16
  */
 
-static int negascout(struct SearchData *sd, int alpha, int beta,
+static int search_negascout(struct SearchData *sd, int alpha, int beta,
                      const int depth, int node_type
 #if MP
                      ,
@@ -731,12 +731,12 @@ static int negascout(struct SearchData *sd, int alpha, int beta,
 
         dbase_do_null(p);
         if (next_depth < 0) {
-            nms = -quies(sd, -beta, -beta + 1, 0);
+            nms = -search_quies(sd, -beta, -beta + 1, 0);
         } else {
 #if MP
-            nms = -negascout(sd, -beta, -beta + 1, next_depth, AllNode, 0);
+            nms = -search_negascout(sd, -beta, -beta + 1, next_depth, AllNode, 0);
 #else
-            nms = -negascout(sd, -beta, -beta + 1, next_depth, AllNode);
+            nms = -search_negascout(sd, -beta, -beta + 1, next_depth, AllNode);
 #endif
         }
         dbase_undo_null(p);
@@ -749,13 +749,13 @@ static int negascout(struct SearchData *sd, int alpha, int beta,
                 goto EXIT;
             } else {
                 if (next_depth < 0) {
-                    nms = quies(sd, beta - 1, beta, 0);
+                    nms = search_quies(sd, beta - 1, beta, 0);
                 } else {
 #if MP
-                    nms = negascout(sd, beta - 1, beta, next_depth,
+                    nms = search_negascout(sd, beta - 1, beta, next_depth,
                                     CutNodeNoNull, 0);
 #else
-                    nms = negascout(sd, beta - 1, beta, next_depth,
+                    nms = search_negascout(sd, beta - 1, beta, next_depth,
                                     CutNodeNoNull);
 #endif
                 }
@@ -810,9 +810,9 @@ static int negascout(struct SearchData *sd, int alpha, int beta,
     if (depth > 2 * OnePly && ((alpha + 1) != beta) &&
         !dbase_legal_move(p, st->st_hashmove)) {
 #if MP
-        negascout(sd, alpha, beta, depth - 2 * OnePly, PVNode, 0);
+        search_negascout(sd, alpha, beta, depth - 2 * OnePly, PVNode, 0);
 #else
-        negascout(sd, alpha, beta, depth - 2 * OnePly, PVNode);
+        search_negascout(sd, alpha, beta, depth - 2 * OnePly, PVNode);
 #endif
         st->st_hashmove = sd->pv_save[sd->ply + 1];
     }
@@ -931,34 +931,34 @@ static int negascout(struct SearchData *sd, int alpha, int beta,
 
             /*
              * Recursively search this position. If depth is exhausted, use
-             * quies, otherwise use negascout.
+             * search_quies, otherwise use search_negascout.
              */
 
             if (next_depth < 0) {
-                tmp = -quies(sd, -beta, -talpha, 0);
+                tmp = -search_quies(sd, -beta, -talpha, 0);
             } else if (bestm != M_NONE && !was_futile) {
 #if MP
-                tmp = -negascout(sd, -talpha - 1, -talpha, next_depth,
+                tmp = -search_negascout(sd, -talpha - 1, -talpha, next_depth,
                                  next_type, bestm != M_NONE);
                 if (tmp != ON_EVALUATION && tmp > talpha && tmp < beta) {
-                    tmp = -negascout(sd, -beta, -tmp, next_depth,
+                    tmp = -search_negascout(sd, -beta, -tmp, next_depth,
                                      node_type == PVNode ? PVNode : AllNode,
                                      bestm != M_NONE);
                 }
 #else
                 tmp =
-                    -negascout(sd, -talpha - 1, -talpha, next_depth, next_type);
+                    -search_negascout(sd, -talpha - 1, -talpha, next_depth, next_type);
                 if (tmp > talpha && tmp < beta) {
-                    tmp = -negascout(sd, -beta, -tmp, next_depth,
+                    tmp = -search_negascout(sd, -beta, -tmp, next_depth,
                                      node_type == PVNode ? PVNode : AllNode);
                 }
 #endif /* MP */
             } else {
 #if MP
-                tmp = -negascout(sd, -beta, -talpha, next_depth, next_type,
+                tmp = -search_negascout(sd, -beta, -talpha, next_depth, next_type,
                                  bestm != M_NONE);
 #else
-                tmp = -negascout(sd, -beta, -talpha, next_depth, next_type);
+                tmp = -search_negascout(sd, -beta, -talpha, next_depth, next_type);
 #endif /* MP */
             }
 
@@ -1030,14 +1030,14 @@ static int negascout(struct SearchData *sd, int alpha, int beta,
 
         dbase_do_move(p, move);
 
-        tmp = -negascout(sd, -talpha - 1, -talpha, next_depth, next_type, 0);
+        tmp = -search_negascout(sd, -talpha - 1, -talpha, next_depth, next_type, 0);
 
         if (tmp == ON_EVALUATION) {
             printf("Oops...\n");
         }
 
         if (tmp > talpha && tmp < beta) {
-            tmp = -negascout(sd, -beta, -talpha, next_depth,
+            tmp = -search_negascout(sd, -beta, -talpha, next_depth,
                              node_type == PVNode ? PVNode : AllNode, 0);
         }
 
@@ -1304,17 +1304,17 @@ static void *search_iterate_int(void *x) {
                 int effective_alpha =
                     is_alternate ? (alpha - ALTERNATE_DELTA) : alpha;
 #if MP
-                tmp = -negascout(sd, -beta, -effective_alpha, next_depth,
+                tmp = -search_negascout(sd, -beta, -effective_alpha, next_depth,
                                  is_pv ? PVNode : CutNode, 0);
 #else
-                tmp = -negascout(sd, -beta, -effective_alpha, next_depth,
+                tmp = -search_negascout(sd, -beta, -effective_alpha, next_depth,
                                  is_pv ? PVNode : CutNode);
 #endif
                 if (is_alternate) {
                     sd->alternate_score = tmp;
                 }
             } else {
-                tmp = -quies(sd, -beta, -alpha, 0);
+                tmp = -search_quies(sd, -beta, -alpha, 0);
             }
             dbase_undo_move(p, move);
             if (AbortSearch)
@@ -1345,12 +1345,12 @@ static void *search_iterate_int(void *x) {
                 dbase_do_move(p, move);
                 if (next_depth >= 0) {
 #if MP
-                    tmp = -negascout(sd, -beta, -alpha, next_depth, PVNode, 0);
+                    tmp = -search_negascout(sd, -beta, -alpha, next_depth, PVNode, 0);
 #else
-                    tmp = -negascout(sd, -beta, -alpha, next_depth, PVNode);
+                    tmp = -search_negascout(sd, -beta, -alpha, next_depth, PVNode);
 #endif
                 } else {
-                    tmp = -quies(sd, -beta, -alpha, 0);
+                    tmp = -search_quies(sd, -beta, -alpha, 0);
                 }
                 dbase_undo_move(p, move);
                 if (AbortSearch)
@@ -1363,13 +1363,13 @@ static void *search_iterate_int(void *x) {
                     dbase_do_move(p, move);
                     if (next_depth >= 0) {
 #if MP
-                        tmp = -negascout(sd, -beta, -alpha, next_depth, PVNode,
+                        tmp = -search_negascout(sd, -beta, -alpha, next_depth, PVNode,
                                          0);
 #else
-                        tmp = -negascout(sd, -beta, -alpha, next_depth, PVNode);
+                        tmp = -search_negascout(sd, -beta, -alpha, next_depth, PVNode);
 #endif
                     } else {
-                        tmp = -quies(sd, -beta, -alpha, 0);
+                        tmp = -search_quies(sd, -beta, -alpha, 0);
                     }
                     dbase_undo_move(p, move);
                     if (AbortSearch)
@@ -1418,12 +1418,12 @@ static void *search_iterate_int(void *x) {
                 dbase_do_move(p, move);
                 if (next_depth >= 0) {
 #if MP
-                    tmp = -negascout(sd, -beta, -alpha, next_depth, PVNode, 0);
+                    tmp = -search_negascout(sd, -beta, -alpha, next_depth, PVNode, 0);
 #else
-                    tmp = -negascout(sd, -beta, -alpha, next_depth, PVNode);
+                    tmp = -search_negascout(sd, -beta, -alpha, next_depth, PVNode);
 #endif
                 } else {
-                    tmp = -quies(sd, -beta, -alpha, 0);
+                    tmp = -search_quies(sd, -beta, -alpha, 0);
                 }
                 dbase_undo_move(p, move);
                 if (AbortSearch)
@@ -1436,13 +1436,13 @@ static void *search_iterate_int(void *x) {
                     dbase_do_move(p, move);
                     if (next_depth >= 0) {
 #if MP
-                        tmp = -negascout(sd, -beta, -alpha, next_depth, PVNode,
+                        tmp = -search_negascout(sd, -beta, -alpha, next_depth, PVNode,
                                          0);
 #else
-                        tmp = -negascout(sd, -beta, -alpha, next_depth, PVNode);
+                        tmp = -search_negascout(sd, -beta, -alpha, next_depth, PVNode);
 #endif
                     } else {
-                        tmp = -quies(sd, -beta, -alpha, 0);
+                        tmp = -search_quies(sd, -beta, -alpha, 0);
                     }
                     dbase_undo_move(p, move);
                     if (AbortSearch)
@@ -1844,7 +1844,7 @@ int search_quiescence(struct Position *p) {
     sd->master = true;
     search_init(sd);
 
-    int score = quies(sd, -INF, INF, 0);
+    int score = search_quies(sd, -INF, INF, 0);
     next_free_data(sd);
 
     return score;
