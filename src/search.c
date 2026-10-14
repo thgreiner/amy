@@ -1290,7 +1290,7 @@ static void *IterateInt(void *x) {
 
                 print_no_log(
                     2, "%2d  %s   %2d/%2d  %s      \r", sd->depth,
-                    FormatTime(CurTime - StartTime, time_buffer,
+                    utils_format_time(CurTime - StartTime, time_buffer,
                                sizeof(time_buffer)),
                     sd->movenum + 1, sd->nrootmoves,
                     search_numbered_san(p, move, san_buffer, sizeof(san_buffer)));
@@ -1466,7 +1466,7 @@ static void *IterateInt(void *x) {
 
                     snprintf(AnalysisLine, sizeof(AnalysisLine),
                              "%2d: (%7s) %s", sd->depth,
-                             FormatScore(sd->best_score, score_as_text,
+                             utils_format_score(sd->best_score, score_as_text,
                                          sizeof(score_as_text)),
                              BestLine);
 
@@ -1594,35 +1594,35 @@ final:
         unsigned long nps = (unsigned long)(TotalNodes / elapsed);
 
         print(2, "Nodes = %s, QPerc: %d %%, time = %g secs, %s nodes/s\n",
-              FormatCount(TotalNodes, buf1, sizeof(buf1)),
+              utils_format_count(TotalNodes, buf1, sizeof(buf1)),
               percentage(sd->qnodes_cnt, sd->nodes_cnt + sd->qnodes_cnt),
-              elapsed, FormatCount(nps, buf2, sizeof(buf2)));
+              elapsed, utils_format_count(nps, buf2, sizeof(buf2)));
 
         print(2,
               "Extensions: Check: %s  DblChk: %s  DiscChk: %s  SingReply: %s\n"
               "            Recapture: %s   Passed Pawn: %s   Zugzwang: %s\n",
-              FormatCount(ChkExt, buf1, sizeof(buf1)),
-              FormatCount(DblExt, buf2, sizeof(buf2)),
-              FormatCount(DiscExt, buf3, sizeof(buf3)),
-              FormatCount(SingExt, buf4, sizeof(buf4)),
-              FormatCount(RCExt, buf5, sizeof(buf5)),
-              FormatCount(PPExt, buf6, sizeof(buf6)),
-              FormatCount(ZZExt, buf7, sizeof(buf7)));
+              utils_format_count(ChkExt, buf1, sizeof(buf1)),
+              utils_format_count(DblExt, buf2, sizeof(buf2)),
+              utils_format_count(DiscExt, buf3, sizeof(buf3)),
+              utils_format_count(SingExt, buf4, sizeof(buf4)),
+              utils_format_count(RCExt, buf5, sizeof(buf5)),
+              utils_format_count(PPExt, buf6, sizeof(buf6)),
+              utils_format_count(ZZExt, buf7, sizeof(buf7)));
 
         print(2,
               "Hashing: Trans: %s/%s = %d %%   Pawn: %s/%s = %d %%\n"
               "         Eval: %s/%s = %d %%\n",
-              FormatCount(HHit, buf1, sizeof(buf1)),
-              FormatCount(HTry, buf2, sizeof(buf2)), percentage(HHit, HTry),
-              FormatCount(PHit, buf3, sizeof(buf3)),
-              FormatCount(PTry, buf4, sizeof(buf4)), percentage(PHit, PTry),
-              FormatCount(SHit, buf5, sizeof(buf5)),
-              FormatCount(STry, buf6, sizeof(buf6)), percentage(SHit, STry));
+              utils_format_count(HHit, buf1, sizeof(buf1)),
+              utils_format_count(HTry, buf2, sizeof(buf2)), percentage(HHit, HTry),
+              utils_format_count(PHit, buf3, sizeof(buf3)),
+              utils_format_count(PTry, buf4, sizeof(buf4)), percentage(PHit, PTry),
+              utils_format_count(SHit, buf5, sizeof(buf5)),
+              utils_format_count(STry, buf6, sizeof(buf6)), percentage(SHit, STry));
 
         if (EGTBProbe != 0) {
             print(2, "EGTB Hits/Probes = %s/%s\n",
-                  FormatCount(EGTBProbeSucc, buf1, sizeof(buf1)),
-                  FormatCount(EGTBProbe, buf2, sizeof(buf2)));
+                  utils_format_count(EGTBProbeSucc, buf1, sizeof(buf1)),
+                  utils_format_count(EGTBProbe, buf2, sizeof(buf2)));
         }
 
         ht_show_statistics();

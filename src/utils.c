@@ -106,7 +106,7 @@ int read_line(char *buffer, int cnt) {
 /**
  * Convert an int representing a time in seconds to a string.
  */
-char *FormatTime(unsigned long secs, char *buffer, size_t len) {
+char *utils_format_time(unsigned long secs, char *buffer, size_t len) {
     if (secs >= 60 * ONE_SECOND) {
         long mins;
         secs = secs / ONE_SECOND;
@@ -131,7 +131,7 @@ char *FormatTime(unsigned long secs, char *buffer, size_t len) {
 /**
  * Convert a score to a string.
  */
-char *FormatScore(int score, char *buffer, size_t len) {
+char *utils_format_score(int score, char *buffer, size_t len) {
     if (score > CMLIMIT) {
         snprintf(buffer, len, "+M%d", (INF - score) / 2 + 1);
     } else if (score < -CMLIMIT) {
@@ -159,7 +159,7 @@ char *FormatScore(int score, char *buffer, size_t len) {
  * Returns:
  *     the pointer to the buffer
  */
-char *FormatCount(unsigned long count, char *buffer, size_t len) {
+char *utils_format_count(unsigned long count, char *buffer, size_t len) {
     if (count < 1000) {
         snprintf(buffer, len, "%lu", count);
     } else if (count < 10000ull) {

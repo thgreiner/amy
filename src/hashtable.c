@@ -168,7 +168,7 @@ static inline struct HTEntry GetHTEntry(hash_t key) {
 /**
  * Puts an entry to the global transposition table.
  */
-static inline void PutHTEntry(hash_t key, struct HTEntry entry) {
+static inline void ht_put_entry(hash_t key, struct HTEntry entry) {
 #if MP && HAVE_LIBPTHREAD
     atomic_int *mutex = TranspositionMutex + ((key >> 32) & MUTEX_MASK);
     acquire_write_lock(mutex);
@@ -188,7 +188,7 @@ static inline void PutHTEntry(hash_t key, struct HTEntry entry) {
  * leave it alone.
  */
 #if MP
-static void IncrementHTCPUs(hash_t key) {
+static void ht_increment_cpus(hash_t key) {
 #if HAVE_LIBPTHREAD
     atomic_int *mutex = TranspositionMutex + ((key >> 32) & MUTEX_MASK);
     acquire_write_lock(mutex);
@@ -208,7 +208,7 @@ static void IncrementHTCPUs(hash_t key) {
 /**
  *
  */
-static inline bool PutHTEntryBestEffort(const hash_t key, struct HTEntry entry,
+static inline bool ht_put_entry_best_effort(const hash_t key, struct HTEntry entry,
                                         int depth) {
     const hash_t key1 = key;
     const hash_t key2 = key + 1;
@@ -218,42 +218,42 @@ static inline bool PutHTEntryBestEffort(const hash_t key, struct HTEntry entry,
 
     /* Overwrite any matching entry. */
     if (entry1.ht_Key == key) {
-        PutHTEntry(key1, entry);
+        ht_put_entry(key1, entry);
         return true;
     }
     if (entry2.ht_Key == key) {
-        PutHTEntry(key2, entry);
+        ht_put_entry(key2, entry);
         return true;
     }
 
     /* Overwrite entries with lower depth. */
     if (entry1.ht_Depth <= entry2.ht_Depth) {
         if (entry1.ht_Depth <= depth) {
-            PutHTEntry(key1, entry);
+            ht_put_entry(key1, entry);
             return true;
         }
         if (entry2.ht_Depth <= depth) {
-            PutHTEntry(key2, entry);
+            ht_put_entry(key2, entry);
             return true;
         }
     } else {
         if (entry2.ht_Depth <= depth) {
-            PutHTEntry(key2, entry);
+            ht_put_entry(key2, entry);
             return true;
         }
         if (entry1.ht_Depth <= depth) {
-            PutHTEntry(key1, entry);
+            ht_put_entry(key1, entry);
             return true;
         }
     }
 
     /* Overwrite entries from older generation. */
     if ((entry1.ht_Flags & HT_AGE) != HTGeneration) {
-        PutHTEntry(key1, entry);
+        ht_put_entry(key1, entry);
         return true;
     }
     if ((entry2.ht_Flags & HT_AGE) != HTGeneration) {
-        PutHTEntry(key2, entry);
+        ht_put_entry(key2, entry);
         return true;
     }
 
@@ -329,7 +329,7 @@ LookupResult ht_probe(const hash_t key, int *score, int depth, move_t *bestm,
                  * increment processor count
                  */
 
-                IncrementHTCPUs(effective_key);
+                ht_increment_cpus(effective_key);
             }
 #endif /* MP */
 
@@ -342,7 +342,7 @@ LookupResult ht_probe(const hash_t key, int *score, int depth, move_t *bestm,
         h.ht_Depth = (short)depth;
         h.ht_Flags = HT_NCPU_INCREMENT;
         h.ht_Key = key;
-        PutHTEntryBestEffort(key, h, depth);
+        ht_put_entry_best_effort(key, h, depth);
     }
 #endif /* MP */
 
@@ -459,7 +459,7 @@ void ht_store(hash_t key, int best, int alpha, int beta, int bestm, int depth,
     if (threat)
         entry.ht_Flags |= HT_THREAT;
 
-    bool success = PutHTEntryBestEffort(key, entry, depth);
+    bool success = ht_put_entry_best_effort(key, entry, depth);
     if (!success) {
         HTStoreFailed++;
 #if MP
@@ -610,10 +610,10 @@ void ht_show_statistics(void) {
     char buf1[16], buf2[16];
 
     print(1, "Hashtable 1:  entries = %s, use = %s (%d %%)\n",
-          FormatCount(i, buf1, sizeof(buf1)),
-          FormatCount(cnt, buf2, sizeof(buf2)), percentage(cnt, i));
+          utils_format_count(i, buf1, sizeof(buf1)),
+          utils_format_count(cnt, buf2, sizeof(buf2)), percentage(cnt, i));
     print(1, "              store failed = %s (%d %%)\n",
-          FormatCount(HTStoreFailed, buf1, sizeof(buf1)),
+          utils_format_count(HTStoreFailed, buf1, sizeof(buf1)),
           percentage(HTStoreFailed, HTStoreTried));
 }
 

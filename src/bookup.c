@@ -117,7 +117,7 @@ static tree_node_t *PutBookEntry(tree_node_t *database, hash_t hk, int result,
     return database;
 }
 
-static void OpenBookFile(tree_node_t **db) {
+static void book_open_file(tree_node_t **db) {
     static bool error_printed = false;
 
     FILE *fin = fopen(BOOK_NAME, "rb");
@@ -143,7 +143,7 @@ static void OpenBookFile(tree_node_t **db) {
 static struct BookEntry *GetBookEntry(hash_t hk) {
     struct BookEntry *retval = NULL;
     if (BookDB == NULL) {
-        OpenBookFile(&BookDB);
+        book_open_file(&BookDB);
     }
     if (BookDB != NULL) {
         retval = (struct BookEntry *)tree_lookup_value(BookDB, (char *)&hk,
@@ -309,7 +309,7 @@ static void book_get_all_moves(struct Position *p, int *cnt, move_t *book_moves,
     heap_free(heap);
 }
 
-static void SortBook(int cnt, move_t *mvs, struct BookQuery *entries) {
+static void book_sort(int cnt, move_t *mvs, struct BookQuery *entries) {
     bool done = false;
 
     while (!done) {
@@ -337,7 +337,7 @@ static void SortBook(int cnt, move_t *mvs, struct BookQuery *entries) {
     }
 }
 
-static void CalculatePropabilities(int cnt, struct BookQuery *entries,
+static void book_calculate_probabilities(int cnt, struct BookQuery *entries,
                                    double *props) {
     int total = 0;
     double totalprops;
@@ -410,8 +410,8 @@ int book_select(struct Position *p) {
     book_get_all_moves(p, &cnt, moves, be);
 
     if (cnt != 0) {
-        SortBook(cnt, moves, be);
-        CalculatePropabilities(cnt, be, props);
+        book_sort(cnt, moves, be);
+        book_calculate_probabilities(cnt, be, props);
 
         for (i = 0; i < cnt; i++) {
             if (props[i] > 0.0) {
@@ -433,8 +433,8 @@ void book_query(struct Position *p) {
     double props[32];
 
     book_get_all_moves(p, &cnt, moves, be);
-    SortBook(cnt, moves, be);
-    CalculatePropabilities(cnt, be, props);
+    book_sort(cnt, moves, be);
+    book_calculate_probabilities(cnt, be, props);
 
     print(0, "\tmove    count  win loss draw av. elo prop\n");
     for (i = 0; i < cnt; i++) {
@@ -465,7 +465,7 @@ void book_query(struct Position *p) {
     print(0, "\n");
 }
 
-static void PutLearnEntry(hash_t hk, int learn_value, int flags) {
+static void book_put_learn_entry(hash_t hk, int learn_value, int flags) {
     if (LearnDB == NULL) {
         FILE *fin = fopen(LEARN_NAME, "rb");
         if (fin != NULL) {
@@ -523,7 +523,7 @@ void book_create_learn_db(char *file_name) {
                 dbase_do_move(p, themove);
 
                 if (flags != 0) {
-                    PutLearnEntry(p->hkey, 0, flags);
+                    book_put_learn_entry(p->hkey, 0, flags);
                 }
             } else {
                 print(0, "can't parse >%s<\n", move);
@@ -575,7 +575,7 @@ void book_flatten(unsigned int threshold) {
     int written = 0;
 
     if (BookDB == NULL) {
-        OpenBookFile(&BookDB);
+        book_open_file(&BookDB);
     }
     if (BookDB != NULL) {
         tree_node_t *flattened =

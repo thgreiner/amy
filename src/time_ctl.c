@@ -90,7 +90,7 @@ void calc_time(struct Position *p, float *soft, float *hard) {
             float limit = (1.625f * TTime / TMoves) + (0.85f * Increment);
 
             print(1, "TC: %d moves in %s\n", Moves[p->turn],
-                  FormatTime((unsigned int)(Time[p->turn]) * ONE_SECOND,
+                  utils_format_time((unsigned int)(Time[p->turn]) * ONE_SECOND,
                              time_as_text, sizeof(time_as_text)));
             /*  *soft = (7*Time[p->turn]/Moves[p->turn])/8 + (3*Increment)/4; */
             *soft =
@@ -118,7 +118,7 @@ void calc_time(struct Position *p, float *soft, float *hard) {
             float limit = 0.0271f * ((float)Time[p->turn] + 60 * Increment);
 
             print(1, "TC: all moves in %s\n",
-                  FormatTime((unsigned int)(Time[p->turn]) * ONE_SECOND,
+                  utils_format_time((unsigned int)(Time[p->turn]) * ONE_SECOND,
                              time_as_text, sizeof(time_as_text)));
             /*  0.875 / 60.0 = 0.0146  */
             *soft = 0.0146f * (float)Time[p->turn] + (0.85f * Increment);
