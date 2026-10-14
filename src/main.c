@@ -195,7 +195,7 @@ int main(int argc, char *argv[]) {
     InitEGTB(EGTBPath);
     recog_init();
 
-    DoBookLearning();
+    learn_book();
 
     print(0, "\n");
 

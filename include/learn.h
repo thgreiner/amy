@@ -32,6 +32,6 @@
 #ifndef LEARN_H
 #define LEARN_H
 
-void DoBookLearning(void);
+void learn_book(void);
 
 #endif
