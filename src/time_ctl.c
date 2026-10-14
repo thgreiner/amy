@@ -64,7 +64,7 @@ static struct TimeControl globalTimeControl = {.first.moves = 60,
                                                .first.total_time = 5 * 60,
                                                .hasSecondTimeControl = false};
 
-void do_tc(struct Position *p, int mtime) {
+void time_ctl_update(struct Position *p, int mtime) {
     Time[p->turn] += -mtime + Increment;
 
     if (Moves[p->turn] > 0) {
@@ -82,7 +82,7 @@ void do_tc(struct Position *p, int mtime) {
     }
 }
 
-void calc_time(struct Position *p, float *soft, float *hard) {
+void time_ctl_calc(struct Position *p, float *soft, float *hard) {
     char time_as_text[16];
     if (TMoves >= 0) {
         if (Moves[p->turn] > 0) {
@@ -137,7 +137,7 @@ void calc_time(struct Position *p, float *soft, float *hard) {
     }
 }
 
-static struct TimeControl parse_timecontrol_xboard(char *args[]) {
+static struct TimeControl time_ctl_parse_xboard(char *args[]) {
     int ttmoves, ttime, tminutes, tseconds, inc = 0;
 
     sscanf(args[0], "%d", &ttmoves);
@@ -165,7 +165,7 @@ static const char *const sudden_death = "sd";
 /** Literal for 'fixed' time control. */
 static const char *const fixed = "fixed";
 
-static struct TimeControl parse_timecontrol(char *args[]) {
+static struct TimeControl time_ctl_parse(char *args[]) {
     int ttmoves, ttime, inc = 0;
     int ttmoves2, ttime2;
 
@@ -234,13 +234,13 @@ static struct TimeControl parse_timecontrol(char *args[]) {
  *     xboard_flag: indicates whether the format is expected to be
  *         for xboard or not
  */
-void set_time_control(char *args[], bool xboard_flag) {
+void time_ctl_set(char *args[], bool xboard_flag) {
     if (xboard_flag) {
-        globalTimeControl = parse_timecontrol_xboard(args);
+        globalTimeControl = time_ctl_parse_xboard(args);
     } else {
-        globalTimeControl = parse_timecontrol(args);
+        globalTimeControl = time_ctl_parse(args);
     }
-    reset_time_control(!xboard_flag);
+    time_ctl_reset(!xboard_flag);
 }
 
 /**
@@ -249,7 +249,7 @@ void set_time_control(char *args[], bool xboard_flag) {
  * Args:
  *     verbose: if true, the settings are printed
  */
-void reset_time_control(bool verbose) {
+void time_ctl_reset(bool verbose) {
     TMoves = globalTimeControl.first.moves;
     TTime = globalTimeControl.first.total_time;
     Increment = globalTimeControl.first.increment;

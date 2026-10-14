@@ -40,9 +40,9 @@ extern int Increment;
 extern int TMoves2, TTime2;
 extern int TwoTimeControls;
 
-void do_tc(struct Position *, int);
-void calc_time(struct Position *, float *, float *);
-void set_time_control(char **, bool);
-void reset_time_control(bool);
+void time_ctl_update(struct Position *, int);
+void time_ctl_calc(struct Position *, float *, float *);
+void time_ctl_set(char **, bool);
+void time_ctl_reset(bool);
 
 #endif

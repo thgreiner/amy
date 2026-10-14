@@ -371,7 +371,7 @@ static void cmd_set_time(char *arg) {
     args[1] = strtok(NULL, " \t");
     args[2] = strtok(NULL, " \t");
 
-    set_time_control(args, XBoardMode);
+    time_ctl_set(args, XBoardMode);
 }
 
 static void cmd_set_xboard(char *args) {
@@ -414,7 +414,7 @@ void cmd_newgame(char *args) {
     if (State != STATE_ANALYZING) {
         State = STATE_WAITING;
     }
-    reset_time_control(!XBoardMode);
+    time_ctl_reset(!XBoardMode);
 }
 
 static void cmd_move_now(char *args) {
