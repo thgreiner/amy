@@ -36,9 +36,9 @@
 #include "pgn_write.h"
 #include <stdio.h>
 
-void load_game(struct Position *, char *);
-int scan_header(FILE *, struct PGNHeader *);
-int scan_move(FILE *, char *);
+void pgn_load_game(struct Position *, char *);
+int pgn_scan_header(FILE *, struct PGNHeader *);
+int pgn_scan_move(FILE *, char *);
 void get_and_reset_comment(char *, unsigned int);
 void free_header(struct PGNHeader *);
 

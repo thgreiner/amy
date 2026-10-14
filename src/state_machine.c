@@ -66,7 +66,7 @@ void StateMachine(void) {
     while (State != STATE_END) {
 
         if (AutoSave) {
-            save_game(CurrentPosition, AutoSaveFileName);
+            pgn_save_game(CurrentPosition, AutoSaveFileName);
         }
 
         switch (State) {

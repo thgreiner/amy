@@ -549,9 +549,9 @@ static void RunAnnotate(char *fname, int side) {
         struct PGNHeader header;
         char move[16];
 
-        while (!scan_header(fin, &header)) {
+        while (!pgn_scan_header(fin, &header)) {
             p = InitialPosition();
-            while (!scan_move(fin, move)) {
+            while (!pgn_scan_move(fin, move)) {
                 int themove = ParseSAN(p, move);
                 if (themove != M_NONE) {
                     char san_buffer[16];
@@ -753,7 +753,7 @@ static void Load(char *args) {
         return;
     }
     CurrentPosition = InitialPosition();
-    load_game(CurrentPosition, args);
+    pgn_load_game(CurrentPosition, args);
 }
 
 static void Save(char *args) {
@@ -761,7 +761,7 @@ static void Save(char *args) {
         print(0, "Usage: save <filename>\n");
         return;
     }
-    save_game(CurrentPosition, args);
+    pgn_save_game(CurrentPosition, args);
 }
 
 static void Prefs(char *args) { CreateLearnDB(args); }

@@ -65,7 +65,7 @@ void FilterQuiescentPositions(char *file_name) {
     unsigned int count_games = 0;
     unsigned int count_comments = 0;
 
-    while (!scan_header(fin, &header)) {
+    while (!pgn_scan_header(fin, &header)) {
         struct Position *p;
 
         count_games++;
@@ -83,7 +83,7 @@ void FilterQuiescentPositions(char *file_name) {
 
         int width = 0;
 
-        while (!scan_move(fin, move)) {
+        while (!pgn_scan_move(fin, move)) {
             if (!(strlen(move) < 12)) {
                 printf("\n<%s>\n", move);
                 exit(1);
@@ -95,7 +95,7 @@ void FilterQuiescentPositions(char *file_name) {
                 count_comments++;
 
                 char *stripped_comment = strip(comment);
-                emit_pgn_line(fout, &width, "{ %s }", stripped_comment);
+                pgn_emit_line(fout, &width, "{ %s }", stripped_comment);
 
                 char eval_buf[16];
                 memcpy(eval_buf, stripped_comment + 2, 6);
@@ -110,10 +110,10 @@ void FilterQuiescentPositions(char *file_name) {
                 break;
 
             if ((p->ply % 2) == 0) {
-                emit_pgn_line(fout, &width, "%d. ", 1 + p->ply / 2);
+                pgn_emit_line(fout, &width, "%d. ", 1 + p->ply / 2);
             }
 
-            emit_pgn_line(fout, &width, "%s ", SAN(p, themove, san_buffer));
+            pgn_emit_line(fout, &width, "%s ", SAN(p, themove, san_buffer));
 
             last_position_was_quiet = true;
 

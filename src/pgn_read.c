@@ -72,7 +72,7 @@ static char *pgn_read_line(FILE *fin) {
 #endif
 }
 
-int scan_header(FILE *fin, struct PGNHeader *header) {
+int pgn_scan_header(FILE *fin, struct PGNHeader *header) {
     char *current_line;
     int state = 0;
 
@@ -164,7 +164,7 @@ void free_header(struct PGNHeader *header) {
 static char comment_buffer[2048] = "";
 static char *comment_ptr = comment_buffer;
 
-int scan_move(FILE *fin, char *nextMove) {
+int pgn_scan_move(FILE *fin, char *nextMove) {
     static char *current_line = NULL;
     static int haveLine = 0;
     static char *x;
@@ -262,14 +262,14 @@ void get_and_reset_comment(char *destination, unsigned int length) {
     *comment_buffer = 0;
 }
 
-void load_game(struct Position *p, char *file_name) {
+void pgn_load_game(struct Position *p, char *file_name) {
     FILE *fin = fopen(file_name, "r");
 
     if (fin) {
         struct PGNHeader header;
         char move[16];
-        if (!scan_header(fin, &header)) {
-            while (!scan_move(fin, move)) {
+        if (!pgn_scan_header(fin, &header)) {
+            while (!pgn_scan_move(fin, move)) {
                 int themove = ParseSAN(p, move);
                 if (themove != M_NONE) {
                     DoMove(p, themove);

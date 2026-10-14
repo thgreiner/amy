@@ -55,12 +55,12 @@ static void close_emit_buf(emit_buf_t *buf) {
     free(buf);
 }
 
-/* emit_pgn_line writes the message and tracks the characters written */
+/* pgn_emit_line writes the message and tracks the characters written */
 static void test_emit_pgn_line_writes_and_tracks_width(void) {
     emit_buf_t *buf = new_emit_buf();
     int width = 0;
 
-    emit_pgn_line(buf->f, &width, "%s ", "hello");
+    pgn_emit_line(buf->f, &width, "%s ", "hello");
     fflush(buf->f);
 
     assert(width == 6);
@@ -79,8 +79,8 @@ static void test_emit_pgn_line_no_wrap_at_72(void) {
     memset(token2, 'b', 32);
     token2[32] = '\0';
 
-    emit_pgn_line(buf->f, &width, "%s", token);  /* 40 */
-    emit_pgn_line(buf->f, &width, "%s", token2); /* 32 */
+    pgn_emit_line(buf->f, &width, "%s", token);  /* 40 */
+    pgn_emit_line(buf->f, &width, "%s", token2); /* 32 */
     fflush(buf->f);
 
     assert(width == 72);
@@ -99,8 +99,8 @@ static void test_emit_pgn_line_wraps_over_72(void) {
     memset(token2, 'b', 5);
     token2[5] = '\0';
 
-    emit_pgn_line(buf->f, &width, "%s", token);  /* 70 */
-    emit_pgn_line(buf->f, &width, "%s", token2); /*  5 -> 75, wraps */
+    pgn_emit_line(buf->f, &width, "%s", token);  /* 70 */
+    pgn_emit_line(buf->f, &width, "%s", token2); /*  5 -> 75, wraps */
     fflush(buf->f);
 
     assert(width == 0);
@@ -118,7 +118,7 @@ static void test_emit_pgn_line_long_message_wraps(void) {
     memset(token, 'b', 100);
     token[100] = '\0';
 
-    emit_pgn_line(buf->f, &width, "%s", token);
+    pgn_emit_line(buf->f, &width, "%s", token);
     fflush(buf->f);
 
     assert(width == 0);
@@ -132,7 +132,7 @@ static void test_emit_pgn_line_empty_is_noop(void) {
     emit_buf_t *buf = new_emit_buf();
     int width = 5;
 
-    emit_pgn_line(buf->f, &width, "%s", "");
+    pgn_emit_line(buf->f, &width, "%s", "");
     fflush(buf->f);
 
     assert(width == 5);

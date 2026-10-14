@@ -196,7 +196,7 @@ static void BookupInternal(char *file_name, int verbosity) {
 
     CloseBook();
 
-    while (!scan_header(fin, &header)) {
+    while (!pgn_scan_header(fin, &header)) {
         int result;
 
         if (!strcmp(header.result, "1-0"))
@@ -210,7 +210,7 @@ static void BookupInternal(char *file_name, int verbosity) {
 
         p = InitialPosition();
 
-        while (!scan_move(fin, move)) {
+        while (!pgn_scan_move(fin, move)) {
             if (!(strlen(move) < 12)) {
                 printf("\n<%s>\n", move);
                 exit(1);
