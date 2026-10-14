@@ -157,6 +157,8 @@ ran_t random64(void) {
     return result;
 }
 
-double random_double(void) { return (random64() >> 11) * (1.0 / 9007199254740991.0); }
+double random_double(void) {
+    return (random64() >> 11) * (1.0 / 9007199254740991.0);
+}
 
 void random_init(ran_t seed) { init_genrand64(seed); }

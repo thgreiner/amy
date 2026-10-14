@@ -212,7 +212,8 @@ static void test_get_as_string_not_found(void) {
     struct Node *result = yaml_parse_yaml(payload);
     assert(result != NULL);
 
-    struct StringLookupResult lookupResult = yaml_get_as_string(result, "other_key");
+    struct StringLookupResult lookupResult =
+        yaml_get_as_string(result, "other_key");
     assert(lookupResult.result_code == NOT_FOUND);
 
     yaml_free_node(result);
@@ -408,7 +409,8 @@ static void test_comments_and_empty_lines(void) {
     assert(result != NULL);
     assert(result->type == DICT);
 
-    struct StringLookupResult lookup_result = yaml_get_as_string(result, "key1");
+    struct StringLookupResult lookup_result =
+        yaml_get_as_string(result, "key1");
     assert(lookup_result.result_code == OK);
     assert(lookup_result.result != NULL);
     assert(!strcmp(lookup_result.result, "value1"));

@@ -249,7 +249,8 @@ move_t next_move(struct SearchData *sd) {
             move = sd->counterTab[p->turn][lmove & 4095];
 
             if (move != M_NONE && move != st->st_hashmove &&
-                move != st->st_k1 && move != st->st_k2 && dbase_legal_move(p, move)) {
+                move != st->st_k1 && move != st->st_k2 &&
+                dbase_legal_move(p, move)) {
                 st->st_phase = Killer3;
                 st->st_cm = move;
 
@@ -267,11 +268,13 @@ move_t next_move(struct SearchData *sd) {
             move = (sd->killer - 2)->killer1;
 
             if (move == st->st_hashmove || move == st->st_k1 ||
-                move == st->st_k2 || move == st->st_cm || !dbase_legal_move(p, move))
+                move == st->st_k2 || move == st->st_cm ||
+                !dbase_legal_move(p, move))
                 move = (sd->killer - 2)->killer2;
 
             if (move != st->st_hashmove && move != st->st_k1 &&
-                move != st->st_k2 && move != st->st_cm && dbase_legal_move(p, move)) {
+                move != st->st_k2 && move != st->st_cm &&
+                dbase_legal_move(p, move)) {
                 st->st_phase = LoosingCapture;
                 st->st_k3 = move;
 
@@ -318,13 +321,13 @@ move_t next_move(struct SearchData *sd) {
 
         if (p->castle & CastleMask[p->turn][0]) {
             heap_append(sd->heap,
-                           dbase_make_move(p->turn == White ? e1 : e8,
-                                     p->turn == White ? g1 : g8, M_SCASTLE));
+                        dbase_make_move(p->turn == White ? e1 : e8,
+                                        p->turn == White ? g1 : g8, M_SCASTLE));
         }
         if (p->castle & CastleMask[p->turn][1]) {
             heap_append(sd->heap,
-                           dbase_make_move(p->turn == White ? e1 : e8,
-                                     p->turn == White ? c1 : c8, M_LCASTLE));
+                        dbase_make_move(p->turn == White ? e1 : e8,
+                                        p->turn == White ? c1 : c8, M_LCASTLE));
         }
 
         BitBoard non_pawn = p->mask[p->turn][0] & ~p->mask[p->turn][Pawn];
@@ -532,7 +535,8 @@ move_t next_evasion(struct SearchData *sd) {
             move = sd->counterTab[p->turn][lmove & 4095];
 
             if (move != M_NONE && move != st->st_hashmove &&
-                move != st->st_k1 && move != st->st_k2 && dbase_legal_move(p, move)) {
+                move != st->st_k1 && move != st->st_k2 &&
+                dbase_legal_move(p, move)) {
                 st->st_phase = Killer3;
                 st->st_cm = move;
 
@@ -550,11 +554,13 @@ move_t next_evasion(struct SearchData *sd) {
             move = (sd->killer - 2)->killer1;
 
             if (move == st->st_hashmove || move == st->st_k1 ||
-                move == st->st_k2 || move == st->st_cm || !dbase_legal_move(p, move))
+                move == st->st_k2 || move == st->st_cm ||
+                !dbase_legal_move(p, move))
                 move = (sd->killer - 2)->killer2;
 
             if (move != st->st_hashmove && move != st->st_k1 &&
-                move != st->st_k2 && move != st->st_cm && dbase_legal_move(p, move)) {
+                move != st->st_k2 && move != st->st_cm &&
+                dbase_legal_move(p, move)) {
                 st->st_phase = /* HistoryMoves; */ LoosingCapture;
                 st->st_k3 = move;
 
@@ -596,7 +602,8 @@ move_t next_evasion(struct SearchData *sd) {
         print(9, "HistoryMoves\n");
 #endif
 
-        const int kp = p->kingSq[p->turn]; /* bitboard_find_set_bit(Mask[Side][King]); */
+        const int kp =
+            p->kingSq[p->turn]; /* bitboard_find_set_bit(Mask[Side][King]); */
         const BitBoard empty = ~(p->mask[White][0] | p->mask[Black][0]);
 
         BitBoard king_flight_squares = p->atkTo[kp] & empty;

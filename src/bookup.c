@@ -83,13 +83,13 @@ static tree_node_t *BookDB = NULL;
 static tree_node_t *LearnDB = NULL;
 
 static tree_node_t *book_put_entry(tree_node_t *database, hash_t hk, int result,
-                                 int elo) {
+                                   int elo) {
     print(9, "storing position\n");
     struct BookEntry *entry = NULL;
 
     if (database != NULL) {
         entry = (struct BookEntry *)tree_lookup_value(database, (char *)&hk,
-                                                 sizeof(hk), NULL);
+                                                      sizeof(hk), NULL);
     }
 
     if (entry == NULL) {
@@ -111,7 +111,7 @@ static tree_node_t *book_put_entry(tree_node_t *database, hash_t hk, int result,
 #endif
 
     database = tree_add_node(database, (char *)&hk, sizeof(hk), (char *)entry,
-                        sizeof(struct BookEntry));
+                             sizeof(struct BookEntry));
     free(entry);
 
     return database;
@@ -147,7 +147,7 @@ static struct BookEntry *book_get_entry(hash_t hk) {
     }
     if (BookDB != NULL) {
         retval = (struct BookEntry *)tree_lookup_value(BookDB, (char *)&hk,
-                                                  sizeof(hk), NULL);
+                                                       sizeof(hk), NULL);
     }
 
     return retval;
@@ -165,7 +165,7 @@ static struct LearnEntry *book_get_learn_entry(hash_t hk) {
     }
     if (LearnDB != NULL) {
         retval = (struct LearnEntry *)tree_lookup_value(LearnDB, (char *)&hk,
-                                                   sizeof(hk), NULL);
+                                                        sizeof(hk), NULL);
     }
 
     return retval;
@@ -230,11 +230,11 @@ static void book_up_internal(char *file_name, int verbosity) {
                     if (p->turn == Black) {
                         /* white played the move */
                         database = book_put_entry(database, p->hkey, result,
-                                                header.white_elo);
+                                                  header.white_elo);
                     } else {
                         /* black played the move */
                         database = book_put_entry(database, p->hkey, -result,
-                                                header.black_elo);
+                                                  header.black_elo);
                     }
                 }
             }
@@ -273,7 +273,7 @@ void book_up(char *file_name) { book_up_internal(file_name, 0); }
 void book_up_quiet(char *file_name) { book_up_internal(file_name, 9); }
 
 static void book_get_all_moves(struct Position *p, int *cnt, move_t *book_moves,
-                            struct BookQuery *entries) {
+                               struct BookQuery *entries) {
     unsigned int i;
 
     heap_t heap = heap_allocate();
@@ -338,7 +338,7 @@ static void book_sort(int cnt, move_t *mvs, struct BookQuery *entries) {
 }
 
 static void book_calculate_probabilities(int cnt, struct BookQuery *entries,
-                                   double *props) {
+                                         double *props) {
     int total = 0;
     double totalprops;
     int limit;
@@ -480,7 +480,7 @@ static void book_put_learn_entry(hash_t hk, int learn_value, int flags) {
     entry.flags = flags;
 
     LearnDB = tree_add_node(LearnDB, (char *)&hk, sizeof(hk), (char *)&entry,
-                       sizeof(entry));
+                            sizeof(entry));
 }
 
 void book_create_learn_db(char *file_name) {
@@ -558,7 +558,7 @@ static tree_node_t *flatten_internal(tree_node_t *source, tree_node_t *target,
     (*read)++;
     if ((entry->win + entry->draw + entry->loss) > threshold) {
         target = tree_add_node(target, source->key_data, source->key_len,
-                          source->value_data, source->value_len);
+                               source->value_data, source->value_len);
         (*written)++;
     }
 

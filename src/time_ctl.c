@@ -87,14 +87,15 @@ void time_ctl_calc(struct Position *p, float *soft, float *hard) {
     if (TMoves >= 0) {
         if (Moves[p->turn] > 0) {
             /*  int limit = (13*TTime/TMoves)/8 + (3*Increment)/4;  */
-            float limit = (1.625f * TTime / TMoves) + (0.85f * Increment);
+            float limit = (1.625f * (float)TTime / (float)TMoves) +
+                          (0.85f * (float)Increment);
 
             print(1, "TC: %d moves in %s\n", Moves[p->turn],
                   utils_format_time((unsigned int)(Time[p->turn]) * ONE_SECOND,
-                             time_as_text, sizeof(time_as_text)));
+                                    time_as_text, sizeof(time_as_text)));
             /*  *soft = (7*Time[p->turn]/Moves[p->turn])/8 + (3*Increment)/4; */
-            *soft =
-                (0.875f * Time[p->turn] / Moves[p->turn]) + (0.75f * Increment);
+            *soft = (0.875f * (float)Time[p->turn] / (float)Moves[p->turn]) +
+                    (0.75f * (float)Increment);
             if (*soft > limit)
                 *soft = limit;
 
@@ -115,18 +116,19 @@ void time_ctl_calc(struct Position *p, float *soft, float *hard) {
              */
             /*  rearrange equation to eliminate floating point division  */
             /*  1.625 / 60 = 0.0271  */
-            float limit = 0.0271f * ((float)Time[p->turn] + 60 * Increment);
+            float limit =
+                0.0271f * ((float)Time[p->turn] + (60.0f * (float)Increment));
 
             print(1, "TC: all moves in %s\n",
                   utils_format_time((unsigned int)(Time[p->turn]) * ONE_SECOND,
-                             time_as_text, sizeof(time_as_text)));
+                                    time_as_text, sizeof(time_as_text)));
             /*  0.875 / 60.0 = 0.0146  */
-            *soft = 0.0146f * (float)Time[p->turn] + (0.85f * Increment);
+            *soft = 0.0146f * (float)Time[p->turn] + (0.85f * (float)Increment);
             if (*soft > limit)
                 *soft = limit;
             *hard = 4.0f * (*soft);
         }
-        if (*hard > Time[p->turn])
+        if (*hard > (float)Time[p->turn])
             *hard = 0.5f * (float)Time[p->turn];
         if (*soft > *hard)
             *soft = 0.67f * (*hard);

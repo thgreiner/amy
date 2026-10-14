@@ -80,8 +80,8 @@ void eco_parse_pgn(char *fname) {
                 }
             }
 
-            node = tree_add_node(node, (char *)&(p->hkey), sizeof(p->hkey), name,
-                            strlen(name) + 1);
+            node = tree_add_node(node, (char *)&(p->hkey), sizeof(p->hkey),
+                                 name, strlen(name) + 1);
         }
 
         dbase_free_position(p);

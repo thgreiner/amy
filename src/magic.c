@@ -245,7 +245,8 @@ static void magic_init_rook_table(void) {
                 magic_blockers_from_index(index, rook_blocker_mask[sq]);
             uint64_t magic_index =
                 (blockers * rook_magics[sq]) >> (64 - rook_index_bits[sq]);
-            rook_table[offset + magic_index] = magic_rook_attack_mask(sq, blockers);
+            rook_table[offset + magic_index] =
+                magic_rook_attack_mask(sq, blockers);
         }
 
         offset += 1 << bits;

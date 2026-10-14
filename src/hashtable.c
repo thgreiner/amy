@@ -208,8 +208,8 @@ static void ht_increment_cpus(hash_t key) {
 /**
  *
  */
-static inline bool ht_put_entry_best_effort(const hash_t key, struct HTEntry entry,
-                                        int depth) {
+static inline bool ht_put_entry_best_effort(const hash_t key,
+                                            struct HTEntry entry, int depth) {
     const hash_t key1 = key;
     const hash_t key2 = key + 1;
 
@@ -262,11 +262,11 @@ static inline bool ht_put_entry_best_effort(const hash_t key, struct HTEntry ent
 
 #if MP
 LookupResult ht_probe(const hash_t key, int *score, int depth, move_t *bestm,
-                     bool *threat, int ply, int exclusiveP,
-                     struct HTEntry *localHT)
+                      bool *threat, int ply, int exclusiveP,
+                      struct HTEntry *localHT)
 #else
 LookupResult ht_probe(const hash_t key, int *score, int depth, move_t *bestm,
-                     bool *threat, int ply)
+                      bool *threat, int ply)
 #endif
 {
     hash_t effective_key = key;
@@ -389,10 +389,10 @@ LookupResult ht_probe_score(hash_t key, int *score) {
 }
 
 void ht_store(hash_t key, int best, int alpha, int beta, int bestm, int depth,
-             int threat, int ply
+              int threat, int ply
 #if MP
-             ,
-             struct HTEntry *localHT
+              ,
+              struct HTEntry *localHT
 #endif
 ) {
     hash_t effective_key = key;
@@ -611,7 +611,8 @@ void ht_show_statistics(void) {
 
     print(1, "Hashtable 1:  entries = %s, use = %s (%d %%)\n",
           utils_format_count(i, buf1, sizeof(buf1)),
-          utils_format_count(cnt, buf2, sizeof(buf2)), utils_percentage(cnt, i));
+          utils_format_count(cnt, buf2, sizeof(buf2)),
+          utils_percentage(cnt, i));
     print(1, "              store failed = %s (%d %%)\n",
           utils_format_count(HTStoreFailed, buf1, sizeof(buf1)),
           utils_percentage(HTStoreFailed, HTStoreTried));

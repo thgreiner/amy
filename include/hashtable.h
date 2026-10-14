@@ -88,7 +88,7 @@ void ht_clear_pawn(void);
 void ht_allocate(void);
 #if MP
 LookupResult ht_probe(hash_t, int *, int, move_t *, bool *, int, int,
-                     struct HTEntry *);
+                      struct HTEntry *);
 void ht_store(hash_t, int, int, int, int, int, int, int, struct HTEntry *);
 #else
 LookupResult ht_probe(hash_t, int *, int, move_t *, bool *, int);

@@ -325,17 +325,27 @@ static const BitBoard FianchettoMaskBlackQueenSide =
 /**
  * Masks used in eval_development.
  */
-static const BitBoard WKingOpeningMask = bitboard_set_mask(e1) | bitboard_set_mask(d1);
-static const BitBoard BKingOpeningMask = bitboard_set_mask(e8) | bitboard_set_mask(d8);
+static const BitBoard WKingOpeningMask =
+    bitboard_set_mask(e1) | bitboard_set_mask(d1);
+static const BitBoard BKingOpeningMask =
+    bitboard_set_mask(e8) | bitboard_set_mask(d8);
 
-static const BitBoard WKingTrapsRook1 = bitboard_set_mask(f1) | bitboard_set_mask(g1);
-static const BitBoard WRookTrapped1 = bitboard_set_mask(g1) | bitboard_set_mask(h1) | bitboard_set_mask(h2);
-static const BitBoard WKingTrapsRook2 = bitboard_set_mask(c1) | bitboard_set_mask(b1);
-static const BitBoard WRookTrapped2 = bitboard_set_mask(b1) | bitboard_set_mask(a1) | bitboard_set_mask(a2);
-static const BitBoard BKingTrapsRook1 = bitboard_set_mask(f8) | bitboard_set_mask(g8);
-static const BitBoard BRookTrapped1 = bitboard_set_mask(g8) | bitboard_set_mask(h8) | bitboard_set_mask(h7);
-static const BitBoard BKingTrapsRook2 = bitboard_set_mask(c8) | bitboard_set_mask(b8);
-static const BitBoard BRookTrapped2 = bitboard_set_mask(b8) | bitboard_set_mask(a8) | bitboard_set_mask(a7);
+static const BitBoard WKingTrapsRook1 =
+    bitboard_set_mask(f1) | bitboard_set_mask(g1);
+static const BitBoard WRookTrapped1 =
+    bitboard_set_mask(g1) | bitboard_set_mask(h1) | bitboard_set_mask(h2);
+static const BitBoard WKingTrapsRook2 =
+    bitboard_set_mask(c1) | bitboard_set_mask(b1);
+static const BitBoard WRookTrapped2 =
+    bitboard_set_mask(b1) | bitboard_set_mask(a1) | bitboard_set_mask(a2);
+static const BitBoard BKingTrapsRook1 =
+    bitboard_set_mask(f8) | bitboard_set_mask(g8);
+static const BitBoard BRookTrapped1 =
+    bitboard_set_mask(g8) | bitboard_set_mask(h8) | bitboard_set_mask(h7);
+static const BitBoard BKingTrapsRook2 =
+    bitboard_set_mask(c8) | bitboard_set_mask(b8);
+static const BitBoard BRookTrapped2 =
+    bitboard_set_mask(b8) | bitboard_set_mask(a8) | bitboard_set_mask(a7);
 
 static void create_mirrored_piece_square_table(int16_t *, int16_t *);
 static bool is_edge(unsigned int);
@@ -351,8 +361,7 @@ static bool is_edge(unsigned int);
  *
  */
 
-static int eval_pawns(const struct Position *p,
-                         struct PawnFacts *pawnFacts) {
+static int eval_pawns(const struct Position *p, struct PawnFacts *pawnFacts) {
     BitBoard pcs = 0;
     int score = 0;
     int file = 0;
@@ -664,7 +673,8 @@ static int eval_pawns(const struct Position *p,
         pawnFacts->pf_Flags |= FianchettoBlackQueenSide;
     }
 
-    if (bitboard_tst_bit(p->mask[White][Pawn], d4) && bitboard_tst_bit(p->mask[Black][Pawn], d5)) {
+    if (bitboard_tst_bit(p->mask[White][Pawn], d4) &&
+        bitboard_tst_bit(p->mask[Black][Pawn], d5)) {
         pawnFacts->pf_Flags |= QueensPawnOpening;
     }
 
@@ -685,7 +695,7 @@ static int eval_pawns(const struct Position *p,
  */
 
 static int eval_pawns_hashed(const struct Position *p,
-                               struct PawnFacts *pawnFacts) {
+                             struct PawnFacts *pawnFacts) {
     int score;
 
     PTry++;
@@ -704,7 +714,7 @@ static int eval_pawns_hashed(const struct Position *p,
  */
 
 static int eval_passed_pawns(const struct Position *p, int wphase, int bphase,
-                               struct PawnFacts *pawnFacts) {
+                             struct PawnFacts *pawnFacts) {
     int score = 0;
     int wdistant = 0;
     int bdistant = 0;
@@ -1070,7 +1080,7 @@ static int eval_passed_pawns(const struct Position *p, int wphase, int bphase,
  */
 
 static int eval_king_safety(const struct Position *p, int wphase, int bphase,
-                              struct PawnFacts *pawnFacts) {
+                            struct PawnFacts *pawnFacts) {
     int score = 0;
 
     int king_safety_w = 0;
@@ -1186,10 +1196,12 @@ static int eval_development(const struct Position *p) {
      * Don't develop pieces to e3/d3 if they block a pawn
      */
 
-    if (bitboard_tst_bit(p->mask[White][Pawn], e2) && bitboard_tst_bit(p->mask[White][0], e3)) {
+    if (bitboard_tst_bit(p->mask[White][Pawn], e2) &&
+        bitboard_tst_bit(p->mask[White][0], e3)) {
         score += PawnDevelopmentBlocked;
     }
-    if (bitboard_tst_bit(p->mask[White][Pawn], d2) && bitboard_tst_bit(p->mask[White][0], d3)) {
+    if (bitboard_tst_bit(p->mask[White][Pawn], d2) &&
+        bitboard_tst_bit(p->mask[White][0], d3)) {
         score += PawnDevelopmentBlocked;
     }
 
@@ -1197,10 +1209,12 @@ static int eval_development(const struct Position *p) {
      * Don't develop pieces to e6/d6 if they block a pawn
      */
 
-    if (bitboard_tst_bit(p->mask[Black][Pawn], e7) && bitboard_tst_bit(p->mask[Black][0], e6)) {
+    if (bitboard_tst_bit(p->mask[Black][Pawn], e7) &&
+        bitboard_tst_bit(p->mask[Black][0], e6)) {
         score -= PawnDevelopmentBlocked;
     }
-    if (bitboard_tst_bit(p->mask[Black][Pawn], d7) && bitboard_tst_bit(p->mask[Black][0], d6)) {
+    if (bitboard_tst_bit(p->mask[Black][Pawn], d7) &&
+        bitboard_tst_bit(p->mask[Black][0], d6)) {
         score -= PawnDevelopmentBlocked;
     }
 
@@ -1858,11 +1872,12 @@ void eval_init(const struct Position *p) {
     RootGamePhase = Middlegame;
     if (npmat >= 38) {
         bool devel = (p->castle != 0);
-        int backrank =
-            bitboard_count_bits((p->mask[White][Knight] | p->mask[White][Bishop]) &
-                      RankMask[0]) +
-            bitboard_count_bits((p->mask[Black][Knight] | p->mask[Black][Bishop]) &
-                      RankMask[7]);
+        int backrank = bitboard_count_bits(
+                           (p->mask[White][Knight] | p->mask[White][Bishop]) &
+                           RankMask[0]) +
+                       bitboard_count_bits(
+                           (p->mask[Black][Knight] | p->mask[Black][Bishop]) &
+                           RankMask[7]);
         if (backrank > 0)
             devel = true;
 

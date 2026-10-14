@@ -96,7 +96,8 @@ static void cmd_test_score(char *);
 static void cmd_set_search_depth(char *);
 
 static struct CommandEntry Commands[] = {
-    {"analyze", &cmd_analyze, false, false, "enter analyze mode (xboard)", NULL},
+    {"analyze", &cmd_analyze, false, false, "enter analyze mode (xboard)",
+     NULL},
     {"anno", &cmd_annotate, false, false, "annotate a game", NULL},
     {"bench", &cmd_benchmark, false, false, "run a benchmark", NULL},
     {"blunder", &blunder_check, false, false, "check for blunders", NULL},
@@ -106,7 +107,8 @@ static struct CommandEntry Commands[] = {
     {"conf", &cmd_conf, false, false, "load scoring config", NULL},
     {"conf-save", &cmd_save_conf, false, false, "save scoring config", NULL},
     {"d", &cmd_show, true, false, "display current position", NULL},
-    {"depth", &cmd_set_search_depth, false, false, "set maximum search depth", NULL},
+    {"depth", &cmd_set_search_depth, false, false, "set maximum search depth",
+     NULL},
     {"distribution", &cmd_show_distribution, true, false,
      "show terms of distribution", NULL},
     {"e", &cmd_show_eco, false, false, "show ECO code", NULL},
@@ -141,7 +143,8 @@ static struct CommandEntry Commands[] = {
      "run static evaluatior on EPD test suite", NULL},
     {"time", &cmd_xboard_time, true, false, "set time (xboard)", NULL},
     {"undo", &cmd_undo, true, true, "undo last move", NULL},
-    {"warranty", &cmd_show_warranty, true, false, "show terms of warranty", NULL},
+    {"warranty", &cmd_show_warranty, true, false, "show terms of warranty",
+     NULL},
     {"xboard", &cmd_set_xboard, false, false, "switch to xboard compatibility",
      NULL},
     {"?", &cmd_move_now, true, false, "move now", NULL},
@@ -498,7 +501,8 @@ void cmd_edit(char *args) {
 static void cmd_undo(char *args) {
     (void)args;
     if (CurrentPosition->ply > 0) {
-        dbase_undo_move(CurrentPosition, (CurrentPosition->actLog - 1)->gl_Move);
+        dbase_undo_move(CurrentPosition,
+                        (CurrentPosition->actLog - 1)->gl_Move);
     }
 }
 
@@ -687,7 +691,7 @@ static void cmd_benchmark(char *args) {
 
     end = utils_get_time();
 
-    elapsed = (end - start) / 100.0;
+    elapsed = (double)(end - start) / 100.0;
 
     print(0, "Nf3: %.2g secs, %g moves/sec\n", elapsed, cycles / elapsed);
 
@@ -695,7 +699,7 @@ static void cmd_benchmark(char *args) {
 }
 
 static BitBoard cmd_search_fully(struct Position *p, BitBoard cnt, int depth,
-                            heap_t heap) {
+                                 heap_t heap) {
     unsigned int i;
 
     if (depth <= 0) {
@@ -740,11 +744,11 @@ static void cmd_perft(char *args) {
 
     heap_free(heap);
 
-    double elapsed = (end - start) / 100.0;
-    double nps = cnt / elapsed;
+    double elapsed = (double)(end - start) / 100.0;
+    double nps = (double)cnt / elapsed;
 
-    print(0, "cmd_perft(%d): %lld terminal positions in %g secs (%g nps)\n", depth,
-          cnt, elapsed, nps);
+    print(0, "cmd_perft(%d): %lld terminal positions in %g secs (%g nps)\n",
+          depth, cnt, elapsed, nps);
 }
 
 static void cmd_load(char *args) {

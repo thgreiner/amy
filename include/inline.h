@@ -46,7 +46,9 @@ static const BitBoard ShiftDownMask = 0xffffffffffffff;
 static const BitBoard ShiftLeftMask = 0xfefefefefefefefe;
 static const BitBoard ShiftRightMask = 0x7f7f7f7f7f7f7f7f;
 
-static inline BitBoard bitboard_shift_up(BitBoard x) { return (x << 8) & ShiftUpMask; }
+static inline BitBoard bitboard_shift_up(BitBoard x) {
+    return (x << 8) & ShiftUpMask;
+}
 
 static inline BitBoard bitboard_shift_down(BitBoard x) {
     return (x >> 8) & ShiftDownMask;
@@ -116,7 +118,8 @@ static inline move_t dbase_make_move(int from, int to, int flags) {
 /**
  * Create a promotion move from from square, to square and flags.
  */
-static inline move_t dbase_make_promotion(int from, int to, int type, int flags) {
+static inline move_t dbase_make_promotion(int from, int to, int type,
+                                          int flags) {
     return (move_t)(from | (to << 6) | (type << M_PROMOTION_OFFSET) | flags);
 }
 

@@ -74,7 +74,7 @@ void searchio_header(void) {
 }
 
 void searchio_output(int depth, unsigned long time, int score, char *line,
-                  unsigned long nodes) {
+                     unsigned long nodes) {
     char time_as_text[16];
     char score_as_text[16];
 
@@ -104,25 +104,28 @@ void searchio_output(int depth, unsigned long time, int score, char *line,
                 short_line[idx] = '\0';
             }
             print_no_log(0, "%d %d %d %lu %s\n", depth, s, time, nodes,
-                       short_line);
+                         short_line);
             free(short_line);
         }
     }
 }
 
-void searchio_output_fail_high_low(int depth, unsigned long time, int isfailhigh,
-                             char *move, unsigned long nodes) {
+void searchio_output_fail_high_low(int depth, unsigned long time,
+                                   int isfailhigh, char *move,
+                                   unsigned long nodes) {
     char time_as_text[16];
 
     if (isfailhigh) {
         print(1, "%2d  %s     +++  %s\n", depth,
-              utils_format_time(time, time_as_text, sizeof(time_as_text)), move);
+              utils_format_time(time, time_as_text, sizeof(time_as_text)),
+              move);
         if (PostMode) {
             print_no_log(0, "%d 0 %d %lu %s!\n", depth, time, nodes, move);
         }
     } else {
         print(1, "%2d  %s     ---  %s\n", depth,
-              utils_format_time(time, time_as_text, sizeof(time_as_text)), move);
+              utils_format_time(time, time_as_text, sizeof(time_as_text)),
+              move);
         if (PostMode) {
             print_no_log(0, "%d 0 %d %lu %s?\n", depth, time, nodes, move);
         }

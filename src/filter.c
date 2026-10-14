@@ -113,7 +113,8 @@ void filter_quiescent_positions(char *file_name) {
                 pgn_emit_line(fout, &width, "%d. ", 1 + p->ply / 2);
             }
 
-            pgn_emit_line(fout, &width, "%s ", dbase_san(p, themove, san_buffer));
+            pgn_emit_line(fout, &width, "%s ",
+                          dbase_san(p, themove, san_buffer));
 
             last_position_was_quiet = true;
 

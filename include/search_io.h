@@ -34,7 +34,8 @@
 
 void searchio_header(void);
 void searchio_output(int depth, unsigned long time, int score, char *line,
-                  unsigned long nodes);
-void searchio_output_fail_high_low(int, unsigned long, int, char *, unsigned long);
+                     unsigned long nodes);
+void searchio_output_fail_high_low(int, unsigned long, int, char *,
+                                   unsigned long);
 
 #endif

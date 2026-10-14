@@ -56,8 +56,7 @@ static RECOGNIZER recog_knk;
 static RECOGNIZER recog_kbkp;
 static RECOGNIZER recog_knkp;
 
-static void recog_register(RECOGNIZER *funct, int white_sig,
-                               int black_sig) {
+static void recog_register(RECOGNIZER *funct, int white_sig, int black_sig) {
     Recognizers[CALCULATE_INDEX(white_sig, black_sig)] = funct;
 
     RecognizerAvailable[white_sig] |= (1 << black_sig);
@@ -83,17 +82,28 @@ void recog_init(void) {
      *                                       P  N  B  R  Q       P  N  B  R  Q
      */
 
-    recog_register(recog_kk, recog_sig(0, 0, 0, 0, 0), recog_sig(0, 0, 0, 0, 0));
-    recog_register(recog_kbk, recog_sig(0, 0, 1, 0, 0), recog_sig(0, 0, 0, 0, 0));
-    recog_register(recog_kbnk, recog_sig(0, 1, 1, 0, 0), recog_sig(0, 0, 0, 0, 0));
-    recog_register(recog_kbnk, recog_sig(0, 0, 1, 0, 0), recog_sig(0, 1, 0, 0, 0));
-    recog_register(recog_knk, recog_sig(0, 1, 0, 0, 0), recog_sig(0, 0, 0, 0, 0));
-    recog_register(recog_knk, recog_sig(0, 0, 0, 0, 0), recog_sig(0, 1, 0, 0, 0));
-    recog_register(recog_knk, recog_sig(0, 1, 0, 0, 0), recog_sig(0, 1, 0, 0, 0));
-    recog_register(recog_kbkp, recog_sig(0, 0, 1, 0, 0), recog_sig(1, 0, 0, 0, 0));
-    recog_register(recog_kbkp, recog_sig(1, 0, 1, 0, 0), recog_sig(0, 0, 0, 0, 0));
-    recog_register(recog_kbkp, recog_sig(1, 0, 1, 0, 0), recog_sig(1, 0, 0, 0, 0));
-    recog_register(recog_knkp, recog_sig(0, 1, 0, 0, 0), recog_sig(1, 0, 0, 0, 0));
+    recog_register(recog_kk, recog_sig(0, 0, 0, 0, 0),
+                   recog_sig(0, 0, 0, 0, 0));
+    recog_register(recog_kbk, recog_sig(0, 0, 1, 0, 0),
+                   recog_sig(0, 0, 0, 0, 0));
+    recog_register(recog_kbnk, recog_sig(0, 1, 1, 0, 0),
+                   recog_sig(0, 0, 0, 0, 0));
+    recog_register(recog_kbnk, recog_sig(0, 0, 1, 0, 0),
+                   recog_sig(0, 1, 0, 0, 0));
+    recog_register(recog_knk, recog_sig(0, 1, 0, 0, 0),
+                   recog_sig(0, 0, 0, 0, 0));
+    recog_register(recog_knk, recog_sig(0, 0, 0, 0, 0),
+                   recog_sig(0, 1, 0, 0, 0));
+    recog_register(recog_knk, recog_sig(0, 1, 0, 0, 0),
+                   recog_sig(0, 1, 0, 0, 0));
+    recog_register(recog_kbkp, recog_sig(0, 0, 1, 0, 0),
+                   recog_sig(1, 0, 0, 0, 0));
+    recog_register(recog_kbkp, recog_sig(1, 0, 1, 0, 0),
+                   recog_sig(0, 0, 0, 0, 0));
+    recog_register(recog_kbkp, recog_sig(1, 0, 1, 0, 0),
+                   recog_sig(1, 0, 0, 0, 0));
+    recog_register(recog_knkp, recog_sig(0, 1, 0, 0, 0),
+                   recog_sig(1, 0, 0, 0, 0));
 }
 
 int recog_probe(const struct Position *p, int *score) {

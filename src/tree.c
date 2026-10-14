@@ -45,7 +45,7 @@ static const char *MAGIC = "ATRE";
  * Allocate a tree node.
  */
 static tree_node_t *tree_allocate_node(void *key_data, size_t key_len,
-                                  void *value_data, size_t value_len) {
+                                       void *value_data, size_t value_len) {
     tree_node_t *node = safe_malloc(sizeof(tree_node_t));
 
     node->key_data = safe_malloc(key_len);
@@ -160,7 +160,8 @@ static tree_node_t *tree_rotate_left(tree_node_t *node) {
  */
 static tree_node_t *tree_rotate_right_full(tree_node_t *node) {
     tree_node_t *child = node->left_child;
-    if (tree_get_depth(child->right_child) > tree_get_depth(child->left_child)) {
+    if (tree_get_depth(child->right_child) >
+        tree_get_depth(child->left_child)) {
         child = tree_rotate_left(child);
         node->left_child = child;
     }
@@ -172,7 +173,8 @@ static tree_node_t *tree_rotate_right_full(tree_node_t *node) {
  */
 static tree_node_t *tree_rotate_left_full(tree_node_t *node) {
     tree_node_t *child = node->right_child;
-    if (tree_get_depth(child->left_child) > tree_get_depth(child->right_child)) {
+    if (tree_get_depth(child->left_child) >
+        tree_get_depth(child->right_child)) {
         child = tree_rotate_right(child);
         node->right_child = child;
     }
@@ -203,12 +205,13 @@ tree_node_t *tree_balance(tree_node_t *node) {
  * Add a node to the tree.
  */
 tree_node_t *tree_add_node(tree_node_t *node, void *key_data, size_t key_len,
-                      void *value_data, size_t value_len) {
+                           void *value_data, size_t value_len) {
     if (node == NULL) {
         return tree_allocate_node(key_data, key_len, value_data, value_len);
     }
 
-    int comparison = tree_cmp_keys(key_data, key_len, node->key_data, node->key_len);
+    int comparison =
+        tree_cmp_keys(key_data, key_len, node->key_data, node->key_len);
 
     if (comparison == 0) {
         node->value_data = safe_realloc(node->value_data, value_len);
@@ -220,10 +223,10 @@ tree_node_t *tree_add_node(tree_node_t *node, void *key_data, size_t key_len,
         return node;
     } else if (comparison < 0) {
         node->left_child = tree_add_node(node->left_child, key_data, key_len,
-                                    value_data, value_len);
+                                         value_data, value_len);
     } else {
         node->right_child = tree_add_node(node->right_child, key_data, key_len,
-                                     value_data, value_len);
+                                          value_data, value_len);
     }
     tree_update_depth(node);
 
@@ -234,13 +237,14 @@ tree_node_t *tree_add_node(tree_node_t *node, void *key_data, size_t key_len,
  * Lookup a value in the tree.
  */
 static void *tree_lookup_value_internal(tree_node_t *node, char *key_data,
-                                   size_t key_len, size_t *value_len,
-                                   int depth) {
+                                        size_t key_len, size_t *value_len,
+                                        int depth) {
     if (node == NULL) {
         return NULL;
     }
 
-    int comparison = tree_cmp_keys(key_data, key_len, node->key_data, node->key_len);
+    int comparison =
+        tree_cmp_keys(key_data, key_len, node->key_data, node->key_len);
 
     if (comparison == 0) {
         if (value_len != NULL) {
@@ -251,10 +255,10 @@ static void *tree_lookup_value_internal(tree_node_t *node, char *key_data,
         return buffer;
     } else if (comparison < 0) {
         return tree_lookup_value_internal(node->left_child, key_data, key_len,
-                                     value_len, depth + 1);
+                                          value_len, depth + 1);
     } else {
         return tree_lookup_value_internal(node->right_child, key_data, key_len,
-                                     value_len, depth + 1);
+                                          value_len, depth + 1);
     }
 }
 
@@ -264,7 +268,7 @@ static void *tree_lookup_value_internal(tree_node_t *node, char *key_data,
  * Use free() on the return value to free the memory of the copy.
  */
 void *tree_lookup_value(tree_node_t *node, void *key_data, size_t key_len,
-                   size_t *value_len) {
+                        size_t *value_len) {
     return tree_lookup_value_internal(node, key_data, key_len, value_len, 0);
 }
 

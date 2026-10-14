@@ -163,25 +163,25 @@ char *utils_format_count(unsigned long count, char *buffer, size_t len) {
     if (count < 1000) {
         snprintf(buffer, len, "%lu", count);
     } else if (count < 10000ull) {
-        double scaled = count * 1e-3;
+        double scaled = (double)count * 1e-3;
         snprintf(buffer, len, "%.2fk", scaled);
     } else if (count < 100000ull) {
-        double scaled = count * 1e-3;
+        double scaled = (double)count * 1e-3;
         snprintf(buffer, len, "%.1fk", scaled);
     } else if (count < 1000000ull) {
-        int scaled = (int)(count * 1e-3);
+        int scaled = (int)((double)count * 1e-3);
         snprintf(buffer, len, "%dk", scaled);
     } else if (count < 10000000ull) {
-        double scaled = count * 1e-6;
+        double scaled = (double)count * 1e-6;
         snprintf(buffer, len, "%.2fM", scaled);
     } else if (count < 100000000ull) {
-        double scaled = count * 1e-6;
+        double scaled = (double)count * 1e-6;
         snprintf(buffer, len, "%.1fM", scaled);
     } else if (count < 1000000000ull) {
-        int scaled = (int)(count * 1e-6);
+        int scaled = (int)((double)count * 1e-6);
         snprintf(buffer, len, "%dM", scaled);
     } else {
-        double scaled = count * 1e-9;
+        double scaled = (double)count * 1e-9;
         snprintf(buffer, len, "%.2fG", scaled);
     }
     return buffer;

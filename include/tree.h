@@ -48,9 +48,9 @@ struct TreeNode {
 typedef struct TreeNode tree_node_t;
 
 tree_node_t *tree_add_node(tree_node_t *node, void *key_data, size_t key_len,
-                      void *value_data, size_t value_len);
+                           void *value_data, size_t value_len);
 void *tree_lookup_value(tree_node_t *node, void *key_data, size_t key_len,
-                   size_t *value_len);
+                        size_t *value_len);
 void tree_free_node(tree_node_t *node);
 
 void tree_save(tree_node_t *node, FILE *fout);

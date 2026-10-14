@@ -216,8 +216,8 @@ static bool search_terminate(struct SearchData *sd) {
 
             if (buffer[0] == '.') {
                 print_no_log(0, "stat01: %d %ld %d %d %d\n",
-                           (CurTime - StartTime), TotalNodes, sd->depth,
-                           sd->nrootmoves - sd->movenum - 1, sd->nrootmoves);
+                             (CurTime - StartTime), TotalNodes, sd->depth,
+                             sd->nrootmoves - sd->movenum - 1, sd->nrootmoves);
             }
 
             theCommand = cmd_parse_input(buffer);
@@ -415,10 +415,12 @@ static int search_check_extend(struct Position *p) {
                     cnt += bitboard_count_bits(tmp2);
                 }
                 if (p->turn == White && (i - 8) > 0 &&
-                    bitboard_tst_bit(p->mask[White][Pawn], i - 8) && bitboard_tst_bit(def, i - 8))
+                    bitboard_tst_bit(p->mask[White][Pawn], i - 8) &&
+                    bitboard_tst_bit(def, i - 8))
                     cnt++;
                 if (p->turn == Black && (i + 8) < 64 &&
-                    bitboard_tst_bit(p->mask[Black][Pawn], i + 8) && bitboard_tst_bit(def, i + 8))
+                    bitboard_tst_bit(p->mask[Black][Pawn], i + 8) &&
+                    bitboard_tst_bit(def, i + 8))
                     cnt++;
                 if (cnt > 1)
                     return nd;
@@ -462,8 +464,8 @@ static int search_score_move(struct Position *p, move_t move) {
  * Store the result of the full width search
  */
 
-static void search_store_result(struct SearchData *sd, int score, int alpha, int beta,
-                        move_t move, int depth, int threat) {
+static void search_store_result(struct SearchData *sd, int score, int alpha,
+                                int beta, move_t move, int depth, int threat) {
     struct Position *p = sd->position;
 
     if (!(move & M_TACTICAL) && score > alpha) {
@@ -472,8 +474,8 @@ static void search_store_result(struct SearchData *sd, int score, int alpha, int
 
     ht_store(p->hkey, score, alpha, beta, move, depth, threat, sd->ply
 #if MP
-            ,
-            sd->localHashTable
+             ,
+             sd->localHashTable
 #endif
     );
 }
@@ -578,10 +580,10 @@ EXIT:
  */
 
 static int search_negascout(struct SearchData *sd, int alpha, int beta,
-                     const int depth, int node_type
+                            const int depth, int node_type
 #if MP
-                     ,
-                     int exclusiveP
+                            ,
+                            int exclusiveP
 #endif /* MP  */
 ) {
     struct Position *p = sd->position;
@@ -645,9 +647,10 @@ static int search_negascout(struct SearchData *sd, int alpha, int beta,
     HTry++;
 #if MP
     switch (ht_probe(p->hkey, &tmp, depth, &(st->st_hashmove), &threat, sd->ply,
-                    exclusiveP, sd->localHashTable))
+                     exclusiveP, sd->localHashTable))
 #else
-    switch (ht_probe(p->hkey, &tmp, depth, &(st->st_hashmove), &threat, sd->ply))
+    switch (
+        ht_probe(p->hkey, &tmp, depth, &(st->st_hashmove), &threat, sd->ply))
 #endif /* MP */
     {
     case ExactScore:
@@ -734,7 +737,8 @@ static int search_negascout(struct SearchData *sd, int alpha, int beta,
             nms = -search_quies(sd, -beta, -beta + 1, 0);
         } else {
 #if MP
-            nms = -search_negascout(sd, -beta, -beta + 1, next_depth, AllNode, 0);
+            nms =
+                -search_negascout(sd, -beta, -beta + 1, next_depth, AllNode, 0);
 #else
             nms = -search_negascout(sd, -beta, -beta + 1, next_depth, AllNode);
 #endif
@@ -753,10 +757,10 @@ static int search_negascout(struct SearchData *sd, int alpha, int beta,
                 } else {
 #if MP
                     nms = search_negascout(sd, beta - 1, beta, next_depth,
-                                    CutNodeNoNull, 0);
+                                           CutNodeNoNull, 0);
 #else
                     nms = search_negascout(sd, beta - 1, beta, next_depth,
-                                    CutNodeNoNull);
+                                           CutNodeNoNull);
 #endif
                 }
 
@@ -833,7 +837,8 @@ static int search_negascout(struct SearchData *sd, int alpha, int beta,
 
         if ((move & M_CAPTURE) && (lmove & M_CAPTURE) &&
             M_TO(move) == M_TO(lmove) &&
-            search_is_recapture(p->piece[M_TO(move)], (p->actLog - 1)->gl_Piece)) {
+            search_is_recapture(p->piece[M_TO(move)],
+                                (p->actLog - 1)->gl_Piece)) {
             RCExt += 1;
             next_depth += ExtendRecapture[TYPE(p->piece[M_TO(move)])];
         }
@@ -892,7 +897,8 @@ static int search_negascout(struct SearchData *sd, int alpha, int beta,
 
             else if (next_depth >= 0 && next_depth < OnePly &&
                      !dbase_is_checking_move(p, move)) {
-                tmp = optimistic + search_score_move(p, move) + (3 * Value[Pawn]);
+                tmp =
+                    optimistic + search_score_move(p, move) + (3 * Value[Pawn]);
                 if (tmp <= alpha) {
                     if (tmp > best) {
                         best = tmp;
@@ -905,7 +911,8 @@ static int search_negascout(struct SearchData *sd, int alpha, int beta,
 #if RAZORING
             else if (next_depth >= OnePly && next_depth < 2 * OnePly &&
                      !dbase_is_checking_move(p, move)) {
-                tmp = optimistic + search_score_move(p, move) + (6 * Value[Pawn]);
+                tmp =
+                    optimistic + search_score_move(p, move) + (6 * Value[Pawn]);
                 if (tmp <= alpha) {
                     next_depth -= OnePly;
                 }
@@ -939,26 +946,29 @@ static int search_negascout(struct SearchData *sd, int alpha, int beta,
             } else if (bestm != M_NONE && !was_futile) {
 #if MP
                 tmp = -search_negascout(sd, -talpha - 1, -talpha, next_depth,
-                                 next_type, bestm != M_NONE);
+                                        next_type, bestm != M_NONE);
                 if (tmp != ON_EVALUATION && tmp > talpha && tmp < beta) {
                     tmp = -search_negascout(sd, -beta, -tmp, next_depth,
-                                     node_type == PVNode ? PVNode : AllNode,
-                                     bestm != M_NONE);
+                                            node_type == PVNode ? PVNode
+                                                                : AllNode,
+                                            bestm != M_NONE);
                 }
 #else
-                tmp =
-                    -search_negascout(sd, -talpha - 1, -talpha, next_depth, next_type);
+                tmp = -search_negascout(sd, -talpha - 1, -talpha, next_depth,
+                                        next_type);
                 if (tmp > talpha && tmp < beta) {
                     tmp = -search_negascout(sd, -beta, -tmp, next_depth,
-                                     node_type == PVNode ? PVNode : AllNode);
+                                            node_type == PVNode ? PVNode
+                                                                : AllNode);
                 }
 #endif /* MP */
             } else {
 #if MP
-                tmp = -search_negascout(sd, -beta, -talpha, next_depth, next_type,
-                                 bestm != M_NONE);
+                tmp = -search_negascout(sd, -beta, -talpha, next_depth,
+                                        next_type, bestm != M_NONE);
 #else
-                tmp = -search_negascout(sd, -beta, -talpha, next_depth, next_type);
+                tmp = -search_negascout(sd, -beta, -talpha, next_depth,
+                                        next_type);
 #endif /* MP */
             }
 
@@ -975,7 +985,7 @@ static int search_negascout(struct SearchData *sd, int alpha, int beta,
                  */
                 heap_append(sd->deferred_heap, move);
                 heap_append(sd->deferred_heap,
-                               next_depth + DEFERRED_DEPTH_OFFSET);
+                            next_depth + DEFERRED_DEPTH_OFFSET);
             } else {
 #endif /* MP */
 
@@ -988,7 +998,8 @@ static int search_negascout(struct SearchData *sd, int alpha, int beta,
                         next_put_killer(sd, move);
                         sd->counterTab[p->turn][lmove & 4095] = move;
                     }
-                    search_store_result(sd, tmp, alpha, beta, move, depth, threat);
+                    search_store_result(sd, tmp, alpha, beta, move, depth,
+                                        threat);
                     best = tmp;
                     goto EXIT;
                 }
@@ -1030,7 +1041,8 @@ static int search_negascout(struct SearchData *sd, int alpha, int beta,
 
         dbase_do_move(p, move);
 
-        tmp = -search_negascout(sd, -talpha - 1, -talpha, next_depth, next_type, 0);
+        tmp = -search_negascout(sd, -talpha - 1, -talpha, next_depth, next_type,
+                                0);
 
         if (tmp == ON_EVALUATION) {
             printf("Oops...\n");
@@ -1038,7 +1050,7 @@ static int search_negascout(struct SearchData *sd, int alpha, int beta,
 
         if (tmp > talpha && tmp < beta) {
             tmp = -search_negascout(sd, -beta, -talpha, next_depth,
-                             node_type == PVNode ? PVNode : AllNode, 0);
+                                    node_type == PVNode ? PVNode : AllNode, 0);
         }
 
         dbase_undo_move(p, move);
@@ -1105,7 +1117,7 @@ EXIT:
  * print the SAN of a move prefixed by the move number.
  */
 static char *search_numbered_san(struct Position *p, int move, char *buffer,
-                         size_t len) {
+                                 size_t len) {
     char san_buffer[16];
     if (p->turn == White)
         snprintf(buffer, len, "%d. %s", 1 + (p->ply + 1) / 2,
@@ -1213,7 +1225,8 @@ static int gaps[] = {57, 23, 10, 4, 1};
  * and sorts the remaining moves by number of nodes searched
  * in decreasing order.
  */
-static void search_resort_moves_list(int cnt, move_t *mvs, unsigned long *nodes) {
+static void search_resort_moves_list(int cnt, move_t *mvs,
+                                     unsigned long *nodes) {
     if (cnt <= 0)
         return;
 
@@ -1288,12 +1301,12 @@ static void *search_iterate_int(void *x) {
                 char time_buffer[16];
                 char san_buffer[32];
 
-                print_no_log(
-                    2, "%2d  %s   %2d/%2d  %s      \r", sd->depth,
-                    utils_format_time(CurTime - StartTime, time_buffer,
-                               sizeof(time_buffer)),
-                    sd->movenum + 1, sd->nrootmoves,
-                    search_numbered_san(p, move, san_buffer, sizeof(san_buffer)));
+                print_no_log(2, "%2d  %s   %2d/%2d  %s      \r", sd->depth,
+                             utils_format_time(CurTime - StartTime, time_buffer,
+                                               sizeof(time_buffer)),
+                             sd->movenum + 1, sd->nrootmoves,
+                             search_numbered_san(p, move, san_buffer,
+                                                 sizeof(san_buffer)));
             }
 
             dbase_do_move(p, move);
@@ -1305,10 +1318,10 @@ static void *search_iterate_int(void *x) {
                     is_alternate ? (alpha - ALTERNATE_DELTA) : alpha;
 #if MP
                 tmp = -search_negascout(sd, -beta, -effective_alpha, next_depth,
-                                 is_pv ? PVNode : CutNode, 0);
+                                        is_pv ? PVNode : CutNode, 0);
 #else
                 tmp = -search_negascout(sd, -beta, -effective_alpha, next_depth,
-                                 is_pv ? PVNode : CutNode);
+                                        is_pv ? PVNode : CutNode);
 #endif
                 if (is_alternate) {
                     sd->alternate_score = tmp;
@@ -1333,7 +1346,8 @@ static void *search_iterate_int(void *x) {
                     char san_buffer[32];
                     searchio_output_fail_high_low(
                         sd->depth, CurTime - StartTime, false,
-                        search_numbered_san(p, move, san_buffer, sizeof(san_buffer)),
+                        search_numbered_san(p, move, san_buffer,
+                                            sizeof(san_buffer)),
                         sd->nodes_cnt + sd->qnodes_cnt);
                 }
 
@@ -1345,9 +1359,11 @@ static void *search_iterate_int(void *x) {
                 dbase_do_move(p, move);
                 if (next_depth >= 0) {
 #if MP
-                    tmp = -search_negascout(sd, -beta, -alpha, next_depth, PVNode, 0);
+                    tmp = -search_negascout(sd, -beta, -alpha, next_depth,
+                                            PVNode, 0);
 #else
-                    tmp = -search_negascout(sd, -beta, -alpha, next_depth, PVNode);
+                    tmp = -search_negascout(sd, -beta, -alpha, next_depth,
+                                            PVNode);
 #endif
                 } else {
                     tmp = -search_quies(sd, -beta, -alpha, 0);
@@ -1363,10 +1379,11 @@ static void *search_iterate_int(void *x) {
                     dbase_do_move(p, move);
                     if (next_depth >= 0) {
 #if MP
-                        tmp = -search_negascout(sd, -beta, -alpha, next_depth, PVNode,
-                                         0);
+                        tmp = -search_negascout(sd, -beta, -alpha, next_depth,
+                                                PVNode, 0);
 #else
-                        tmp = -search_negascout(sd, -beta, -alpha, next_depth, PVNode);
+                        tmp = -search_negascout(sd, -beta, -alpha, next_depth,
+                                                PVNode);
 #endif
                     } else {
                         tmp = -search_quies(sd, -beta, -alpha, 0);
@@ -1408,7 +1425,8 @@ static void *search_iterate_int(void *x) {
                     char san_buffer[32];
                     searchio_output_fail_high_low(
                         sd->depth, CurTime - StartTime, true,
-                        search_numbered_san(p, mvs[0], san_buffer, sizeof(san_buffer)),
+                        search_numbered_san(p, mvs[0], san_buffer,
+                                            sizeof(san_buffer)),
                         sd->nodes_cnt + sd->qnodes_cnt);
                 }
 
@@ -1418,9 +1436,11 @@ static void *search_iterate_int(void *x) {
                 dbase_do_move(p, move);
                 if (next_depth >= 0) {
 #if MP
-                    tmp = -search_negascout(sd, -beta, -alpha, next_depth, PVNode, 0);
+                    tmp = -search_negascout(sd, -beta, -alpha, next_depth,
+                                            PVNode, 0);
 #else
-                    tmp = -search_negascout(sd, -beta, -alpha, next_depth, PVNode);
+                    tmp = -search_negascout(sd, -beta, -alpha, next_depth,
+                                            PVNode);
 #endif
                 } else {
                     tmp = -search_quies(sd, -beta, -alpha, 0);
@@ -1436,10 +1456,11 @@ static void *search_iterate_int(void *x) {
                     dbase_do_move(p, move);
                     if (next_depth >= 0) {
 #if MP
-                        tmp = -search_negascout(sd, -beta, -alpha, next_depth, PVNode,
-                                         0);
+                        tmp = -search_negascout(sd, -beta, -alpha, next_depth,
+                                                PVNode, 0);
 #else
-                        tmp = -search_negascout(sd, -beta, -alpha, next_depth, PVNode);
+                        tmp = -search_negascout(sd, -beta, -alpha, next_depth,
+                                                PVNode);
 #endif
                     } else {
                         tmp = -search_quies(sd, -beta, -alpha, 0);
@@ -1467,14 +1488,14 @@ static void *search_iterate_int(void *x) {
                     snprintf(AnalysisLine, sizeof(AnalysisLine),
                              "%2d: (%7s) %s", sd->depth,
                              utils_format_score(sd->best_score, score_as_text,
-                                         sizeof(score_as_text)),
+                                                sizeof(score_as_text)),
                              BestLine);
 
                     if (PrintOK) {
-                        searchio_output(sd->depth, CurTime - StartTime,
-                                     (p->turn) ? -sd->best_score
-                                               : sd->best_score,
-                                     BestLine, sd->nodes_cnt + sd->qnodes_cnt);
+                        searchio_output(
+                            sd->depth, CurTime - StartTime,
+                            (p->turn) ? -sd->best_score : sd->best_score,
+                            BestLine, sd->nodes_cnt + sd->qnodes_cnt);
 
                         any_pv_printed = true;
                     }
@@ -1500,8 +1521,8 @@ static void *search_iterate_int(void *x) {
                                        (sd->best_score < -CMLIMIT ||
                                         sd->best_score > CMLIMIT)))) {
             searchio_output(sd->depth, CurTime - StartTime,
-                         (p->turn) ? -sd->best_score : sd->best_score, BestLine,
-                         sd->nodes_cnt + sd->qnodes_cnt);
+                            (p->turn) ? -sd->best_score : sd->best_score,
+                            BestLine, sd->nodes_cnt + sd->qnodes_cnt);
 
             any_pv_printed = true;
         }
@@ -1557,7 +1578,8 @@ static void *search_iterate_int(void *x) {
             NodesPerCheck =
                 (elapsed == 0.0)
                     ? 1000
-                    : (int)((sd->nodes_cnt + sd->qnodes_cnt) / elapsed / 10);
+                    : (int)((double)(sd->nodes_cnt + sd->qnodes_cnt) / elapsed /
+                            10.0);
         }
 
         if (SearchMode == Puzzling && sd->depth > 4)
@@ -1584,14 +1606,14 @@ final:
         if (pv_valid && !any_pv_printed) {
             // Make sure there is a PV printed
             searchio_output(sd->depth, CurTime - StartTime,
-                         (p->turn) ? -sd->best_score : sd->best_score, BestLine,
-                         sd->nodes_cnt + sd->qnodes_cnt);
+                            (p->turn) ? -sd->best_score : sd->best_score,
+                            BestLine, sd->nodes_cnt + sd->qnodes_cnt);
         }
 
         char buf1[16], buf2[16], buf3[16], buf4[16], buf5[16], buf6[16],
             buf7[16];
 
-        unsigned long nps = (unsigned long)(TotalNodes / elapsed);
+        unsigned long nps = (unsigned long)((double)TotalNodes / elapsed);
 
         print(2, "Nodes = %s, QPerc: %d %%, time = %g secs, %s nodes/s\n",
               utils_format_count(TotalNodes, buf1, sizeof(buf1)),
@@ -1613,11 +1635,14 @@ final:
               "Hashing: Trans: %s/%s = %d %%   Pawn: %s/%s = %d %%\n"
               "         Eval: %s/%s = %d %%\n",
               utils_format_count(HHit, buf1, sizeof(buf1)),
-              utils_format_count(HTry, buf2, sizeof(buf2)), utils_percentage(HHit, HTry),
+              utils_format_count(HTry, buf2, sizeof(buf2)),
+              utils_percentage(HHit, HTry),
               utils_format_count(PHit, buf3, sizeof(buf3)),
-              utils_format_count(PTry, buf4, sizeof(buf4)), utils_percentage(PHit, PTry),
+              utils_format_count(PTry, buf4, sizeof(buf4)),
+              utils_percentage(PHit, PTry),
               utils_format_count(SHit, buf5, sizeof(buf5)),
-              utils_format_count(STry, buf6, sizeof(buf6)), utils_percentage(SHit, STry));
+              utils_format_count(STry, buf6, sizeof(buf6)),
+              utils_percentage(SHit, STry));
 
         if (EGTBProbe != 0) {
             print(2, "EGTB Hits/Probes = %s/%s\n",
@@ -1710,7 +1735,7 @@ static void search_start_helpers(struct Position *p) {
  *  alternate_score_ptr: a pointer to return the alternate score in
  */
 int search_iterate(struct Position *p, int *score_ptr, move_t alternate_move,
-            int *alternate_score_ptr) {
+                   int *alternate_score_ptr) {
     float soft, hard;
     int cnt;
     struct SearchData *sd;

@@ -42,8 +42,8 @@
 
 #define THRESHOLD 2000
 
-move_t blunder_get_best_move_from_comment(const char *comment, struct Position *p,
-                                  char *eval_buf) {
+move_t blunder_get_best_move_from_comment(const char *comment,
+                                          struct Position *p, char *eval_buf) {
     const char *ptr = comment;
 
     move_t best_move = M_NONE;
@@ -157,8 +157,8 @@ void blunder_check(char *file_name) {
                 int search_evaluation;
                 int alternate_evaluation;
 
-                move_t optimal_move = search_iterate(p, &search_evaluation, best_move,
-                                              &alternate_evaluation);
+                move_t optimal_move = search_iterate(
+                    p, &search_evaluation, best_move, &alternate_evaluation);
                 int score_diff = search_evaluation - alternate_evaluation;
 
                 if (optimal_move != best_move && score_diff >= 1500) {
@@ -174,8 +174,8 @@ void blunder_check(char *file_name) {
                     print(1, ">>> score diff: %d\n",
                           search_evaluation - alternate_evaluation);
 
-                    pgn_emit_line(fout, &width, "{ q=%s; p=[%s:100] } ", evalbuf,
-                                dbase_san(p, optimal_move, sanbuf));
+                    pgn_emit_line(fout, &width, "{ q=%s; p=[%s:100] } ",
+                                  evalbuf, dbase_san(p, optimal_move, sanbuf));
                 } else {
                     pgn_emit_line(fout, &width, "{%s} ", comment);
                 }
@@ -197,7 +197,8 @@ void blunder_check(char *file_name) {
                 pgn_emit_line(fout, &width, "%d. ", 1 + p->ply / 2);
             }
 
-            pgn_emit_line(fout, &width, "%s ", dbase_san(p, themove, san_buffer));
+            pgn_emit_line(fout, &width, "%s ",
+                          dbase_san(p, themove, san_buffer));
 
             dbase_do_move(p, themove);
             last_move = themove;

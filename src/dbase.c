@@ -169,7 +169,8 @@ static void dbase_debug_engine(struct Position *p) {
  * Generate attacks for a piece "type" of "color" on square "square"
  */
 
-static void dbase_atk_set(struct Position *p, Piece type, Color color, Square square) {
+static void dbase_atk_set(struct Position *p, Piece type, Color color,
+                          Square square) {
     BitBoard attacks;
 
     switch (type) {
@@ -222,7 +223,8 @@ static void dbase_atk_clr(struct Position *p, Square square) {
  * been removed
  */
 
-static void dbase_gain_attack(struct Position *p, const Square from, const Square to) {
+static void dbase_gain_attack(struct Position *p, const Square from,
+                              const Square to) {
     signed char *nsq = NextSQ[from];
     int sq = to;
     const BitBoard all = p->mask[0][0] | p->mask[1][0];
@@ -246,7 +248,7 @@ static void dbase_gain_attack(struct Position *p, const Square from, const Squar
  */
 
 static void dbase_loose_attack(struct Position *p, const Square from,
-                        const Square to) {
+                               const Square to) {
     signed char *nsq = NextSQ[from];
     int sq = to;
     const BitBoard all = p->mask[0][0] | p->mask[1][0];
@@ -885,10 +887,13 @@ void dbase_gen_to(struct Position *p, Square square, heap_t heap) {
         int i = bitboard_find_set_bit(tmp);
         tmp &= tmp - 1;
         if (TYPE(p->piece[i]) == Pawn && dbase_is_promo_square(square)) {
-            heap_append(heap, dbase_make_promotion(i, square, Queen, M_CAPTURE));
-            heap_append(heap, dbase_make_promotion(i, square, Knight, M_CAPTURE));
+            heap_append(heap,
+                        dbase_make_promotion(i, square, Queen, M_CAPTURE));
+            heap_append(heap,
+                        dbase_make_promotion(i, square, Knight, M_CAPTURE));
             heap_append(heap, dbase_make_promotion(i, square, Rook, M_CAPTURE));
-            heap_append(heap, dbase_make_promotion(i, square, Bishop, M_CAPTURE));
+            heap_append(heap,
+                        dbase_make_promotion(i, square, Bishop, M_CAPTURE));
         } else {
             heap_append(heap, dbase_make_move(i, square, M_CAPTURE));
         }
@@ -933,13 +938,13 @@ void dbase_gen_from(struct Position *p, Square square, heap_t heap) {
             if (p->castle & CastleMask[p->turn][0]) {
                 /* OK, we might castle king p->turn */
                 heap_append(heap, dbase_make_move(p->turn == White ? e1 : e8,
-                                               p->turn == White ? g1 : g8,
-                                               M_SCASTLE));
+                                                  p->turn == White ? g1 : g8,
+                                                  M_SCASTLE));
             }
             if (p->castle & CastleMask[p->turn][1]) {
                 heap_append(heap, dbase_make_move(p->turn == White ? e1 : e8,
-                                               p->turn == White ? c1 : c8,
-                                               M_LCASTLE));
+                                                  p->turn == White ? c1 : c8,
+                                                  M_LCASTLE));
             }
         }
     } else {
@@ -1778,7 +1783,8 @@ move_t dbase_parse_san(struct Position *p, char *san) {
  * Parse a move string (in SAN) against supplied move list
  */
 
-move_t dbase_parse_san_list(char *san, Color side, move_t *mvs, int cnt, int *pmap) {
+move_t dbase_parse_san_list(char *san, Color side, move_t *mvs, int cnt,
+                            int *pmap) {
     int tp = Neutral;
     int frk = -1, ffl = -1, trk = -1, tfl = -1;
     int pro = 0;
