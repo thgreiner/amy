@@ -42,7 +42,7 @@
 
 #define THRESHOLD 200
 
-void FilterQuiescentPositions(char *file_name) {
+void filter_quiescent_positions(char *file_name) {
     struct PGNHeader header;
     char move[12];
     char comment[2048];

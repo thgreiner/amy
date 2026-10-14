@@ -115,7 +115,7 @@ static struct CommandEntry Commands[] = {
     {"epd", &SetEPD, false, false, "set position in EPD", NULL},
     {"edit", &Edit, false, false, "edit position (xboard!)", NULL},
     {"exit", &StopAnalyze, true, true, "exit analyze mode (xboard)", NULL},
-    {"filter", &FilterQuiescentPositions, false, false,
+    {"filter", &filter_quiescent_positions, false, false,
      "filter quiescent positions", NULL},
     {"flatten", &Flatten, true, false, "flatten book", NULL},
     {"force", &Force, true, false, "switch force mode (xboard)", NULL},
