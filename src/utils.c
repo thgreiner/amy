@@ -56,7 +56,7 @@ int Verbosity = 9;
 /**
  * Open a log file, remember fp in global variable LogFile
  */
-void open_log_file(char *name) {
+void utils_open_log_file(char *name) {
     if (LogFile) {
         fclose(LogFile);
     }
@@ -99,7 +99,7 @@ void CDECL print_no_log(int vb, char *fmt, ...) {
 /**
  * Read a line from stdin.
  */
-int read_line(char *buffer, int cnt) {
+int utils_read_line(char *buffer, int cnt) {
     return fgets(buffer, cnt, stdin) != NULL;
 }
 
@@ -190,7 +190,7 @@ char *utils_format_count(unsigned long count, char *buffer, size_t len) {
 /**
  * Get the current time.
  */
-unsigned long get_time(void) {
+unsigned long utils_get_time(void) {
 #if HAVE_GETTIMEOFDAY
     static struct timeval timeval;
 
@@ -208,7 +208,7 @@ unsigned long get_time(void) {
 /**
  * Create a filename for a temporary file
  */
-void get_tmp_file_name(char *file_name, size_t len) {
+void utils_get_tmp_file_name(char *file_name, size_t len) {
     for (int cnt = 0;; cnt++) {
         int result;
         struct stat dummy;
@@ -223,7 +223,7 @@ void get_tmp_file_name(char *file_name, size_t len) {
 /**
  * Check if we can read from stdin without blocking.
  */
-int input_ready(void) {
+int utils_input_ready(void) {
 #if HAVE_SELECT
     fd_set rfd;
     struct timeval timeout;
@@ -322,10 +322,10 @@ char *utils_next_token(char **string, const char *delim) {
 }
 
 /**
- * Returns the ratio of dividend / divisor as percentage.
+ * Returns the ratio of dividend / divisor as utils_percentage.
  * Handles some edge cases for convenience.
  */
-int percentage(unsigned long dividend, unsigned long divisor) {
+int utils_percentage(unsigned long dividend, unsigned long divisor) {
     if (dividend == 0) {
         return 0;
     }
@@ -338,7 +338,7 @@ int percentage(unsigned long dividend, unsigned long divisor) {
     return (int)(ratio * 100.0 + 0.5);
 }
 
-char *strip(char *buffer) {
+char *utils_strip(char *buffer) {
     char *start = buffer;
     while (*start == ' ') {
         start++;

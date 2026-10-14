@@ -170,7 +170,7 @@ int main(int argc, char *argv[]) {
     setbuf(stdin, NULL);
 #endif
 
-    open_log_file("Amy.log");
+    utils_open_log_file("Amy.log");
 
     movedata_init();
 
@@ -200,7 +200,7 @@ int main(int argc, char *argv[]) {
     print(0, "\n");
 
     /* Ensure true random behavior. */
-    random_init(get_time());
+    random_init(utils_get_time());
 
     state_machine_run();
 

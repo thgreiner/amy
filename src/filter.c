@@ -94,7 +94,7 @@ void filter_quiescent_positions(char *file_name) {
             if (last_position_was_quiet) {
                 count_comments++;
 
-                char *stripped_comment = strip(comment);
+                char *stripped_comment = utils_strip(comment);
                 pgn_emit_line(fout, &width, "{ %s }", stripped_comment);
 
                 char eval_buf[16];

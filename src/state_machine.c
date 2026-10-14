@@ -77,7 +77,7 @@ void state_machine_run(void) {
                       (CurrentPosition->ply / 2) + 1);
             }
 
-            if (!read_line(InputBuffer, 1023)) {
+            if (!utils_read_line(InputBuffer, 1023)) {
                 State = STATE_END;
             } else {
                 struct Command *command = cmd_parse_input(InputBuffer);

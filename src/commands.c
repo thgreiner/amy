@@ -406,7 +406,7 @@ void cmd_newgame(char *args) {
     /*
      * Create a new save file.
      */
-    get_tmp_file_name(AutoSaveFileName, sizeof(AutoSaveFileName));
+    utils_get_tmp_file_name(AutoSaveFileName, sizeof(AutoSaveFileName));
 
     ForceMode = false;
     dbase_free_position(CurrentPosition);
@@ -437,7 +437,7 @@ void cmd_edit(char *args) {
     while (editing) {
         int sq;
 
-        if (!read_line(buffer, 256))
+        if (!utils_read_line(buffer, 256))
             break;
 
         sq = (buffer[1] - 'a') + 8 * (buffer[2] - '1');
@@ -678,14 +678,14 @@ static void cmd_benchmark(char *args) {
 
     p = dbase_initial_position();
 
-    start = get_time();
+    start = utils_get_time();
 
     for (i = cycles; i > 0; i--) {
         dbase_do_move(p, move);
         dbase_undo_move(p, move);
     }
 
-    end = get_time();
+    end = utils_get_time();
 
     elapsed = (end - start) / 100.0;
 
@@ -734,9 +734,9 @@ static void cmd_perft(char *args) {
     BitBoard cnt = 0;
     heap_t heap = heap_allocate();
 
-    unsigned long start = get_time();
+    unsigned long start = utils_get_time();
     cnt = cmd_search_fully(CurrentPosition, cnt, depth, heap);
-    unsigned long end = get_time();
+    unsigned long end = utils_get_time();
 
     heap_free(heap);
 

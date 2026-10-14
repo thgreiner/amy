@@ -194,7 +194,7 @@ static int search_negascout(struct SearchData *, int, int, int, int);
  */
 static bool search_terminate(struct SearchData *sd) {
     if ((sd->nodes_cnt + sd->qnodes_cnt) > sd->check_nodes_cnt) {
-        unsigned long now = get_time();
+        unsigned long now = utils_get_time();
 
         sd->check_nodes_cnt = sd->nodes_cnt + sd->qnodes_cnt + NodesPerCheck;
         if (AbortSearch)
@@ -204,11 +204,11 @@ static bool search_terminate(struct SearchData *sd) {
         if (CurTime > (StartTime + ONE_SECOND))
             PrintOK = true;
 
-        if (sd->master && input_ready()) {
+        if (sd->master && utils_input_ready()) {
             char buffer[64];
             struct Command *theCommand;
 
-            read_line(buffer, 64);
+            utils_read_line(buffer, 64);
 
             /*
              * the '.' command can only be handled here
@@ -1545,7 +1545,7 @@ static void *search_iterate_int(void *x) {
             }
         */
 
-        CurTime = get_time();
+        CurTime = utils_get_time();
 
         if (sd->depth > 3) {
             /*
@@ -1595,7 +1595,7 @@ final:
 
         print(2, "Nodes = %s, QPerc: %d %%, time = %g secs, %s nodes/s\n",
               utils_format_count(TotalNodes, buf1, sizeof(buf1)),
-              percentage(sd->qnodes_cnt, sd->nodes_cnt + sd->qnodes_cnt),
+              utils_percentage(sd->qnodes_cnt, sd->nodes_cnt + sd->qnodes_cnt),
               elapsed, utils_format_count(nps, buf2, sizeof(buf2)));
 
         print(2,
@@ -1613,11 +1613,11 @@ final:
               "Hashing: Trans: %s/%s = %d %%   Pawn: %s/%s = %d %%\n"
               "         Eval: %s/%s = %d %%\n",
               utils_format_count(HHit, buf1, sizeof(buf1)),
-              utils_format_count(HTry, buf2, sizeof(buf2)), percentage(HHit, HTry),
+              utils_format_count(HTry, buf2, sizeof(buf2)), utils_percentage(HHit, HTry),
               utils_format_count(PHit, buf3, sizeof(buf3)),
-              utils_format_count(PTry, buf4, sizeof(buf4)), percentage(PHit, PTry),
+              utils_format_count(PTry, buf4, sizeof(buf4)), utils_percentage(PHit, PTry),
               utils_format_count(SHit, buf5, sizeof(buf5)),
-              utils_format_count(STry, buf6, sizeof(buf6)), percentage(SHit, STry));
+              utils_format_count(STry, buf6, sizeof(buf6)), utils_percentage(SHit, STry));
 
         if (EGTBProbe != 0) {
             print(2, "EGTB Hits/Probes = %s/%s\n",
@@ -1717,7 +1717,7 @@ int search_iterate(struct Position *p, int *score_ptr, move_t alternate_move,
 
     FHTime = 0;
 
-    StartTime = get_time();
+    StartTime = utils_get_time();
     CurTime = StartTime;
     WallTimeStart = StartTime;
 

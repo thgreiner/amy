@@ -611,10 +611,10 @@ void ht_show_statistics(void) {
 
     print(1, "Hashtable 1:  entries = %s, use = %s (%d %%)\n",
           utils_format_count(i, buf1, sizeof(buf1)),
-          utils_format_count(cnt, buf2, sizeof(buf2)), percentage(cnt, i));
+          utils_format_count(cnt, buf2, sizeof(buf2)), utils_percentage(cnt, i));
     print(1, "              store failed = %s (%d %%)\n",
           utils_format_count(HTStoreFailed, buf1, sizeof(buf1)),
-          percentage(HTStoreFailed, HTStoreTried));
+          utils_percentage(HTStoreFailed, HTStoreTried));
 }
 
 void ht_guess_sizes(char *size) {
