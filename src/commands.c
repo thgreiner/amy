@@ -150,13 +150,13 @@ static struct CommandEntry Commands[] = {
 
 char AutoSaveFileName[64];
 
-struct Command *ParseInput(char *line) {
+struct Command *cmd_parse_input(char *line) {
     static struct Command theCommand;
     char *token;
     int move;
     struct CommandEntry *entry;
 
-    token = nextToken(&line, " \t\n\r");
+    token = utils_next_token(&line, " \t\n\r");
     if (token == NULL)
         return NULL;
 
@@ -183,7 +183,7 @@ struct Command *ParseInput(char *line) {
             theCommand.command_func = entry->command_func;
             theCommand.allowed_during_search = entry->allowed_during_search;
             theCommand.interrupts_search = entry->interrupts_search;
-            theCommand.args = nextToken(&line, "\n\r");
+            theCommand.args = utils_next_token(&line, "\n\r");
             return &theCommand;
         }
         entry++;
@@ -694,7 +694,7 @@ static void cmd_benchmark(char *args) {
     dbase_free_position(p);
 }
 
-static BitBoard SearchFully(struct Position *p, BitBoard cnt, int depth,
+static BitBoard cmd_search_fully(struct Position *p, BitBoard cnt, int depth,
                             heap_t heap) {
     unsigned int i;
 
@@ -713,7 +713,7 @@ static BitBoard SearchFully(struct Position *p, BitBoard cnt, int depth,
 
         dbase_do_move(p, move);
         if (!dbase_in_check(p, OPP(p->turn))) {
-            cnt = SearchFully(p, cnt, depth - 1, heap);
+            cnt = cmd_search_fully(p, cnt, depth - 1, heap);
         }
         dbase_undo_move(p, move);
     }
@@ -735,7 +735,7 @@ static void cmd_perft(char *args) {
     heap_t heap = heap_allocate();
 
     unsigned long start = get_time();
-    cnt = SearchFully(CurrentPosition, cnt, depth, heap);
+    cnt = cmd_search_fully(CurrentPosition, cnt, depth, heap);
     unsigned long end = get_time();
 
     heap_free(heap);

@@ -77,11 +77,11 @@ static void get_hostname(char *hostname_buf) {
 #endif
 }
 
-static char *getWhiteName(void) {
+static char *pgn_get_white_name(void) {
     return (ComputerSide == White) ? (AMY_NAME) : (OpponentName);
 }
 
-static char *getBlackName(void) {
+static char *pgn_get_black_name(void) {
     return (ComputerSide == Black) ? (AMY_NAME) : (OpponentName);
 }
 
@@ -155,8 +155,8 @@ void pgn_save_game(struct Position *p, char *file_name) {
                 header.eco = eco;
             }
 
-            header.white = getWhiteName();
-            header.black = getBlackName();
+            header.white = pgn_get_white_name();
+            header.black = pgn_get_black_name();
 
             print_header(fout, &header);
 

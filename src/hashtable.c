@@ -150,7 +150,7 @@ static void release_write_lock(atomic_int *data) {
 /**
  * Gets an entry from the global transposition table.
  */
-static inline struct HTEntry GetHTEntry(hash_t key) {
+static inline struct HTEntry ht_get_entry(hash_t key) {
 #if MP && HAVE_LIBPTHREAD
     atomic_int *mutex = TranspositionMutex + ((key >> 32) & MUTEX_MASK);
     acquire_read_lock(mutex);
@@ -213,8 +213,8 @@ static inline bool ht_put_entry_best_effort(const hash_t key, struct HTEntry ent
     const hash_t key1 = key;
     const hash_t key2 = key + 1;
 
-    struct HTEntry entry1 = GetHTEntry(key1);
-    struct HTEntry entry2 = GetHTEntry(key2);
+    struct HTEntry entry1 = ht_get_entry(key1);
+    struct HTEntry entry2 = ht_get_entry(key2);
 
     /* Overwrite any matching entry. */
     if (entry1.ht_Key == key) {
@@ -270,12 +270,12 @@ LookupResult ht_probe(const hash_t key, int *score, int depth, move_t *bestm,
 #endif
 {
     hash_t effective_key = key;
-    struct HTEntry h = GetHTEntry(effective_key);
+    struct HTEntry h = ht_get_entry(effective_key);
     bool found = h.ht_Key == key;
 
     if (!found) {
         effective_key++;
-        h = GetHTEntry(effective_key);
+        h = ht_get_entry(effective_key);
         found = h.ht_Key == key;
     }
 
@@ -396,12 +396,12 @@ void ht_store(hash_t key, int best, int alpha, int beta, int bestm, int depth,
 #endif
 ) {
     hash_t effective_key = key;
-    struct HTEntry entry = GetHTEntry(effective_key);
+    struct HTEntry entry = ht_get_entry(effective_key);
     bool found = entry.ht_Key == key;
 
     if (!found) {
         effective_key++;
-        entry = GetHTEntry(effective_key);
+        entry = ht_get_entry(effective_key);
         found = entry.ht_Key == key;
     }
 

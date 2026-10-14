@@ -82,8 +82,8 @@ int pgn_scan_header(FILE *fin, struct PGNHeader *header) {
     while ((current_line = pgn_read_line(fin)) != NULL) {
         if (current_line[0] == '[') {
             char *x = current_line + 1;
-            char *key = nextToken(&x, " \"");
-            char *value = nextToken(&x, "\"");
+            char *key = utils_next_token(&x, " \"");
+            char *value = utils_next_token(&x, "\"");
             size_t len = strlen(value);
 
             if (!strcmp("Event", key)) {
@@ -229,7 +229,7 @@ int pgn_scan_move(FILE *fin, char *nextMove) {
                 x++;
                 continue;
             }
-            token = nextToken(&x, " .\n\r\t");
+            token = utils_next_token(&x, " .\n\r\t");
 
             if (token == NULL) {
                 haveLine = 0;

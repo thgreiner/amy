@@ -47,7 +47,7 @@
 #include "hashtable.h"
 #endif
 
-struct SearchData *CreateSearchData(struct Position *p) {
+struct SearchData *next_create_data(struct Position *p) {
     struct SearchData *sd = safe_calloc(1, sizeof(struct SearchData));
 
     sd->position = p;
@@ -343,9 +343,9 @@ move_t next_move(struct SearchData *sd) {
         BitBoard tmp = p->mask[p->turn][Pawn] & ~SeventhRank[p->turn];
 
         if (p->turn == White)
-            tmp = ShiftUp(tmp);
+            tmp = dbase_shift_up(tmp);
         else
-            tmp = ShiftDown(tmp);
+            tmp = dbase_shift_down(tmp);
 
         BitBoard tmp2 = tmp &= empty;
 
@@ -360,9 +360,9 @@ move_t next_move(struct SearchData *sd) {
         tmp &= ThirdRank[p->turn];
 
         if (p->turn == White)
-            tmp = ShiftUp(tmp);
+            tmp = dbase_shift_up(tmp);
         else
-            tmp = ShiftDown(tmp);
+            tmp = dbase_shift_down(tmp);
 
         tmp &= empty;
 
@@ -639,9 +639,9 @@ move_t next_evasion(struct SearchData *sd) {
         BitBoard pawns = p->mask[p->turn][Pawn];
 
         if (p->turn == White)
-            pawns = ShiftUp(pawns);
+            pawns = dbase_shift_up(pawns);
         else
-            pawns = ShiftDown(pawns);
+            pawns = dbase_shift_down(pawns);
 
         BitBoard pawns_to = pawns = (pawns & empty);
 
@@ -662,9 +662,9 @@ move_t next_evasion(struct SearchData *sd) {
         pawns &= ThirdRank[p->turn];
 
         if (p->turn == White)
-            pawns = ShiftUp(pawns);
+            pawns = dbase_shift_up(pawns);
         else
-            pawns = ShiftDown(pawns);
+            pawns = dbase_shift_down(pawns);
 
         pawns &= empty;
 
@@ -956,7 +956,7 @@ move_t next_move_q_fixed_alpha(struct SearchData *sd) {
 }
 
 void next_test_generators(struct Position *p) {
-    struct SearchData *sd = CreateSearchData(p);
+    struct SearchData *sd = next_create_data(p);
     print(0, "next_move:\n");
     test_next_move(sd, &next_move);
     print(0, "\nNextEvasion:\n");

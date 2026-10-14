@@ -530,7 +530,7 @@ void dbase_do_move(struct Position *p, move_t move) {
 
         if (move & M_PROMOTION_MASK) {
             /* Promote piece */
-            tp = PromoType(move);
+            tp = dbase_promo_type(move);
 
             /* Update own material */
             p->material[p->turn] += Value[tp] - Value[Pawn];
@@ -1113,7 +1113,7 @@ bool dbase_is_checking_move(struct Position *p, move_t move) {
     /* Is it a direct check ? */
 
     if (move & M_PROMOTION_MASK)
-        tp = PromoType(move);
+        tp = dbase_promo_type(move);
 
     switch (tp) {
     case Knight:
@@ -1381,7 +1381,7 @@ char *dbase_san(struct Position *p, move_t move, char *buffer) {
 
         if (move & M_PROMOTION_MASK) {
             *(x++) = '=';
-            *(x++) = PieceName[PromoType(move)];
+            *(x++) = PieceName[dbase_promo_type(move)];
         }
     } else if (move & M_CANY) {
         *(x++) = 'O';
@@ -1484,7 +1484,7 @@ char *dbase_ics_san(move_t move) {
     *(x++) = 'a' + (to & 7);
     *(x++) = '1' + (to >> 3);
     if (move & M_PROMOTION_MASK) {
-        *(x++) = PieceName[PromoType(move)];
+        *(x++) = PieceName[dbase_promo_type(move)];
     }
     *x = '\0';
     return buffer;
@@ -1755,7 +1755,7 @@ static move_t parse_san_with_heap(struct Position *p, char *san, heap_t heap) {
             continue;
         if (frk != -1 && (fr >> 3) != frk)
             continue;
-        if (pro && (PromoType(move) != pro))
+        if (pro && (dbase_promo_type(move) != pro))
             continue;
         if (!dbase_try_move(p, move))
             continue;
@@ -1899,7 +1899,7 @@ move_t dbase_parse_san_list(char *san, Color side, move_t *mvs, int cnt, int *pm
             continue;
         if (frk != -1 && (fr >> 3) != frk)
             continue;
-        if (pro && (PromoType(mvs[i]) != pro))
+        if (pro && (dbase_promo_type(mvs[i]) != pro))
             continue;
 
         return mvs[i];

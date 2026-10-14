@@ -128,11 +128,11 @@ static void main_process_rc_file(void) {
         if (buf[0] == '#')
             continue;
 
-        key = nextToken(&x, "=\t\n\r");
+        key = utils_next_token(&x, "=\t\n\r");
         if (key == NULL)
             continue;
 
-        value = nextToken(&x, "\n\n\r");
+        value = utils_next_token(&x, "\n\n\r");
         if (value == NULL)
             continue;
 

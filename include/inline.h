@@ -46,17 +46,17 @@ static const BitBoard ShiftDownMask = 0xffffffffffffff;
 static const BitBoard ShiftLeftMask = 0xfefefefefefefefe;
 static const BitBoard ShiftRightMask = 0x7f7f7f7f7f7f7f7f;
 
-static inline BitBoard ShiftUp(BitBoard x) { return (x << 8) & ShiftUpMask; }
+static inline BitBoard dbase_shift_up(BitBoard x) { return (x << 8) & ShiftUpMask; }
 
-static inline BitBoard ShiftDown(BitBoard x) {
+static inline BitBoard dbase_shift_down(BitBoard x) {
     return (x >> 8) & ShiftDownMask;
 }
 
-static inline BitBoard ShiftLeft(BitBoard x) {
+static inline BitBoard dbase_shift_left(BitBoard x) {
     return (x << 1) & ShiftLeftMask;
 }
 
-static inline BitBoard ShiftRight(BitBoard x) {
+static inline BitBoard dbase_shift_right(BitBoard x) {
     return (x >> 1) & ShiftRightMask;
 }
 
@@ -139,7 +139,7 @@ static inline bool dbase_in_check(struct Position *p, int side) {
 /*
  * Determine type of promotion from move
  */
-static inline int8_t PromoType(move_t move) {
+static inline int8_t dbase_promo_type(move_t move) {
     return (move & M_PROMOTION_MASK) >> M_PROMOTION_OFFSET;
 }
 

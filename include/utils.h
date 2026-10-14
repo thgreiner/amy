@@ -48,7 +48,7 @@ char *utils_format_score(int, char *, size_t);
 char *utils_format_count(unsigned long, char *, size_t);
 unsigned long get_time(void);
 void get_tmp_file_name(char *, size_t);
-char *nextToken(char **, const char *);
+char *utils_next_token(char **, const char *);
 int percentage(unsigned long, unsigned long);
 char *strip(char *);
 

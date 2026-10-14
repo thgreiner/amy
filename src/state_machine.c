@@ -80,7 +80,7 @@ void state_machine_run(void) {
             if (!read_line(InputBuffer, 1023)) {
                 State = STATE_END;
             } else {
-                struct Command *command = ParseInput(InputBuffer);
+                struct Command *command = cmd_parse_input(InputBuffer);
                 if (command) {
                     cmd_execute(command);
                     if (command->move != M_NONE) {

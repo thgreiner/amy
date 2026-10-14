@@ -278,7 +278,7 @@ int input_ready(void) {
 /**
  * Tokenize a string.
  */
-char *nextToken(char **string, const char *delim) {
+char *utils_next_token(char **string, const char *delim) {
     char *start = *string;
     char *end;
     const char *t;

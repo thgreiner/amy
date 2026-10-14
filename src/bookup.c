@@ -82,7 +82,7 @@ struct BookQuery {
 static tree_node_t *BookDB = NULL;
 static tree_node_t *LearnDB = NULL;
 
-static tree_node_t *PutBookEntry(tree_node_t *database, hash_t hk, int result,
+static tree_node_t *book_put_entry(tree_node_t *database, hash_t hk, int result,
                                  int elo) {
     print(9, "storing position\n");
     struct BookEntry *entry = NULL;
@@ -140,7 +140,7 @@ static void book_open_file(tree_node_t **db) {
     fclose(fin);
 }
 
-static struct BookEntry *GetBookEntry(hash_t hk) {
+static struct BookEntry *book_get_entry(hash_t hk) {
     struct BookEntry *retval = NULL;
     if (BookDB == NULL) {
         book_open_file(&BookDB);
@@ -153,7 +153,7 @@ static struct BookEntry *GetBookEntry(hash_t hk) {
     return retval;
 }
 
-static struct LearnEntry *GetLearnEntry(hash_t hk) {
+static struct LearnEntry *book_get_learn_entry(hash_t hk) {
     struct LearnEntry *retval = NULL;
 
     if (LearnDB == NULL) {
@@ -229,11 +229,11 @@ static void book_up_internal(char *file_name, int verbosity) {
                 if (afterEco <= 20) {
                     if (p->turn == Black) {
                         /* white played the move */
-                        database = PutBookEntry(database, p->hkey, result,
+                        database = book_put_entry(database, p->hkey, result,
                                                 header.white_elo);
                     } else {
                         /* black played the move */
-                        database = PutBookEntry(database, p->hkey, -result,
+                        database = book_put_entry(database, p->hkey, -result,
                                                 header.black_elo);
                     }
                 }
@@ -288,8 +288,8 @@ static void book_get_all_moves(struct Position *p, int *cnt, move_t *book_moves,
         dbase_do_move(p, move);
         /* If the move leads to a repetition, do not accept it. */
         if (!dbase_repeated(p, false)) {
-            be = GetBookEntry(p->hkey);
-            le = GetLearnEntry(p->hkey);
+            be = book_get_entry(p->hkey);
+            le = book_get_learn_entry(p->hkey);
         }
         dbase_undo_move(p, move);
 
@@ -502,7 +502,7 @@ void book_create_learn_db(char *file_name) {
 
         p = dbase_initial_position();
 
-        while ((move = nextToken(&x, " \n\r\t")) != NULL) {
+        while ((move = utils_next_token(&x, " \n\r\t")) != NULL) {
             int flags = 0;
             char *modifier = move + strlen(move) - 1;
             move_t themove;

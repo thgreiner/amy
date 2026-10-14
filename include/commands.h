@@ -53,7 +53,7 @@ struct CommandEntry {
 
 extern char AutoSaveFileName[64];
 
-struct Command *ParseInput(char *line);
+struct Command *cmd_parse_input(char *line);
 void cmd_execute(struct Command *theCommand);
 void cmd_newgame(char *);
 

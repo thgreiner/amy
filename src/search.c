@@ -220,7 +220,7 @@ static bool search_terminate(struct SearchData *sd) {
                            sd->nrootmoves - sd->movenum - 1, sd->nrootmoves);
             }
 
-            theCommand = ParseInput(buffer);
+            theCommand = cmd_parse_input(buffer);
 
             if (theCommand) {
                 if (SearchMode == Pondering && theCommand->move != M_NONE) {
@@ -442,7 +442,7 @@ static int search_score_move(struct Position *p, move_t move) {
     if (move & M_CAPTURE)
         score += Value[TYPE(p->piece[M_TO(move)])];
     if (move & M_PROMOTION_MASK)
-        score += Value[PromoType(move)] - Value[Pawn];
+        score += Value[dbase_promo_type(move)] - Value[Pawn];
     else if (TYPE(p->piece[M_FROM(move)]) == Pawn) {
         if (p->turn == White && M_TO(move) >= a7) {
             score += Value[Bishop];
@@ -1244,7 +1244,7 @@ static void search_resort_moves_list(int cnt, move_t *mvs, unsigned long *nodes)
  * aspiration window and scout search.
  */
 
-static void *IterateInt(void *x) {
+static void *search_iterate_int(void *x) {
     unsigned long nodes[256];
     int last = 0;
     double elapsed;
@@ -1690,9 +1690,9 @@ static void search_start_helpers(struct Position *p) {
      */
 
     for (nthread = 0; nthread < (NumberOfCPUs - 1); nthread++) {
-        struct SearchData *sd = CreateSearchData(dbase_clone_position(p));
+        struct SearchData *sd = next_create_data(dbase_clone_position(p));
         sd->master = false;
-        pthread_create(tids + nthread, &attr, &IterateInt, sd);
+        pthread_create(tids + nthread, &attr, &search_iterate_int, sd);
     }
 
 #endif /* HAVE_LIBPTHREAD */
@@ -1763,10 +1763,10 @@ int search_iterate(struct Position *p, int *score_ptr, move_t alternate_move,
     search_start_helpers(p);
 #endif /* MP */
 
-    sd = CreateSearchData(p);
+    sd = next_create_data(p);
     sd->master = true;
     sd->alternate_move = alternate_move;
-    IterateInt(sd);
+    search_iterate_int(sd);
 
     move_t best_move = sd->best_move;
     if (score_ptr != NULL) {
@@ -1840,7 +1840,7 @@ int search_quiescence(struct Position *p) {
     eval_init(p);
     MaxDepth = MAX_TREE_SIZE - 1;
 
-    sd = CreateSearchData(p);
+    sd = next_create_data(p);
     sd->master = true;
     search_init(sd);
 

@@ -101,7 +101,7 @@ struct SearchData {
     uint16_t movenum;
 };
 
-struct SearchData *CreateSearchData(struct Position *);
+struct SearchData *next_create_data(struct Position *);
 void next_free_data(struct SearchData *);
 void next_enter_node(struct SearchData *);
 void next_leave_node(struct SearchData *);
