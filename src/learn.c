@@ -54,7 +54,7 @@ void learn_book(void) {
             break;
         }
         print(2, "Book learning with save file %s\n", save_file_name);
-        BookupQuiet(save_file_name);
+        book_up_quiet(save_file_name);
         remove(save_file_name);
     }
 }

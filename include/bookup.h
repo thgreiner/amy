@@ -34,11 +34,11 @@
 
 #include "dbase.h"
 
-void Bookup(char *);
-void BookupQuiet(char *);
-void FlattenBook(unsigned int);
-void CreateLearnDB(char *);
-void QueryBook(struct Position *);
-int SelectBook(struct Position *);
+void book_up(char *);
+void book_up_quiet(char *);
+void book_flatten(unsigned int);
+void book_create_learn_db(char *);
+void book_query(struct Position *);
+int book_select(struct Position *);
 
 #endif

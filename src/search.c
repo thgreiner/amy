@@ -1797,7 +1797,7 @@ void SearchRoot(struct Position *p) {
 
     /* Test book first */
     if (p->outOfBookCnt[p->turn] < 3) {
-        move = SelectBook(p);
+        move = book_select(p);
 
         if (move != M_NONE) {
             char san_buffer[32];
@@ -1899,7 +1899,7 @@ pb_result_t PermanentBrain(struct Position *p) {
         DoMove(q, PBActMove);
 
         if (q->outOfBookCnt[q->turn] < 3) {
-            move = SelectBook(q);
+            move = book_select(q);
             if (move != M_NONE) {
                 PBHit = false;
                 PBAltMove = M_NONE;

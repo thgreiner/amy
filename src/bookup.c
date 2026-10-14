@@ -171,12 +171,12 @@ static struct LearnEntry *GetLearnEntry(hash_t hk) {
     return retval;
 }
 
-void CloseBook(void) {
+void book_close(void) {
     tree_free_node(BookDB);
     BookDB = NULL;
 }
 
-static void BookupInternal(char *file_name, int verbosity) {
+static void book_up_internal(char *file_name, int verbosity) {
     struct Position *p;
     FILE *fin;
     int afterEco = 0;
@@ -194,7 +194,7 @@ static void BookupInternal(char *file_name, int verbosity) {
         print(verbosity, "   Parsing PGN file %s. '.'= 100 Games\n", file_name);
     }
 
-    CloseBook();
+    book_close();
 
     while (!pgn_scan_header(fin, &header)) {
         int result;
@@ -268,11 +268,11 @@ static void BookupInternal(char *file_name, int verbosity) {
     tree_free_node(database);
 }
 
-void Bookup(char *file_name) { BookupInternal(file_name, 0); }
+void book_up(char *file_name) { book_up_internal(file_name, 0); }
 
-void BookupQuiet(char *file_name) { BookupInternal(file_name, 9); }
+void book_up_quiet(char *file_name) { book_up_internal(file_name, 9); }
 
-static void GetAllBookMoves(struct Position *p, int *cnt, move_t *book_moves,
+static void book_get_all_moves(struct Position *p, int *cnt, move_t *book_moves,
                             struct BookQuery *entries) {
     unsigned int i;
 
@@ -400,14 +400,14 @@ static void CalculatePropabilities(int cnt, struct BookQuery *entries,
     }
 }
 
-int SelectBook(struct Position *p) {
+int book_select(struct Position *p) {
     int i, cnt = 0;
     struct BookQuery be[32];
     move_t moves[32];
     double props[32];
     double random_value = random_double();
 
-    GetAllBookMoves(p, &cnt, moves, be);
+    book_get_all_moves(p, &cnt, moves, be);
 
     if (cnt != 0) {
         SortBook(cnt, moves, be);
@@ -426,13 +426,13 @@ int SelectBook(struct Position *p) {
     return M_NONE;
 }
 
-void QueryBook(struct Position *p) {
+void book_query(struct Position *p) {
     int i, cnt = 0;
     struct BookQuery be[32];
     move_t moves[32];
     double props[32];
 
-    GetAllBookMoves(p, &cnt, moves, be);
+    book_get_all_moves(p, &cnt, moves, be);
     SortBook(cnt, moves, be);
     CalculatePropabilities(cnt, be, props);
 
@@ -483,7 +483,7 @@ static void PutLearnEntry(hash_t hk, int learn_value, int flags) {
                        sizeof(entry));
 }
 
-void CreateLearnDB(char *file_name) {
+void book_create_learn_db(char *file_name) {
     FILE *fin = fopen(file_name, "rb");
     char buffer[1024];
     struct Position *p;
@@ -570,7 +570,7 @@ static tree_node_t *flatten_internal(tree_node_t *source, tree_node_t *target,
     return target;
 }
 
-void FlattenBook(unsigned int threshold) {
+void book_flatten(unsigned int threshold) {
     int read = 0;
     int written = 0;
 

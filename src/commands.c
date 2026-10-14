@@ -102,7 +102,7 @@ static struct CommandEntry Commands[] = {
     {"blunder", &blunder_check, false, false, "check for blunders", NULL},
     {"book", &Book, false, false, "display book moves", NULL},
     {"bk", &Book, false, false, "display book moves (xboard)", NULL},
-    {"bookup", &Bookup, false, false, "create a book", NULL},
+    {"bookup", &book_up, false, false, "create a book", NULL},
     {"conf", &Conf, false, false, "load scoring config", NULL},
     {"conf-save", &SaveConf, false, false, "save scoring config", NULL},
     {"d", &Show, true, false, "display current position", NULL},
@@ -504,7 +504,7 @@ static void Undo(char *args) {
 
 static void Book(char *args) {
     (void)args;
-    QueryBook(CurrentPosition);
+    book_query(CurrentPosition);
 }
 
 static void Post(char *args) {
@@ -764,7 +764,7 @@ static void Save(char *args) {
     pgn_save_game(CurrentPosition, args);
 }
 
-static void Prefs(char *args) { CreateLearnDB(args); }
+static void Prefs(char *args) { book_create_learn_db(args); }
 
 static void Flatten(char *args) {
     int threshold;
@@ -778,7 +778,7 @@ static void Flatten(char *args) {
         threshold = 1;
     }
 
-    FlattenBook(threshold);
+    book_flatten(threshold);
 }
 
 static void XboardTime(char *args) {
