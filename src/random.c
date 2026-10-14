@@ -110,7 +110,7 @@ void init_genrand64(unsigned long long seed) {
              context.mti);
 }
 
-ran_t Random64(void) {
+ran_t random64(void) {
     /* This is the altered Cocoa with Love implementation. */
     size_t i;
     size_t j;
@@ -157,6 +157,6 @@ ran_t Random64(void) {
     return result;
 }
 
-double Random(void) { return (Random64() >> 11) * (1.0 / 9007199254740991.0); }
+double random_double(void) { return (random64() >> 11) * (1.0 / 9007199254740991.0); }
 
-void InitRandom(ran_t seed) { init_genrand64(seed); }
+void random_init(ran_t seed) { init_genrand64(seed); }

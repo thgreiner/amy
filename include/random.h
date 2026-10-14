@@ -34,8 +34,8 @@
 
 #include "types.h"
 
-ran_t Random64(void);
-double Random(void);
-void InitRandom(ran_t seed);
+ran_t random64(void);
+double random_double(void);
+void random_init(ran_t seed);
 
 #endif

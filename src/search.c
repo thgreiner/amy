@@ -1254,7 +1254,7 @@ static void *IterateInt(void *x) {
     bool pv_valid = false;
 
     if (!sd->master) {
-        usleep((useconds_t)(50 + 100 * Random()));
+        usleep((useconds_t)(50 + 100 * random_double()));
     }
     p = sd->position;
 

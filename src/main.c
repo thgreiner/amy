@@ -200,7 +200,7 @@ int main(int argc, char *argv[]) {
     print(0, "\n");
 
     /* Ensure true random behavior. */
-    InitRandom(get_time());
+    random_init(get_time());
 
     StateMachine();
 

@@ -405,7 +405,7 @@ int SelectBook(struct Position *p) {
     struct BookQuery be[32];
     move_t moves[32];
     double props[32];
-    double random_value = Random();
+    double random_value = random_double();
 
     GetAllBookMoves(p, &cnt, moves, be);
 

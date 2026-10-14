@@ -700,23 +700,23 @@ void GuessHTSizes(char *size) {
 }
 
 void HashInit(void) {
-    InitRandom(0);
+    random_init(0);
 
     for (int i = 0; i < 2; i++) {
         for (int j = 0; j < 8; j++) {
             for (int k = 0; k < 64; k++) {
-                HashKeys[i][j][k] = Random64();
+                HashKeys[i][j][k] = random64();
             }
         }
     }
 
     for (int i = 0; i < 64; i++) {
-        HashKeysEP[i] = Random64();
+        HashKeysEP[i] = random64();
     }
 
     for (int i = 0; i < 16; i++) {
-        HashKeysCastle[i] = Random64();
+        HashKeysCastle[i] = random64();
     }
 
-    STMKey = Random64();
+    STMKey = random64();
 }
