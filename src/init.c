@@ -38,9 +38,6 @@
 #include "magic.h"
 #include "utils.h"
 
-BitBoard ShiftUpMask, ShiftDownMask;
-BitBoard ShiftLeftMask, ShiftRightMask;
-
 BitBoard FileMask[8], IsoMask[8];
 BitBoard RankMask[8];
 BitBoard ForwardRayW[64], ForwardRayB[64];
@@ -53,26 +50,9 @@ BitBoard BishopEPM[64], RookEPM[64], QueenEPM[64];
 BitBoard SeventhRank[2], EighthRank[2];
 BitBoard ThirdRank[2];
 BitBoard LeftOf[8], RightOf[8], FarLeftOf[8], FarRightOf[8];
-BitBoard EdgeMask;
-BitBoard BlackSquaresMask, WhiteSquaresMask;
 BitBoard KingSquareW[64], KingSquareB[64];
-BitBoard NotAFileMask, NotHFileMask;
-BitBoard CornerMaskA1, CornerMaskA8, CornerMaskH1, CornerMaskH8;
 BitBoard WPawnBackwardMask[64], BPawnBackwardMask[64];
-BitBoard KingSideMask, QueenSideMask;
 BitBoard ConnectedMask[64];
-
-void InitMasks(void) {
-    int i;
-
-    ShiftUpMask = ShiftDownMask = ShiftLeftMask = ShiftRightMask = -1;
-    for (i = 0; i < 8; i++) {
-        ShiftUpMask &= ClrMask(i);
-        ShiftDownMask &= ClrMask(56 + i);
-        ShiftRightMask &= ClrMask(8 * i + 7);
-        ShiftLeftMask &= ClrMask(8 * i);
-    }
-}
 
 void PrintBitBoard(BitBoard x) {
     int i, j;
@@ -295,26 +275,6 @@ void InitMiscMasks(void) {
             FarRightOf[i] |= FileMask[j];
     }
 
-    EdgeMask = 0;
-
-    for (i = 0; i < 8; i++) {
-        SetBit(EdgeMask, a1 + i);
-        SetBit(EdgeMask, a8 + i);
-        SetBit(EdgeMask, a1 + 8 * i);
-        SetBit(EdgeMask, h1 + 8 * i);
-    }
-
-    WhiteSquaresMask = BlackSquaresMask = 0;
-    for (i = 0; i < 8; i++) {
-        for (j = 0; j < 8; j++) {
-            if (((i + j) & 1) == 0) {
-                SetBit(BlackSquaresMask, (i * 8 + j));
-            } else {
-                SetBit(WhiteSquaresMask, (i * 8 + j));
-            }
-        }
-    }
-
     for (i = 0; i < 64; i++) {
         int bdist = (i >> 3);
         int wdist = 7 - bdist;
@@ -331,24 +291,9 @@ void InitMiscMasks(void) {
             }
         }
     }
-
-    NotAFileMask = NotHFileMask = 0;
-    for (i = 0; i < 7; i++) {
-        NotAFileMask |= FileMask[i + 1];
-        NotHFileMask |= FileMask[i];
-    }
-
-    CornerMaskA1 = SetMask(a1) | SetMask(a2) | SetMask(b1) | SetMask(b2);
-    CornerMaskA8 = SetMask(a8) | SetMask(a7) | SetMask(b8) | SetMask(b7);
-    CornerMaskH1 = SetMask(h1) | SetMask(h2) | SetMask(g1) | SetMask(g2);
-    CornerMaskH8 = SetMask(h8) | SetMask(h7) | SetMask(g8) | SetMask(g7);
-
-    KingSideMask = FileMask[7] | FileMask[6] | FileMask[5] | FileMask[4];
-    QueenSideMask = FileMask[0] | FileMask[1] | FileMask[2] | FileMask[3];
 }
 
 void InitAll(void) {
-    InitMasks();
     InitPawnMasks();
     InitGeometry();
     InitMiscMasks();

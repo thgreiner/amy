@@ -29,36 +29,9 @@
 
 */
 
-#ifndef PGN_H
-#define PGN_H
+#ifndef TEST_PGN_WRITE_H
+#define TEST_PGN_WRITE_H
 
-#include "dbase.h"
-#include "types.h"
-#include <stdio.h>
-
-#define OPP_NAME_LENGTH 1024
-
-struct PGNHeader {
-    char event[64];
-    char site[64];
-    char date[64];
-    char round[64];
-    char white[64];
-    char black[64];
-    char result[8];
-    char fen[128];
-    int white_elo;
-    int black_elo;
-    bool is_setup;
-};
-
-extern char OpponentName[OPP_NAME_LENGTH];
-
-void SaveGame(struct Position *, char *);
-void LoadGame(struct Position *, char *);
-int scanHeader(FILE *, struct PGNHeader *);
-int scanMove(FILE *, char *);
-void get_and_reset_comment(char *, unsigned int);
-void print_header(FILE *, struct PGNHeader *);
+void test_all_pgn_write(void);
 
 #endif

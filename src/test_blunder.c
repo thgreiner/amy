@@ -33,6 +33,9 @@
 #include "dbase.h"
 #include "inline.h"
 #include "string.h"
+#include <limits.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 static void test_get_best_move_from_comment(void) {
     struct Position *p = InitialPosition();

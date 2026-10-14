@@ -35,7 +35,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static void *safe_malloc(size_t size) {
+static inline void *safe_malloc(size_t size) {
     void *ptr = malloc(size);
     if (ptr == NULL) {
         perror(NULL);
@@ -44,7 +44,7 @@ static void *safe_malloc(size_t size) {
     return ptr;
 }
 
-static void *safe_calloc(size_t count, size_t size) {
+static inline void *safe_calloc(size_t count, size_t size) {
     void *ptr = calloc(count, size);
     if (ptr == NULL) {
         perror(NULL);
@@ -53,7 +53,7 @@ static void *safe_calloc(size_t count, size_t size) {
     return ptr;
 }
 
-static void *safe_realloc(void *old_ptr, size_t size) {
+static inline void *safe_realloc(void *old_ptr, size_t size) {
     void *ptr = realloc(old_ptr, size);
     if (ptr == NULL) {
         perror(NULL);

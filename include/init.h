@@ -47,16 +47,23 @@ extern const BitBoard PawnEPM[2][64];
 extern BitBoard BishopEPM[64], RookEPM[64], QueenEPM[64];
 extern BitBoard SeventhRank[2], ThirdRank[2], EighthRank[2];
 extern BitBoard LeftOf[8], RightOf[8], FarLeftOf[8], FarRightOf[8];
-extern BitBoard EdgeMask;
-extern BitBoard BlackSquaresMask, WhiteSquaresMask;
 extern BitBoard KingSquareW[64], KingSquareB[64];
-extern BitBoard NotAFileMask, NotHFileMask;
-extern BitBoard CornerMaskA1, CornerMaskA8, CornerMaskH1, CornerMaskH8;
 extern BitBoard WPawnBackwardMask[64], BPawnBackwardMask[64];
-extern BitBoard KingSideMask, QueenSideMask;
 extern BitBoard ConnectedMask[64];
 
 extern signed char NextSQ[64][64];
+
+static const BitBoard EdgeMask = 0xff818181818181ff;
+static const BitBoard BlackSquaresMask = 0xaa55aa55aa55aa55;
+static const BitBoard WhiteSquaresMask = 0x55aa55aa55aa55aa;
+static const BitBoard NotAFileMask = 0xfefefefefefefefe;
+static const BitBoard NotHFileMask = 0x7f7f7f7f7f7f7f7f;
+static const BitBoard CornerMaskA1 = 0x303;
+static const BitBoard CornerMaskA8 = 0x303000000000000;
+static const BitBoard CornerMaskH1 = 0xc0c0;
+static const BitBoard CornerMaskH8 = 0xc0c0000000000000;
+static const BitBoard KingSideMask = 0xf0f0f0f0f0f0f0f0;
+static const BitBoard QueenSideMask = 0xf0f0f0f0f0f0f0f;
 
 void InitAll(void);
 void PrintBitBoard(BitBoard);
