@@ -59,7 +59,7 @@ int ComputerSide;
 void state_machine_run(void) {
     const char *gameend;
 
-    NewGame(NULL);
+    cmd_newgame(NULL);
 
     ComputerSide = Black;
 
@@ -82,7 +82,7 @@ void state_machine_run(void) {
             } else {
                 struct Command *command = ParseInput(InputBuffer);
                 if (command) {
-                    ExecuteCommand(command);
+                    cmd_execute(command);
                     if (command->move != M_NONE) {
                         if (!ForceMode)
                             State = STATE_CALCULATING;

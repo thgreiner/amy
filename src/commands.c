@@ -55,97 +55,97 @@
 #include "time_ctl.h"
 #include "utils.h"
 
-static void Quit(char *);
-static void Show(char *);
-static void ShowEco(char *);
+static void cmd_quit(char *);
+static void cmd_show(char *);
+static void cmd_show_eco(char *);
 static void Test(char *);
 static void SetTime(char *);
-static void SetXBoard(char *);
-static void Go(char *);
-static void Force(char *);
-static void Name(char *);
-static void MoveNow(char *);
-static void Edit(char *);
-static void Undo(char *);
-static void Book(char *);
-static void Post(char *);
-static void NoPost(char *);
-static void Easy(char *);
-static void Hard(char *);
-static void MovesCmd(char *);
-static void SetEPD(char *);
-static void Anno(char *);
-static void ShowWarranty(char *);
-static void ShowDistribution(char *);
-static void Help(char *);
-static void Benchmark(char *);
-static void Perft(char *);
-static void Load(char *);
-static void Save(char *);
-static void Prefs(char *);
-static void Flatten(char *);
-static void XboardTime(char *);
-static void Analyze(char *);
-static void StopAnalyze(char *);
-static void SelfPlay(char *);
-static void TestNext(char *);
-static void Conf(char *);
-static void SaveConf(char *);
-static void ShowScore(char *);
+static void cmd_set_xboard(char *);
+static void cmd_go(char *);
+static void cmd_force(char *);
+static void cmd_name(char *);
+static void cmd_move_now(char *);
+static void cmd_edit(char *);
+static void cmd_undo(char *);
+static void cmd_book(char *);
+static void cmd_post(char *);
+static void cmd_nopost(char *);
+static void cmd_easy(char *);
+static void cmd_hard(char *);
+static void cmd_moves(char *);
+static void cmd_set_epd(char *);
+static void cmd_annotate(char *);
+static void cmd_show_warranty(char *);
+static void cmd_show_distribution(char *);
+static void cmd_help(char *);
+static void cmd_benchmark(char *);
+static void cmd_perft(char *);
+static void cmd_load(char *);
+static void cmd_save(char *);
+static void cmd_prefs(char *);
+static void cmd_flatten(char *);
+static void cmd_xboard_time(char *);
+static void cmd_analyze(char *);
+static void cmd_stop_analyze(char *);
+static void cmd_selfplay(char *);
+static void cmd_test_next(char *);
+static void cmd_conf(char *);
+static void cmd_save_conf(char *);
+static void cmd_show_score(char *);
 static void TestScore(char *);
-static void SetSearchDepth(char *);
+static void cmd_set_search_depth(char *);
 
 static struct CommandEntry Commands[] = {
-    {"analyze", &Analyze, false, false, "enter analyze mode (xboard)", NULL},
-    {"anno", &Anno, false, false, "annotate a game", NULL},
-    {"bench", &Benchmark, false, false, "run a benchmark", NULL},
+    {"analyze", &cmd_analyze, false, false, "enter analyze mode (xboard)", NULL},
+    {"anno", &cmd_annotate, false, false, "annotate a game", NULL},
+    {"bench", &cmd_benchmark, false, false, "run a benchmark", NULL},
     {"blunder", &blunder_check, false, false, "check for blunders", NULL},
-    {"book", &Book, false, false, "display book moves", NULL},
-    {"bk", &Book, false, false, "display book moves (xboard)", NULL},
+    {"book", &cmd_book, false, false, "display book moves", NULL},
+    {"bk", &cmd_book, false, false, "display book moves (xboard)", NULL},
     {"bookup", &book_up, false, false, "create a book", NULL},
-    {"conf", &Conf, false, false, "load scoring config", NULL},
-    {"conf-save", &SaveConf, false, false, "save scoring config", NULL},
-    {"d", &Show, true, false, "display current position", NULL},
-    {"depth", &SetSearchDepth, false, false, "set maximum search depth", NULL},
-    {"distribution", &ShowDistribution, true, false,
+    {"conf", &cmd_conf, false, false, "load scoring config", NULL},
+    {"conf-save", &cmd_save_conf, false, false, "save scoring config", NULL},
+    {"d", &cmd_show, true, false, "display current position", NULL},
+    {"depth", &cmd_set_search_depth, false, false, "set maximum search depth", NULL},
+    {"distribution", &cmd_show_distribution, true, false,
      "show terms of distribution", NULL},
-    {"e", &ShowEco, false, false, "show ECO code", NULL},
+    {"e", &cmd_show_eco, false, false, "show ECO code", NULL},
     {"eco", &eco_parse_pgn, false, false, "create ECO database", NULL},
-    {"easy", &Easy, true, false, "switch off permanent brain", NULL},
-    {"epd", &SetEPD, false, false, "set position in EPD", NULL},
-    {"edit", &Edit, false, false, "edit position (xboard!)", NULL},
-    {"exit", &StopAnalyze, true, true, "exit analyze mode (xboard)", NULL},
+    {"easy", &cmd_easy, true, false, "switch off permanent brain", NULL},
+    {"epd", &cmd_set_epd, false, false, "set position in EPD", NULL},
+    {"edit", &cmd_edit, false, false, "edit position (xboard!)", NULL},
+    {"exit", &cmd_stop_analyze, true, true, "exit analyze mode (xboard)", NULL},
     {"filter", &filter_quiescent_positions, false, false,
      "filter quiescent positions", NULL},
-    {"flatten", &Flatten, true, false, "flatten book", NULL},
-    {"force", &Force, true, false, "switch force mode (xboard)", NULL},
-    {"go", &Go, false, false, "start searching", NULL},
-    {"hard", &Hard, true, false, "switch on permanent brain", NULL},
-    {"help", &Help, true, false, "show help", NULL},
+    {"flatten", &cmd_flatten, true, false, "flatten book", NULL},
+    {"force", &cmd_force, true, false, "switch force mode (xboard)", NULL},
+    {"go", &cmd_go, false, false, "start searching", NULL},
+    {"hard", &cmd_hard, true, false, "switch on permanent brain", NULL},
+    {"help", &cmd_help, true, false, "show help", NULL},
     {"level", &SetTime, false, false, "set time control", NULL},
-    {"load", &Load, false, false, "load game from PGN file", NULL},
-    {"moves", &MovesCmd, false, false, "show legal moves", NULL},
-    {"name", &Name, true, false, "set the opponents name", NULL},
-    {"new", &NewGame, true, true, "start new game", NULL},
-    {"nopost", &NoPost, true, false, "switch off post mode (xboard)", NULL},
-    {"perft", &Perft, false, false, "Run the perft benchmark", NULL},
-    {"post", &Post, true, false, "switch on post mode (xboard)", NULL},
-    {"prefs", &Prefs, false, false, "read opening book preferences", NULL},
-    {"quit", &Quit, true, false, "quit Amy", NULL},
-    {"s", &ShowScore, true, false, "display static evaluation", NULL},
-    {"save", &Save, false, false, "save game to PGN file", NULL},
-    {"self", &SelfPlay, false, false, "start self play", NULL},
-    {"show", &Show, true, false, "display current position", NULL},
+    {"load", &cmd_load, false, false, "load game from PGN file", NULL},
+    {"moves", &cmd_moves, false, false, "show legal moves", NULL},
+    {"name", &cmd_name, true, false, "set the opponents name", NULL},
+    {"new", &cmd_newgame, true, true, "start new game", NULL},
+    {"nopost", &cmd_nopost, true, false, "switch off post mode (xboard)", NULL},
+    {"perft", &cmd_perft, false, false, "Run the perft benchmark", NULL},
+    {"post", &cmd_post, true, false, "switch on post mode (xboard)", NULL},
+    {"prefs", &cmd_prefs, false, false, "read opening book preferences", NULL},
+    {"quit", &cmd_quit, true, false, "quit Amy", NULL},
+    {"s", &cmd_show_score, true, false, "display static evaluation", NULL},
+    {"save", &cmd_save, false, false, "save game to PGN file", NULL},
+    {"self", &cmd_selfplay, false, false, "start self play", NULL},
+    {"show", &cmd_show, true, false, "display current position", NULL},
     {"test", &Test, false, false, "run EPD test suite", NULL},
     {"test-score", &TestScore, false, false,
      "run static evaluatior on EPD test suite", NULL},
-    {"time", &XboardTime, true, false, "set time (xboard)", NULL},
-    {"undo", &Undo, true, true, "undo last move", NULL},
-    {"warranty", &ShowWarranty, true, false, "show terms of warranty", NULL},
-    {"xboard", &SetXBoard, false, false, "switch to xboard compatibility",
+    {"time", &cmd_xboard_time, true, false, "set time (xboard)", NULL},
+    {"undo", &cmd_undo, true, true, "undo last move", NULL},
+    {"warranty", &cmd_show_warranty, true, false, "show terms of warranty", NULL},
+    {"xboard", &cmd_set_xboard, false, false, "switch to xboard compatibility",
      NULL},
-    {"?", &MoveNow, true, false, "move now", NULL},
-    {"tn", &TestNext, false, false, "test the move generators", NULL},
+    {"?", &cmd_move_now, true, false, "move now", NULL},
+    {"tn", &cmd_test_next, false, false, "test the move generators", NULL},
     {NULL, NULL, false, false, NULL, NULL}};
 
 char AutoSaveFileName[64];
@@ -192,7 +192,7 @@ struct Command *ParseInput(char *line) {
     return NULL;
 }
 
-void ExecuteCommand(struct Command *theCommand) {
+void cmd_execute(struct Command *theCommand) {
     if (theCommand->move != M_NONE) {
         dbase_do_move(CurrentPosition, theCommand->move);
     } else {
@@ -201,7 +201,7 @@ void ExecuteCommand(struct Command *theCommand) {
     }
 }
 
-static void Quit(char *args) {
+static void cmd_quit(char *args) {
     (void)args;
 #if MP
     search_stop_helpers();
@@ -211,12 +211,12 @@ static void Quit(char *args) {
     exit(0);
 }
 
-static void Show(char *args) {
+static void cmd_show(char *args) {
     (void)args;
     dbase_show_position(CurrentPosition);
 }
 
-static void ShowEco(char *args) {
+static void cmd_show_eco(char *args) {
     (void)args;
     char eco[128] = "";
 
@@ -374,7 +374,7 @@ static void SetTime(char *arg) {
     set_time_control(args, XBoardMode);
 }
 
-static void SetXBoard(char *args) {
+static void cmd_set_xboard(char *args) {
     (void)args;
     XBoardMode = true;
     Verbosity = 1;
@@ -389,19 +389,19 @@ static void SetXBoard(char *args) {
     signal(SIGINT, SIG_IGN);
 }
 
-static void Go(char *args) {
+static void cmd_go(char *args) {
     (void)args;
     ForceMode = false;
     State = STATE_CALCULATING;
 }
 
-static void Force(char *args) {
+static void cmd_force(char *args) {
     (void)args;
     ForceMode = true;
     AbortSearch = true;
 }
 
-void NewGame(char *args) {
+void cmd_newgame(char *args) {
     (void)args;
     /*
      * Create a new save file.
@@ -417,12 +417,12 @@ void NewGame(char *args) {
     reset_time_control(!XBoardMode);
 }
 
-static void MoveNow(char *args) {
+static void cmd_move_now(char *args) {
     (void)args;
     AbortSearch = true;
 }
 
-void Edit(char *args) {
+void cmd_edit(char *args) {
     (void)args;
     bool editing = true;
     int i;
@@ -495,44 +495,44 @@ void Edit(char *args) {
     dbase_show_position(p);
 }
 
-static void Undo(char *args) {
+static void cmd_undo(char *args) {
     (void)args;
     if (CurrentPosition->ply > 0) {
         dbase_undo_move(CurrentPosition, (CurrentPosition->actLog - 1)->gl_Move);
     }
 }
 
-static void Book(char *args) {
+static void cmd_book(char *args) {
     (void)args;
     book_query(CurrentPosition);
 }
 
-static void Post(char *args) {
+static void cmd_post(char *args) {
     (void)args;
     PostMode = true;
 }
 
-static void NoPost(char *args) {
+static void cmd_nopost(char *args) {
     (void)args;
     PostMode = false;
 }
 
-static void Easy(char *args) {
+static void cmd_easy(char *args) {
     (void)args;
     EasyMode = true;
 }
 
-static void Hard(char *args) {
+static void cmd_hard(char *args) {
     (void)args;
     EasyMode = false;
 }
 
-static void MovesCmd(char *args) {
+static void cmd_moves(char *args) {
     (void)args;
     dbase_show_moves(CurrentPosition);
 }
 
-static void SetEPD(char *args) {
+static void cmd_set_epd(char *args) {
     if (!args) {
         print(0, "Usage: epd <EPD>\n");
         return;
@@ -541,7 +541,7 @@ static void SetEPD(char *args) {
     CurrentPosition = dbase_create_position_from_epd(args);
 }
 
-static void RunAnnotate(char *fname, int side) {
+static void cmd_run_annotate(char *fname, int side) {
     FILE *fin = fopen(fname, "r");
     struct Position *p;
 
@@ -573,7 +573,7 @@ static void RunAnnotate(char *fname, int side) {
         print(0, "Couldn't open %s\n", fname);
 }
 
-static void Anno(char *args) {
+static void cmd_annotate(char *args) {
     int side = -1;
     char *arg1 = strtok(args, " \n\r");
     char *arg2 = strtok(NULL, " \n\r");
@@ -591,7 +591,7 @@ static void Anno(char *args) {
         }
     }
 
-    RunAnnotate(arg1, side);
+    cmd_run_annotate(arg1, side);
 }
 
 static char *distribution =
@@ -635,18 +635,18 @@ static char *warranty =
     " OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n"
     "\n";
 
-static void ShowWarranty(char *args) {
+static void cmd_show_warranty(char *args) {
     (void)args;
     print(0, warranty);
 }
 
-static void ShowDistribution(char *args) {
+static void cmd_show_distribution(char *args) {
     (void)args;
     print(0, distribution);
     print(0, warranty);
 }
 
-static void Help(char *args) {
+static void cmd_help(char *args) {
     struct CommandEntry *entry = Commands;
 
     (void)args;
@@ -667,7 +667,7 @@ static void Help(char *args) {
     print(2, "\n");
 }
 
-static void Benchmark(char *args) {
+static void cmd_benchmark(char *args) {
     (void)args;
     int move = g1 | (f3 << 6);
     int i;
@@ -722,7 +722,7 @@ static BitBoard SearchFully(struct Position *p, BitBoard cnt, int depth,
     return cnt;
 }
 
-static void Perft(char *args) {
+static void cmd_perft(char *args) {
     if (args == NULL) {
         print(0, "Usage: perft <depth>\n");
         return;
@@ -743,11 +743,11 @@ static void Perft(char *args) {
     double elapsed = (end - start) / 100.0;
     double nps = cnt / elapsed;
 
-    print(0, "Perft(%d): %lld terminal positions in %g secs (%g nps)\n", depth,
+    print(0, "cmd_perft(%d): %lld terminal positions in %g secs (%g nps)\n", depth,
           cnt, elapsed, nps);
 }
 
-static void Load(char *args) {
+static void cmd_load(char *args) {
     if (args == NULL) {
         print(0, "Usage: load <filename>\n");
         return;
@@ -756,7 +756,7 @@ static void Load(char *args) {
     pgn_load_game(CurrentPosition, args);
 }
 
-static void Save(char *args) {
+static void cmd_save(char *args) {
     if (args == NULL) {
         print(0, "Usage: save <filename>\n");
         return;
@@ -764,9 +764,9 @@ static void Save(char *args) {
     pgn_save_game(CurrentPosition, args);
 }
 
-static void Prefs(char *args) { book_create_learn_db(args); }
+static void cmd_prefs(char *args) { book_create_learn_db(args); }
 
-static void Flatten(char *args) {
+static void cmd_flatten(char *args) {
     int threshold;
     if (args == NULL) {
         print(0, "Usage: flatten <count>\n");
@@ -781,7 +781,7 @@ static void Flatten(char *args) {
     book_flatten(threshold);
 }
 
-static void XboardTime(char *args) {
+static void cmd_xboard_time(char *args) {
     if (args != NULL) {
         int seconds = atoi(args) / 100;
 
@@ -793,35 +793,35 @@ static void XboardTime(char *args) {
     }
 }
 
-static void Analyze(char *args) {
+static void cmd_analyze(char *args) {
     (void)args;
     State = STATE_ANALYZING;
 }
 
-static void StopAnalyze(char *args) {
+static void cmd_stop_analyze(char *args) {
     (void)args;
     State = STATE_WAITING;
 }
 
-static void Name(char *args) {
+static void cmd_name(char *args) {
     if (args) {
         strncpy(OpponentName, args, OPP_NAME_LENGTH - 1);
         print(2, "Your name is %s\n", OpponentName);
     }
 }
 
-static void SelfPlay(char *args) {
+static void cmd_selfplay(char *args) {
     (void)args;
     SelfPlayMode = true;
     State = STATE_CALCULATING;
 }
 
-static void TestNext(char *args) {
+static void cmd_test_next(char *args) {
     (void)args;
     next_test_generators(CurrentPosition);
 }
 
-static void Conf(char *args) {
+static void cmd_conf(char *args) {
     if (args == NULL) {
         print(0, "Usage: conf <filename>\n");
         return;
@@ -831,7 +831,7 @@ static void Conf(char *args) {
     dbase_recalc_attacks(CurrentPosition);
 }
 
-static void SaveConf(char *args) {
+static void cmd_save_conf(char *args) {
     if (args == NULL) {
         print(0, "Usage: save-conf <filename>\n");
         return;
@@ -840,14 +840,14 @@ static void SaveConf(char *args) {
     eval_config_save(args);
 }
 
-static void ShowScore(char *args) {
+static void cmd_show_score(char *args) {
     (void)args;
     eval_init(CurrentPosition);
     int score = eval_position(CurrentPosition);
     print(0, "Static evaluation: %d\n", score);
 }
 
-static void SetSearchDepth(char *args) {
+static void cmd_set_search_depth(char *args) {
     if (args == NULL) {
         print(0, "Usage: depth <depth>");
         return;

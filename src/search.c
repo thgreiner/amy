@@ -249,12 +249,12 @@ static bool TerminateSearch(struct SearchData *sd) {
                 }
 
                 if (SearchMode == Analyzing && theCommand->move != M_NONE) {
-                    ExecuteCommand(theCommand);
+                    cmd_execute(theCommand);
                     return true;
                 }
 
                 if (theCommand->allowed_during_search) {
-                    ExecuteCommand(theCommand);
+                    cmd_execute(theCommand);
 
                     if (theCommand->interrupts_search) {
                         SearchMode = Interrupted;
@@ -1118,7 +1118,7 @@ static char *search_numbered_san(struct Position *p, int move, char *buffer,
 }
 
 /*
- * Analyze the hashtable to find the principal variation.
+ * cmd_analyze the hashtable to find the principal variation.
  */
 
 static void search_analysis_loop(struct Position *p, int depth) {
@@ -1801,7 +1801,7 @@ void search_root(struct Position *p) {
 
         if (move != M_NONE) {
             char san_buffer[32];
-            print(1, "Book move found: %s\n",
+            print(1, "cmd_book move found: %s\n",
                   search_numbered_san(p, move, san_buffer, sizeof(san_buffer)));
             p->outOfBookCnt[p->turn] = 0;
         } else {
