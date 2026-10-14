@@ -760,9 +760,9 @@ static void next_generate_qcaptures(struct SearchData *sd, int alpha) {
     }
 
     if (p->turn == White) {
-        score = MaterialBalance(p) + MaxPos;
+        score = eval_material_balance(p) + MaxPos;
     } else {
-        score = -MaterialBalance(p) + MaxPos;
+        score = -eval_material_balance(p) + MaxPos;
     }
 
     if (score + Value[Queen] <= alpha)

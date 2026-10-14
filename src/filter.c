@@ -118,7 +118,7 @@ void filter_quiescent_positions(char *file_name) {
             last_position_was_quiet = true;
 
             if (!dbase_game_end(p)) {
-                const int static_evaluation = EvaluatePosition(p);
+                const int static_evaluation = eval_position(p);
                 const int dynamic_evaluation = QuiescenceSearch(p);
 
                 const int diff = ABS(static_evaluation - dynamic_evaluation);

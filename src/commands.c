@@ -340,8 +340,8 @@ static void TestScore(char *fname) {
         if (fgets(line, 256, fin) == NULL)
             break;
         p = dbase_create_position_from_epd(line);
-        InitEvaluation(p);
-        int score = EvaluatePosition(p);
+        eval_init(p);
+        int score = eval_position(p);
 
         if (fout) {
             size_t l = strlen(line);
@@ -827,7 +827,7 @@ static void Conf(char *args) {
         return;
     }
 
-    LoadEvaluationConfig(args);
+    eval_config_load(args);
     dbase_recalc_attacks(CurrentPosition);
 }
 
@@ -837,13 +837,13 @@ static void SaveConf(char *args) {
         return;
     }
 
-    SaveEvaluationConfig(args);
+    eval_config_save(args);
 }
 
 static void ShowScore(char *args) {
     (void)args;
-    InitEvaluation(CurrentPosition);
-    int score = EvaluatePosition(CurrentPosition);
+    eval_init(CurrentPosition);
+    int score = eval_position(CurrentPosition);
     print(0, "Static evaluation: %d\n", score);
 }
 

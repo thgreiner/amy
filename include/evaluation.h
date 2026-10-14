@@ -120,8 +120,8 @@ extern int16_t ScaleOpenFiles[];
 
 extern int MaxPos;
 
-int EvaluatePosition(const struct Position *);
-void InitEvaluation(const struct Position *);
-int MaterialBalance(const struct Position *);
+int eval_position(const struct Position *);
+void eval_init(const struct Position *);
+int eval_material_balance(const struct Position *);
 
 #endif /* EVALUATION_H */

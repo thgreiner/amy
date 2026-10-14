@@ -188,7 +188,7 @@ int main(int argc, char *argv[]) {
     ShowVersion();
 
     if (ConfigFileName) {
-        LoadEvaluationConfig(ConfigFileName);
+        eval_config_load(ConfigFileName);
     }
 
     ht_allocate();

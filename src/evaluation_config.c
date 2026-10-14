@@ -57,7 +57,7 @@ static void print_array(FILE *, char *, int16_t *, size_t);
 /**
  * Reads evaluation parameters from a file.
  */
-void LoadEvaluationConfig(char *file_name) {
+void eval_config_load(char *file_name) {
     char *buffer = read_file(file_name);
 
     if (buffer == NULL)
@@ -85,7 +85,7 @@ void LoadEvaluationConfig(char *file_name) {
 /**
  * Writes evaluation config to a file.
  */
-void SaveEvaluationConfig(char *file_name) {
+void eval_config_save(char *file_name) {
     FILE *fout = fopen(file_name, "w");
 
     if (!fout) {

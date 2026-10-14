@@ -508,7 +508,7 @@ static int quies(struct SearchData *sd, int alpha, int beta, int depth) {
      * Probe recognizers. If the probe is successful, use the
      * recognizer score as evaluation score.
      *
-     * Otherwise, use EvaluatePosition()
+     * Otherwise, use eval_position()
      */
 
     switch (recog_probe(p, &tmp)) {
@@ -528,7 +528,7 @@ static int quies(struct SearchData *sd, int alpha, int beta, int depth) {
         }
         break;
     default:
-        best = EvaluatePosition(p);
+        best = eval_position(p);
         break;
     }
 
@@ -795,9 +795,9 @@ static int negascout(struct SearchData *sd, int alpha, int beta,
     is_futile = !incheck && !threat && alpha < CMLIMIT && alpha > -CMLIMIT;
     if (is_futile) {
         if (p->turn == White) {
-            optimistic = MaterialBalance(p) + MaxPos;
+            optimistic = eval_material_balance(p) + MaxPos;
         } else {
-            optimistic = -MaterialBalance(p) + MaxPos;
+            optimistic = -eval_material_balance(p) + MaxPos;
         }
     }
 #endif /* FUTILITY */
@@ -1755,7 +1755,7 @@ int Iterate(struct Position *p, int *score_ptr, move_t alternate_move,
     SoftLimit2 = StartTime + (int)(85 * soft);
     HardLimit = StartTime + (int)(hard * ONE_SECOND);
 
-    InitEvaluation(p);
+    eval_init(p);
     ht_age();
     searchio_header();
 
@@ -1837,7 +1837,7 @@ void SearchRoot(struct Position *p) {
 int QuiescenceSearch(struct Position *p) {
     struct SearchData *sd;
 
-    InitEvaluation(p);
+    eval_init(p);
     MaxDepth = MAX_TREE_SIZE - 1;
 
     sd = CreateSearchData(p);

@@ -310,7 +310,7 @@ static const int MaxPosInit = 2000;
 static int RootGamePhase;
 
 /**
- * Masks used in EvaluatePawns.
+ * Masks used in eval_pawns.
  */
 
 static const BitBoard FianchettoMaskWhiteKingSide =
@@ -323,7 +323,7 @@ static const BitBoard FianchettoMaskBlackQueenSide =
     bitboard_set_mask(c7) | bitboard_set_mask(b6) | bitboard_set_mask(a7);
 
 /**
- * Masks used in EvaluateDevelopment.
+ * Masks used in eval_development.
  */
 static const BitBoard WKingOpeningMask = bitboard_set_mask(e1) | bitboard_set_mask(d1);
 static const BitBoard BKingOpeningMask = bitboard_set_mask(e8) | bitboard_set_mask(d8);
@@ -351,7 +351,7 @@ static bool is_edge(unsigned int);
  *
  */
 
-static int EvaluatePawns(const struct Position *p,
+static int eval_pawns(const struct Position *p,
                          struct PawnFacts *pawnFacts) {
     BitBoard pcs = 0;
     int score = 0;
@@ -670,7 +670,7 @@ static int EvaluatePawns(const struct Position *p,
 
 #ifdef DEBUG
     if (DebugWhat & DebugPawnStructure) {
-        print(2, "EvaluatePawns returns %d\n", score);
+        print(2, "eval_pawns returns %d\n", score);
     }
 #endif
 
@@ -679,18 +679,18 @@ static int EvaluatePawns(const struct Position *p,
 
 /**
  * Look up current pawn structure in pawn hashtable. If not present,
- * use EvaluatePawns() to score the pawn structure. Store result in the
+ * use eval_pawns() to score the pawn structure. Store result in the
  * pawn hashtable.
  *
  */
 
-static int EvaluatePawnsHashed(const struct Position *p,
+static int eval_pawns_hashed(const struct Position *p,
                                struct PawnFacts *pawnFacts) {
     int score;
 
     PTry++;
     if (ht_probe_pawn(p->pkey, &score, pawnFacts) != Useful) {
-        score = EvaluatePawns(p, pawnFacts);
+        score = eval_pawns(p, pawnFacts);
         ht_store_pawn(p->pkey, score, pawnFacts);
     } else {
         PHit++;
@@ -703,7 +703,7 @@ static int EvaluatePawnsHashed(const struct Position *p,
  * Evaluate passed pawns
  */
 
-static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
+static int eval_passed_pawns(const struct Position *p, int wphase, int bphase,
                                struct PawnFacts *pawnFacts) {
     int score = 0;
     int wdistant = 0;
@@ -1069,7 +1069,7 @@ static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
  * Evaluate the king safety
  */
 
-static int EvaluateKingSafety(const struct Position *p, int wphase, int bphase,
+static int eval_king_safety(const struct Position *p, int wphase, int bphase,
                               struct PawnFacts *pawnFacts) {
     int score = 0;
 
@@ -1178,7 +1178,7 @@ static int EvaluateKingSafety(const struct Position *p, int wphase, int bphase,
  * Evaluate the development status
  */
 
-static int EvaluateDevelopment(const struct Position *p) {
+static int eval_development(const struct Position *p) {
     int score = 0;
     BitBoard pcs;
 
@@ -1241,7 +1241,7 @@ static int EvaluateDevelopment(const struct Position *p) {
  * Evaluate the material balance.
  */
 
-int MaterialBalance(const struct Position *p) {
+int eval_material_balance(const struct Position *p) {
     int score = p->material[White] - p->material[Black];
 
     return score;
@@ -1251,7 +1251,7 @@ int MaterialBalance(const struct Position *p) {
  * Evaluate the position from white points of view.
  */
 
-static int EvaluatePositionForWhite(const struct Position *p) {
+static int eval_position_for_white(const struct Position *p) {
     int score;
 
     int wphase;
@@ -1277,7 +1277,7 @@ static int EvaluatePositionForWhite(const struct Position *p) {
     }
 #endif
 
-    score = MaterialBalance(p);
+    score = eval_material_balance(p);
     fastscore = score;
 
 #ifdef DEBUG
@@ -1286,7 +1286,7 @@ static int EvaluatePositionForWhite(const struct Position *p) {
     }
 #endif
 
-    score += EvaluatePawnsHashed(p, &pawnFacts);
+    score += eval_pawns_hashed(p, &pawnFacts);
 
 #ifdef DEBUG
     if (DebugWhat & DebugPieces) {
@@ -1303,7 +1303,7 @@ static int EvaluatePositionForWhite(const struct Position *p) {
     wphase = MIN(31, p->nonPawn[Black] / Value[Pawn]);
     bphase = MIN(31, p->nonPawn[White] / Value[Pawn]);
 
-    score += EvaluateKingSafety(p, wphase, bphase, &pawnFacts);
+    score += eval_king_safety(p, wphase, bphase, &pawnFacts);
 
 #ifdef DEBUG
     if (DebugWhat & DebugPieces) {
@@ -1317,7 +1317,7 @@ static int EvaluatePositionForWhite(const struct Position *p) {
      *
      *************************************************************/
 
-    score += EvaluatePassedPawns(p, wphase, bphase, &pawnFacts);
+    score += eval_passed_pawns(p, wphase, bphase, &pawnFacts);
 
 #ifdef DEBUG
     if (DebugWhat & DebugPieces) {
@@ -1365,7 +1365,7 @@ static int EvaluatePositionForWhite(const struct Position *p) {
      *************************************************************/
 
     if (RootGamePhase == Opening) {
-        score += EvaluateDevelopment(p);
+        score += eval_development(p);
     }
 
 #ifdef DEBUG
@@ -1762,18 +1762,18 @@ static int EvaluatePositionForWhite(const struct Position *p) {
  * if it is not white to move.
  */
 
-int EvaluatePosition(const struct Position *p) {
+int eval_position(const struct Position *p) {
     if (p->turn == White)
-        return EvaluatePositionForWhite(p);
+        return eval_position_for_white(p);
     else
-        return -EvaluatePositionForWhite(p);
+        return -eval_position_for_white(p);
 }
 
 /**
  * Do the pre-search initialization of evaluation.
  */
 
-void InitEvaluation(const struct Position *p) {
+void eval_init(const struct Position *p) {
     int sq;
 
     int eg_threshold = Value[Queen] + Value[Bishop];
@@ -1847,7 +1847,7 @@ void InitEvaluation(const struct Position *p) {
 
 #ifdef DEBUG
     DebugWhat = 255;
-    EvaluatePositionForWhite(p);
+    eval_position_for_white(p);
     DebugWhat = 0;
 #endif
 
