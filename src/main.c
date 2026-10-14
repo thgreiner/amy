@@ -193,7 +193,7 @@ int main(int argc, char *argv[]) {
 
     AllocateHT();
     InitEGTB(EGTBPath);
-    RecogInit();
+    recog_init();
 
     DoBookLearning();
 

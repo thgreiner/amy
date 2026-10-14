@@ -511,7 +511,7 @@ static int quies(struct SearchData *sd, int alpha, int beta, int depth) {
      * Otherwise, use EvaluatePosition()
      */
 
-    switch (ProbeRecognizer(p, &tmp)) {
+    switch (recog_probe(p, &tmp)) {
     case ExactScore:
         best = tmp;
         goto EXIT;
@@ -693,7 +693,7 @@ static int negascout(struct SearchData *sd, int alpha, int beta,
      * Probe recognizers
      */
 
-    switch (ProbeRecognizer(p, &tmp)) {
+    switch (recog_probe(p, &tmp)) {
     case ExactScore:
         best = tmp;
         goto EXIT;

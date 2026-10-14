@@ -49,14 +49,14 @@ typedef int RECOGNIZER(const struct Position *, int *score);
 static RECOGNIZER *Recognizers[64];
 static int RecognizerAvailable[32];
 
-static RECOGNIZER RecognizerKK;
-static RECOGNIZER RecognizerKBK;
-static RECOGNIZER RecognizerKBNK;
-static RECOGNIZER RecognizerKNK;
-static RECOGNIZER RecognizerKBKP;
-static RECOGNIZER RecognizerKNKP;
+static RECOGNIZER recog_kk;
+static RECOGNIZER recog_kbk;
+static RECOGNIZER recog_kbnk;
+static RECOGNIZER recog_knk;
+static RECOGNIZER recog_kbkp;
+static RECOGNIZER recog_knkp;
 
-static void RegisterRecognizer(RECOGNIZER *funct, int white_sig,
+static void recog_register(RECOGNIZER *funct, int white_sig,
                                int black_sig) {
     Recognizers[CALCULATE_INDEX(white_sig, black_sig)] = funct;
 
@@ -64,11 +64,11 @@ static void RegisterRecognizer(RECOGNIZER *funct, int white_sig,
     RecognizerAvailable[black_sig] |= (1 << white_sig);
 }
 
-static int sig(int pawn, int knight, int bishop, int rook, int queen) {
+static int recog_sig(int pawn, int knight, int bishop, int rook, int queen) {
     return pawn | (knight << 1) | (bishop << 2) | (rook << 3) | (queen << 4);
 }
 
-void RecogInit(void) {
+void recog_init(void) {
     int i;
 
     for (i = 0; i < 64; i++) {
@@ -83,20 +83,20 @@ void RecogInit(void) {
      *                                       P  N  B  R  Q       P  N  B  R  Q
      */
 
-    RegisterRecognizer(RecognizerKK, sig(0, 0, 0, 0, 0), sig(0, 0, 0, 0, 0));
-    RegisterRecognizer(RecognizerKBK, sig(0, 0, 1, 0, 0), sig(0, 0, 0, 0, 0));
-    RegisterRecognizer(RecognizerKBNK, sig(0, 1, 1, 0, 0), sig(0, 0, 0, 0, 0));
-    RegisterRecognizer(RecognizerKBNK, sig(0, 0, 1, 0, 0), sig(0, 1, 0, 0, 0));
-    RegisterRecognizer(RecognizerKNK, sig(0, 1, 0, 0, 0), sig(0, 0, 0, 0, 0));
-    RegisterRecognizer(RecognizerKNK, sig(0, 0, 0, 0, 0), sig(0, 1, 0, 0, 0));
-    RegisterRecognizer(RecognizerKNK, sig(0, 1, 0, 0, 0), sig(0, 1, 0, 0, 0));
-    RegisterRecognizer(RecognizerKBKP, sig(0, 0, 1, 0, 0), sig(1, 0, 0, 0, 0));
-    RegisterRecognizer(RecognizerKBKP, sig(1, 0, 1, 0, 0), sig(0, 0, 0, 0, 0));
-    RegisterRecognizer(RecognizerKBKP, sig(1, 0, 1, 0, 0), sig(1, 0, 0, 0, 0));
-    RegisterRecognizer(RecognizerKNKP, sig(0, 1, 0, 0, 0), sig(1, 0, 0, 0, 0));
+    recog_register(recog_kk, recog_sig(0, 0, 0, 0, 0), recog_sig(0, 0, 0, 0, 0));
+    recog_register(recog_kbk, recog_sig(0, 0, 1, 0, 0), recog_sig(0, 0, 0, 0, 0));
+    recog_register(recog_kbnk, recog_sig(0, 1, 1, 0, 0), recog_sig(0, 0, 0, 0, 0));
+    recog_register(recog_kbnk, recog_sig(0, 0, 1, 0, 0), recog_sig(0, 1, 0, 0, 0));
+    recog_register(recog_knk, recog_sig(0, 1, 0, 0, 0), recog_sig(0, 0, 0, 0, 0));
+    recog_register(recog_knk, recog_sig(0, 0, 0, 0, 0), recog_sig(0, 1, 0, 0, 0));
+    recog_register(recog_knk, recog_sig(0, 1, 0, 0, 0), recog_sig(0, 1, 0, 0, 0));
+    recog_register(recog_kbkp, recog_sig(0, 0, 1, 0, 0), recog_sig(1, 0, 0, 0, 0));
+    recog_register(recog_kbkp, recog_sig(1, 0, 1, 0, 0), recog_sig(0, 0, 0, 0, 0));
+    recog_register(recog_kbkp, recog_sig(1, 0, 1, 0, 0), recog_sig(1, 0, 0, 0, 0));
+    recog_register(recog_knkp, recog_sig(0, 1, 0, 0, 0), recog_sig(1, 0, 0, 0, 0));
 }
 
-int ProbeRecognizer(const struct Position *p, int *score) {
+int recog_probe(const struct Position *p, int *score) {
     int index = RECOGNIZER_INDEX(p);
     RECOGNIZER *rec = Recognizers[index];
     if (rec != NULL) {
@@ -109,14 +109,14 @@ int ProbeRecognizer(const struct Position *p, int *score) {
     return Useless;
 }
 
-static int RecognizerKK(const struct Position *p, int *score) {
+static int recog_kk(const struct Position *p, int *score) {
     (void)p;
     *score = 0;
 
     return ExactScore;
 }
 
-static int RecognizerKBK(const struct Position *p, int *score) {
+static int recog_kbk(const struct Position *p, int *score) {
     BitBoard pcs;
     int color = White;
 
@@ -185,7 +185,7 @@ static int KBNKTab[] = {500, 450, 425, 400, 375, 350, 325, 300, 450, 300, 300,
                         100, 100, 300, 425, 325, 300, 300, 300, 300, 300, 300,
                         450, 300, 325, 350, 375, 400, 425, 450, 500};
 
-static int RecognizerKBNK(const struct Position *p, int *score) {
+static int recog_kbnk(const struct Position *p, int *score) {
     if (p->material_signature[White] && p->material_signature[Black]) {
 
         /*
@@ -261,7 +261,7 @@ static int RecognizerKBNK(const struct Position *p, int *score) {
     }
 }
 
-static int RecognizerKNK(const struct Position *p, int *score) {
+static int recog_knk(const struct Position *p, int *score) {
     if (p->material_signature[White] && p->material_signature[Black]) {
         return Useless;
     } else {
@@ -282,7 +282,7 @@ static int RecognizerKNK(const struct Position *p, int *score) {
     }
 }
 
-static int RecognizerKBKP(const struct Position *p, int *score) {
+static int recog_kbkp(const struct Position *p, int *score) {
     if (p->material_signature[White] && p->material_signature[Black]) {
 
         /*
@@ -379,7 +379,7 @@ static int RecognizerKBKP(const struct Position *p, int *score) {
     }
 }
 
-static int RecognizerKNKP(const struct Position *p, int *score) {
+static int recog_knkp(const struct Position *p, int *score) {
     int color = White;
 
     if (p->material_signature[Black] & SIGNATURE_BIT(Knight)) {
