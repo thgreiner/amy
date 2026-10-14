@@ -56,7 +56,7 @@ typedef enum {
 } LookupResult;
 
 struct HTEntry {
-    unsigned int ht_Signature;
+    hash_t ht_Key;
     move_t ht_Move;
     int ht_Score;
     short ht_Flags;
@@ -64,13 +64,13 @@ struct HTEntry {
 };
 
 struct PTEntry {
-    unsigned int pt_Signature;
+    hash_t pt_Key;
     int pt_Score;
     struct PawnFacts pt_PawnFacts;
 };
 
 struct STEntry {
-    unsigned int st_Signature;
+    hash_t st_Key;
     int st_Score;
 };
 

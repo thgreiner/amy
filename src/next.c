@@ -62,7 +62,7 @@ struct SearchData *CreateSearchData(struct Position *p) {
     sd->data_heap_size = 0;
 
 #if MP
-    sd->localHashTable = safe_calloc(sizeof(struct HTEntry), L_HT_Size);
+    sd->localHashTable = safe_calloc(L_HT_Size, sizeof(struct HTEntry));
     sd->deferred_heap = allocate_heap();
 #endif
 

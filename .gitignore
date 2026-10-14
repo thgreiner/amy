@@ -15,3 +15,5 @@ amy-*.tar.gz
 configure
 **/Makefile.in
 **/Makefile.deps
+.DS_Store
+*.dSYM
