@@ -66,6 +66,5 @@ static const BitBoard KingSideMask = 0xf0f0f0f0f0f0f0f0;
 static const BitBoard QueenSideMask = 0xf0f0f0f0f0f0f0f;
 
 void init_all(void);
-void bitboard_print(BitBoard);
 
 #endif

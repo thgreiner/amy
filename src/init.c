@@ -54,20 +54,6 @@ BitBoard KingSquareW[64], KingSquareB[64];
 BitBoard WPawnBackwardMask[64], BPawnBackwardMask[64];
 BitBoard ConnectedMask[64];
 
-void bitboard_print(BitBoard x) {
-    int i, j;
-    for (i = 7; i >= 0; i--) {
-        for (j = 0; j < 8; j++) {
-            int k = i * 8 + j;
-            if (bitboard_tst_bit(x, k))
-                print(0, "*");
-            else
-                print(0, ".");
-        }
-        print(0, "\n");
-    }
-}
-
 void init_pawn_masks(void) {
     int i, j;
 

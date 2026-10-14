@@ -55,4 +55,6 @@ int bitboard_count_bits(BitBoard);
 int bitboard_find_set_bit(BitBoard);
 #endif
 
+void bitboard_print(BitBoard);
+
 #endif

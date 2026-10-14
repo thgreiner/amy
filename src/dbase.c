@@ -36,6 +36,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "bitboard.h"
 #include "dbase.h"
 #include "hashtable.h"
 #include "heap.h"
