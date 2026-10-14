@@ -35,6 +35,6 @@
 #include "dbase.h"
 #include <stdbool.h>
 
-bool MateThreat(struct Position *, int);
+bool mates_threat(struct Position *, int);
 
 #endif

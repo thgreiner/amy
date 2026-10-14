@@ -2088,8 +2088,8 @@ void ShowPosition(struct Position *p) {
         } else if (rk == 1) {
             print(0, "|   Index: %d\n", RECOGNIZER_INDEX(p));
         } else if (rk == 0) {
-            print(0, "|   MateThreat: %d %d\n", MateThreat(p, White),
-                  MateThreat(p, Black));
+            print(0, "|   mates_threat: %d %d\n", mates_threat(p, White),
+                  mates_threat(p, Black));
         } else {
             print(0, "|\n");
         }

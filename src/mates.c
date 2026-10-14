@@ -36,7 +36,7 @@
 #include "dbase.h"
 #include "init.h"
 
-bool MateThreat(struct Position *p, int side) {
+bool mates_threat(struct Position *p, int side) {
     int oside = !side;
     int ekp = p->kingSq[oside];
     BitBoard pcs;

@@ -669,7 +669,7 @@ static int negascout(struct SearchData *sd, int alpha, int beta,
         }
         break;
     case Useless:
-        threat = !incheck && MateThreat(p, OPP(p->turn));
+        threat = !incheck && mates_threat(p, OPP(p->turn));
         break;
 #if MP
     case OnEvaluation:
