@@ -110,7 +110,7 @@ static struct CommandEntry Commands[] = {
     {"distribution", &ShowDistribution, true, false,
      "show terms of distribution", NULL},
     {"e", &ShowEco, false, false, "show ECO code", NULL},
-    {"eco", &ParseEcoPgn, false, false, "create ECO database", NULL},
+    {"eco", &eco_parse_pgn, false, false, "create ECO database", NULL},
     {"easy", &Easy, true, false, "switch off permanent brain", NULL},
     {"epd", &SetEPD, false, false, "set position in EPD", NULL},
     {"edit", &Edit, false, false, "edit position (xboard!)", NULL},
@@ -220,7 +220,7 @@ static void ShowEco(char *args) {
     (void)args;
     char eco[128] = "";
 
-    FindEcoCode(CurrentPosition, eco);
+    eco_find_code(CurrentPosition, eco);
 
     print(0, "Eco code is %s\n", eco);
 }

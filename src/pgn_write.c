@@ -151,7 +151,7 @@ void pgn_save_game(struct Position *p, char *file_name) {
             header.date = date_buf;
             header.time = time_buf;
 
-            if (FindEcoCode(p, eco)) {
+            if (eco_find_code(p, eco)) {
                 header.eco = eco;
             }
 

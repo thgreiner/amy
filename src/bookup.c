@@ -219,7 +219,7 @@ static void book_up_internal(char *file_name, int verbosity) {
             move_t themove = ParseSAN(p, move);
             if (themove != M_NONE) {
                 DoMove(p, themove);
-                char *eco_code = GetEcoCode(p->hkey);
+                char *eco_code = eco_get_code(p->hkey);
                 if (eco_code) {
                     afterEco = 0;
                     free(eco_code);

@@ -34,8 +34,8 @@
 
 #include "types.h"
 
-void ParseEcoPgn(char *);
-char *GetEcoCode(hash_t);
-bool FindEcoCode(const struct Position *, char *);
+void eco_parse_pgn(char *);
+char *eco_get_code(hash_t);
+bool eco_find_code(const struct Position *, char *);
 
 #endif

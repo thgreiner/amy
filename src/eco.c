@@ -49,7 +49,7 @@
 #warning "ECODIR is not defined!"
 #endif
 
-void ParseEcoPgn(char *fname) {
+void eco_parse_pgn(char *fname) {
     FILE *fin = fopen(fname, "rb");
     char buffer[1024];
     char name[128];
@@ -106,7 +106,7 @@ void ParseEcoPgn(char *fname) {
 
 static tree_node_t *EcoDB = NULL;
 
-char *GetEcoCode(hash_t hkey) {
+char *eco_get_code(hash_t hkey) {
     char *retval = NULL;
 
     if (EcoDB == NULL) {
@@ -133,7 +133,7 @@ char *GetEcoCode(hash_t hkey) {
     return retval;
 }
 
-bool FindEcoCode(const struct Position *p, char *result) {
+bool eco_find_code(const struct Position *p, char *result) {
     int ply = 0;
     char *res;
     bool found = false;
@@ -143,7 +143,7 @@ bool FindEcoCode(const struct Position *p, char *result) {
         if (ply == p->ply) {
             key = p->hkey;
         }
-        res = GetEcoCode(key);
+        res = eco_get_code(key);
         if (res != NULL) {
             strcpy(result, res);
             found = true;
