@@ -100,13 +100,13 @@ static void save_moves(FILE *fout, struct Position *p) {
     for (int i = 0; i < ply; i++) {
         int move = history[i];
         if ((i & 1) == 0) {
-            EmitPgnLine(fout, &width, "%d. ", (i / 2) + 1);
+            emit_pgn_line(fout, &width, "%d. ", (i / 2) + 1);
         }
 
         char san_buffer[16];
         char *san = SAN(p, move, san_buffer);
 
-        EmitPgnLine(fout, &width, "%s ", san);
+        emit_pgn_line(fout, &width, "%s ", san);
 
         DoMove(p, move);
     }
@@ -114,7 +114,7 @@ static void save_moves(FILE *fout, struct Position *p) {
     free(history);
 }
 
-void SaveGame(struct Position *p, char *file_name) {
+void save_game(struct Position *p, char *file_name) {
     /* Do not save if no move made yet. */
     if (p->ply > 0) {
         FILE *fout = fopen(file_name, "w");
@@ -174,7 +174,7 @@ void SaveGame(struct Position *p, char *file_name) {
  * The width is derived from the number of characters actually written,
  * so callers no longer need to compute it by hand.
  */
-void EmitPgnLine(FILE *fout, int *width, const char *fmt, ...) {
+void emit_pgn_line(FILE *fout, int *width, const char *fmt, ...) {
     va_list ap, copy;
 
     va_start(ap, fmt);

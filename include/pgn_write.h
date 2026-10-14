@@ -56,8 +56,8 @@ struct PGNHeader {
 
 extern char OpponentName[OPP_NAME_LENGTH];
 
-void SaveGame(struct Position *, char *);
+void save_game(struct Position *, char *);
 void print_header(FILE *, struct PGNHeader *);
-void EmitPgnLine(FILE *fout, int *width, const char *fmt, ...);
+void emit_pgn_line(FILE *fout, int *width, const char *fmt, ...);
 
 #endif

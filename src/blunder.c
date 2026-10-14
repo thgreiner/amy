@@ -121,7 +121,7 @@ void BlunderCheck(char *file_name) {
     unsigned int count_games = 0;
     unsigned int count_blunders = 0;
 
-    while (!scanHeader(fin, &header)) {
+    while (!scan_header(fin, &header)) {
         struct Position *p;
 
         count_games++;
@@ -137,7 +137,7 @@ void BlunderCheck(char *file_name) {
         move_t last_move = M_NONE;
         int width = 0;
 
-        while (!scanMove(fin, move)) {
+        while (!scan_move(fin, move)) {
             if (!(strlen(move) < 12)) {
                 print(0, "\nMalformed move: <%s>\n", move);
                 exit(1);
@@ -174,10 +174,10 @@ void BlunderCheck(char *file_name) {
                     print(1, ">>> score diff: %d\n",
                           search_evaluation - alternate_evaluation);
 
-                    EmitPgnLine(fout, &width, "{ q=%s; p=[%s:100] } ", evalbuf,
+                    emit_pgn_line(fout, &width, "{ q=%s; p=[%s:100] } ", evalbuf,
                                 SAN(p, optimal_move, sanbuf));
                 } else {
-                    EmitPgnLine(fout, &width, "{%s} ", comment);
+                    emit_pgn_line(fout, &width, "{%s} ", comment);
                 }
 
                 DoMove(p, last_move);
@@ -188,16 +188,16 @@ void BlunderCheck(char *file_name) {
             if (themove == M_NONE) {
                 get_and_reset_comment(comment, sizeof(comment) - 1);
                 if (strlen(comment) != 0) {
-                    EmitPgnLine(fout, &width, "{%s} ", comment);
+                    emit_pgn_line(fout, &width, "{%s} ", comment);
                 }
                 break;
             }
 
             if ((p->ply % 2) == 0) {
-                EmitPgnLine(fout, &width, "%d. ", 1 + p->ply / 2);
+                emit_pgn_line(fout, &width, "%d. ", 1 + p->ply / 2);
             }
 
-            EmitPgnLine(fout, &width, "%s ", SAN(p, themove, san_buffer));
+            emit_pgn_line(fout, &width, "%s ", SAN(p, themove, san_buffer));
 
             DoMove(p, themove);
             last_move = themove;
