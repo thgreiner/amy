@@ -103,15 +103,15 @@ typedef enum {
 // clang-format on
 
 #if HAVE___BUILTIN_POPCOUNTLL
-#define CountBits(x) __builtin_popcountll(x)
+#define bitboard_count_bits(x) __builtin_popcountll(x)
 #else
-int CountBits(BitBoard);
+int bitboard_count_bits(BitBoard);
 #endif
 
 #if HAVE___BUILTIN_CTZLL
-#define FindSetBit(x) __builtin_ctzll(x)
+#define bitboard_find_set_bit(x) __builtin_ctzll(x)
 #else
-int FindSetBit(BitBoard);
+int bitboard_find_set_bit(BitBoard);
 #endif
 
 struct Position {

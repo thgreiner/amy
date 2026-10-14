@@ -147,7 +147,7 @@ const uint64_t bishop_magics[64] = {
 };
 
 static int magic_poplsb(BitBoard *x) {
-    int lsb = FindSetBit(*x);
+    int lsb = bitboard_find_set_bit(*x);
     *x &= *x - 1;
     return lsb;
 }
@@ -155,28 +155,28 @@ static int magic_poplsb(BitBoard *x) {
 static uint64_t magic_rook_attack_mask(int sq, uint64_t blockers) {
     uint64_t x = 0;
 
-    uint64_t m = ShiftLeft(SetMask(sq));
+    uint64_t m = ShiftLeft(bitboard_set_mask(sq));
     while (m) {
         x |= m;
         m &= ~blockers;
         m = ShiftLeft(m);
     }
 
-    m = ShiftRight(SetMask(sq));
+    m = ShiftRight(bitboard_set_mask(sq));
     while (m) {
         x |= m;
         m &= ~blockers;
         m = ShiftRight(m);
     }
 
-    m = ShiftUp(SetMask(sq));
+    m = ShiftUp(bitboard_set_mask(sq));
     while (m) {
         x |= m;
         m &= ~blockers;
         m = ShiftUp(m);
     }
 
-    m = ShiftDown(SetMask(sq));
+    m = ShiftDown(bitboard_set_mask(sq));
     while (m) {
         x |= m;
         m &= ~blockers;
@@ -189,28 +189,28 @@ static uint64_t magic_rook_attack_mask(int sq, uint64_t blockers) {
 static uint64_t magic_bishop_attack_mask(int sq, uint64_t blockers) {
     uint64_t x = 0;
 
-    uint64_t m = ShiftUp(ShiftLeft(SetMask(sq)));
+    uint64_t m = ShiftUp(ShiftLeft(bitboard_set_mask(sq)));
     while (m) {
         x |= m;
         m &= ~blockers;
         m = ShiftUp(ShiftLeft(m));
     }
 
-    m = ShiftUp(ShiftRight(SetMask(sq)));
+    m = ShiftUp(ShiftRight(bitboard_set_mask(sq)));
     while (m) {
         x |= m;
         m &= ~blockers;
         m = ShiftUp(ShiftRight(m));
     }
 
-    m = ShiftDown(ShiftLeft(SetMask(sq)));
+    m = ShiftDown(ShiftLeft(bitboard_set_mask(sq)));
     while (m) {
         x |= m;
         m &= ~blockers;
         m = ShiftDown(ShiftLeft(m));
     }
 
-    m = ShiftDown(ShiftRight(SetMask(sq)));
+    m = ShiftDown(ShiftRight(bitboard_set_mask(sq)));
     while (m) {
         x |= m;
         m &= ~blockers;
@@ -226,7 +226,7 @@ static BitBoard magic_blockers_from_index(int index, BitBoard mask) {
     for (int i = 0; i < bits; i++) {
         int bit = magic_poplsb(&mask);
         if (index & (1 << i)) {
-            SetBit(blockers, bit);
+            bitboard_set_bit(blockers, bit);
         }
     }
     return blockers;

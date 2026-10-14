@@ -300,7 +300,7 @@ static int CheckExtend(struct Position *p) {
 
     att = p->atkFr[kp] & p->mask[OPP(p->turn)][0];
 
-    if (CountBits(att) > 1) {
+    if (bitboard_count_bits(att) > 1) {
 
         /*
          * double check, the king has to move
@@ -319,13 +319,13 @@ static int CheckExtend(struct Position *p) {
         att &= p->slidingPieces;
 
         while (att) {
-            i = FindSetBit(att);
+            i = bitboard_find_set_bit(att);
             att &= att - 1;
             ff &= ~Ray[i][kp];
         }
 
         while (ff) {
-            i = FindSetBit(ff);
+            i = bitboard_find_set_bit(ff);
             ff &= ff - 1;
             if (!(p->atkFr[i] & p->mask[OPP(p->turn)][0]))
                 cnt++;
@@ -337,7 +337,7 @@ static int CheckExtend(struct Position *p) {
         BitBoard def;
         BitBoard tmp;
 
-        int atp = FindSetBit(att);
+        int atp = bitboard_find_set_bit(att);
         int cnt = 0;
         int i;
         int nd = 0;
@@ -350,13 +350,13 @@ static int CheckExtend(struct Position *p) {
 
         ff = KingEPM[kp] & ~p->mask[p->turn][0];
 
-        i = FindSetBit(att);
-        if (TstBit(p->slidingPieces, i))
+        i = bitboard_find_set_bit(att);
+        if (bitboard_tst_bit(p->slidingPieces, i))
             ff &= ~Ray[i][kp];
 
         /* check for king flight squares */
         while (ff) {
-            i = FindSetBit(ff);
+            i = bitboard_find_set_bit(ff);
             ff &= ff - 1;
             if (!(p->atkFr[i] & p->mask[OPP(p->turn)][0]))
                 cnt++;
@@ -371,13 +371,13 @@ static int CheckExtend(struct Position *p) {
               BishopEPM[kp];
         while (tmp) {
             BitBoard tmp2;
-            i = FindSetBit(tmp);
+            i = bitboard_find_set_bit(tmp);
             tmp &= tmp - 1;
             tmp2 = InterPath[i][kp];
             if (tmp2 && !(p->mask[OPP(p->turn)][0] & tmp2)) {
                 tmp2 &= p->mask[p->turn][0];
-                if (CountBits(tmp2) == 1) {
-                    ClrBit(def, FindSetBit(tmp2));
+                if (bitboard_count_bits(tmp2) == 1) {
+                    bitboard_clr_bit(def, bitboard_find_set_bit(tmp2));
                 }
             }
         }
@@ -386,13 +386,13 @@ static int CheckExtend(struct Position *p) {
               RookEPM[kp];
         while (tmp) {
             BitBoard tmp2;
-            i = FindSetBit(tmp);
+            i = bitboard_find_set_bit(tmp);
             tmp &= tmp - 1;
             tmp2 = InterPath[i][kp];
             if (tmp2 && !(p->mask[OPP(p->turn)][0] & tmp2)) {
                 tmp2 &= p->mask[p->turn][0];
-                if (CountBits(tmp2) == 1) {
-                    ClrBit(def, FindSetBit(tmp2));
+                if (bitboard_count_bits(tmp2) == 1) {
+                    bitboard_clr_bit(def, bitboard_find_set_bit(tmp2));
                 }
             }
         }
@@ -400,25 +400,25 @@ static int CheckExtend(struct Position *p) {
         /* All non-pinned defenders are in 'def' */
         tmp = p->atkFr[atp] & def;
 
-        cnt += CountBits(tmp);
+        cnt += bitboard_count_bits(tmp);
         if (cnt > 1)
             return nd;
 
         /* if possible, try an interposition */
-        if (TstBit(p->slidingPieces, atp)) {
+        if (bitboard_tst_bit(p->slidingPieces, atp)) {
             tmp = InterPath[atp][kp];
             while (tmp) {
                 BitBoard tmp2;
-                i = FindSetBit(tmp);
+                i = bitboard_find_set_bit(tmp);
                 tmp &= tmp - 1;
                 if ((tmp2 = p->atkFr[i] & def)) {
-                    cnt += CountBits(tmp2);
+                    cnt += bitboard_count_bits(tmp2);
                 }
                 if (p->turn == White && (i - 8) > 0 &&
-                    TstBit(p->mask[White][Pawn], i - 8) && TstBit(def, i - 8))
+                    bitboard_tst_bit(p->mask[White][Pawn], i - 8) && bitboard_tst_bit(def, i - 8))
                     cnt++;
                 if (p->turn == Black && (i + 8) < 64 &&
-                    TstBit(p->mask[Black][Pawn], i + 8) && TstBit(def, i + 8))
+                    bitboard_tst_bit(p->mask[Black][Pawn], i + 8) && bitboard_tst_bit(def, i + 8))
                     cnt++;
                 if (cnt > 1)
                     return nd;

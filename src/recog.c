@@ -130,7 +130,7 @@ static int recog_kbk(const struct Position *p, int *score) {
      * drawn if there is only one bishop
      */
 
-    if (CountBits(pcs) < 2) {
+    if (bitboard_count_bits(pcs) < 2) {
         *score = 0;
         return ExactScore;
     }
@@ -192,7 +192,7 @@ static int recog_kbnk(const struct Position *p, int *score) {
          * This is knkb
          */
 
-        if (CountBits(p->mask[White][0] | p->mask[Black][0]) > 4) {
+        if (bitboard_count_bits(p->mask[White][0] | p->mask[Black][0]) > 4) {
             return Useless;
         }
 
@@ -222,7 +222,7 @@ static int recog_kbnk(const struct Position *p, int *score) {
 
         atkd = p->atkTo[p->kingSq[OPP(color)]] & p->mask[color][0];
         if (atkd) {
-            if (p->turn != color || CountBits(atkd) > 1) {
+            if (p->turn != color || bitboard_count_bits(atkd) > 1) {
                 return Useless;
             }
         }
@@ -268,9 +268,9 @@ static int recog_knk(const struct Position *p, int *score) {
         int cnt;
 
         if (p->material_signature[White]) {
-            cnt = CountBits(p->mask[White][Knight]);
+            cnt = bitboard_count_bits(p->mask[White][Knight]);
         } else {
-            cnt = CountBits(p->mask[Black][Knight]);
+            cnt = bitboard_count_bits(p->mask[Black][Knight]);
         }
 
         if (cnt < 3) {
@@ -326,7 +326,7 @@ static int recog_kbkp(const struct Position *p, int *score) {
 
             return Useless;
         } else {
-            if (CountBits(p->mask[color][Bishop]) > 1 ||
+            if (bitboard_count_bits(p->mask[color][Bishop]) > 1 ||
                 p->mask[OPP(color)][King] & EdgeMask) {
                 return Useless;
             }
@@ -386,7 +386,7 @@ static int recog_knkp(const struct Position *p, int *score) {
         color = Black;
     }
 
-    if (CountBits(p->mask[color][Knight]) > 1 ||
+    if (bitboard_count_bits(p->mask[color][Knight]) > 1 ||
         p->mask[OPP(color)][King] & EdgeMask) {
         return Useless;
     }

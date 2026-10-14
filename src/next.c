@@ -150,7 +150,7 @@ move_t next_move(struct SearchData *sd) {
          */
         BitBoard targets = p->mask[OPP(p->turn)][0];
         while (targets) {
-            int to = FindSetBit(targets);
+            int to = bitboard_find_set_bit(targets);
             targets &= targets - 1;
 
             dbase_gen_to(p, to, sd->heap);
@@ -159,7 +159,7 @@ move_t next_move(struct SearchData *sd) {
         BitBoard promoting_pawns =
             p->mask[p->turn][Pawn] & SeventhRank[p->turn];
         while (promoting_pawns) {
-            int from = FindSetBit(promoting_pawns);
+            int from = bitboard_find_set_bit(promoting_pawns);
             promoting_pawns &= promoting_pawns - 1;
 
             dbase_gen_from(p, from, sd->heap);
@@ -330,11 +330,11 @@ move_t next_move(struct SearchData *sd) {
         BitBoard non_pawn = p->mask[p->turn][0] & ~p->mask[p->turn][Pawn];
 
         while (non_pawn) {
-            int from = FindSetBit(non_pawn);
+            int from = bitboard_find_set_bit(non_pawn);
             non_pawn &= non_pawn - 1;
             BitBoard attacks = p->atkTo[from] & empty;
             while (attacks) {
-                int to = FindSetBit(attacks);
+                int to = bitboard_find_set_bit(attacks);
                 attacks &= attacks - 1;
                 heap_append(sd->heap, make_move(from, to, 0));
             }
@@ -350,7 +350,7 @@ move_t next_move(struct SearchData *sd) {
         BitBoard tmp2 = tmp &= empty;
 
         while (tmp2) {
-            int to = FindSetBit(tmp2);
+            int to = bitboard_find_set_bit(tmp2);
             tmp2 &= tmp2 - 1;
 
             int fr = (p->turn == White) ? to - 8 : to + 8;
@@ -367,7 +367,7 @@ move_t next_move(struct SearchData *sd) {
         tmp &= empty;
 
         while (tmp) {
-            int to = FindSetBit(tmp);
+            int to = bitboard_find_set_bit(tmp);
             tmp &= tmp - 1;
 
             int fr = (p->turn == White) ? to - 16 : to + 16;
@@ -446,7 +446,7 @@ move_t next_evasion(struct SearchData *sd) {
             (p->atkFr[kp] | p->atkTo[kp]) & p->mask[OPP(p->turn)][0];
 
         while (targets) {
-            int to = FindSetBit(targets);
+            int to = bitboard_find_set_bit(targets);
             targets &= targets - 1;
             dbase_gen_to(p, to, sd->heap);
         }
@@ -596,13 +596,13 @@ move_t next_evasion(struct SearchData *sd) {
         print(9, "HistoryMoves\n");
 #endif
 
-        const int kp = p->kingSq[p->turn]; /* FindSetBit(Mask[Side][King]); */
+        const int kp = p->kingSq[p->turn]; /* bitboard_find_set_bit(Mask[Side][King]); */
         const BitBoard empty = ~(p->mask[White][0] | p->mask[Black][0]);
 
         BitBoard king_flight_squares = p->atkTo[kp] & empty;
 
         while (king_flight_squares) {
-            int to = FindSetBit(king_flight_squares);
+            int to = bitboard_find_set_bit(king_flight_squares);
             king_flight_squares &= king_flight_squares - 1;
             if (!(p->atkFr[to] & p->mask[OPP(p->turn)][0]))
                 heap_append(sd->heap, make_move(kp, to, 0));
@@ -616,7 +616,7 @@ move_t next_evasion(struct SearchData *sd) {
         BitBoard interpositions = 0;
 
         while (sliding_attackers) {
-            int attacker_sq = FindSetBit(sliding_attackers);
+            int attacker_sq = bitboard_find_set_bit(sliding_attackers);
             sliding_attackers &= sliding_attackers - 1;
             interpositions = InterPath[kp][attacker_sq];
         }
@@ -625,12 +625,12 @@ move_t next_evasion(struct SearchData *sd) {
                              ~p->mask[p->turn][Pawn];
 
         while (non_pawns) {
-            int from = FindSetBit(non_pawns);
+            int from = bitboard_find_set_bit(non_pawns);
             non_pawns &= non_pawns - 1;
             BitBoard blocking = p->atkTo[from] & empty & interpositions;
 
             while (blocking) {
-                int to = FindSetBit(blocking);
+                int to = bitboard_find_set_bit(blocking);
                 blocking &= blocking - 1;
                 heap_append(sd->heap, make_move(from, to, 0));
             }
@@ -646,7 +646,7 @@ move_t next_evasion(struct SearchData *sd) {
         BitBoard pawns_to = pawns = (pawns & empty);
 
         while (pawns_to) {
-            int to = FindSetBit(pawns_to);
+            int to = bitboard_find_set_bit(pawns_to);
             pawns_to &= pawns_to - 1;
             int fr = (p->turn == White) ? to - 8 : to + 8;
 
@@ -669,7 +669,7 @@ move_t next_evasion(struct SearchData *sd) {
         pawns &= empty;
 
         while (pawns) {
-            int to = FindSetBit(pawns);
+            int to = bitboard_find_set_bit(pawns);
             pawns &= pawns - 1;
             int fr = (p->turn == White) ? to - 16 : to + 16;
             heap_append(sd->heap, make_move(fr, to, M_PAWND));
@@ -731,7 +731,7 @@ static void next_generate_qcaptures(struct SearchData *sd, int alpha) {
         int j;
         BitBoard tmp;
 
-        i = FindSetBit(pwn7th);
+        i = bitboard_find_set_bit(pwn7th);
         pwn7th &= pwn7th - 1;
         next = (p->turn == White) ? i + 8 : i - 8;
 
@@ -748,7 +748,7 @@ static void next_generate_qcaptures(struct SearchData *sd, int alpha) {
         tmp = p->atkTo[i] & p->mask[OPP(p->turn)][0];
         while (tmp) {
             int sw;
-            j = FindSetBit(tmp);
+            j = bitboard_find_set_bit(tmp);
             tmp &= tmp - 1;
             move_t move = make_promotion(i, j, Queen, M_CAPTURE);
             if ((sw = swap_off(p, move)) >= 0) {
@@ -771,11 +771,11 @@ static void next_generate_qcaptures(struct SearchData *sd, int alpha) {
     while (def) {
         BitBoard tmp2;
         int j;
-        i = FindSetBit(def);
+        i = bitboard_find_set_bit(def);
         def &= def - 1;
         tmp2 = p->atkFr[i] & att;
         while (tmp2) {
-            j = FindSetBit(tmp2);
+            j = bitboard_find_set_bit(tmp2);
             tmp2 &= tmp2 - 1;
             move_t move = make_move(j, i, M_CAPTURE);
             int sw = swap_off(p, move);
@@ -792,11 +792,11 @@ static void next_generate_qcaptures(struct SearchData *sd, int alpha) {
     while (def) {
         BitBoard tmp2;
         int j;
-        i = FindSetBit(def);
+        i = bitboard_find_set_bit(def);
         def &= def - 1;
         tmp2 = p->atkFr[i] & att;
         while (tmp2) {
-            j = FindSetBit(tmp2);
+            j = bitboard_find_set_bit(tmp2);
             tmp2 &= tmp2 - 1;
             move_t move = make_move(j, i, M_CAPTURE);
             int sw = swap_off(p, move);
@@ -813,11 +813,11 @@ static void next_generate_qcaptures(struct SearchData *sd, int alpha) {
     while (def) {
         BitBoard tmp2;
         int j;
-        i = FindSetBit(def);
+        i = bitboard_find_set_bit(def);
         def &= def - 1;
         tmp2 = p->atkFr[i] & att;
         while (tmp2) {
-            j = FindSetBit(tmp2);
+            j = bitboard_find_set_bit(tmp2);
             tmp2 &= tmp2 - 1;
             move_t move = make_move(j, i, M_CAPTURE);
             int sw = swap_off(p, move);
@@ -834,11 +834,11 @@ static void next_generate_qcaptures(struct SearchData *sd, int alpha) {
     while (def) {
         BitBoard tmp2;
         int j;
-        i = FindSetBit(def);
+        i = bitboard_find_set_bit(def);
         def &= def - 1;
         tmp2 = p->atkFr[i] & att;
         while (tmp2) {
-            j = FindSetBit(tmp2);
+            j = bitboard_find_set_bit(tmp2);
             tmp2 &= tmp2 - 1;
             move_t move = make_move(j, i, M_CAPTURE);
             int sw = swap_off(p, move);

@@ -79,7 +79,7 @@ void probe_init_counters(int *pieceCounter, int *squares, int type,
                         BitBoard mask) {
     int count = 0;
     while (mask) {
-        int index = FindSetBit(mask);
+        int index = bitboard_find_set_bit(mask);
         mask &= mask - 1;
         squares[type * C_PIECES + count] = index;
         count++;
@@ -99,7 +99,7 @@ int probe_egtb(const struct Position *p, int *score, int ply) {
     int value;
     int result;
 
-    if (CountBits(p->mask[White][0] | p->mask[Black][0]) > EGTBMenCount)
+    if (bitboard_count_bits(p->mask[White][0] | p->mask[Black][0]) > EGTBMenCount)
         return 0;
 
     EGTBProbe++;

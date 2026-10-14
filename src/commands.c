@@ -451,27 +451,27 @@ void Edit(char *args) {
             break;
         case 'P':
             p->piece[sq] = PIECEID(Pawn, side);
-            SetBit(p->mask[side][0], sq);
+            bitboard_set_bit(p->mask[side][0], sq);
             break;
         case 'N':
             p->piece[sq] = PIECEID(Knight, side);
-            SetBit(p->mask[side][0], sq);
+            bitboard_set_bit(p->mask[side][0], sq);
             break;
         case 'B':
             p->piece[sq] = PIECEID(Bishop, side);
-            SetBit(p->mask[side][0], sq);
+            bitboard_set_bit(p->mask[side][0], sq);
             break;
         case 'R':
             p->piece[sq] = PIECEID(Rook, side);
-            SetBit(p->mask[side][0], sq);
+            bitboard_set_bit(p->mask[side][0], sq);
             break;
         case 'Q':
             p->piece[sq] = PIECEID(Queen, side);
-            SetBit(p->mask[side][0], sq);
+            bitboard_set_bit(p->mask[side][0], sq);
             break;
         case 'K':
             p->piece[sq] = PIECEID(King, side);
-            SetBit(p->mask[side][0], sq);
+            bitboard_set_bit(p->mask[side][0], sq);
             break;
         }
     }
