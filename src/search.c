@@ -1331,7 +1331,7 @@ static void *IterateInt(void *x) {
 
                 if (sd->master && PrintOK) {
                     char san_buffer[32];
-                    SearchOutputFailHighLow(
+                    searchio_output_fail_high_low(
                         sd->depth, CurTime - StartTime, false,
                         NumberedSAN(p, move, san_buffer, sizeof(san_buffer)),
                         sd->nodes_cnt + sd->qnodes_cnt);
@@ -1406,7 +1406,7 @@ static void *IterateInt(void *x) {
 
                 if (sd->master && PrintOK) {
                     char san_buffer[32];
-                    SearchOutputFailHighLow(
+                    searchio_output_fail_high_low(
                         sd->depth, CurTime - StartTime, true,
                         NumberedSAN(p, mvs[0], san_buffer, sizeof(san_buffer)),
                         sd->nodes_cnt + sd->qnodes_cnt);
@@ -1471,7 +1471,7 @@ static void *IterateInt(void *x) {
                              BestLine);
 
                     if (PrintOK) {
-                        SearchOutput(sd->depth, CurTime - StartTime,
+                        searchio_output(sd->depth, CurTime - StartTime,
                                      (p->turn) ? -sd->best_score
                                                : sd->best_score,
                                      BestLine, sd->nodes_cnt + sd->qnodes_cnt);
@@ -1499,7 +1499,7 @@ static void *IterateInt(void *x) {
         if (sd->master && (PrintOK || (sd->depth > MateDepth &&
                                        (sd->best_score < -CMLIMIT ||
                                         sd->best_score > CMLIMIT)))) {
-            SearchOutput(sd->depth, CurTime - StartTime,
+            searchio_output(sd->depth, CurTime - StartTime,
                          (p->turn) ? -sd->best_score : sd->best_score, BestLine,
                          sd->nodes_cnt + sd->qnodes_cnt);
 
@@ -1583,7 +1583,7 @@ final:
     if (sd->master) {
         if (pv_valid && !any_pv_printed) {
             // Make sure there is a PV printed
-            SearchOutput(sd->depth, CurTime - StartTime,
+            searchio_output(sd->depth, CurTime - StartTime,
                          (p->turn) ? -sd->best_score : sd->best_score, BestLine,
                          sd->nodes_cnt + sd->qnodes_cnt);
         }
@@ -1757,7 +1757,7 @@ int Iterate(struct Position *p, int *score_ptr, move_t alternate_move,
 
     InitEvaluation(p);
     ht_age();
-    SearchHeader();
+    searchio_header();
 
 #if MP
     StartHelpers(p);

@@ -69,11 +69,11 @@ static void PrintPV(char *pv) {
     print(1, "\n");
 }
 
-void SearchHeader(void) {
+void searchio_header(void) {
     print(1, "It    Time   Score  principal Variation\n");
 }
 
-void SearchOutput(int depth, unsigned long time, int score, char *line,
+void searchio_output(int depth, unsigned long time, int score, char *line,
                   unsigned long nodes) {
     char time_as_text[16];
     char score_as_text[16];
@@ -110,7 +110,7 @@ void SearchOutput(int depth, unsigned long time, int score, char *line,
     }
 }
 
-void SearchOutputFailHighLow(int depth, unsigned long time, int isfailhigh,
+void searchio_output_fail_high_low(int depth, unsigned long time, int isfailhigh,
                              char *move, unsigned long nodes) {
     char time_as_text[16];
 
