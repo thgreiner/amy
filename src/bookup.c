@@ -241,7 +241,7 @@ static void book_up_internal(char *file_name, int verbosity) {
         }
 
         dbase_free_position(p);
-        free_header(&header);
+        pgn_free_header(&header);
 
         lines++;
         if ((lines % 100) == 0) {

@@ -39,7 +39,7 @@
 void pgn_load_game(struct Position *, char *);
 int pgn_scan_header(FILE *, struct PGNHeader *);
 int pgn_scan_move(FILE *, char *);
-void get_and_reset_comment(char *, unsigned int);
-void free_header(struct PGNHeader *);
+void pgn_get_and_reset_comment(char *, unsigned int);
+void pgn_free_header(struct PGNHeader *);
 
 #endif

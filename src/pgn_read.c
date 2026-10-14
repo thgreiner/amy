@@ -148,7 +148,7 @@ int pgn_scan_header(FILE *fin, struct PGNHeader *header) {
     return 1;
 }
 
-void free_header(struct PGNHeader *header) {
+void pgn_free_header(struct PGNHeader *header) {
     free(header->event);
     free(header->site);
     free(header->date);
@@ -255,7 +255,7 @@ int pgn_scan_move(FILE *fin, char *nextMove) {
     return 1;
 }
 
-void get_and_reset_comment(char *destination, unsigned int length) {
+void pgn_get_and_reset_comment(char *destination, unsigned int length) {
     strncpy(destination, comment_buffer, length);
 
     comment_ptr = comment_buffer;
@@ -277,6 +277,6 @@ void pgn_load_game(struct Position *p, char *file_name) {
             }
         }
         fclose(fin);
-        free_header(&header);
+        pgn_free_header(&header);
     }
 }

@@ -89,7 +89,7 @@ void filter_quiescent_positions(char *file_name) {
                 exit(1);
             }
 
-            get_and_reset_comment(comment, sizeof(comment) - 1);
+            pgn_get_and_reset_comment(comment, sizeof(comment) - 1);
 
             if (last_position_was_quiet) {
                 count_comments++;
@@ -151,10 +151,10 @@ void filter_quiescent_positions(char *file_name) {
         }
 
         fprintf(fout, "%s\n\n", header.result);
-        get_and_reset_comment(comment, sizeof(comment) - 1);
+        pgn_get_and_reset_comment(comment, sizeof(comment) - 1);
 
         dbase_free_position(p);
-        free_header(&header);
+        pgn_free_header(&header);
     }
 
     fclose(dout);

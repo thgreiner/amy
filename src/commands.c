@@ -566,7 +566,7 @@ static void cmd_run_annotate(char *fname, int side) {
                 }
             }
             dbase_free_position(p);
-            free_header(&header);
+            pgn_free_header(&header);
         }
         fclose(fin);
     } else

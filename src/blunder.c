@@ -143,7 +143,7 @@ void blunder_check(char *file_name) {
                 exit(1);
             }
 
-            get_and_reset_comment(comment, sizeof(comment) - 1);
+            pgn_get_and_reset_comment(comment, sizeof(comment) - 1);
             // print(1, "**** %s\n", comment);
 
             if (last_move != M_NONE && strlen(comment) != 0) {
@@ -186,7 +186,7 @@ void blunder_check(char *file_name) {
             move_t themove = dbase_parse_san(p, move);
 
             if (themove == M_NONE) {
-                get_and_reset_comment(comment, sizeof(comment) - 1);
+                pgn_get_and_reset_comment(comment, sizeof(comment) - 1);
                 if (strlen(comment) != 0) {
                     pgn_emit_line(fout, &width, "{%s} ", comment);
                 }
@@ -203,7 +203,7 @@ void blunder_check(char *file_name) {
             last_move = themove;
         }
 
-        get_and_reset_comment(comment, sizeof(comment) - 1);
+        pgn_get_and_reset_comment(comment, sizeof(comment) - 1);
         if (strlen(comment) != 0) {
             fprintf(fout, "{%s} ", comment);
         }
@@ -211,7 +211,7 @@ void blunder_check(char *file_name) {
         fprintf(fout, "%s\n\n", header.result);
 
         dbase_free_position(p);
-        free_header(&header);
+        pgn_free_header(&header);
     }
 
     fclose(fin);
