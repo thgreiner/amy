@@ -144,9 +144,9 @@ static void dbase_debug_engine(struct Position *p) {
 
     if (p->atkTo[kingSq] != KingEPM[kingSq]) {
         print(0, "White king is bad:\n");
-        PrintBitBoard(p->atkTo[kingSq]);
+        bitboard_print(p->atkTo[kingSq]);
         print(0, "should be:\n");
-        PrintBitBoard(KingEPM[kingSq]);
+        bitboard_print(KingEPM[kingSq]);
         dbase_show_move_list(p);
         dbase_show_position(p);
         abort();
@@ -154,9 +154,9 @@ static void dbase_debug_engine(struct Position *p) {
     kingSq = p->kingSq[Black];
     if (p->atkTo[kingSq] != KingEPM[kingSq]) {
         print(0, "Black king is bad:\n");
-        PrintBitBoard(p->atkTo[kingSq]);
+        bitboard_print(p->atkTo[kingSq]);
         print(0, "should be:\n");
-        PrintBitBoard(KingEPM[kingSq]);
+        bitboard_print(KingEPM[kingSq]);
         dbase_show_move_list(p);
         dbase_show_position(p);
         abort();

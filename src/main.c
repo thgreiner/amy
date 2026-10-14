@@ -174,7 +174,7 @@ int main(int argc, char *argv[]) {
 
     movedata_init();
 
-    InitAll();
+    init_all();
     ht_init();
 
     /*

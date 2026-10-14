@@ -54,7 +54,7 @@ BitBoard KingSquareW[64], KingSquareB[64];
 BitBoard WPawnBackwardMask[64], BPawnBackwardMask[64];
 BitBoard ConnectedMask[64];
 
-void PrintBitBoard(BitBoard x) {
+void bitboard_print(BitBoard x) {
     int i, j;
     for (i = 7; i >= 0; i--) {
         for (j = 0; j < 8; j++) {
@@ -68,7 +68,7 @@ void PrintBitBoard(BitBoard x) {
     }
 }
 
-void InitPawnMasks(void) {
+void init_pawn_masks(void) {
     int i, j;
 
     for (i = 0; i < 8; i++) {
@@ -82,7 +82,7 @@ void InitPawnMasks(void) {
                 IsoMask[i] |= SetMask(8 * j + i + 1);
         }
 #ifdef DEBUG
-        PrintBitBoard(IsoMask[i]);
+        bitboard_print(IsoMask[i]);
 #endif
     }
     for (i = 0; i < 64; i++) {
@@ -94,8 +94,8 @@ void InitPawnMasks(void) {
             ForwardRayB[i] |= SetMask(j);
         }
 #ifdef DEBUG
-        PrintBitBoard(ForwardRayW[i]);
-        PrintBitBoard(ForwardRayB[i]);
+        bitboard_print(ForwardRayW[i]);
+        bitboard_print(ForwardRayB[i]);
 #endif
     }
     for (i = 0; i < 64; i++) {
@@ -109,8 +109,8 @@ void InitPawnMasks(void) {
             PassedMaskB[i] |= ForwardRayB[i - 1];
         if ((i & 7) < 7)
             PassedMaskB[i] |= ForwardRayB[i + 1];
-        /* PrintBitBoard(PassedMaskW[i]); */
-        /* PrintBitBoard(PassedMaskB[i]); */
+        /* bitboard_print(PassedMaskW[i]); */
+        /* bitboard_print(PassedMaskB[i]); */
         OutpostMaskW[i] = OutpostMaskB[i] = 0;
         if ((i & 7) > 0) {
             OutpostMaskW[i] |= ForwardRayW[i - 1];
@@ -172,7 +172,7 @@ void InitPawnMasks(void) {
     }
 }
 
-void InitGeometry(void) {
+void init_geometry(void) {
     int edge[100];
     int trto[100];
     int i, j, k, l;
@@ -242,7 +242,7 @@ void InitGeometry(void) {
     }
 }
 
-void InitMiscMasks(void) {
+void init_misc_masks(void) {
     int i, j;
 
     SeventhRank[White] = SeventhRank[Black] = 0;
@@ -293,9 +293,9 @@ void InitMiscMasks(void) {
     }
 }
 
-void InitAll(void) {
-    InitPawnMasks();
-    InitGeometry();
-    InitMiscMasks();
+void init_all(void) {
+    init_pawn_masks();
+    init_geometry();
+    init_misc_masks();
     magic_init();
 }
