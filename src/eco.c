@@ -80,7 +80,7 @@ void ParseEcoPgn(char *fname) {
                 }
             }
 
-            node = add_node(node, (char *)&(p->hkey), sizeof(p->hkey), name,
+            node = tree_add_node(node, (char *)&(p->hkey), sizeof(p->hkey), name,
                             strlen(name) + 1);
         }
 
@@ -96,10 +96,10 @@ void ParseEcoPgn(char *fname) {
         return;
     }
 
-    save_tree(node, fout);
+    tree_save(node, fout);
     fclose(fout);
 
-    free_node(node);
+    tree_free_node(node);
 
     print(0, "\nECO database created.\n");
 }
@@ -122,12 +122,12 @@ char *GetEcoCode(hash_t hkey) {
             print(0, "Can't open database: %s\n", strerror(errno));
             return NULL;
         }
-        EcoDB = load_tree(fin);
+        EcoDB = tree_load(fin);
         fclose(fin);
     }
 
     if (EcoDB != NULL) {
-        retval = lookup_value(EcoDB, (char *)&hkey, sizeof(hkey), NULL);
+        retval = tree_lookup_value(EcoDB, (char *)&hkey, sizeof(hkey), NULL);
     }
 
     return retval;

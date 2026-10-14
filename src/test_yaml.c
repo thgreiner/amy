@@ -48,7 +48,7 @@ static void test_simple_dict(void) {
     tree_node_t *tree = result->payload;
 
     size_t value_len;
-    struct Node *value = lookup_value(tree, "key", 4, &value_len);
+    struct Node *value = tree_lookup_value(tree, "key", 4, &value_len);
 
     assert(value != NULL);
     assert(value_len == sizeof(struct Node));
@@ -74,7 +74,7 @@ static void test_nested_dict(void) {
     tree_node_t *tree = result->payload;
 
     size_t value_len;
-    struct Node *value = lookup_value(tree, "level1", 7, &value_len);
+    struct Node *value = tree_lookup_value(tree, "level1", 7, &value_len);
 
     assert(value != NULL);
     assert(value_len == sizeof(struct Node));
@@ -84,7 +84,7 @@ static void test_nested_dict(void) {
     tree_node_t *tree2 = value->payload;
 
     size_t value2_len;
-    struct Node *value2 = lookup_value(tree2, "level2", 7, &value2_len);
+    struct Node *value2 = tree_lookup_value(tree2, "level2", 7, &value2_len);
 
     assert(value2 != NULL);
 
@@ -109,7 +109,7 @@ static void test_multi_line_array(void) {
     tree_node_t *tree = result->payload;
 
     size_t value_len;
-    struct Node *value = lookup_value(tree, "array", 6, &value_len);
+    struct Node *value = tree_lookup_value(tree, "array", 6, &value_len);
 
     assert(value != NULL);
     assert(value_len == sizeof(struct Node));
@@ -132,7 +132,7 @@ static void test_nested_multi_line_array(void) {
     tree_node_t *tree = result->payload;
 
     size_t value_len;
-    struct Node *value = lookup_value(tree, "level1", 7, &value_len);
+    struct Node *value = tree_lookup_value(tree, "level1", 7, &value_len);
 
     assert(value != NULL);
     assert(value_len == sizeof(struct Node));
@@ -141,14 +141,14 @@ static void test_nested_multi_line_array(void) {
 
     tree_node_t *nested = value->payload;
 
-    value = lookup_value(nested, "array", 6, &value_len);
+    value = tree_lookup_value(nested, "array", 6, &value_len);
 
     assert(value != NULL);
     assert(value_len == sizeof(struct Node));
 
     assert(value->type == LIST);
 
-    value = lookup_value(nested, "scalar", 7, &value_len);
+    value = tree_lookup_value(nested, "scalar", 7, &value_len);
 
     assert(value != NULL);
     assert(value_len == sizeof(struct Node));
@@ -171,7 +171,7 @@ static void test_nested_multi_line_array_2(void) {
     tree_node_t *tree = result->payload;
 
     size_t value_len;
-    struct Node *value = lookup_value(tree, "level1", 7, &value_len);
+    struct Node *value = tree_lookup_value(tree, "level1", 7, &value_len);
 
     assert(value != NULL);
     assert(value_len == sizeof(struct Node));
@@ -180,14 +180,14 @@ static void test_nested_multi_line_array_2(void) {
 
     tree_node_t *nested = value->payload;
 
-    value = lookup_value(nested, "array", 6, &value_len);
+    value = tree_lookup_value(nested, "array", 6, &value_len);
 
     assert(value != NULL);
     assert(value_len == sizeof(struct Node));
 
     assert(value->type == LIST);
 
-    value = lookup_value(nested, "scalar", 7, &value_len);
+    value = tree_lookup_value(nested, "scalar", 7, &value_len);
 
     assert(value == NULL);
 }

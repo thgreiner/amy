@@ -88,7 +88,7 @@ static tree_node_t *PutBookEntry(tree_node_t *database, hash_t hk, int result,
     struct BookEntry *entry = NULL;
 
     if (database != NULL) {
-        entry = (struct BookEntry *)lookup_value(database, (char *)&hk,
+        entry = (struct BookEntry *)tree_lookup_value(database, (char *)&hk,
                                                  sizeof(hk), NULL);
     }
 
@@ -110,7 +110,7 @@ static tree_node_t *PutBookEntry(tree_node_t *database, hash_t hk, int result,
     }
 #endif
 
-    database = add_node(database, (char *)&hk, sizeof(hk), (char *)entry,
+    database = tree_add_node(database, (char *)&hk, sizeof(hk), (char *)entry,
                         sizeof(struct BookEntry));
     free(entry);
 
@@ -136,7 +136,7 @@ static void OpenBookFile(tree_node_t **db) {
         return;
     }
 
-    *db = load_tree(fin);
+    *db = tree_load(fin);
     fclose(fin);
 }
 
@@ -146,7 +146,7 @@ static struct BookEntry *GetBookEntry(hash_t hk) {
         OpenBookFile(&BookDB);
     }
     if (BookDB != NULL) {
-        retval = (struct BookEntry *)lookup_value(BookDB, (char *)&hk,
+        retval = (struct BookEntry *)tree_lookup_value(BookDB, (char *)&hk,
                                                   sizeof(hk), NULL);
     }
 
@@ -159,12 +159,12 @@ static struct LearnEntry *GetLearnEntry(hash_t hk) {
     if (LearnDB == NULL) {
         FILE *fin = fopen(LEARN_NAME, "rb");
         if (fin != NULL) {
-            LearnDB = load_tree(fin);
+            LearnDB = tree_load(fin);
             fclose(fin);
         }
     }
     if (LearnDB != NULL) {
-        retval = (struct LearnEntry *)lookup_value(LearnDB, (char *)&hk,
+        retval = (struct LearnEntry *)tree_lookup_value(LearnDB, (char *)&hk,
                                                    sizeof(hk), NULL);
     }
 
@@ -172,7 +172,7 @@ static struct LearnEntry *GetLearnEntry(hash_t hk) {
 }
 
 void CloseBook(void) {
-    free_node(BookDB);
+    tree_free_node(BookDB);
     BookDB = NULL;
 }
 
@@ -262,10 +262,10 @@ static void BookupInternal(char *file_name, int verbosity) {
         return;
     }
 
-    save_tree(database, fout);
+    tree_save(database, fout);
     fclose(fout);
 
-    free_node(database);
+    tree_free_node(database);
 }
 
 void Bookup(char *file_name) { BookupInternal(file_name, 0); }
@@ -469,7 +469,7 @@ static void PutLearnEntry(hash_t hk, int learn_value, int flags) {
     if (LearnDB == NULL) {
         FILE *fin = fopen(LEARN_NAME, "rb");
         if (fin != NULL) {
-            LearnDB = load_tree(fin);
+            LearnDB = tree_load(fin);
             fclose(fin);
         }
     }
@@ -479,7 +479,7 @@ static void PutLearnEntry(hash_t hk, int learn_value, int flags) {
     entry.learn_value = learn_value;
     entry.flags = flags;
 
-    LearnDB = add_node(LearnDB, (char *)&hk, sizeof(hk), (char *)&entry,
+    LearnDB = tree_add_node(LearnDB, (char *)&hk, sizeof(hk), (char *)&entry,
                        sizeof(entry));
 }
 
@@ -540,7 +540,7 @@ void CreateLearnDB(char *file_name) {
     if (LearnDB != NULL) {
         FILE *fout = fopen(LEARN_NAME, "wb");
         if (fout != NULL) {
-            save_tree(LearnDB, fout);
+            tree_save(LearnDB, fout);
             fclose(fout);
         } else {
             print(0, "Failed to save learn file: %s\n", strerror(errno));
@@ -557,7 +557,7 @@ static tree_node_t *flatten_internal(tree_node_t *source, tree_node_t *target,
     struct BookEntry *entry = (struct BookEntry *)source->value_data;
     (*read)++;
     if ((entry->win + entry->draw + entry->loss) > threshold) {
-        target = add_node(target, source->key_data, source->key_len,
+        target = tree_add_node(target, source->key_data, source->key_len,
                           source->value_data, source->value_len);
         (*written)++;
     }
@@ -585,12 +585,12 @@ void FlattenBook(unsigned int threshold) {
 
         FILE *fout = fopen("Book2.db", "wb");
         if (fout != NULL) {
-            save_tree(flattened, fout);
+            tree_save(flattened, fout);
             fclose(fout);
         } else {
             print(0, "Can't write database: %s\n", strerror(errno));
         }
 
-        free_node(flattened);
+        tree_free_node(flattened);
     }
 }

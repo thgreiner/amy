@@ -265,7 +265,7 @@ struct Node *parse_dict(struct TokenizerState *state) {
                 struct Node node = {.type = SCALAR,
                                     .payload = expected_value.text};
                 result_dict =
-                    add_node(result_dict, token.text, strlen(token.text) + 1,
+                    tree_add_node(result_dict, token.text, strlen(token.text) + 1,
                              &node, sizeof(struct Node));
             } else if (expected_value.type == OPENING_BRACKET) {
                 struct ListNode *list_node = parse_list(state);
@@ -277,7 +277,7 @@ struct Node *parse_dict(struct TokenizerState *state) {
                 }
                 struct Node node = {.type = LIST, .payload = list_node};
                 result_dict =
-                    add_node(result_dict, token.text, strlen(token.text) + 1,
+                    tree_add_node(result_dict, token.text, strlen(token.text) + 1,
                              &node, sizeof(struct Node));
             } else if (expected_value.type == OPENING_BRACE) {
                 struct Node *dict_node = parse_dict(state);
@@ -288,7 +288,7 @@ struct Node *parse_dict(struct TokenizerState *state) {
                     return NULL;
                 }
                 result_dict =
-                    add_node(result_dict, token.text, strlen(token.text) + 1,
+                    tree_add_node(result_dict, token.text, strlen(token.text) + 1,
                              dict_node, sizeof(struct Node));
                 free(dict_node);
             } else {
@@ -345,7 +345,7 @@ struct Node *get_node(struct Node *node, char *path) {
 
         tree_node_t *tree = current_node.payload;
         size_t value_len;
-        struct Node *value = lookup_value(tree, path_element,
+        struct Node *value = tree_lookup_value(tree, path_element,
                                           strlen(path_element) + 1, &value_len);
 
         if (value == NULL) {
