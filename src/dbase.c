@@ -975,7 +975,7 @@ bool dbase_may_castle(struct Position *p, move_t move) {
     if (M_FROM(move) != ((p->turn == White) ? e1 : e8))
         return false;
 
-    if (InCheck(p, p->turn))
+    if (dbase_in_check(p, p->turn))
         return false;
 
     /* king p->turn castling */
@@ -1417,7 +1417,7 @@ char *dbase_san(struct Position *p, move_t move, char *buffer) {
                     tmove |= M_CAPTURE;
 
                 dbase_do_move(p, tmove);
-                incheck = InCheck(p, OPP(p->turn));
+                incheck = dbase_in_check(p, OPP(p->turn));
                 dbase_undo_move(p, tmove);
 
                 if (incheck)
@@ -1453,7 +1453,7 @@ char *dbase_san(struct Position *p, move_t move, char *buffer) {
     }
 
     dbase_do_move(p, move);
-    if (InCheck(p, p->turn)) {
+    if (dbase_in_check(p, p->turn)) {
         if (!dbase_legal_moves(p, NULL))
             *(x++) = '#';
         else
@@ -1617,7 +1617,7 @@ move_t dbase_parse_gsan_list(char *san, Color side, move_t *mvs, int cnt) {
 static bool dbase_try_move(struct Position *p, move_t move) {
     bool tmp;
     dbase_do_move(p, move);
-    tmp = InCheck(p, OPP(p->turn));
+    tmp = dbase_in_check(p, OPP(p->turn));
     dbase_undo_move(p, move);
 
     return !tmp;
@@ -1958,7 +1958,7 @@ void legal_moves_internal(struct Position *p, heap_t heap, heap_t tmp_heap) {
              i < tmp_heap->current_section->end; i++) {
             move_t move = tmp_heap->data[i];
             dbase_do_move(p, move);
-            if (!InCheck(p, OPP(p->turn))) {
+            if (!dbase_in_check(p, OPP(p->turn))) {
                 heap_append(heap, move);
             }
             dbase_undo_move(p, move);
@@ -1983,7 +1983,7 @@ void legal_moves_internal(struct Position *p, heap_t heap, heap_t tmp_heap) {
                 continue;
 
             dbase_do_move(p, move);
-            if (!InCheck(p, OPP(p->turn))) {
+            if (!dbase_in_check(p, OPP(p->turn))) {
                 heap_append(heap, move);
             }
             dbase_undo_move(p, move);
@@ -2000,7 +2000,7 @@ void legal_moves_internal(struct Position *p, heap_t heap, heap_t tmp_heap) {
              i < tmp_heap->current_section->end; i++) {
             move_t move = tmp_heap->data[i];
             dbase_do_move(p, move);
-            if (!InCheck(p, OPP(p->turn))) {
+            if (!dbase_in_check(p, OPP(p->turn))) {
                 heap_append(heap, move);
             }
             dbase_undo_move(p, move);
@@ -2467,7 +2467,7 @@ const char *dbase_game_end(struct Position *p) {
     }
 
     if (!dbase_legal_moves(p, NULL)) {
-        if (InCheck(p, p->turn)) {
+        if (dbase_in_check(p, p->turn)) {
             if (p->turn == Black) {
                 return "1-0 {White mates}";
             } else {

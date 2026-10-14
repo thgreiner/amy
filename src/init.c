@@ -283,10 +283,10 @@ void init_misc_masks(void) {
 
         KingSquareW[i] = KingSquareB[i] = 0;
         for (j = 0; j < 64; j++) {
-            if (KingDist(wtarget, j) <= wdist) {
+            if (dbase_king_dist(wtarget, j) <= wdist) {
                 bitboard_set_bit(KingSquareW[i], j);
             }
-            if (KingDist(btarget, j) <= bdist) {
+            if (dbase_king_dist(btarget, j) <= bdist) {
                 bitboard_set_bit(KingSquareB[i], j);
             }
         }

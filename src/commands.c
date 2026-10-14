@@ -58,8 +58,8 @@
 static void cmd_quit(char *);
 static void cmd_show(char *);
 static void cmd_show_eco(char *);
-static void Test(char *);
-static void SetTime(char *);
+static void cmd_test(char *);
+static void cmd_set_time(char *);
 static void cmd_set_xboard(char *);
 static void cmd_go(char *);
 static void cmd_force(char *);
@@ -92,7 +92,7 @@ static void cmd_test_next(char *);
 static void cmd_conf(char *);
 static void cmd_save_conf(char *);
 static void cmd_show_score(char *);
-static void TestScore(char *);
+static void cmd_test_score(char *);
 static void cmd_set_search_depth(char *);
 
 static struct CommandEntry Commands[] = {
@@ -122,7 +122,7 @@ static struct CommandEntry Commands[] = {
     {"go", &cmd_go, false, false, "start searching", NULL},
     {"hard", &cmd_hard, true, false, "switch on permanent brain", NULL},
     {"help", &cmd_help, true, false, "show help", NULL},
-    {"level", &SetTime, false, false, "set time control", NULL},
+    {"level", &cmd_set_time, false, false, "set time control", NULL},
     {"load", &cmd_load, false, false, "load game from PGN file", NULL},
     {"moves", &cmd_moves, false, false, "show legal moves", NULL},
     {"name", &cmd_name, true, false, "set the opponents name", NULL},
@@ -136,8 +136,8 @@ static struct CommandEntry Commands[] = {
     {"save", &cmd_save, false, false, "save game to PGN file", NULL},
     {"self", &cmd_selfplay, false, false, "start self play", NULL},
     {"show", &cmd_show, true, false, "display current position", NULL},
-    {"test", &Test, false, false, "run EPD test suite", NULL},
-    {"test-score", &TestScore, false, false,
+    {"test", &cmd_test, false, false, "run EPD test suite", NULL},
+    {"test-score", &cmd_test_score, false, false,
      "run static evaluatior on EPD test suite", NULL},
     {"time", &cmd_xboard_time, true, false, "set time (xboard)", NULL},
     {"undo", &cmd_undo, true, true, "undo last move", NULL},
@@ -225,7 +225,7 @@ static void cmd_show_eco(char *args) {
     print(0, "Eco code is %s\n", eco);
 }
 
-static void Test(char *fname) {
+static void cmd_test(char *fname) {
     struct Position *p;
     int solved = 0, total = 0;
     FILE *fin, *fout;
@@ -317,7 +317,7 @@ static void Test(char *fname) {
         fclose(fout);
 }
 
-static void TestScore(char *fname) {
+static void cmd_test_score(char *fname) {
     struct Position *p;
     FILE *fin, *fout;
     char line[256];
@@ -364,7 +364,7 @@ static void TestScore(char *fname) {
         fclose(fout);
 }
 
-static void SetTime(char *arg) {
+static void cmd_set_time(char *arg) {
     char *args[3];
 
     args[0] = strtok(arg, " \t");
@@ -712,7 +712,7 @@ static BitBoard SearchFully(struct Position *p, BitBoard cnt, int depth,
             continue;
 
         dbase_do_move(p, move);
-        if (!InCheck(p, OPP(p->turn))) {
+        if (!dbase_in_check(p, OPP(p->turn))) {
             cnt = SearchFully(p, cnt, depth - 1, heap);
         }
         dbase_undo_move(p, move);

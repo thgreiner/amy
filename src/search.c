@@ -192,7 +192,7 @@ static int negascout(struct SearchData *, int, int, int, int);
  * check for user input.
  *
  */
-static bool TerminateSearch(struct SearchData *sd) {
+static bool search_terminate(struct SearchData *sd) {
     if ((sd->nodes_cnt + sd->qnodes_cnt) > sd->check_nodes_cnt) {
         unsigned long now = get_time();
 
@@ -294,7 +294,7 @@ static bool search_is_recapture(int piece1, int piece2) {
  *
  */
 
-static int CheckExtend(struct Position *p) {
+static int search_check_extend(struct Position *p) {
     int kp = p->kingSq[p->turn];
     BitBoard att;
 
@@ -436,7 +436,7 @@ static int CheckExtend(struct Position *p) {
  * Compute an optimistic score for a move.
  */
 
-static int ScoreMove(struct Position *p, move_t move) {
+static int search_score_move(struct Position *p, move_t move) {
     int score = 0;
 
     if (move & M_CAPTURE)
@@ -540,7 +540,7 @@ static int quies(struct SearchData *sd, int alpha, int beta, int depth) {
 
     while ((move = next_move_q(sd, alpha)) != M_NONE) {
         dbase_do_move(p, move);
-        if (InCheck(p, OPP(p->turn)))
+        if (dbase_in_check(p, OPP(p->turn)))
             dbase_undo_move(p, move);
         else {
             tmp = -quies(sd, -beta, -talpha, depth - 1);
@@ -608,7 +608,7 @@ static int negascout(struct SearchData *sd, int alpha, int beta,
     TotalNodes++;
 
     /* check for search termination */
-    if (sd->master && TerminateSearch(sd)) {
+    if (sd->master && search_terminate(sd)) {
         AbortSearch = true;
         goto EXIT;
     }
@@ -630,9 +630,9 @@ static int negascout(struct SearchData *sd, int alpha, int beta,
      * check extension
      */
 
-    const bool incheck = InCheck(p, p->turn);
+    const bool incheck = dbase_in_check(p, p->turn);
     if (incheck && p->material[p->turn] > 0) {
-        extend += CheckExtend(p);
+        extend += search_check_extend(p);
         ChkExt++;
     }
 
@@ -872,7 +872,7 @@ static int negascout(struct SearchData *sd, int alpha, int beta,
 
         if (is_futile) {
             if (next_depth < 0 && !dbase_is_checking_move(p, move)) {
-                tmp = optimistic + ScoreMove(p, move);
+                tmp = optimistic + search_score_move(p, move);
                 if (tmp <= alpha) {
                     if (tmp > best) {
                         best = tmp;
@@ -892,7 +892,7 @@ static int negascout(struct SearchData *sd, int alpha, int beta,
 
             else if (next_depth >= 0 && next_depth < OnePly &&
                      !dbase_is_checking_move(p, move)) {
-                tmp = optimistic + ScoreMove(p, move) + (3 * Value[Pawn]);
+                tmp = optimistic + search_score_move(p, move) + (3 * Value[Pawn]);
                 if (tmp <= alpha) {
                     if (tmp > best) {
                         best = tmp;
@@ -905,7 +905,7 @@ static int negascout(struct SearchData *sd, int alpha, int beta,
 #if RAZORING
             else if (next_depth >= OnePly && next_depth < 2 * OnePly &&
                      !dbase_is_checking_move(p, move)) {
-                tmp = optimistic + ScoreMove(p, move) + (6 * Value[Pawn]);
+                tmp = optimistic + search_score_move(p, move) + (6 * Value[Pawn]);
                 if (tmp <= alpha) {
                     next_depth -= OnePly;
                 }
@@ -917,14 +917,14 @@ static int negascout(struct SearchData *sd, int alpha, int beta,
 #endif /* FUTILITY */
 
         dbase_do_move(p, move);
-        if (InCheck(p, OPP(p->turn))) {
+        if (dbase_in_check(p, OPP(p->turn))) {
             dbase_undo_move(p, move);
         } else {
             /*
              * Check extension
              */
 
-            if (p->material[p->turn] > 0 && InCheck(p, p->turn)) {
+            if (p->material[p->turn] > 0 && dbase_in_check(p, p->turn)) {
                 next_depth +=
                     (reduce_extensions) ? ExtendInCheck >> 1 : ExtendInCheck;
             }
@@ -1142,7 +1142,7 @@ static void search_analysis_loop(struct Position *p, int depth) {
         char buffer[16];
 
         dbase_do_move(p, move);
-        incheck = InCheck(p, OPP(p->turn));
+        incheck = dbase_in_check(p, OPP(p->turn));
         dbase_undo_move(p, move);
 
         if (p->turn == White) {
@@ -1178,7 +1178,7 @@ static void search_analysis_loop(struct Position *p, int depth) {
     }
 }
 
-static void AnalyzeHT(struct Position *p, move_t move) {
+static void search_analyze_ht(struct Position *p, move_t move) {
     search_numbered_san(p, move, BestLine, sizeof(BestLine));
     strcat(BestLine, " ");
     char san_buffer[16];
@@ -1213,7 +1213,7 @@ static int gaps[] = {57, 23, 10, 4, 1};
  * and sorts the remaining moves by number of nodes searched
  * in decreasing order.
  */
-static void ResortMovesList(int cnt, move_t *mvs, unsigned long *nodes) {
+static void search_resort_moves_list(int cnt, move_t *mvs, unsigned long *nodes) {
     if (cnt <= 0)
         return;
 
@@ -1297,7 +1297,7 @@ static void *IterateInt(void *x) {
             }
 
             dbase_do_move(p, move);
-            if (InCheck(p, p->turn))
+            if (dbase_in_check(p, p->turn))
                 next_depth += ExtendInCheck;
 
             if (next_depth >= 0) {
@@ -1461,7 +1461,7 @@ static void *IterateInt(void *x) {
 
                 if (sd->master) {
                     char score_as_text[16];
-                    AnalyzeHT(p, mvs[0]);
+                    search_analyze_ht(p, mvs[0]);
                     pv_valid = true;
 
                     snprintf(AnalysisLine, sizeof(AnalysisLine),
@@ -1521,7 +1521,7 @@ static void *IterateInt(void *x) {
         }
 
         NeedTime = false;
-        ResortMovesList(sd->nrootmoves, mvs, nodes);
+        search_resort_moves_list(sd->nrootmoves, mvs, nodes);
 
         /*
             if(Depth > 5 && pv_stable) {
@@ -1668,7 +1668,7 @@ void search_stop_helpers(void) {
  * In parallel search start up all helper threads
  */
 
-static void StartHelpers(struct Position *p) {
+static void search_start_helpers(struct Position *p) {
 #if HAVE_LIBPTHREAD
     pthread_attr_t attr;
     int nthread;
@@ -1737,7 +1737,7 @@ int search_iterate(struct Position *p, int *score_ptr, move_t alternate_move,
 
     if (cnt == 0) {
         heap_free(heap);
-        if (!InCheck(p, p->turn))
+        if (!dbase_in_check(p, p->turn))
             strcpy(AnalysisLine, "stalemate");
         else
             strcpy(AnalysisLine, "mate");
@@ -1760,7 +1760,7 @@ int search_iterate(struct Position *p, int *score_ptr, move_t alternate_move,
     searchio_header();
 
 #if MP
-    StartHelpers(p);
+    search_start_helpers(p);
 #endif /* MP */
 
     sd = CreateSearchData(p);

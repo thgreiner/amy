@@ -534,7 +534,7 @@ void ht_clear_pawn(void) {
     }
 }
 
-static void FreeHT(void) {
+static void ht_free(void) {
     if (TranspositionTable) {
         free(TranspositionTable);
         TranspositionTable = NULL;
@@ -560,7 +560,7 @@ void ht_allocate(void) {
 
     if (!registered_free_ht) {
         registered_free_ht = true;
-        atexit(FreeHT);
+        atexit(ht_free);
     }
 
     HT_Size = 1 << HT_Bits;

@@ -40,7 +40,7 @@
 
 #define PV_BUFFER_SIZE 512
 
-static void PrintPV(char *pv) {
+static void searchio_print_pv(char *pv) {
     char PVBuffer[512];
     char *x;
     size_t len = 21;
@@ -81,7 +81,7 @@ void searchio_output(int depth, unsigned long time, int score, char *line,
     print(1, "%2d  %s %7s  ", depth,
           utils_format_time(time, time_as_text, sizeof(time_as_text)),
           utils_format_score(score, score_as_text, sizeof(score_as_text)));
-    PrintPV(line);
+    searchio_print_pv(line);
 
     if (PostMode) {
         char *short_line = strdup(line);

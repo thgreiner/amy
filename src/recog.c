@@ -158,7 +158,7 @@ static int recog_kbk(const struct Position *p, int *score) {
      */
 
     if (p->turn != color && (p->mask[OPP(color)][King] & EdgeMask) &&
-        (KingDist(p->kingSq[White], p->kingSq[Black]) == 2)) {
+        (dbase_king_dist(p->kingSq[White], p->kingSq[Black]) == 2)) {
         return Useless;
     }
 
@@ -167,8 +167,8 @@ static int recog_kbk(const struct Position *p, int *score) {
      */
 
     *score = p->material[color] + 2 * Value[Pawn] -
-             250 * EdgeDist(p->kingSq[OPP(color)]) -
-             125 * KingDist(p->kingSq[White], p->kingSq[Black]);
+             250 * dbase_edge_dist(p->kingSq[OPP(color)]) -
+             125 * dbase_king_dist(p->kingSq[White], p->kingSq[Black]);
 
     if (p->turn != color) {
         *score = -*score;
@@ -233,7 +233,7 @@ static int recog_kbnk(const struct Position *p, int *score) {
          */
 
         if (p->turn != color && (p->mask[OPP(color)][King] & EdgeMask) &&
-            (KingDist(p->kingSq[White], p->kingSq[Black]) == 2)) {
+            (dbase_king_dist(p->kingSq[White], p->kingSq[Black]) == 2)) {
             return Useless;
         }
 
@@ -250,7 +250,7 @@ static int recog_kbnk(const struct Position *p, int *score) {
         }
 
         *score = p->material[color] + 3 * Value[Pawn] + sqx -
-                 125 * KingDist(p->kingSq[White], p->kingSq[Black]);
+                 125 * dbase_king_dist(p->kingSq[White], p->kingSq[Black]);
 
         if (p->turn != color) {
             *score = -*score;
