@@ -63,7 +63,7 @@ static char EGTBPath[1024] = "TB";
 
 static char *ConfigFileName = NULL;
 
-static void RunAllTests(void) {
+static void main_run_tests(void) {
     test_all_blunder();
     test_all_yaml();
     test_all_dbase();
@@ -71,7 +71,7 @@ static void RunAllTests(void) {
     print(0, "All tests passed.\n");
 }
 
-static void ProcessOptions(int argc, char *argv[]) {
+static void main_process_options(int argc, char *argv[]) {
     int i;
 
     for (i = 1; i < argc; i++) {
@@ -90,7 +90,7 @@ static void ProcessOptions(int argc, char *argv[]) {
         }
 
         if (!strcmp(argv[i], "--test")) {
-            RunAllTests();
+            main_run_tests();
             exit(0);
         }
 #if MP
@@ -104,7 +104,7 @@ static void ProcessOptions(int argc, char *argv[]) {
     }
 }
 
-static void ProcessRCFile(void) {
+static void main_process_rc_file(void) {
     FILE *rcFile = fopen(".amyrc", "r");
     char buf[1024];
 
@@ -155,7 +155,7 @@ static void ProcessRCFile(void) {
 /**
  * Show the version of Amy.
  */
-static void ShowVersion(void) {
+static void main_show_version(void) {
     print(0, "\n");
     print(0, CopyrightNotice);
 #if MP
@@ -182,10 +182,10 @@ int main(int argc, char *argv[]) {
      * line options can override rc file settings.
      */
 
-    ProcessRCFile();
-    ProcessOptions(argc, argv);
+    main_process_rc_file();
+    main_process_options(argc, argv);
 
-    ShowVersion();
+    main_show_version();
 
     if (ConfigFileName) {
         eval_config_load(ConfigFileName);
