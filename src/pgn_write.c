@@ -169,7 +169,7 @@ void SaveGame(struct Position *p, char *file_name) {
 }
 
 /*
- * Print a formatted message to fout as fprintf would, track the current
+ * print a formatted message to fout as fprintf would, track the current
  * line width, and start a new line when it exceeds 72 characters.
  * The width is derived from the number of characters actually written,
  * so callers no longer need to compute it by hand.

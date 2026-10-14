@@ -60,11 +60,11 @@ void PrintBitBoard(BitBoard x) {
         for (j = 0; j < 8; j++) {
             int k = i * 8 + j;
             if (TstBit(x, k))
-                Print(0, "*");
+                print(0, "*");
             else
-                Print(0, ".");
+                print(0, ".");
         }
-        Print(0, "\n");
+        print(0, "\n");
     }
 }
 

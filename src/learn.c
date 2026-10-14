@@ -53,7 +53,7 @@ void DoBookLearning(void) {
         if (result < 0) {
             break;
         }
-        Print(2, "Book learning with save file %s\n", save_file_name);
+        print(2, "Book learning with save file %s\n", save_file_name);
         BookupQuiet(save_file_name);
         remove(save_file_name);
     }

@@ -207,7 +207,7 @@ static void Quit(char *args) {
     StopHelpers();
 #endif
     FreePosition(CurrentPosition);
-    Print(0, "\n\nI'll be back.\n");
+    print(0, "\n\nI'll be back.\n");
     exit(0);
 }
 
@@ -222,7 +222,7 @@ static void ShowEco(char *args) {
 
     FindEcoCode(CurrentPosition, eco);
 
-    Print(0, "Eco code is %s\n", eco);
+    print(0, "Eco code is %s\n", eco);
 }
 
 static void Test(char *fname) {
@@ -237,13 +237,13 @@ static void Test(char *fname) {
     char line[256];
 
     if (!fname) {
-        Print(0, "Usage: test <filename>\n");
+        print(0, "Usage: test <filename>\n");
         return;
     }
 
     fin = fopen(fname, "r");
     if (!fin) {
-        Print(0, "Couldn't open %s for input.\n", fname);
+        print(0, "Couldn't open %s for input.\n", fname);
         return;
     }
 
@@ -255,7 +255,7 @@ static void Test(char *fname) {
 
         if (fgets(line, 256, fin) == NULL)
             break;
-        Print(0, "Problem %d:\n", i);
+        print(0, "Problem %d:\n", i);
         p = CreatePositionFromEPD(line);
         ShowPosition(p);
 
@@ -276,7 +276,7 @@ static void Test(char *fname) {
 
         total++;
         if (correct) {
-            Print(0, "solved!\n");
+            print(0, "solved!\n");
             solved++;
 
             btav += (FHTime < 900) ? FHTime : 900;
@@ -294,7 +294,7 @@ static void Test(char *fname) {
             else if (FHTime <= 600)
                 lctval += 5;
         } else {
-            Print(0, "not solved!\n");
+            print(0, "not solved!\n");
             btav += 900;
             if (fout)
                 fprintf(fout, "%s", line);
@@ -304,9 +304,9 @@ static void Test(char *fname) {
         bsval = (btav / (17 * 60));
         bsval = 2830 - bsval * bsval;
 
-        Print(0, "solved %d out of %d  (BT2630 = %d, LCT2 = %d, BS2830 = %d)\n",
+        print(0, "solved %d out of %d  (BT2630 = %d, LCT2 = %d, BS2830 = %d)\n",
               solved, total, btval, lctval, bsval);
-        Print(0, "-----------------------------------------------\n\n");
+        print(0, "-----------------------------------------------\n\n");
 
         FreePosition(p);
     }
@@ -323,13 +323,13 @@ static void TestScore(char *fname) {
     char line[256];
 
     if (!fname) {
-        Print(0, "Usage: test-score <filename>\n");
+        print(0, "Usage: test-score <filename>\n");
         return;
     }
 
     fin = fopen(fname, "r");
     if (!fin) {
-        Print(0, "Couldn't open %s for input.\n", fname);
+        print(0, "Couldn't open %s for input.\n", fname);
         return;
     }
 
@@ -379,11 +379,11 @@ static void SetXBoard(char *args) {
     XBoardMode = true;
     Verbosity = 1;
 
-    Print(0, "\n");
-    Print(0, "feature myname=\"Amy " VERSION "\"\n");
-    Print(0, "feature san=1\n");
-    Print(0, "feature name=1\n");
-    Print(0, "feature done=1\n");
+    print(0, "\n");
+    print(0, "feature myname=\"Amy " VERSION "\"\n");
+    print(0, "feature san=1\n");
+    print(0, "feature name=1\n");
+    print(0, "feature done=1\n");
 
     /* Set up signal handler fuer Ctrl+C */
     signal(SIGINT, SIG_IGN);
@@ -406,7 +406,7 @@ void NewGame(char *args) {
     /*
      * Create a new save file.
      */
-    GetTmpFileName(AutoSaveFileName, sizeof(AutoSaveFileName));
+    get_tmp_file_name(AutoSaveFileName, sizeof(AutoSaveFileName));
 
     ForceMode = false;
     FreePosition(CurrentPosition);
@@ -437,7 +437,7 @@ void Edit(char *args) {
     while (editing) {
         int sq;
 
-        if (!ReadLine(buffer, 256))
+        if (!read_line(buffer, 256))
             break;
 
         sq = (buffer[1] - 'a') + 8 * (buffer[2] - '1');
@@ -534,7 +534,7 @@ static void MovesCmd(char *args) {
 
 static void SetEPD(char *args) {
     if (!args) {
-        Print(0, "Usage: epd <EPD>\n");
+        print(0, "Usage: epd <EPD>\n");
         return;
     }
     FreePosition(CurrentPosition);
@@ -556,9 +556,9 @@ static void RunAnnotate(char *fname, int side) {
                 if (themove != M_NONE) {
                     char san_buffer[16];
                     ShowPosition(p);
-                    Print(0, "%s(%d): ", p->turn == White ? "White" : "Black",
+                    print(0, "%s(%d): ", p->turn == White ? "White" : "Black",
                           (p->ply / 2) + 1);
-                    Print(0, "%s\n", SAN(p, themove, san_buffer));
+                    print(0, "%s\n", SAN(p, themove, san_buffer));
                     if (side == -1 || (side == p->turn)) {
                         Iterate(p, NULL, M_NONE, NULL);
                     }
@@ -570,7 +570,7 @@ static void RunAnnotate(char *fname, int side) {
         }
         fclose(fin);
     } else
-        Print(0, "Couldn't open %s\n", fname);
+        print(0, "Couldn't open %s\n", fname);
 }
 
 static void Anno(char *args) {
@@ -579,7 +579,7 @@ static void Anno(char *args) {
     char *arg2 = strtok(NULL, " \n\r");
 
     if (!arg1) {
-        Print(0, "Usage: anno <file> [w|b|wb]\n");
+        print(0, "Usage: anno <file> [w|b|wb]\n");
         return;
     }
 
@@ -637,34 +637,34 @@ static char *warranty =
 
 static void ShowWarranty(char *args) {
     (void)args;
-    Print(0, warranty);
+    print(0, warranty);
 }
 
 static void ShowDistribution(char *args) {
     (void)args;
-    Print(0, distribution);
-    Print(0, warranty);
+    print(0, distribution);
+    print(0, warranty);
 }
 
 static void Help(char *args) {
     struct CommandEntry *entry = Commands;
 
     (void)args;
-    Print(2, "\nEnter a legal move (like e4, Nxd5, O-O, d1=Q+) or one of the\n"
+    print(2, "\nEnter a legal move (like e4, Nxd5, O-O, d1=Q+) or one of the\n"
              "following commands:\n\n");
     while (entry->name) {
         char template[] = ". . . . . . . . ";
         memcpy(template, entry->name, strlen(entry->name));
-        Print(2, template);
+        print(2, template);
         if (entry->short_help) {
-            Print(2, "%s", entry->short_help);
+            print(2, "%s", entry->short_help);
         }
-        Print(2, "\n");
+        print(2, "\n");
 
         entry++;
     }
 
-    Print(2, "\n");
+    print(2, "\n");
 }
 
 static void Benchmark(char *args) {
@@ -678,18 +678,18 @@ static void Benchmark(char *args) {
 
     p = InitialPosition();
 
-    start = GetTime();
+    start = get_time();
 
     for (i = cycles; i > 0; i--) {
         DoMove(p, move);
         UndoMove(p, move);
     }
 
-    end = GetTime();
+    end = get_time();
 
     elapsed = (end - start) / 100.0;
 
-    Print(0, "Nf3: %.2g secs, %g moves/sec\n", elapsed, cycles / elapsed);
+    print(0, "Nf3: %.2g secs, %g moves/sec\n", elapsed, cycles / elapsed);
 
     FreePosition(p);
 }
@@ -724,7 +724,7 @@ static BitBoard SearchFully(struct Position *p, BitBoard cnt, int depth,
 
 static void Perft(char *args) {
     if (args == NULL) {
-        Print(0, "Usage: perft <depth>\n");
+        print(0, "Usage: perft <depth>\n");
         return;
     }
 
@@ -734,22 +734,22 @@ static void Perft(char *args) {
     BitBoard cnt = 0;
     heap_t heap = allocate_heap();
 
-    unsigned long start = GetTime();
+    unsigned long start = get_time();
     cnt = SearchFully(CurrentPosition, cnt, depth, heap);
-    unsigned long end = GetTime();
+    unsigned long end = get_time();
 
     free_heap(heap);
 
     double elapsed = (end - start) / 100.0;
     double nps = cnt / elapsed;
 
-    Print(0, "Perft(%d): %lld terminal positions in %g secs (%g nps)\n", depth,
+    print(0, "Perft(%d): %lld terminal positions in %g secs (%g nps)\n", depth,
           cnt, elapsed, nps);
 }
 
 static void Load(char *args) {
     if (args == NULL) {
-        Print(0, "Usage: load <filename>\n");
+        print(0, "Usage: load <filename>\n");
         return;
     }
     CurrentPosition = InitialPosition();
@@ -758,7 +758,7 @@ static void Load(char *args) {
 
 static void Save(char *args) {
     if (args == NULL) {
-        Print(0, "Usage: save <filename>\n");
+        print(0, "Usage: save <filename>\n");
         return;
     }
     SaveGame(CurrentPosition, args);
@@ -769,7 +769,7 @@ static void Prefs(char *args) { CreateLearnDB(args); }
 static void Flatten(char *args) {
     int threshold;
     if (args == NULL) {
-        Print(0, "Usage: flatten <count>\n");
+        print(0, "Usage: flatten <count>\n");
         return;
     }
 
@@ -806,7 +806,7 @@ static void StopAnalyze(char *args) {
 static void Name(char *args) {
     if (args) {
         strncpy(OpponentName, args, OPP_NAME_LENGTH - 1);
-        Print(2, "Your name is %s\n", OpponentName);
+        print(2, "Your name is %s\n", OpponentName);
     }
 }
 
@@ -823,7 +823,7 @@ static void TestNext(char *args) {
 
 static void Conf(char *args) {
     if (args == NULL) {
-        Print(0, "Usage: conf <filename>\n");
+        print(0, "Usage: conf <filename>\n");
         return;
     }
 
@@ -833,7 +833,7 @@ static void Conf(char *args) {
 
 static void SaveConf(char *args) {
     if (args == NULL) {
-        Print(0, "Usage: save-conf <filename>\n");
+        print(0, "Usage: save-conf <filename>\n");
         return;
     }
 
@@ -844,12 +844,12 @@ static void ShowScore(char *args) {
     (void)args;
     InitEvaluation(CurrentPosition);
     int score = EvaluatePosition(CurrentPosition);
-    Print(0, "Static evaluation: %d\n", score);
+    print(0, "Static evaluation: %d\n", score);
 }
 
 static void SetSearchDepth(char *args) {
     if (args == NULL) {
-        Print(0, "Usage: depth <depth>");
+        print(0, "Usage: depth <depth>");
         return;
     }
 

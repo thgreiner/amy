@@ -131,7 +131,7 @@ move_t NextMove(struct SearchData *sd) {
     switch (st->st_phase) {
     case HashMove:
 #ifdef VERBOSE
-        Print(9, "HashMove\n");
+        print(9, "HashMove\n");
 #endif
         if (LegalMove(p, st->st_hashmove)) {
             st->st_phase = GenerateCaptures;
@@ -142,7 +142,7 @@ move_t NextMove(struct SearchData *sd) {
     /* fall through */
     case GenerateCaptures: {
 #ifdef VERBOSE
-        Print(9, "GenerateCaptures\n");
+        print(9, "GenerateCaptures\n");
 #endif
 
         /*
@@ -183,7 +183,7 @@ move_t NextMove(struct SearchData *sd) {
     /* fall through */
     case GainingCapture:
 #ifdef VERBOSE
-        Print(9, "GainingCapture\n");
+        print(9, "GainingCapture\n");
 #endif
         while (section->end > section->start) {
             unsigned int besti = section->start;
@@ -213,7 +213,7 @@ move_t NextMove(struct SearchData *sd) {
     case Killer1: {
         move = sd->killer->killer1;
 #ifdef VERBOSE
-        Print(9, "Killer1\n");
+        print(9, "Killer1\n");
 #endif
         st->st_k1 = M_NONE;
         if (move != st->st_hashmove && LegalMove(p, move)) {
@@ -227,7 +227,7 @@ move_t NextMove(struct SearchData *sd) {
     case Killer2: {
         move = sd->killer->killer2;
 #ifdef VERBOSE
-        Print(9, "Killer2\n");
+        print(9, "Killer2\n");
 #endif
         st->st_k2 = M_NONE;
         if (move != st->st_hashmove && LegalMove(p, move)) {
@@ -242,7 +242,7 @@ move_t NextMove(struct SearchData *sd) {
         move_t lmove = (p->actLog - 1)->gl_Move;
 
 #ifdef VERBOSE
-        Print(9, "CounterMv\n");
+        print(9, "CounterMv\n");
 #endif
         st->st_cm = M_NONE;
         if (lmove != M_NULL) {
@@ -260,7 +260,7 @@ move_t NextMove(struct SearchData *sd) {
     /* fallthrough */
     case Killer3:
 #ifdef VERBOSE
-        Print(9, "Killer3\n");
+        print(9, "Killer3\n");
 #endif
         st->st_k3 = M_NONE;
         if (sd->ply >= 2) {
@@ -282,7 +282,7 @@ move_t NextMove(struct SearchData *sd) {
 
     case LoosingCapture:
 #ifdef VERBOSE
-        Print(9, "LoosingCapture\n");
+        print(9, "LoosingCapture\n");
 #endif
         while (section->end > section->start) {
             unsigned int besti = section->start;
@@ -312,7 +312,7 @@ move_t NextMove(struct SearchData *sd) {
 
     case GenerateRest: {
 #ifdef VERBOSE
-        Print(9, "GenerateRest\n");
+        print(9, "GenerateRest\n");
 #endif
         const BitBoard empty = ~(p->mask[White][0] | p->mask[Black][0]);
 
@@ -379,7 +379,7 @@ move_t NextMove(struct SearchData *sd) {
 
     case HistoryMoves:
 #ifdef VERBOSE
-        Print(9, "HistoryMoves\n");
+        print(9, "HistoryMoves\n");
 #endif
         while (section->end > section->start) {
             int besti = section->start;
@@ -420,7 +420,7 @@ move_t NextEvasion(struct SearchData *sd) {
     switch (st->st_phase) {
     case HashMove:
 #ifdef VERBOSE
-        Print(9, "HashMove\n");
+        print(9, "HashMove\n");
 #endif
         if (LegalMove(p, st->st_hashmove)) {
             st->st_phase = GenerateCaptures;
@@ -431,7 +431,7 @@ move_t NextEvasion(struct SearchData *sd) {
         /* fall through */
     case GenerateCaptures: {
 #ifdef VERBOSE
-        Print(9, "GainingCapture\n");
+        print(9, "GainingCapture\n");
 #endif
 
         /*
@@ -496,7 +496,7 @@ move_t NextEvasion(struct SearchData *sd) {
     case Killer1: {
         move = sd->killer->killer1;
 #ifdef VERBOSE
-        Print(9, "Killer1\n");
+        print(9, "Killer1\n");
 #endif
         st->st_k1 = M_NONE;
         if (move != st->st_hashmove && LegalMove(p, move)) {
@@ -510,7 +510,7 @@ move_t NextEvasion(struct SearchData *sd) {
     case Killer2: {
         move = sd->killer->killer2;
 #ifdef VERBOSE
-        Print(9, "Killer2\n");
+        print(9, "Killer2\n");
 #endif
         st->st_k2 = M_NONE;
         if (move != st->st_hashmove && LegalMove(p, move)) {
@@ -525,7 +525,7 @@ move_t NextEvasion(struct SearchData *sd) {
         move_t lmove = (p->actLog - 1)->gl_Move;
 
 #ifdef VERBOSE
-        Print(9, "CounterMv\n");
+        print(9, "CounterMv\n");
 #endif
         st->st_cm = M_NONE;
         if (lmove != M_NULL) {
@@ -543,7 +543,7 @@ move_t NextEvasion(struct SearchData *sd) {
         /* fall through */
     case Killer3:
 #ifdef VERBOSE
-        Print(9, "Killer3\n");
+        print(9, "Killer3\n");
 #endif
         st->st_k3 = M_NONE;
         if (sd->ply >= 2) {
@@ -564,7 +564,7 @@ move_t NextEvasion(struct SearchData *sd) {
         /* fall through */
     case LoosingCapture:
 #ifdef VERBOSE
-        Print(9, "LoosingCapture\n");
+        print(9, "LoosingCapture\n");
 #endif
         while (section->end > section->start) {
             unsigned int besti = section->start;
@@ -593,7 +593,7 @@ move_t NextEvasion(struct SearchData *sd) {
         /* fall through */
     case GenerateRest: {
 #ifdef VERBOSE
-        Print(9, "HistoryMoves\n");
+        print(9, "HistoryMoves\n");
 #endif
 
         const int kp = p->kingSq[p->turn]; /* FindSetBit(Mask[Side][King]); */
@@ -681,7 +681,7 @@ move_t NextEvasion(struct SearchData *sd) {
         /* fall through */
     case HistoryMoves:
 #ifdef VERBOSE
-        Print(9, "HistoryMoves\n");
+        print(9, "HistoryMoves\n");
 #endif
         while (section->end > section->start) {
             unsigned int besti = section->start;
@@ -860,7 +860,7 @@ move_t NextMoveQ(struct SearchData *sd, int alpha) {
     case HashMove:
     case GenerateCaptures:
 #ifdef VERBOSE
-        Print(9, "GenerateCaptures\n");
+        print(9, "GenerateCaptures\n");
 #endif
         GenerateQCaptures(sd, alpha);
         st->st_phase = GainingCapture;
@@ -868,7 +868,7 @@ move_t NextMoveQ(struct SearchData *sd, int alpha) {
         /* fall through */
     case GainingCapture:
 #ifdef VERBOSE
-        Print(9, "GainingCapture\n");
+        print(9, "GainingCapture\n");
 #endif
         while (section->end > section->start) {
             unsigned int besti = section->start;
@@ -940,15 +940,15 @@ static void test_next_move(struct SearchData *sd,
 
         if (LegalMove(sd->position, move)) {
             if (comma) {
-                Print(0, ", ");
+                print(0, ", ");
             }
             char san_buffer[16];
-            Print(0, "%s", SAN(sd->position, move, san_buffer));
+            print(0, "%s", SAN(sd->position, move, san_buffer));
             comma = true;
         }
     }
     LeaveNode(sd);
-    Print(0, "\n");
+    print(0, "\n");
 }
 
 move_t next_move_q_fixed_alpha(struct SearchData *sd) {
@@ -957,10 +957,10 @@ move_t next_move_q_fixed_alpha(struct SearchData *sd) {
 
 void TestNextGenerators(struct Position *p) {
     struct SearchData *sd = CreateSearchData(p);
-    Print(0, "NextMove:\n");
+    print(0, "NextMove:\n");
     test_next_move(sd, &NextMove);
-    Print(0, "\nNextEvasion:\n");
+    print(0, "\nNextEvasion:\n");
     test_next_move(sd, &NextEvasion);
-    Print(0, "\nNextMoveQ:\n");
+    print(0, "\nNextMoveQ:\n");
     test_next_move(sd, &next_move_q_fixed_alpha);
 }

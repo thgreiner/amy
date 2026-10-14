@@ -56,7 +56,7 @@ int Verbosity = 9;
 /**
  * Open a log file, remember fp in global variable LogFile
  */
-void OpenLogFile(char *name) {
+void open_log_file(char *name) {
     if (LogFile) {
         fclose(LogFile);
     }
@@ -64,9 +64,9 @@ void OpenLogFile(char *name) {
 }
 
 /**
- * Print something to stdout and to the logfile.
+ * print something to stdout and to the logfile.
  */
-void CDECL Print(int vb, char *fmt, ...) {
+void CDECL print(int vb, char *fmt, ...) {
     if (vb < Verbosity) {
         va_list va;
         va_start(va, fmt);
@@ -84,9 +84,9 @@ void CDECL Print(int vb, char *fmt, ...) {
 }
 
 /**
- * Print to stdout only.
+ * print to stdout only.
  */
-void CDECL PrintNoLog(int vb, char *fmt, ...) {
+void CDECL print_no_log(int vb, char *fmt, ...) {
     va_list va;
     va_start(va, fmt);
     if (vb < Verbosity) {
@@ -99,7 +99,7 @@ void CDECL PrintNoLog(int vb, char *fmt, ...) {
 /**
  * Read a line from stdin.
  */
-int ReadLine(char *buffer, int cnt) {
+int read_line(char *buffer, int cnt) {
     return fgets(buffer, cnt, stdin) != NULL;
 }
 
@@ -190,7 +190,7 @@ char *FormatCount(unsigned long count, char *buffer, size_t len) {
 /**
  * Get the current time.
  */
-unsigned long GetTime(void) {
+unsigned long get_time(void) {
 #if HAVE_GETTIMEOFDAY
     static struct timeval timeval;
 
@@ -208,7 +208,7 @@ unsigned long GetTime(void) {
 /**
  * Create a filename for a temporary file
  */
-void GetTmpFileName(char *file_name, size_t len) {
+void get_tmp_file_name(char *file_name, size_t len) {
     for (int cnt = 0;; cnt++) {
         int result;
         struct stat dummy;
@@ -223,7 +223,7 @@ void GetTmpFileName(char *file_name, size_t len) {
 /**
  * Check if we can read from stdin without blocking.
  */
-int InputReady(void) {
+int input_ready(void) {
 #if HAVE_SELECT
     fd_set rfd;
     struct timeval timeout;
@@ -325,7 +325,7 @@ char *nextToken(char **string, const char *delim) {
  * Returns the ratio of dividend / divisor as percentage.
  * Handles some edge cases for convenience.
  */
-int Percentage(unsigned long dividend, unsigned long divisor) {
+int percentage(unsigned long dividend, unsigned long divisor) {
     if (dividend == 0) {
         return 0;
     }

@@ -109,7 +109,7 @@ void BlunderCheck(char *file_name) {
 
     FILE *fin = fopen(file_name, "r");
     if (fin == NULL) {
-        Print(0, "Cannot open input file %s\n");
+        print(0, "Cannot open input file %s\n");
         return;
     }
 
@@ -139,12 +139,12 @@ void BlunderCheck(char *file_name) {
 
         while (!scanMove(fin, move)) {
             if (!(strlen(move) < 12)) {
-                Print(0, "\nMalformed move: <%s>\n", move);
+                print(0, "\nMalformed move: <%s>\n", move);
                 exit(1);
             }
 
             get_and_reset_comment(comment, sizeof(comment) - 1);
-            // Print(1, "**** %s\n", comment);
+            // print(1, "**** %s\n", comment);
 
             if (last_move != M_NONE && strlen(comment) != 0) {
                 char sanbuf[16], evalbuf[16];
@@ -167,11 +167,11 @@ void BlunderCheck(char *file_name) {
                     ShowPosition(p);
 
                     // Logging
-                    Print(1, ">>> best move from comment: %s\n",
+                    print(1, ">>> best move from comment: %s\n",
                           SAN(p, best_move, sanbuf));
-                    Print(1, ">>> optimal move: %s\n",
+                    print(1, ">>> optimal move: %s\n",
                           SAN(p, optimal_move, sanbuf));
-                    Print(1, ">>> score diff: %d\n",
+                    print(1, ">>> score diff: %d\n",
                           search_evaluation - alternate_evaluation);
 
                     EmitPgnLine(fout, &width, "{ q=%s; p=[%s:100] } ", evalbuf,
@@ -218,5 +218,5 @@ void BlunderCheck(char *file_name) {
 
     Verbosity = verbosity_safe;
 
-    Print(0, "Games: %u Blunders: %u\n", count_games, count_blunders);
+    print(0, "Games: %u Blunders: %u\n", count_games, count_blunders);
 }

@@ -50,7 +50,7 @@ void FilterQuiescentPositions(char *file_name) {
 
     FILE *fin = fopen(file_name, "r");
     if (fin == NULL) {
-        Print(0, "Cannot open input file %s\n");
+        print(0, "Cannot open input file %s\n");
         return;
     }
 
@@ -127,7 +127,7 @@ void FilterQuiescentPositions(char *file_name) {
 
                 if (diff > THRESHOLD) {
                     // ShowPosition(p);
-                    // Print(0, "Static: %d Dynamic: %d\n", static_evaluation,
+                    // print(0, "Static: %d Dynamic: %d\n", static_evaluation,
                     //      dynamic_evaluation);
                     last_position_was_quiet = false;
                 } else {
@@ -164,5 +164,5 @@ void FilterQuiescentPositions(char *file_name) {
 
     Verbosity = verbosity_safe;
 
-    Print(0, "Games: %u Comments: %u\n", count_games, count_comments);
+    print(0, "Games: %u Comments: %u\n", count_games, count_comments);
 }

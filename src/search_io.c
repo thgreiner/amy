@@ -59,18 +59,18 @@ static void PrintPV(char *pv) {
         len += strlen(x);
 
         if (len >= 79) {
-            Print(1, "\n                    ");
+            print(1, "\n                    ");
             len = 21 + strlen(x);
         }
-        Print(1, "%s ", x);
+        print(1, "%s ", x);
         len += 1;
         x = y + 1;
     }
-    Print(1, "\n");
+    print(1, "\n");
 }
 
 void SearchHeader(void) {
-    Print(1, "It    Time   Score  principal Variation\n");
+    print(1, "It    Time   Score  principal Variation\n");
 }
 
 void SearchOutput(int depth, unsigned long time, int score, char *line,
@@ -78,7 +78,7 @@ void SearchOutput(int depth, unsigned long time, int score, char *line,
     char time_as_text[16];
     char score_as_text[16];
 
-    Print(1, "%2d  %s %7s  ", depth,
+    print(1, "%2d  %s %7s  ", depth,
           FormatTime(time, time_as_text, sizeof(time_as_text)),
           FormatScore(score, score_as_text, sizeof(score_as_text)));
     PrintPV(line);
@@ -103,7 +103,7 @@ void SearchOutput(int depth, unsigned long time, int score, char *line,
                 }
                 short_line[idx] = '\0';
             }
-            PrintNoLog(0, "%d %d %d %lu %s\n", depth, s, time, nodes,
+            print_no_log(0, "%d %d %d %lu %s\n", depth, s, time, nodes,
                        short_line);
             free(short_line);
         }
@@ -115,16 +115,16 @@ void SearchOutputFailHighLow(int depth, unsigned long time, int isfailhigh,
     char time_as_text[16];
 
     if (isfailhigh) {
-        Print(1, "%2d  %s     +++  %s\n", depth,
+        print(1, "%2d  %s     +++  %s\n", depth,
               FormatTime(time, time_as_text, sizeof(time_as_text)), move);
         if (PostMode) {
-            PrintNoLog(0, "%d 0 %d %lu %s!\n", depth, time, nodes, move);
+            print_no_log(0, "%d 0 %d %lu %s!\n", depth, time, nodes, move);
         }
     } else {
-        Print(1, "%2d  %s     ---  %s\n", depth,
+        print(1, "%2d  %s     ---  %s\n", depth,
               FormatTime(time, time_as_text, sizeof(time_as_text)), move);
         if (PostMode) {
-            PrintNoLog(0, "%d 0 %d %lu %s?\n", depth, time, nodes, move);
+            print_no_log(0, "%d 0 %d %lu %s?\n", depth, time, nodes, move);
         }
     }
 }

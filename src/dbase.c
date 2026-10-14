@@ -92,7 +92,7 @@ static void ShowMoveList(struct Position *p) {
     int ply;
     for (ply = 0; ply < p->ply; ply++) {
         int move = p->gameLog[ply].gl_Move;
-        Print(0, "%s\n", ICS_SAN(move));
+        print(0, "%s\n", ICS_SAN(move));
     }
 }
 
@@ -115,7 +115,7 @@ static void DebugEngine(struct Position *p) {
             int sq = FindSetBit(temp);
             temp &= temp - 1;
             if (!TstBit(p->atkFr[sq], i)) {
-                Print(0, "AtkFr or AtkTo is bad on %c%c or %c%c\n", SQUARE(i),
+                print(0, "AtkFr or AtkTo is bad on %c%c or %c%c\n", SQUARE(i),
                       SQUARE(sq));
                 ShowMoveList(p);
                 ShowPosition(p);
@@ -132,7 +132,7 @@ static void DebugEngine(struct Position *p) {
                 temp &= temp - 1;
                 int pc = (1 - 2 * color) * i;
                 if (p->piece[sq] != pc) {
-                    Print(0, "Piece on %c%c is %d, expected %d!\n", SQUARE(sq),
+                    print(0, "Piece on %c%c is %d, expected %d!\n", SQUARE(sq),
                           p->piece[sq], pc);
                     ShowMoveList(p);
                     ShowPosition(p);
@@ -143,9 +143,9 @@ static void DebugEngine(struct Position *p) {
     }
 
     if (p->atkTo[kingSq] != KingEPM[kingSq]) {
-        Print(0, "White king is bad:\n");
+        print(0, "White king is bad:\n");
         PrintBitBoard(p->atkTo[kingSq]);
-        Print(0, "should be:\n");
+        print(0, "should be:\n");
         PrintBitBoard(KingEPM[kingSq]);
         ShowMoveList(p);
         ShowPosition(p);
@@ -153,9 +153,9 @@ static void DebugEngine(struct Position *p) {
     }
     kingSq = p->kingSq[Black];
     if (p->atkTo[kingSq] != KingEPM[kingSq]) {
-        Print(0, "Black king is bad:\n");
+        print(0, "Black king is bad:\n");
         PrintBitBoard(p->atkTo[kingSq]);
-        Print(0, "should be:\n");
+        print(0, "should be:\n");
         PrintBitBoard(KingEPM[kingSq]);
         ShowMoveList(p);
         ShowPosition(p);
@@ -2032,70 +2032,70 @@ int LegalMoves(struct Position *p, heap_t heap) {
 }
 
 /*
- * Print the current position
+ * print the current position
  */
 
 void ShowPosition(struct Position *p) {
     int rk, fl;
 
-    Print(0, "        +---+---+---+---+---+---+---+---+\n");
+    print(0, "        +---+---+---+---+---+---+---+---+\n");
     for (rk = 7; rk >= 0; rk--) {
         char indicator =
             ((rk == 7) && (p->turn)) || ((rk == 0) && (!p->turn)) ? '>' : ' ';
-        Print(0, "    %c %c ", indicator, '1' + rk);
+        print(0, "    %c %c ", indicator, '1' + rk);
         for (fl = 0; fl < 8; fl++) {
             int i = (rk << 3) + fl;
 
-            Print(0, "|");
+            print(0, "|");
             if (p->enPassant && i == p->enPassant)
-                Print(0, "<E>");
+                print(0, "<E>");
             else {
                 if (p->piece[i] < 0)
-                    Print(0, "*");
+                    print(0, "*");
                 else
-                    Print(0, " ");
-                Print(0, "%c", PieceName[TYPE(p->piece[i])]);
+                    print(0, " ");
+                print(0, "%c", PieceName[TYPE(p->piece[i])]);
                 if (p->piece[i] < 0)
-                    Print(0, "*");
+                    print(0, "*");
                 else
-                    Print(0, " ");
+                    print(0, " ");
             }
         }
         if (rk == 4) {
             int bit;
-            Print(0, "|   Black (%5d, %5d)  ", p->material[Black],
+            print(0, "|   Black (%5d, %5d)  ", p->material[Black],
                   p->nonPawn[Black]);
             for (bit = 0; bit < 5; bit++) {
-                Print(0, "%c",
+                print(0, "%c",
                       (p->material_signature[Black] & (1 << bit))
                           ? PieceName[bit + 1]
                           : '.');
             }
-            Print(0, "\n");
+            print(0, "\n");
         } else if (rk == 3) {
             int bit;
-            Print(0, "|   White (%5d, %5d)  ", p->material[White],
+            print(0, "|   White (%5d, %5d)  ", p->material[White],
                   p->nonPawn[White]);
             for (bit = 0; bit < 5; bit++) {
-                Print(0, "%c",
+                print(0, "%c",
                       (p->material_signature[White] & (1 << bit))
                           ? PieceName[bit + 1]
                           : '.');
             }
-            Print(0, "\n");
+            print(0, "\n");
         } else if (rk == 6) {
-            Print(0, "|   Hashkey: %llx\n", p->hkey);
+            print(0, "|   Hashkey: %llx\n", p->hkey);
         } else if (rk == 1) {
-            Print(0, "|   Index: %d\n", RECOGNIZER_INDEX(p));
+            print(0, "|   Index: %d\n", RECOGNIZER_INDEX(p));
         } else if (rk == 0) {
-            Print(0, "|   MateThreat: %d %d\n", MateThreat(p, White),
+            print(0, "|   MateThreat: %d %d\n", MateThreat(p, White),
                   MateThreat(p, Black));
         } else {
-            Print(0, "|\n");
+            print(0, "|\n");
         }
-        Print(0, "        +---+---+---+---+---+---+---+---+\n");
+        print(0, "        +---+---+---+---+---+---+---+---+\n");
     }
-    Print(0, "          a   b   c   d   e   f   g   h\n");
+    print(0, "          a   b   c   d   e   f   g   h\n");
 }
 
 /*
@@ -2114,17 +2114,17 @@ void ShowMoves(struct Position *p) {
     for (i = heap->current_section->start; i < heap->current_section->end;
          i++) {
         move_t move = heap->data[i];
-        Print(0, "%s ", SAN(p, move, san_buffer));
+        print(0, "%s ", SAN(p, move, san_buffer));
         if (IsCheckingMove(p, move))
-            Print(0, "(check) ");
+            print(0, "(check) ");
         if (!LegalMove(p, move)) {
-            Print(0, "(rejected?!) ");
+            print(0, "(rejected?!) ");
         }
         if (move & (M_CAPTURE | M_ENPASSANT)) {
-            Print(0, "(%d) ", SwapOff(p, move));
+            print(0, "(%d) ", SwapOff(p, move));
         }
     }
-    Print(0, "\n");
+    print(0, "\n");
 
     pop_section(heap);
 
@@ -2132,13 +2132,13 @@ void ShowMoves(struct Position *p) {
     GenChecks(p, heap);
 
     if (heap->current_section->end > heap->current_section->start) {
-        Print(0, "Checks: ");
+        print(0, "Checks: ");
         for (i = heap->current_section->start; i < heap->current_section->end;
              i++) {
             move_t move = heap->data[i];
-            Print(0, "%s ", SAN(p, move, san_buffer));
+            print(0, "%s ", SAN(p, move, san_buffer));
         }
-        Print(0, "\n");
+        print(0, "\n");
     }
 
     free_heap(heap);
@@ -2332,7 +2332,7 @@ static void ReadEPD(struct Position *p, char *x) {
                     int mv = ParseSAN(p, op);
                     if (mv != 0) {
                         goodmove[cnt] = mv;
-                        Print(0, "best move is %s\n",
+                        print(0, "best move is %s\n",
                               SAN(p, goodmove[cnt], san_buffer));
                         cnt++;
                         if (cnt >= MAX_EPD_MOVES - 1)
@@ -2347,7 +2347,7 @@ static void ReadEPD(struct Position *p, char *x) {
                     int mv = ParseSAN(p, op);
                     if (mv != 0) {
                         badmove[cnt] = mv;
-                        Print(0, "bad move is %s\n",
+                        print(0, "bad move is %s\n",
                               SAN(p, badmove[cnt], san_buffer));
                         cnt++;
                         if (cnt >= MAX_EPD_MOVES - 1)

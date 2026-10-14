@@ -402,7 +402,7 @@ static int EvaluatePawns(const struct Position *p,
             score += IsolatedPawn[sq & 7];
 #ifdef DEBUG
             if (DebugWhat & DebugPawnStructure)
-                Print(2, "isolated pawn on %c%c\n", SQUARE(sq));
+                print(2, "isolated pawn on %c%c\n", SQUARE(sq));
 #endif
         } else if (!(p->mask[White][Pawn] & WPawnBackwardMask[sq]) &&
                    (p->atkFr[sq + 8] & p->mask[Black][Pawn])) {
@@ -410,12 +410,12 @@ static int EvaluatePawns(const struct Position *p,
                 score += HiddenBackwardPawn;
 #ifdef DEBUG
                 if (DebugWhat & DebugPawnStructure)
-                    Print(2, "hidden backward pawn on %c%c\n", SQUARE(sq));
+                    print(2, "hidden backward pawn on %c%c\n", SQUARE(sq));
 #endif
             } else {
 #ifdef DEBUG
                 if (DebugWhat & DebugPawnStructure)
-                    Print(2, "backward pawn on %c%c\n", SQUARE(sq));
+                    print(2, "backward pawn on %c%c\n", SQUARE(sq));
 #endif
                 score += BackwardPawn;
             }
@@ -458,7 +458,7 @@ static int EvaluatePawns(const struct Position *p,
             score -= IsolatedPawn[sq & 7];
 #ifdef DEBUG
             if (DebugWhat & DebugPawnStructure)
-                Print(2, "isolated pawn on %c%c\n", SQUARE(sq));
+                print(2, "isolated pawn on %c%c\n", SQUARE(sq));
 #endif
         } else if (!(p->mask[Black][Pawn] & BPawnBackwardMask[sq]) &&
                    (p->atkFr[sq - 8] & p->mask[White][Pawn])) {
@@ -466,13 +466,13 @@ static int EvaluatePawns(const struct Position *p,
                 score -= HiddenBackwardPawn;
 #ifdef DEBUG
                 if (DebugWhat & DebugPawnStructure)
-                    Print(2, "hidden backward pawn on %c%c\n", SQUARE(sq));
+                    print(2, "hidden backward pawn on %c%c\n", SQUARE(sq));
 #endif
             } else {
                 score -= BackwardPawn;
 #ifdef DEBUG
                 if (DebugWhat & DebugPawnStructure)
-                    Print(2, "backward pawn on %c%c\n", SQUARE(sq));
+                    print(2, "backward pawn on %c%c\n", SQUARE(sq));
 #endif
             }
         }
@@ -594,10 +594,10 @@ static int EvaluatePawns(const struct Position *p,
 
 #ifdef DEBUG
     if (DebugWhat & DebugPawnStructure) {
-        Print(0, "open : %d %d hopen k: %d %d hopen q: %d %d\n",
+        print(0, "open : %d %d hopen k: %d %d hopen q: %d %d\n",
               kside_open_files, qside_open_files, kside_hopen_files_w,
               kside_hopen_files_b, qside_hopen_files_w, qside_hopen_files_b);
-        Print(0, "pawns w: %d %d pawns b: %d %d\n", kside_pawns_w,
+        print(0, "pawns w: %d %d pawns b: %d %d\n", kside_pawns_w,
               qside_pawns_w, kside_pawns_b, qside_pawns_b);
     }
 #endif /* DEBUG */
@@ -624,10 +624,10 @@ static int EvaluatePawns(const struct Position *p,
 
 #ifdef DEBUG
     if (DebugWhat & DebugPawnStructure) {
-        Print(0, "king safety white: %d %d\n", pawnFacts->pf_WhiteKingSide,
+        print(0, "king safety white: %d %d\n", pawnFacts->pf_WhiteKingSide,
               pawnFacts->pf_WhiteQueenSide);
 
-        Print(0, "king safety black: %d %d\n", pawnFacts->pf_BlackKingSide,
+        print(0, "king safety black: %d %d\n", pawnFacts->pf_BlackKingSide,
               pawnFacts->pf_BlackQueenSide);
     }
 #endif /* DEBUG */
@@ -670,7 +670,7 @@ static int EvaluatePawns(const struct Position *p,
 
 #ifdef DEBUG
     if (DebugWhat & DebugPawnStructure) {
-        Print(2, "EvaluatePawns returns %d\n", score);
+        print(2, "EvaluatePawns returns %d\n", score);
     }
 #endif
 
@@ -739,7 +739,7 @@ static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
 #ifdef DEBUG
         if (DebugWhat & DebugPassedPawns) {
             int increment = score - score_at_start;
-            Print(0, "score increment from %c%c: %d\n", SQUARE(sq), increment);
+            print(0, "score increment from %c%c: %d\n", SQUARE(sq), increment);
         }
 #endif
 
@@ -757,7 +757,7 @@ static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
 #ifdef DEBUG
         if (DebugWhat & DebugPassedPawns) {
             int increment = score - score_at_start;
-            Print(0, "score increment from %c%c: %d\n", SQUARE(sq), increment);
+            print(0, "score increment from %c%c: %d\n", SQUARE(sq), increment);
         }
 #endif
 
@@ -776,7 +776,7 @@ static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
 #ifdef DEBUG
         if (DebugWhat & DebugPassedPawns) {
             int increment = score - score_at_start;
-            Print(0, "score increment from %c%c: %d\n", SQUARE(sq), increment);
+            print(0, "score increment from %c%c: %d\n", SQUARE(sq), increment);
         }
 #endif
 
@@ -793,7 +793,7 @@ static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
 #ifdef DEBUG
         if (DebugWhat & DebugPassedPawns) {
             int increment = score - score_at_start;
-            Print(0, "score increment from %c%c: %d\n", SQUARE(sq), increment);
+            print(0, "score increment from %c%c: %d\n", SQUARE(sq), increment);
         }
 #endif
 
@@ -804,7 +804,7 @@ static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
                 SetBit(wrunner, sq);
 #ifdef DEBUG
                 if (DebugWhat & DebugPassedPawns) {
-                    Print(0, "white runner on %c%c\n", SQUARE(sq));
+                    print(0, "white runner on %c%c\n", SQUARE(sq));
                 }
 #endif
             }
@@ -816,7 +816,7 @@ static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
             !(p->mask[Black][Pawn] & LeftOf[file + 2])) {
 #ifdef DEBUG
             if (DebugWhat & DebugPassedPawns) {
-                Print(0, "white outside passed pawn on %c%c\n", SQUARE(sq));
+                print(0, "white outside passed pawn on %c%c\n", SQUARE(sq));
             }
 #endif
 
@@ -828,7 +828,7 @@ static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
             !(p->mask[Black][Pawn] & RightOf[file - 2])) {
 #ifdef DEBUG
             if (DebugWhat & DebugPassedPawns) {
-                Print(0, "white outside passed pawn on %c%c\n", SQUARE(sq));
+                print(0, "white outside passed pawn on %c%c\n", SQUARE(sq));
             }
 #endif
 
@@ -838,7 +838,7 @@ static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
 
 #ifdef DEBUG
     if (DebugWhat & DebugPassedPawns) {
-        Print(0, "After white pawn basic scoring: %d\n", score);
+        print(0, "After white pawn basic scoring: %d\n", score);
     }
 #endif
 
@@ -865,7 +865,7 @@ static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
 #ifdef DEBUG
         if (DebugWhat & DebugPassedPawns) {
             int increment = score - score_at_start;
-            Print(0, "score increment from %c%c: %d\n", SQUARE(sq), increment);
+            print(0, "score increment from %c%c: %d\n", SQUARE(sq), increment);
         }
 #endif
 
@@ -883,7 +883,7 @@ static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
 #ifdef DEBUG
         if (DebugWhat & DebugPassedPawns) {
             int increment = score - score_at_start;
-            Print(0, "score increment from %c%c: %d\n", SQUARE(sq), increment);
+            print(0, "score increment from %c%c: %d\n", SQUARE(sq), increment);
         }
 #endif
 
@@ -902,7 +902,7 @@ static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
 #ifdef DEBUG
         if (DebugWhat & DebugPassedPawns) {
             int increment = score - score_at_start;
-            Print(0, "score increment from %c%c: %d\n", SQUARE(sq), increment);
+            print(0, "score increment from %c%c: %d\n", SQUARE(sq), increment);
         }
 #endif
 
@@ -919,7 +919,7 @@ static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
 #ifdef DEBUG
         if (DebugWhat & DebugPassedPawns) {
             int increment = score - score_at_start;
-            Print(0, "score increment from %c%c: %d\n", SQUARE(sq), increment);
+            print(0, "score increment from %c%c: %d\n", SQUARE(sq), increment);
         }
 #endif
 
@@ -930,7 +930,7 @@ static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
                 SetBit(brunner, sq);
 #ifdef DEBUG
                 if (DebugWhat & DebugPassedPawns) {
-                    Print(0, "black runner on %c%c\n", SQUARE(sq));
+                    print(0, "black runner on %c%c\n", SQUARE(sq));
                 }
 #endif
             }
@@ -942,7 +942,7 @@ static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
             !(p->mask[White][Pawn] & LeftOf[file + 2])) {
 #ifdef DEBUG
             if (DebugWhat & DebugPassedPawns) {
-                Print(0, "black outside passed pawn on %c%c\n", SQUARE(sq));
+                print(0, "black outside passed pawn on %c%c\n", SQUARE(sq));
             }
 #endif
 
@@ -954,7 +954,7 @@ static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
             !(p->mask[White][Pawn] & RightOf[file - 2])) {
 #ifdef DEBUG
             if (DebugWhat & DebugPassedPawns) {
-                Print(0, "black outside passed pawn on %c%c\n", SQUARE(sq));
+                print(0, "black outside passed pawn on %c%c\n", SQUARE(sq));
             }
 #endif
 
@@ -964,7 +964,7 @@ static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
 
 #ifdef DEBUG
     if (DebugWhat & DebugPassedPawns) {
-        Print(0, "After black pawn basic scoring: %d\n", score);
+        print(0, "After black pawn basic scoring: %d\n", score);
     }
 #endif
 
@@ -1039,7 +1039,7 @@ static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
 
 #ifdef DEBUG
     if (DebugWhat & DebugPassedPawns) {
-        Print(0, "Before runner scoring: wdistant: %d bdistant: %d\n", wdistant,
+        print(0, "Before runner scoring: wdistant: %d bdistant: %d\n", wdistant,
               bdistant);
     }
 #endif
@@ -1058,7 +1058,7 @@ static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
 
 #ifdef DEBUG
     if (DebugWhat & DebugPassedPawns) {
-        Print(0, "After runner scoring: %d\n", score);
+        print(0, "After runner scoring: %d\n", score);
     }
 #endif
 
@@ -1166,7 +1166,7 @@ static int EvaluateKingSafety(const struct Position *p, int wphase, int bphase,
 
 #ifdef DEBUG
     if (DebugWhat & DebugKingSafety) {
-        Print(0, "king safety w: %d b: %d total: %d\n", king_safety_w,
+        print(0, "king safety w: %d b: %d total: %d\n", king_safety_w,
               king_safety_b, score);
     }
 #endif
@@ -1282,7 +1282,7 @@ static int EvaluatePositionForWhite(const struct Position *p) {
 
 #ifdef DEBUG
     if (DebugWhat & DebugPieces) {
-        Print(0, "After material balance: %d\n", score);
+        print(0, "After material balance: %d\n", score);
     }
 #endif
 
@@ -1290,7 +1290,7 @@ static int EvaluatePositionForWhite(const struct Position *p) {
 
 #ifdef DEBUG
     if (DebugWhat & DebugPieces) {
-        Print(0, "After hashed pawns: %d\n", score);
+        print(0, "After hashed pawns: %d\n", score);
     }
 #endif
 
@@ -1307,7 +1307,7 @@ static int EvaluatePositionForWhite(const struct Position *p) {
 
 #ifdef DEBUG
     if (DebugWhat & DebugPieces) {
-        Print(0, "After king safety: %d\n", score);
+        print(0, "After king safety: %d\n", score);
     }
 #endif
 
@@ -1321,7 +1321,7 @@ static int EvaluatePositionForWhite(const struct Position *p) {
 
 #ifdef DEBUG
     if (DebugWhat & DebugPieces) {
-        Print(0, "After passed pawns: %d\n", score);
+        print(0, "After passed pawns: %d\n", score);
     }
 #endif
 
@@ -1354,7 +1354,7 @@ static int EvaluatePositionForWhite(const struct Position *p) {
 
 #ifdef DEBUG
     if (DebugWhat & DebugPieces) {
-        Print(0, "After trapped bishops: %d\n", score);
+        print(0, "After trapped bishops: %d\n", score);
     }
 #endif
 
@@ -1370,7 +1370,7 @@ static int EvaluatePositionForWhite(const struct Position *p) {
 
 #ifdef DEBUG
     if (DebugWhat & DebugPieces) {
-        Print(0, "After development: %d\n", score);
+        print(0, "After development: %d\n", score);
     }
 #endif
 
@@ -1434,7 +1434,7 @@ static int EvaluatePositionForWhite(const struct Position *p) {
 
 #ifdef DEBUG
     if (DebugWhat & DebugPieces) {
-        Print(0, "After king: %d\n", score);
+        print(0, "After king: %d\n", score);
     }
 #endif
 
@@ -1504,7 +1504,7 @@ static int EvaluatePositionForWhite(const struct Position *p) {
 
 #ifdef DEBUG
     if (DebugWhat & DebugPieces) {
-        Print(0, "After knights: %d\n", score);
+        print(0, "After knights: %d\n", score);
     }
 #endif
 
@@ -1564,7 +1564,7 @@ static int EvaluatePositionForWhite(const struct Position *p) {
 
 #ifdef DEBUG
     if (DebugWhat & DebugPieces) {
-        Print(0, "After bishops: %d\n", score);
+        print(0, "After bishops: %d\n", score);
     }
 #endif
 
@@ -1653,7 +1653,7 @@ static int EvaluatePositionForWhite(const struct Position *p) {
 
 #ifdef DEBUG
     if (DebugWhat & DebugPieces) {
-        Print(0, "After rooks: %d\n", score);
+        print(0, "After rooks: %d\n", score);
     }
 #endif
 
@@ -1697,7 +1697,7 @@ static int EvaluatePositionForWhite(const struct Position *p) {
 
 #ifdef DEBUG
     if (DebugWhat & DebugPieces) {
-        Print(0, "After queens: %d\n", score);
+        print(0, "After queens: %d\n", score);
     }
 #endif
 
@@ -1730,7 +1730,7 @@ static int EvaluatePositionForWhite(const struct Position *p) {
 
 #ifdef DEBUG
     if (DebugWhat & DebugPieces) {
-        Print(0, "After bishop adjustment: %d\n", score);
+        print(0, "After bishop adjustment: %d\n", score);
     }
 #endif
 
@@ -1870,7 +1870,7 @@ void InitEvaluation(const struct Position *p) {
             RootGamePhase = Opening;
     }
 
-    // Print(2, "GamePhase: %s\n", GamePhaseName[RootGamePhase]);
+    // print(2, "GamePhase: %s\n", GamePhaseName[RootGamePhase]);
 
     MaxPos = MaxPosInit;
 }

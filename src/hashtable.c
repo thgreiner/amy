@@ -582,7 +582,7 @@ void AllocateHT(void) {
 
     ScoreTable = safe_calloc(ST_Size, sizeof(struct STEntry));
 
-    Print(0, "Hashtable sizes: %d k, %d k, %d k (%d, %d, %d bits)\n",
+    print(0, "Hashtable sizes: %d k, %d k, %d k (%d, %d, %d bits)\n",
           ((1 << HT_Bits) * sizeof(struct HTEntry)) / 1024,
           ((1 << PT_Bits) * sizeof(struct PTEntry)) / 1024,
           ((1 << ST_Bits) * sizeof(struct STEntry)) / 1024, HT_Bits, PT_Bits,
@@ -609,12 +609,12 @@ void ShowHashStatistics(void) {
 
     char buf1[16], buf2[16];
 
-    Print(1, "Hashtable 1:  entries = %s, use = %s (%d %%)\n",
+    print(1, "Hashtable 1:  entries = %s, use = %s (%d %%)\n",
           FormatCount(i, buf1, sizeof(buf1)),
-          FormatCount(cnt, buf2, sizeof(buf2)), Percentage(cnt, i));
-    Print(1, "              store failed = %s (%d %%)\n",
+          FormatCount(cnt, buf2, sizeof(buf2)), percentage(cnt, i));
+    print(1, "              store failed = %s (%d %%)\n",
           FormatCount(HTStoreFailed, buf1, sizeof(buf1)),
-          Percentage(HTStoreFailed, HTStoreTried));
+          percentage(HTStoreFailed, HTStoreTried));
 }
 
 void GuessHTSizes(char *size) {
@@ -662,10 +662,10 @@ void GuessHTSizes(char *size) {
     }
 
     if (!valid)
-        Print(0, "Invalid hashtable size, using 64k.\n");
+        print(0, "Invalid hashtable size, using 64k.\n");
 
     if (total_size < min_size) {
-        Print(0, "I need at least 64k of hashtables.\n");
+        print(0, "I need at least 64k of hashtables.\n");
         total_size = min_size;
     }
 

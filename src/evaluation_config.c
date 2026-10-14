@@ -198,7 +198,7 @@ void SaveEvaluationConfig(char *file_name) {
 
     fclose(fout);
 
-    Print(0, "Saved configuration '%s' to '%s'.\n", ConfigurationName,
+    print(0, "Saved configuration '%s' to '%s'.\n", ConfigurationName,
           file_name);
 }
 
@@ -236,7 +236,7 @@ static void print_array(FILE *fout, char *prefix, int16_t *array,
 static void set_parameter(struct Node *node, char *name, int *parameter) {
     struct IntLookupResult result = get_as_int(node, name);
     if (result.result_code == OK) {
-        Print(9, "%s: %d\n", name, result.result);
+        print(9, "%s: %d\n", name, result.result);
         *parameter = result.result;
     }
 }
@@ -250,15 +250,15 @@ static void set_piece_square_table(struct Node *node, char *name,
 
     if (array_result.result_code == OK) {
         if (array_result.elements_read != 64) {
-            Print(0, "Warning: expected 64 entries for %s, got %d!\n", name,
+            print(0, "Warning: expected 64 entries for %s, got %d!\n", name,
                   array_result.elements_read);
         }
-        Print(9, "%s:\n", name);
+        print(9, "%s:\n", name);
         for (unsigned int i = 0; i < array_result.elements_read; i++) {
             target_table[i] = (int16_t)piece_square_table[i];
-            Print(9, "%5d, ", piece_square_table[i]);
+            print(9, "%5d, ", piece_square_table[i]);
             if (i % 8 == 7) {
-                Print(9, "\n");
+                print(9, "\n");
             }
         }
     }
@@ -273,15 +273,15 @@ static void set_array(struct Node *node, char *name, int16_t *target_array,
 
     if (array_result.result_code == OK) {
         if (array_result.elements_read != count) {
-            Print(0, "Warning: expected %d entries for %s, got %d!\n", count,
+            print(0, "Warning: expected %d entries for %s, got %d!\n", count,
                   name, array_result.elements_read);
         }
-        Print(9, "%s: ", name);
+        print(9, "%s: ", name);
         for (unsigned int i = 0; i < array_result.elements_read; i++) {
             target_array[i] = (int16_t)destination[i];
-            Print(9, "%d, ", destination[i]);
+            print(9, "%d, ", destination[i]);
         }
-        Print(9, "\n");
+        print(9, "\n");
     }
 
     free(destination);
@@ -292,7 +292,7 @@ static void configure_name(struct Node *node) {
 
     if (result.result_code == OK) {
         ConfigurationName = result.result;
-        Print(0, "Using configuration name: %s\n", ConfigurationName);
+        print(0, "Using configuration name: %s\n", ConfigurationName);
     }
 }
 

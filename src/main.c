@@ -68,7 +68,7 @@ static void RunAllTests(void) {
     test_all_yaml();
     test_all_dbase();
     test_all_pgn_write();
-    Print(0, "All tests passed.\n");
+    print(0, "All tests passed.\n");
 }
 
 static void ProcessOptions(int argc, char *argv[]) {
@@ -156,12 +156,12 @@ static void ProcessRCFile(void) {
  * Show the version of Amy.
  */
 static void ShowVersion(void) {
-    Print(0, "\n");
-    Print(0, CopyrightNotice);
+    print(0, "\n");
+    print(0, CopyrightNotice);
 #if MP
-    Print(0, "    Multiprocessor support (%d CPUs).\n\n", NumberOfCPUs);
+    print(0, "    Multiprocessor support (%d CPUs).\n\n", NumberOfCPUs);
 #else
-    Print(0, "    No multiprocessor support.\n\n");
+    print(0, "    No multiprocessor support.\n\n");
 #endif
 }
 
@@ -170,7 +170,7 @@ int main(int argc, char *argv[]) {
     setbuf(stdin, NULL);
 #endif
 
-    OpenLogFile("Amy.log");
+    open_log_file("Amy.log");
 
     InitMoves();
 
@@ -197,10 +197,10 @@ int main(int argc, char *argv[]) {
 
     DoBookLearning();
 
-    Print(0, "\n");
+    print(0, "\n");
 
     /* Ensure true random behavior. */
-    InitRandom(GetTime());
+    InitRandom(get_time());
 
     StateMachine();
 

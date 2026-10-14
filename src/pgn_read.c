@@ -43,7 +43,7 @@
 #include "safe_malloc.h"
 #include "utils.h"
 
-static char *read_line(FILE *fin) {
+static char *pgn_read_line(FILE *fin) {
 #if HAVE_GETLINE
     char *line = NULL;
     size_t len = 0;
@@ -79,7 +79,7 @@ int scanHeader(FILE *fin, struct PGNHeader *header) {
     /* Clear it */
     memset(header, 0, sizeof(struct PGNHeader));
 
-    while ((current_line = read_line(fin)) != NULL) {
+    while ((current_line = pgn_read_line(fin)) != NULL) {
         if (current_line[0] == '[') {
             char *x = current_line + 1;
             char *key = nextToken(&x, " \"");
@@ -177,7 +177,7 @@ int scanMove(FILE *fin, char *nextMove) {
     do {
         if (!haveLine) {
             free(current_line);
-            current_line = read_line(fin);
+            current_line = pgn_read_line(fin);
 
             if (current_line == NULL)
                 return 1;

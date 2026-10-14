@@ -70,7 +70,7 @@ void InitEGTB(char *tbpath) {
     EGTBMenCount = IInitializeTb(tbpath);
     if (EGTBMenCount != 0) {
         void *egtb_cache = safe_malloc(EGTB_CACHE_SIZE);
-        Print(0, "Found %d-men endgame table bases.\n", EGTBMenCount);
+        print(0, "Found %d-men endgame table bases.\n", EGTBMenCount);
         FTbSetCacheSize(egtb_cache, EGTB_CACHE_SIZE);
     }
 }

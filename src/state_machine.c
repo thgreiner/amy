@@ -72,12 +72,12 @@ void StateMachine(void) {
         switch (State) {
         case STATE_WAITING:
             if (!XBoardMode) {
-                Print(0, "%s(%d): ",
+                print(0, "%s(%d): ",
                       CurrentPosition->turn == White ? "White" : "Black",
                       (CurrentPosition->ply / 2) + 1);
             }
 
-            if (!ReadLine(InputBuffer, 1023)) {
+            if (!read_line(InputBuffer, 1023)) {
                 State = STATE_END;
             } else {
                 struct Command *command = ParseInput(InputBuffer);
@@ -129,7 +129,7 @@ void StateMachine(void) {
 
         gameend = GameEnd(CurrentPosition);
         if (gameend != NULL) {
-            Print(0, "%s\n", gameend);
+            print(0, "%s\n", gameend);
             if (State == STATE_ANALYZING) {
                 State = STATE_WAITING;
             }

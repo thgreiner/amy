@@ -194,7 +194,7 @@ static int negascout(struct SearchData *, int, int, int, int);
  */
 static bool TerminateSearch(struct SearchData *sd) {
     if ((sd->nodes_cnt + sd->qnodes_cnt) > sd->check_nodes_cnt) {
-        unsigned long now = GetTime();
+        unsigned long now = get_time();
 
         sd->check_nodes_cnt = sd->nodes_cnt + sd->qnodes_cnt + NodesPerCheck;
         if (AbortSearch)
@@ -204,18 +204,18 @@ static bool TerminateSearch(struct SearchData *sd) {
         if (CurTime > (StartTime + ONE_SECOND))
             PrintOK = true;
 
-        if (sd->master && InputReady()) {
+        if (sd->master && input_ready()) {
             char buffer[64];
             struct Command *theCommand;
 
-            ReadLine(buffer, 64);
+            read_line(buffer, 64);
 
             /*
              * the '.' command can only be handled here
              */
 
             if (buffer[0] == '.') {
-                PrintNoLog(0, "stat01: %d %ld %d %d %d\n",
+                print_no_log(0, "stat01: %d %ld %d %d %d\n",
                            (CurTime - StartTime), TotalNodes, sd->depth,
                            sd->nrootmoves - sd->movenum - 1, sd->nrootmoves);
             }
@@ -227,7 +227,7 @@ static bool TerminateSearch(struct SearchData *sd) {
                     if (theCommand->move == PBActMove) {
                         PBHit = true;
                         SearchMode = Searching;
-                        Print(1, "OK!\n");
+                        print(1, "OK!\n");
                         WallTimeStart = now;
 
                         if (CurTime >= HardLimit)
@@ -1102,7 +1102,7 @@ EXIT:
 }
 
 /**
- * Print the SAN of a move prefixed by the move number.
+ * print the SAN of a move prefixed by the move number.
  */
 static char *NumberedSAN(struct Position *p, int move, char *buffer,
                          size_t len) {
@@ -1288,7 +1288,7 @@ static void *IterateInt(void *x) {
                 char time_buffer[16];
                 char san_buffer[32];
 
-                PrintNoLog(
+                print_no_log(
                     2, "%2d  %s   %2d/%2d  %s      \r", sd->depth,
                     FormatTime(CurTime - StartTime, time_buffer,
                                sizeof(time_buffer)),
@@ -1537,7 +1537,7 @@ static void *IterateInt(void *x) {
                                 (double) (nodes_per_iteration);
 
                 if(pv_percentage >= easy_threshold) {
-                    Print(1, "                    -> easy move\n");
+                    print(1, "                    -> easy move\n");
 
                     SoftLimit = StartTime +
                                 2 * (SoftLimit - StartTime) / 3;
@@ -1545,7 +1545,7 @@ static void *IterateInt(void *x) {
             }
         */
 
-        CurTime = GetTime();
+        CurTime = get_time();
 
         if (sd->depth > 3) {
             /*
@@ -1593,12 +1593,12 @@ final:
 
         unsigned long nps = (unsigned long)(TotalNodes / elapsed);
 
-        Print(2, "Nodes = %s, QPerc: %d %%, time = %g secs, %s nodes/s\n",
+        print(2, "Nodes = %s, QPerc: %d %%, time = %g secs, %s nodes/s\n",
               FormatCount(TotalNodes, buf1, sizeof(buf1)),
-              Percentage(sd->qnodes_cnt, sd->nodes_cnt + sd->qnodes_cnt),
+              percentage(sd->qnodes_cnt, sd->nodes_cnt + sd->qnodes_cnt),
               elapsed, FormatCount(nps, buf2, sizeof(buf2)));
 
-        Print(2,
+        print(2,
               "Extensions: Check: %s  DblChk: %s  DiscChk: %s  SingReply: %s\n"
               "            Recapture: %s   Passed Pawn: %s   Zugzwang: %s\n",
               FormatCount(ChkExt, buf1, sizeof(buf1)),
@@ -1609,18 +1609,18 @@ final:
               FormatCount(PPExt, buf6, sizeof(buf6)),
               FormatCount(ZZExt, buf7, sizeof(buf7)));
 
-        Print(2,
+        print(2,
               "Hashing: Trans: %s/%s = %d %%   Pawn: %s/%s = %d %%\n"
               "         Eval: %s/%s = %d %%\n",
               FormatCount(HHit, buf1, sizeof(buf1)),
-              FormatCount(HTry, buf2, sizeof(buf2)), Percentage(HHit, HTry),
+              FormatCount(HTry, buf2, sizeof(buf2)), percentage(HHit, HTry),
               FormatCount(PHit, buf3, sizeof(buf3)),
-              FormatCount(PTry, buf4, sizeof(buf4)), Percentage(PHit, PTry),
+              FormatCount(PTry, buf4, sizeof(buf4)), percentage(PHit, PTry),
               FormatCount(SHit, buf5, sizeof(buf5)),
-              FormatCount(STry, buf6, sizeof(buf6)), Percentage(SHit, STry));
+              FormatCount(STry, buf6, sizeof(buf6)), percentage(SHit, STry));
 
         if (EGTBProbe != 0) {
-            Print(2, "EGTB Hits/Probes = %s/%s\n",
+            print(2, "EGTB Hits/Probes = %s/%s\n",
                   FormatCount(EGTBProbeSucc, buf1, sizeof(buf1)),
                   FormatCount(EGTBProbe, buf2, sizeof(buf2)));
         }
@@ -1717,7 +1717,7 @@ int Iterate(struct Position *p, int *score_ptr, move_t alternate_move,
 
     FHTime = 0;
 
-    StartTime = GetTime();
+    StartTime = get_time();
     CurTime = StartTime;
     WallTimeStart = StartTime;
 
@@ -1801,7 +1801,7 @@ void SearchRoot(struct Position *p) {
 
         if (move != M_NONE) {
             char san_buffer[32];
-            Print(1, "Book move found: %s\n",
+            print(1, "Book move found: %s\n",
                   NumberedSAN(p, move, san_buffer, sizeof(san_buffer)));
             p->outOfBookCnt[p->turn] = 0;
         } else {
@@ -1820,12 +1820,12 @@ void SearchRoot(struct Position *p) {
         DoTC(p, (int)(elapsed + 0.5));
 
         char san_buffer[16];
-        Print(0, REVERSE "%s(%d): %s" NORMAL "\n",
+        print(0, REVERSE "%s(%d): %s" NORMAL "\n",
               p->turn == White ? "White" : "Black", (p->ply / 2) + 1,
               SAN(p, move, san_buffer));
 
         if (XBoardMode)
-            PrintNoLog(0, "move %s\n", ICS_SAN(move));
+            print_no_log(0, "move %s\n", ICS_SAN(move));
 
         DoMove(p, move);
     }
@@ -1861,7 +1861,7 @@ pb_result_t PermanentBrain(struct Position *p) {
         SearchMode = Puzzling;
         PBAltMove = M_NONE;
 
-        Print(2, "Puzzling over a move to ponder on...\n");
+        print(2, "Puzzling over a move to ponder on...\n");
         PBMove = Iterate(q, NULL, M_NONE, NULL);
         FreePosition(q);
 
@@ -1875,7 +1875,7 @@ pb_result_t PermanentBrain(struct Position *p) {
         }
 
         if (!LegalMove(p, PBMove)) {
-            Print(0, "No PB move.\n");
+            print(0, "No PB move.\n");
             return PB_NO_PB_MOVE;
         }
     }
@@ -1892,7 +1892,7 @@ pb_result_t PermanentBrain(struct Position *p) {
         PBAltMove = M_NONE;
         PBHit = false;
 
-        Print(0, "%s(%d): %s (in Permanent Brain)\n",
+        print(0, "%s(%d): %s (in Permanent Brain)\n",
               p->turn == White ? "White" : "Black", (p->ply / 2) + 1,
               SAN(p, PBActMove, san_buffer));
 
@@ -1922,27 +1922,27 @@ pb_result_t PermanentBrain(struct Position *p) {
         if (PBHit) {
             double elapsed =
                 (double)(CurTime - WallTimeStart) / (double)ONE_SECOND;
-            Print(2, "PB Hit! (elapsed %g secs)\n", elapsed);
+            print(2, "PB Hit! (elapsed %g secs)\n", elapsed);
 
-            Print(0, "%s(%d): %s\n", p->turn == White ? "White" : "Black",
+            print(0, "%s(%d): %s\n", p->turn == White ? "White" : "Black",
                   (p->ply / 2) + 1, SAN(p, PBActMove, san_buffer));
 
             DoMove(p, PBActMove);
             DoTC(p, (int)(elapsed + 0.5));
 
-            Print(0, REVERSE "%s(%d): %s" NORMAL "\n",
+            print(0, REVERSE "%s(%d): %s" NORMAL "\n",
                   p->turn == White ? "White" : "Black", (p->ply / 2) + 1,
                   SAN(p, move, san_buffer));
 
             if (XBoardMode) {
-                PrintNoLog(0, "move %s\n", ICS_SAN(move));
+                print_no_log(0, "move %s\n", ICS_SAN(move));
             }
 
             DoMove(p, move);
 
             return PB_HIT;
         } else if (!PBHit && PBAltMove != M_NONE) {
-            Print(2, "PB not Hit! Alternate move is %s\n",
+            print(2, "PB not Hit! Alternate move is %s\n",
                   SAN(p, PBAltMove, san_buffer));
 
             DoMove(p, PBAltMove);

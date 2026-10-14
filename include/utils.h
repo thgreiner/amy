@@ -38,18 +38,18 @@
 
 extern int Verbosity;
 
-void OpenLogFile(char *name);
-void Print(int, char *, ...);
-void PrintNoLog(int, char *, ...);
-int InputReady(void);
-int ReadLine(char *buffer, int cnt);
+void open_log_file(char *name);
+void print(int, char *, ...);
+void print_no_log(int, char *, ...);
+int input_ready(void);
+int read_line(char *buffer, int cnt);
 char *FormatTime(unsigned long, char *, size_t);
 char *FormatScore(int, char *, size_t);
 char *FormatCount(unsigned long, char *, size_t);
-unsigned long GetTime(void);
-void GetTmpFileName(char *, size_t);
+unsigned long get_time(void);
+void get_tmp_file_name(char *, size_t);
 char *nextToken(char **, const char *);
-int Percentage(unsigned long, unsigned long);
+int percentage(unsigned long, unsigned long);
 char *strip(char *);
 
 #endif

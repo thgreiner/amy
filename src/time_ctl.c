@@ -71,7 +71,7 @@ void DoTC(struct Position *p, int mtime) {
         Moves[p->turn] -= 1;
         if (Moves[p->turn] <= 0) {
             if (TwoTimeControls) {
-                Print(0, "Switching to second time control.\n");
+                print(0, "Switching to second time control.\n");
                 TMoves = TMoves2;
                 TTime = TTime2;
                 TwoTimeControls = false;
@@ -89,7 +89,7 @@ void CalcTime(struct Position *p, float *soft, float *hard) {
             /*  int limit = (13*TTime/TMoves)/8 + (3*Increment)/4;  */
             float limit = (1.625f * TTime / TMoves) + (0.85f * Increment);
 
-            Print(1, "TC: %d moves in %s\n", Moves[p->turn],
+            print(1, "TC: %d moves in %s\n", Moves[p->turn],
                   FormatTime((unsigned int)(Time[p->turn]) * ONE_SECOND,
                              time_as_text, sizeof(time_as_text)));
             /*  *soft = (7*Time[p->turn]/Moves[p->turn])/8 + (3*Increment)/4; */
@@ -106,7 +106,7 @@ void CalcTime(struct Position *p, float *soft, float *hard) {
                 soft2 = TTime2 / moves;
                 /*    *soft = ((*soft)+(float)soft2)/2;    */
                 *soft = 0.5f * ((*soft) + (float)soft2);
-                Print(1, "Adjusted timing to %.4f secs\n", (double)*soft);
+                print(1, "Adjusted timing to %.4f secs\n", (double)*soft);
             }
             *hard = 4.0f * (*soft);
         } else {
@@ -117,7 +117,7 @@ void CalcTime(struct Position *p, float *soft, float *hard) {
             /*  1.625 / 60 = 0.0271  */
             float limit = 0.0271f * ((float)Time[p->turn] + 60 * Increment);
 
-            Print(1, "TC: all moves in %s\n",
+            print(1, "TC: all moves in %s\n",
                   FormatTime((unsigned int)(Time[p->turn]) * ONE_SECOND,
                              time_as_text, sizeof(time_as_text)));
             /*  0.875 / 60.0 = 0.0146  */
@@ -131,7 +131,7 @@ void CalcTime(struct Position *p, float *soft, float *hard) {
         if (*soft > *hard)
             *soft = 0.67f * (*hard);
 
-        Print(1, "TL: %.2f/%.2f\n", (double)*soft, (double)*hard);
+        print(1, "TL: %.2f/%.2f\n", (double)*soft, (double)*hard);
     } else {
         *soft = *hard = (float)TTime;
     }
@@ -263,34 +263,34 @@ void ResetTimeControl(bool verbose) {
     Time[White] = Time[Black] = TTime;
 
     if (verbose) {
-        Print(0, "Timecontrol is ");
+        print(0, "Timecontrol is ");
         if (globalTimeControl.first.moves >= 0) {
             if (globalTimeControl.first.moves == 0)
-                Print(0, "all ");
+                print(0, "all ");
             else
-                Print(0, "%d ", globalTimeControl.first.moves);
+                print(0, "%d ", globalTimeControl.first.moves);
 
             if (globalTimeControl.first.increment) {
-                Print(0, "moves in %d mins + %d secs Increment\n",
+                print(0, "moves in %d mins + %d secs Increment\n",
                       globalTimeControl.first.total_time / 60,
                       globalTimeControl.first.increment);
             } else {
-                Print(0, "moves in %d mins\n",
+                print(0, "moves in %d mins\n",
                       globalTimeControl.first.total_time / 60);
             }
 
         } else {
-            Print(0, "%d seconds/move fixed time\n",
+            print(0, "%d seconds/move fixed time\n",
                   globalTimeControl.first.total_time);
         }
 
         if (globalTimeControl.hasSecondTimeControl) {
-            Print(0, "Second Timecontrol is ");
+            print(0, "Second Timecontrol is ");
             if (globalTimeControl.second.moves == 0)
-                Print(0, "all ");
+                print(0, "all ");
             else
-                Print(0, "%d ", globalTimeControl.second.moves);
-            Print(0, "moves in %d mins\n",
+                print(0, "%d ", globalTimeControl.second.moves);
+            print(0, "moves in %d mins\n",
                   globalTimeControl.second.total_time / 60);
         }
     }
