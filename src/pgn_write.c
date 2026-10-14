@@ -35,6 +35,8 @@
 
 #include "config.h"
 #include "safe_malloc.h"
+#include <stdarg.h>
+#include <stddef.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -98,23 +100,13 @@ static void save_moves(FILE *fout, struct Position *p) {
     for (int i = 0; i < ply; i++) {
         int move = history[i];
         if ((i & 1) == 0) {
-            char num_buf[16];
-            snprintf(num_buf, 15, "%d. ", (i / 2) + 1);
-            fprintf(fout, "%s", num_buf);
-
-            width += strlen(num_buf);
+            EmitPgnLine(fout, &width, "%d. ", (i / 2) + 1);
         }
 
         char san_buffer[16];
         char *san = SAN(p, move, san_buffer);
 
-        fprintf(fout, "%s ", san);
-
-        width += strlen(san) + 1;
-        if (width > 67) {
-            width = 0;
-            fprintf(fout, "\n");
-        }
+        EmitPgnLine(fout, &width, "%s ", san);
 
         DoMove(p, move);
     }
@@ -173,6 +165,39 @@ void SaveGame(struct Position *p, char *file_name) {
             fprintf(fout, "\n%s\n\n", gameend);
             fclose(fout);
         }
+    }
+}
+
+/*
+ * Print a formatted message to fout as fprintf would, track the current
+ * line width, and start a new line when it exceeds 72 characters.
+ * The width is derived from the number of characters actually written,
+ * so callers no longer need to compute it by hand.
+ */
+void EmitPgnLine(FILE *fout, int *width, const char *fmt, ...) {
+    va_list ap, copy;
+
+    va_start(ap, fmt);
+    va_copy(copy, ap);
+    int needed = vsnprintf(NULL, 0, fmt, copy);
+    va_end(copy);
+    if (needed <= 0) {
+        va_end(ap);
+        return;
+    }
+
+    char *buf = safe_malloc(needed + 1);
+    int written = vsnprintf(buf, (size_t)needed + 1, fmt, ap);
+    va_end(ap);
+    if (written > 0) {
+        fwrite(buf, 1, (size_t)written, fout);
+        *width += written;
+    }
+    free(buf);
+
+    if (*width > 72) {
+        fputc('\n', fout);
+        *width = 0;
     }
 }
 

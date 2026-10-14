@@ -47,6 +47,7 @@
 #include "state_machine.h"
 #include "test_blunder.h"
 #include "test_dbase.h"
+#include "test_pgn_write.h"
 #include "test_yaml.h"
 #include "utils.h"
 
@@ -66,6 +67,8 @@ static void RunAllTests(void) {
     test_all_blunder();
     test_all_yaml();
     test_all_dbase();
+    test_all_pgn_write();
+    Print(0, "All tests passed.\n");
 }
 
 static void ProcessOptions(int argc, char *argv[]) {

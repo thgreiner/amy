@@ -139,12 +139,12 @@ void BlunderCheck(char *file_name) {
 
         while (!scanMove(fin, move)) {
             if (!(strlen(move) < 12)) {
-                printf("\n<%s>\n", move);
+                Print(0, "\nMalformed move: <%s>\n", move);
                 exit(1);
             }
 
             get_and_reset_comment(comment, sizeof(comment) - 1);
-            Print(1, "**** %s\n", comment);
+            // Print(1, "**** %s\n", comment);
 
             if (last_move != M_NONE && strlen(comment) != 0) {
                 char sanbuf[16], evalbuf[16];
@@ -165,6 +165,8 @@ void BlunderCheck(char *file_name) {
                     count_blunders++;
 
                     ShowPosition(p);
+
+                    // Logging
                     Print(1, ">>> best move from comment: %s\n",
                           SAN(p, best_move, sanbuf));
                     Print(1, ">>> optimal move: %s\n",
@@ -172,52 +174,30 @@ void BlunderCheck(char *file_name) {
                     Print(1, ">>> score diff: %d\n",
                           search_evaluation - alternate_evaluation);
 
-                    fprintf(fout, "{ q=%s; p=[%s:100] } ", evalbuf,
-                            SAN(p, optimal_move, sanbuf));
-
-                    width += strlen(evalbuf) + strlen(sanbuf) + 14;
+                    EmitPgnLine(fout, &width, "{ q=%s; p=[%s:100] } ", evalbuf,
+                                SAN(p, optimal_move, sanbuf));
                 } else {
-                    fprintf(fout, "{%s} ", comment);
-                    width += strlen(comment) + 3;
-                }
-
-                if (width > 72) {
-                    fprintf(fout, "\n");
-                    width = 0;
+                    EmitPgnLine(fout, &width, "{%s} ", comment);
                 }
 
                 DoMove(p, last_move);
             }
 
-            Print(0, ">>>> %s\n", move);
-
             move_t themove = ParseSAN(p, move);
 
             if (themove == M_NONE) {
                 get_and_reset_comment(comment, sizeof(comment) - 1);
-                Print(1, "**** %s\n", comment);
-
                 if (strlen(comment) != 0) {
-                    fprintf(fout, "{%s} ", comment);
-                    width += strlen(comment) + 3;
+                    EmitPgnLine(fout, &width, "{%s} ", comment);
                 }
                 break;
             }
 
             if ((p->ply % 2) == 0) {
-                char num_buf[16];
-                snprintf(num_buf, 15, "%d. ", 1 + p->ply / 2);
-                fprintf(fout, "%s", num_buf);
-                width += strlen(num_buf);
+                EmitPgnLine(fout, &width, "%d. ", 1 + p->ply / 2);
             }
 
-            fprintf(fout, "%s ", SAN(p, themove, san_buffer));
-            width += strlen(san_buffer) + 1;
-
-            if (width > 72) {
-                fprintf(fout, "\n");
-                width = 0;
-            }
+            EmitPgnLine(fout, &width, "%s ", SAN(p, themove, san_buffer));
 
             DoMove(p, themove);
             last_move = themove;
@@ -227,7 +207,6 @@ void BlunderCheck(char *file_name) {
         if (strlen(comment) != 0) {
             fprintf(fout, "{%s} ", comment);
         }
-        Print(1, "**** %s\n", comment);
 
         fprintf(fout, "%s\n\n", header.result);
 
@@ -235,7 +214,6 @@ void BlunderCheck(char *file_name) {
         free_header(&header);
     }
 
-    Print(0, "\n");
     fclose(fin);
 
     Verbosity = verbosity_safe;

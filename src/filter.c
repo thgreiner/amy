@@ -95,20 +95,13 @@ void FilterQuiescentPositions(char *file_name) {
                 count_comments++;
 
                 char *stripped_comment = strip(comment);
-                fprintf(fout, "{ %s }", strip(stripped_comment));
+                EmitPgnLine(fout, &width, "{ %s }", stripped_comment);
 
                 char eval_buf[16];
                 memcpy(eval_buf, stripped_comment + 2, 6);
                 eval_buf[6] = '\0';
 
                 fprintf(dout, "%d,%s\n", last_position_evaluation, eval_buf);
-
-                width += strlen(stripped_comment) + 4;
-
-                if (width > 72) {
-                    fprintf(fout, "\n");
-                    width = 0;
-                }
             }
 
             move_t themove = ParseSAN(p, move);
@@ -117,19 +110,10 @@ void FilterQuiescentPositions(char *file_name) {
                 break;
 
             if ((p->ply % 2) == 0) {
-                char num_buf[16];
-                snprintf(num_buf, 15, "%d. ", 1 + p->ply / 2);
-                fprintf(fout, "%s", num_buf);
-                width += strlen(num_buf);
+                EmitPgnLine(fout, &width, "%d. ", 1 + p->ply / 2);
             }
 
-            fprintf(fout, "%s ", SAN(p, themove, san_buffer));
-            width += strlen(san_buffer);
-
-            if (width > 72) {
-                fprintf(fout, "\n");
-                width = 0;
-            }
+            EmitPgnLine(fout, &width, "%s ", SAN(p, themove, san_buffer));
 
             last_position_was_quiet = true;
 

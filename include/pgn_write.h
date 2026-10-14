@@ -33,6 +33,7 @@
 #define PGN_WRITE_H
 
 #include "dbase.h"
+#include <stdarg.h>
 #include <stdio.h>
 
 #define OPP_NAME_LENGTH 1024
@@ -57,5 +58,6 @@ extern char OpponentName[OPP_NAME_LENGTH];
 
 void SaveGame(struct Position *, char *);
 void print_header(FILE *, struct PGNHeader *);
+void EmitPgnLine(FILE *fout, int *width, const char *fmt, ...);
 
 #endif

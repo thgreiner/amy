@@ -35,7 +35,7 @@
 
 #include "config.h"
 
-#include <_stdio.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "dbase.h"
