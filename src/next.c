@@ -318,12 +318,12 @@ move_t next_move(struct SearchData *sd) {
 
         if (p->castle & CastleMask[p->turn][0]) {
             heap_append(sd->heap,
-                           make_move(p->turn == White ? e1 : e8,
+                           dbase_make_move(p->turn == White ? e1 : e8,
                                      p->turn == White ? g1 : g8, M_SCASTLE));
         }
         if (p->castle & CastleMask[p->turn][1]) {
             heap_append(sd->heap,
-                           make_move(p->turn == White ? e1 : e8,
+                           dbase_make_move(p->turn == White ? e1 : e8,
                                      p->turn == White ? c1 : c8, M_LCASTLE));
         }
 
@@ -336,7 +336,7 @@ move_t next_move(struct SearchData *sd) {
             while (attacks) {
                 int to = bitboard_find_set_bit(attacks);
                 attacks &= attacks - 1;
-                heap_append(sd->heap, make_move(from, to, 0));
+                heap_append(sd->heap, dbase_make_move(from, to, 0));
             }
         }
 
@@ -354,7 +354,7 @@ move_t next_move(struct SearchData *sd) {
             tmp2 &= tmp2 - 1;
 
             int fr = (p->turn == White) ? to - 8 : to + 8;
-            heap_append(sd->heap, make_move(fr, to, 0));
+            heap_append(sd->heap, dbase_make_move(fr, to, 0));
         }
 
         tmp &= ThirdRank[p->turn];
@@ -371,7 +371,7 @@ move_t next_move(struct SearchData *sd) {
             tmp &= tmp - 1;
 
             int fr = (p->turn == White) ? to - 16 : to + 16;
-            heap_append(sd->heap, make_move(fr, to, M_PAWND));
+            heap_append(sd->heap, dbase_make_move(fr, to, M_PAWND));
         }
 
         st->st_phase = HistoryMoves;
@@ -605,7 +605,7 @@ move_t next_evasion(struct SearchData *sd) {
             int to = bitboard_find_set_bit(king_flight_squares);
             king_flight_squares &= king_flight_squares - 1;
             if (!(p->atkFr[to] & p->mask[OPP(p->turn)][0]))
-                heap_append(sd->heap, make_move(kp, to, 0));
+                heap_append(sd->heap, dbase_make_move(kp, to, 0));
         }
 
         BitBoard sliding_attackers =
@@ -632,7 +632,7 @@ move_t next_evasion(struct SearchData *sd) {
             while (blocking) {
                 int to = bitboard_find_set_bit(blocking);
                 blocking &= blocking - 1;
-                heap_append(sd->heap, make_move(from, to, 0));
+                heap_append(sd->heap, dbase_make_move(from, to, 0));
             }
         }
 
@@ -650,13 +650,13 @@ move_t next_evasion(struct SearchData *sd) {
             pawns_to &= pawns_to - 1;
             int fr = (p->turn == White) ? to - 8 : to + 8;
 
-            if (is_promo_square(to)) {
-                heap_append(sd->heap, make_promotion(fr, to, Queen, 0));
-                heap_append(sd->heap, make_promotion(fr, to, Knight, 0));
-                heap_append(sd->heap, make_promotion(fr, to, Rook, 0));
-                heap_append(sd->heap, make_promotion(fr, to, Bishop, 0));
+            if (dbase_is_promo_square(to)) {
+                heap_append(sd->heap, dbase_make_promotion(fr, to, Queen, 0));
+                heap_append(sd->heap, dbase_make_promotion(fr, to, Knight, 0));
+                heap_append(sd->heap, dbase_make_promotion(fr, to, Rook, 0));
+                heap_append(sd->heap, dbase_make_promotion(fr, to, Bishop, 0));
             } else
-                heap_append(sd->heap, make_move(fr, to, 0));
+                heap_append(sd->heap, dbase_make_move(fr, to, 0));
         }
 
         pawns &= ThirdRank[p->turn];
@@ -672,7 +672,7 @@ move_t next_evasion(struct SearchData *sd) {
             int to = bitboard_find_set_bit(pawns);
             pawns &= pawns - 1;
             int fr = (p->turn == White) ? to - 16 : to + 16;
-            heap_append(sd->heap, make_move(fr, to, M_PAWND));
+            heap_append(sd->heap, dbase_make_move(fr, to, M_PAWND));
         }
 
         st->st_phase = HistoryMoves;
@@ -736,7 +736,7 @@ static void next_generate_qcaptures(struct SearchData *sd, int alpha) {
         next = (p->turn == White) ? i + 8 : i - 8;
 
         if (p->piece[next] == Neutral) {
-            move_t move = make_promotion(i, next, Queen, 0);
+            move_t move = dbase_make_promotion(i, next, Queen, 0);
             int sw;
             if ((sw = swap_off(p, move)) >= 0) {
                 heap_append(sd->heap, move);
@@ -750,7 +750,7 @@ static void next_generate_qcaptures(struct SearchData *sd, int alpha) {
             int sw;
             j = bitboard_find_set_bit(tmp);
             tmp &= tmp - 1;
-            move_t move = make_promotion(i, j, Queen, M_CAPTURE);
+            move_t move = dbase_make_promotion(i, j, Queen, M_CAPTURE);
             if ((sw = swap_off(p, move)) >= 0) {
                 heap_append(sd->heap, move);
                 grow_data_heap(sd);
@@ -777,7 +777,7 @@ static void next_generate_qcaptures(struct SearchData *sd, int alpha) {
         while (tmp2) {
             j = bitboard_find_set_bit(tmp2);
             tmp2 &= tmp2 - 1;
-            move_t move = make_move(j, i, M_CAPTURE);
+            move_t move = dbase_make_move(j, i, M_CAPTURE);
             int sw = swap_off(p, move);
             if (sw >= 0) {
                 heap_append(sd->heap, move);
@@ -798,7 +798,7 @@ static void next_generate_qcaptures(struct SearchData *sd, int alpha) {
         while (tmp2) {
             j = bitboard_find_set_bit(tmp2);
             tmp2 &= tmp2 - 1;
-            move_t move = make_move(j, i, M_CAPTURE);
+            move_t move = dbase_make_move(j, i, M_CAPTURE);
             int sw = swap_off(p, move);
             if (sw >= 0) {
                 heap_append(sd->heap, move);
@@ -819,7 +819,7 @@ static void next_generate_qcaptures(struct SearchData *sd, int alpha) {
         while (tmp2) {
             j = bitboard_find_set_bit(tmp2);
             tmp2 &= tmp2 - 1;
-            move_t move = make_move(j, i, M_CAPTURE);
+            move_t move = dbase_make_move(j, i, M_CAPTURE);
             int sw = swap_off(p, move);
             if (sw >= 0) {
                 heap_append(sd->heap, move);
@@ -840,7 +840,7 @@ static void next_generate_qcaptures(struct SearchData *sd, int alpha) {
         while (tmp2) {
             j = bitboard_find_set_bit(tmp2);
             tmp2 &= tmp2 - 1;
-            move_t move = make_move(j, i, M_CAPTURE);
+            move_t move = dbase_make_move(j, i, M_CAPTURE);
             int sw = swap_off(p, move);
             if (sw >= 0) {
                 heap_append(sd->heap, move);

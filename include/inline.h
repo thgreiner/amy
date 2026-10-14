@@ -109,21 +109,21 @@ static inline int dbase_edge_dist(int sq) {
 /**
  * Create a move from from square, to square and flags.
  */
-static inline move_t make_move(int from, int to, int flags) {
+static inline move_t dbase_make_move(int from, int to, int flags) {
     return (move_t)(from | (to << 6) | flags);
 }
 
 /**
  * Create a promotion move from from square, to square and flags.
  */
-static inline move_t make_promotion(int from, int to, int type, int flags) {
+static inline move_t dbase_make_promotion(int from, int to, int type, int flags) {
     return (move_t)(from | (to << 6) | (type << M_PROMOTION_OFFSET) | flags);
 }
 
 /**
  * Returns if the square is a promotion square.
  */
-static inline bool is_promo_square(int sq) {
+static inline bool dbase_is_promo_square(int sq) {
     int rank = sq >> 3;
     return rank == 0 || rank == 7;
 }

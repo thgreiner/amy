@@ -884,13 +884,13 @@ void dbase_gen_to(struct Position *p, Square square, heap_t heap) {
     while (tmp) {
         int i = bitboard_find_set_bit(tmp);
         tmp &= tmp - 1;
-        if (TYPE(p->piece[i]) == Pawn && is_promo_square(square)) {
-            heap_append(heap, make_promotion(i, square, Queen, M_CAPTURE));
-            heap_append(heap, make_promotion(i, square, Knight, M_CAPTURE));
-            heap_append(heap, make_promotion(i, square, Rook, M_CAPTURE));
-            heap_append(heap, make_promotion(i, square, Bishop, M_CAPTURE));
+        if (TYPE(p->piece[i]) == Pawn && dbase_is_promo_square(square)) {
+            heap_append(heap, dbase_make_promotion(i, square, Queen, M_CAPTURE));
+            heap_append(heap, dbase_make_promotion(i, square, Knight, M_CAPTURE));
+            heap_append(heap, dbase_make_promotion(i, square, Rook, M_CAPTURE));
+            heap_append(heap, dbase_make_promotion(i, square, Bishop, M_CAPTURE));
         } else {
-            heap_append(heap, make_move(i, square, M_CAPTURE));
+            heap_append(heap, dbase_make_move(i, square, M_CAPTURE));
         }
     }
 }
@@ -905,7 +905,7 @@ void dbase_gen_enpas(struct Position *p, heap_t heap) {
     while (tmp) {
         int i = bitboard_find_set_bit(tmp);
         tmp &= tmp - 1;
-        heap_append(heap, make_move(i, p->enPassant, M_ENPASSANT));
+        heap_append(heap, dbase_make_move(i, p->enPassant, M_ENPASSANT));
     }
 }
 
@@ -922,7 +922,7 @@ void dbase_gen_from(struct Position *p, Square square, heap_t heap) {
         while (tmp) {
             int i = bitboard_find_set_bit(tmp);
             tmp &= tmp - 1;
-            heap_append(heap, make_move(square, i, 0));
+            heap_append(heap, dbase_make_move(square, i, 0));
         }
 
         /* Generate castling moves
@@ -932,12 +932,12 @@ void dbase_gen_from(struct Position *p, Square square, heap_t heap) {
         if (TYPE(p->piece[square]) == King) {
             if (p->castle & CastleMask[p->turn][0]) {
                 /* OK, we might castle king p->turn */
-                heap_append(heap, make_move(p->turn == White ? e1 : e8,
+                heap_append(heap, dbase_make_move(p->turn == White ? e1 : e8,
                                                p->turn == White ? g1 : g8,
                                                M_SCASTLE));
             }
             if (p->castle & CastleMask[p->turn][1]) {
-                heap_append(heap, make_move(p->turn == White ? e1 : e8,
+                heap_append(heap, dbase_make_move(p->turn == White ? e1 : e8,
                                                p->turn == White ? c1 : c8,
                                                M_LCASTLE));
             }
@@ -946,19 +946,19 @@ void dbase_gen_from(struct Position *p, Square square, heap_t heap) {
         int sq = (p->turn == White ? square + 8 : square - 8);
 
         if (p->piece[sq] == Neutral) {
-            if (is_promo_square(sq)) {
-                heap_append(heap, make_promotion(square, sq, Queen, 0));
-                heap_append(heap, make_promotion(square, sq, Knight, 0));
-                heap_append(heap, make_promotion(square, sq, Rook, 0));
-                heap_append(heap, make_promotion(square, sq, Bishop, 0));
+            if (dbase_is_promo_square(sq)) {
+                heap_append(heap, dbase_make_promotion(square, sq, Queen, 0));
+                heap_append(heap, dbase_make_promotion(square, sq, Knight, 0));
+                heap_append(heap, dbase_make_promotion(square, sq, Rook, 0));
+                heap_append(heap, dbase_make_promotion(square, sq, Bishop, 0));
             } else {
-                heap_append(heap, make_move(square, sq, 0));
+                heap_append(heap, dbase_make_move(square, sq, 0));
 
                 if ((p->turn == White && square <= h2) ||
                     (p->turn == Black && square >= a7)) {
                     sq = (p->turn == White ? sq + 8 : sq - 8);
                     if (p->piece[sq] == Neutral) {
-                        heap_append(heap, make_move(square, sq, M_PAWND));
+                        heap_append(heap, dbase_make_move(square, sq, M_PAWND));
                     }
                 }
             }
@@ -1254,7 +1254,7 @@ void dbase_gen_checks(struct Position *p, heap_t heap) {
             tmp2 &= tmp2 - 1;
             if (InterPath[kp][sq2] & all)
                 continue;
-            heap_append(heap, make_move(sq, sq2, 0));
+            heap_append(heap, dbase_make_move(sq, sq2, 0));
         }
     }
 
@@ -1275,7 +1275,7 @@ void dbase_gen_checks(struct Position *p, heap_t heap) {
             tmp2 &= tmp2 - 1;
             if (InterPath[kp][sq2] & all)
                 continue;
-            heap_append(heap, make_move(sq, sq2, 0));
+            heap_append(heap, dbase_make_move(sq, sq2, 0));
         }
     }
 
@@ -1296,7 +1296,7 @@ void dbase_gen_checks(struct Position *p, heap_t heap) {
         while (tmp2) {
             int sq2 = bitboard_find_set_bit(tmp2);
             tmp2 &= tmp2 - 1;
-            heap_append(heap, make_move(sq, sq2, 0));
+            heap_append(heap, dbase_make_move(sq, sq2, 0));
         }
     }
 
@@ -1313,11 +1313,11 @@ void dbase_gen_checks(struct Position *p, heap_t heap) {
 
         if (p->turn == White) {
             if (p->piece[sq - 8] == Pawn) {
-                heap_append(heap, make_move(sq - 8, sq, 0));
+                heap_append(heap, dbase_make_move(sq - 8, sq, 0));
             }
         } else {
             if (p->piece[sq + 8] == -Pawn) {
-                heap_append(heap, make_move(sq + 8, sq, 0));
+                heap_append(heap, dbase_make_move(sq + 8, sq, 0));
             }
         }
     }

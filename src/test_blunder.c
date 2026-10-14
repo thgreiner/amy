@@ -47,7 +47,7 @@ static void test_get_best_move_from_comment(void) {
 
     int move = blunder_get_best_move_from_comment(comment, p, eval_buf);
 
-    assert(move == make_move(e2, e4, M_PAWND));
+    assert(move == dbase_make_move(e2, e4, M_PAWND));
     assert(strcmp(eval_buf, "0.5003") == 0);
 
     dbase_free_position(p);
