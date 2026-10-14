@@ -208,7 +208,7 @@ static void book_up_internal(char *file_name, int verbosity) {
         else
             continue;
 
-        p = InitialPosition();
+        p = dbase_initial_position();
 
         while (!pgn_scan_move(fin, move)) {
             if (!(strlen(move) < 12)) {
@@ -216,9 +216,9 @@ static void book_up_internal(char *file_name, int verbosity) {
                 exit(1);
             }
 
-            move_t themove = ParseSAN(p, move);
+            move_t themove = dbase_parse_san(p, move);
             if (themove != M_NONE) {
-                DoMove(p, themove);
+                dbase_do_move(p, themove);
                 char *eco_code = eco_get_code(p->hkey);
                 if (eco_code) {
                     afterEco = 0;
@@ -240,7 +240,7 @@ static void book_up_internal(char *file_name, int verbosity) {
             }
         }
 
-        FreePosition(p);
+        dbase_free_position(p);
         free_header(&header);
 
         lines++;
@@ -277,7 +277,7 @@ static void book_get_all_moves(struct Position *p, int *cnt, move_t *book_moves,
     unsigned int i;
 
     heap_t heap = heap_allocate();
-    LegalMoves(p, heap);
+    dbase_legal_moves(p, heap);
 
     for (i = heap->current_section->start; i < heap->current_section->end;
          i++) {
@@ -285,13 +285,13 @@ static void book_get_all_moves(struct Position *p, int *cnt, move_t *book_moves,
         struct BookEntry *be = NULL;
         struct LearnEntry *le = NULL;
 
-        DoMove(p, move);
+        dbase_do_move(p, move);
         /* If the move leads to a repetition, do not accept it. */
-        if (!Repeated(p, false)) {
+        if (!dbase_repeated(p, false)) {
             be = GetBookEntry(p->hkey);
             le = GetLearnEntry(p->hkey);
         }
-        UndoMove(p, move);
+        dbase_undo_move(p, move);
 
         if (be) {
             memset(entries + *cnt, 0, sizeof(struct BookQuery));
@@ -451,7 +451,7 @@ void book_query(struct Position *p) {
 
         char san_buffer[16];
         print(0, "\t%5s%c %6d %3d%% %3d%% %3d%% %5d %3.f\n",
-              SAN(p, moves[i], san_buffer), modifier, freq,
+              dbase_san(p, moves[i], san_buffer), modifier, freq,
               (100 * entry->be.win) / freq, (100 * entry->be.loss) / freq,
               (100 * entry->be.draw) / freq,
 #if WITH_ELO
@@ -500,7 +500,7 @@ void book_create_learn_db(char *file_name) {
         if (buffer[0] == '#')
             continue;
 
-        p = InitialPosition();
+        p = dbase_initial_position();
 
         while ((move = nextToken(&x, " \n\r\t")) != NULL) {
             int flags = 0;
@@ -515,12 +515,12 @@ void book_create_learn_db(char *file_name) {
                 *modifier = '\0';
             }
 
-            themove = ParseSAN(p, move);
+            themove = dbase_parse_san(p, move);
             if (themove != M_NONE) {
                 char san_buffer[16];
-                print(0, "%s ", SAN(p, themove, san_buffer));
+                print(0, "%s ", dbase_san(p, themove, san_buffer));
 
-                DoMove(p, themove);
+                dbase_do_move(p, themove);
 
                 if (flags != 0) {
                     PutLearnEntry(p->hkey, 0, flags);
@@ -532,7 +532,7 @@ void book_create_learn_db(char *file_name) {
         }
 
         print(0, "\n");
-        FreePosition(p);
+        dbase_free_position(p);
     }
 
     fclose(fin);

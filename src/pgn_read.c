@@ -270,9 +270,9 @@ void pgn_load_game(struct Position *p, char *file_name) {
         char move[16];
         if (!pgn_scan_header(fin, &header)) {
             while (!pgn_scan_move(fin, move)) {
-                int themove = ParseSAN(p, move);
+                int themove = dbase_parse_san(p, move);
                 if (themove != M_NONE) {
-                    DoMove(p, themove);
+                    dbase_do_move(p, themove);
                 }
             }
         }

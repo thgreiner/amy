@@ -69,14 +69,14 @@ void eco_parse_pgn(char *fname) {
 
         print(0, ".");
 
-        struct Position *p = InitialPosition();
+        struct Position *p = dbase_initial_position();
 
         if (fgets(buffer, 1024, fin) != NULL) {
             for (x = strtok(buffer, " \n\r\t"); x;
                  x = strtok(NULL, " \n\r\t")) {
-                move_t move = ParseSAN(p, x);
+                move_t move = dbase_parse_san(p, x);
                 if (move != M_NONE) {
-                    DoMove(p, move);
+                    dbase_do_move(p, move);
                 }
             }
 
@@ -84,7 +84,7 @@ void eco_parse_pgn(char *fname) {
                             strlen(name) + 1);
         }
 
-        FreePosition(p);
+        dbase_free_position(p);
     }
 
     fclose(fin);

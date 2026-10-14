@@ -127,7 +127,7 @@ void StateMachine(void) {
          * Check for game termination
          */
 
-        gameend = GameEnd(CurrentPosition);
+        gameend = dbase_game_end(CurrentPosition);
         if (gameend != NULL) {
             print(0, "%s\n", gameend);
             if (State == STATE_ANALYZING) {
@@ -137,5 +137,5 @@ void StateMachine(void) {
         }
     }
 
-    FreePosition(CurrentPosition);
+    dbase_free_position(CurrentPosition);
 }

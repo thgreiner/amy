@@ -71,9 +71,9 @@ void filter_quiescent_positions(char *file_name) {
         count_games++;
 
         if (header.is_setup) {
-            p = CreatePositionFromEPD(header.fen);
+            p = dbase_create_position_from_epd(header.fen);
         } else {
-            p = InitialPosition();
+            p = dbase_initial_position();
         }
 
         print_header(fout, &header);
@@ -104,7 +104,7 @@ void filter_quiescent_positions(char *file_name) {
                 fprintf(dout, "%d,%s\n", last_position_evaluation, eval_buf);
             }
 
-            move_t themove = ParseSAN(p, move);
+            move_t themove = dbase_parse_san(p, move);
 
             if (themove == M_NONE)
                 break;
@@ -113,11 +113,11 @@ void filter_quiescent_positions(char *file_name) {
                 pgn_emit_line(fout, &width, "%d. ", 1 + p->ply / 2);
             }
 
-            pgn_emit_line(fout, &width, "%s ", SAN(p, themove, san_buffer));
+            pgn_emit_line(fout, &width, "%s ", dbase_san(p, themove, san_buffer));
 
             last_position_was_quiet = true;
 
-            if (!GameEnd(p)) {
+            if (!dbase_game_end(p)) {
                 const int static_evaluation = EvaluatePosition(p);
                 const int dynamic_evaluation = QuiescenceSearch(p);
 
@@ -126,7 +126,7 @@ void filter_quiescent_positions(char *file_name) {
                 last_position_evaluation = static_evaluation;
 
                 if (diff > THRESHOLD) {
-                    // ShowPosition(p);
+                    // dbase_show_position(p);
                     // print(0, "Static: %d Dynamic: %d\n", static_evaluation,
                     //      dynamic_evaluation);
                     last_position_was_quiet = false;
@@ -144,7 +144,7 @@ void filter_quiescent_positions(char *file_name) {
             }
 
             if (themove != M_NONE) {
-                DoMove(p, themove);
+                dbase_do_move(p, themove);
             } else {
                 break;
             }
@@ -153,7 +153,7 @@ void filter_quiescent_positions(char *file_name) {
         fprintf(fout, "%s\n\n", header.result);
         get_and_reset_comment(comment, sizeof(comment) - 1);
 
-        FreePosition(p);
+        dbase_free_position(p);
         free_header(&header);
     }
 

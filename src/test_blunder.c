@@ -38,7 +38,7 @@
 #include <stdlib.h>
 
 static void test_get_best_move_from_comment(void) {
-    struct Position *p = InitialPosition();
+    struct Position *p = dbase_initial_position();
     char eval_buf[16];
 
     char comment[] = "q=0.5003; p=[a3:18, b3:22, c3:7, d3:8, e3:7, f3:12, "
@@ -50,7 +50,7 @@ static void test_get_best_move_from_comment(void) {
     assert(move == make_move(e2, e4, M_PAWND));
     assert(strcmp(eval_buf, "0.5003") == 0);
 
-    FreePosition(p);
+    dbase_free_position(p);
 }
 
 void test_all_blunder(void) { test_get_best_move_from_comment(); }

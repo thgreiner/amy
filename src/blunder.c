@@ -85,7 +85,7 @@ move_t blunder_get_best_move_from_comment(const char *comment, struct Position *
         char *move = strtok_r(elem, ":", &brki);
         char *count = strtok_r(NULL, ":", &brki);
 
-        move_t parsed_move = ParseSAN(p, move);
+        move_t parsed_move = dbase_parse_san(p, move);
 
         if (parsed_move != M_NONE && count != NULL) {
             int parsed_count = atoi(count);
@@ -127,9 +127,9 @@ void blunder_check(char *file_name) {
         count_games++;
 
         if (header.fen != NULL) {
-            p = CreatePositionFromEPD(header.fen);
+            p = dbase_create_position_from_epd(header.fen);
         } else {
-            p = InitialPosition();
+            p = dbase_initial_position();
         }
 
         print_header(fout, &header);
@@ -149,7 +149,7 @@ void blunder_check(char *file_name) {
             if (last_move != M_NONE && strlen(comment) != 0) {
                 char sanbuf[16], evalbuf[16];
 
-                UndoMove(p, last_move);
+                dbase_undo_move(p, last_move);
 
                 move_t best_move =
                     blunder_get_best_move_from_comment(comment, p, evalbuf);
@@ -164,26 +164,26 @@ void blunder_check(char *file_name) {
                 if (optimal_move != best_move && score_diff >= 1500) {
                     count_blunders++;
 
-                    ShowPosition(p);
+                    dbase_show_position(p);
 
                     // Logging
                     print(1, ">>> best move from comment: %s\n",
-                          SAN(p, best_move, sanbuf));
+                          dbase_san(p, best_move, sanbuf));
                     print(1, ">>> optimal move: %s\n",
-                          SAN(p, optimal_move, sanbuf));
+                          dbase_san(p, optimal_move, sanbuf));
                     print(1, ">>> score diff: %d\n",
                           search_evaluation - alternate_evaluation);
 
                     pgn_emit_line(fout, &width, "{ q=%s; p=[%s:100] } ", evalbuf,
-                                SAN(p, optimal_move, sanbuf));
+                                dbase_san(p, optimal_move, sanbuf));
                 } else {
                     pgn_emit_line(fout, &width, "{%s} ", comment);
                 }
 
-                DoMove(p, last_move);
+                dbase_do_move(p, last_move);
             }
 
-            move_t themove = ParseSAN(p, move);
+            move_t themove = dbase_parse_san(p, move);
 
             if (themove == M_NONE) {
                 get_and_reset_comment(comment, sizeof(comment) - 1);
@@ -197,9 +197,9 @@ void blunder_check(char *file_name) {
                 pgn_emit_line(fout, &width, "%d. ", 1 + p->ply / 2);
             }
 
-            pgn_emit_line(fout, &width, "%s ", SAN(p, themove, san_buffer));
+            pgn_emit_line(fout, &width, "%s ", dbase_san(p, themove, san_buffer));
 
-            DoMove(p, themove);
+            dbase_do_move(p, themove);
             last_move = themove;
         }
 
@@ -210,7 +210,7 @@ void blunder_check(char *file_name) {
 
         fprintf(fout, "%s\n\n", header.result);
 
-        FreePosition(p);
+        dbase_free_position(p);
         free_header(&header);
     }
 

@@ -133,7 +133,7 @@ move_t next_move(struct SearchData *sd) {
 #ifdef VERBOSE
         print(9, "HashMove\n");
 #endif
-        if (LegalMove(p, st->st_hashmove)) {
+        if (dbase_legal_move(p, st->st_hashmove)) {
             st->st_phase = GenerateCaptures;
             return st->st_hashmove;
         } else {
@@ -153,7 +153,7 @@ move_t next_move(struct SearchData *sd) {
             int to = FindSetBit(targets);
             targets &= targets - 1;
 
-            GenTo(p, to, sd->heap);
+            dbase_gen_to(p, to, sd->heap);
         }
 
         BitBoard promoting_pawns =
@@ -162,7 +162,7 @@ move_t next_move(struct SearchData *sd) {
             int from = FindSetBit(promoting_pawns);
             promoting_pawns &= promoting_pawns - 1;
 
-            GenFrom(p, from, sd->heap);
+            dbase_gen_from(p, from, sd->heap);
         }
 
         grow_data_heap(sd);
@@ -171,7 +171,7 @@ move_t next_move(struct SearchData *sd) {
         }
 
         unsigned int last_end = section->end;
-        GenEnpas(p, sd->heap);
+        dbase_gen_enpas(p, sd->heap);
         grow_data_heap(sd);
 
         for (unsigned int j = last_end; j < section->end; j++) {
@@ -216,7 +216,7 @@ move_t next_move(struct SearchData *sd) {
         print(9, "Killer1\n");
 #endif
         st->st_k1 = M_NONE;
-        if (move != st->st_hashmove && LegalMove(p, move)) {
+        if (move != st->st_hashmove && dbase_legal_move(p, move)) {
             st->st_phase = Killer2;
             st->st_k1 = move;
 
@@ -230,7 +230,7 @@ move_t next_move(struct SearchData *sd) {
         print(9, "Killer2\n");
 #endif
         st->st_k2 = M_NONE;
-        if (move != st->st_hashmove && LegalMove(p, move)) {
+        if (move != st->st_hashmove && dbase_legal_move(p, move)) {
             st->st_phase = CounterMv;
             st->st_k2 = move;
 
@@ -249,7 +249,7 @@ move_t next_move(struct SearchData *sd) {
             move = sd->counterTab[p->turn][lmove & 4095];
 
             if (move != M_NONE && move != st->st_hashmove &&
-                move != st->st_k1 && move != st->st_k2 && LegalMove(p, move)) {
+                move != st->st_k1 && move != st->st_k2 && dbase_legal_move(p, move)) {
                 st->st_phase = Killer3;
                 st->st_cm = move;
 
@@ -267,11 +267,11 @@ move_t next_move(struct SearchData *sd) {
             move = (sd->killer - 2)->killer1;
 
             if (move == st->st_hashmove || move == st->st_k1 ||
-                move == st->st_k2 || move == st->st_cm || !LegalMove(p, move))
+                move == st->st_k2 || move == st->st_cm || !dbase_legal_move(p, move))
                 move = (sd->killer - 2)->killer2;
 
             if (move != st->st_hashmove && move != st->st_k1 &&
-                move != st->st_k2 && move != st->st_cm && LegalMove(p, move)) {
+                move != st->st_k2 && move != st->st_cm && dbase_legal_move(p, move)) {
                 st->st_phase = LoosingCapture;
                 st->st_k3 = move;
 
@@ -422,7 +422,7 @@ move_t next_evasion(struct SearchData *sd) {
 #ifdef VERBOSE
         print(9, "HashMove\n");
 #endif
-        if (LegalMove(p, st->st_hashmove)) {
+        if (dbase_legal_move(p, st->st_hashmove)) {
             st->st_phase = GenerateCaptures;
             return st->st_hashmove;
         } else {
@@ -448,7 +448,7 @@ move_t next_evasion(struct SearchData *sd) {
         while (targets) {
             int to = FindSetBit(targets);
             targets &= targets - 1;
-            GenTo(p, to, sd->heap);
+            dbase_gen_to(p, to, sd->heap);
         }
 
         grow_data_heap(sd);
@@ -457,7 +457,7 @@ move_t next_evasion(struct SearchData *sd) {
         }
 
         unsigned int last_end = section->end;
-        GenEnpas(p, sd->heap);
+        dbase_gen_enpas(p, sd->heap);
         grow_data_heap(sd);
 
         for (unsigned int j = last_end; j < section->end; j++) {
@@ -499,7 +499,7 @@ move_t next_evasion(struct SearchData *sd) {
         print(9, "Killer1\n");
 #endif
         st->st_k1 = M_NONE;
-        if (move != st->st_hashmove && LegalMove(p, move)) {
+        if (move != st->st_hashmove && dbase_legal_move(p, move)) {
             st->st_phase = Killer2;
             st->st_k1 = move;
 
@@ -513,7 +513,7 @@ move_t next_evasion(struct SearchData *sd) {
         print(9, "Killer2\n");
 #endif
         st->st_k2 = M_NONE;
-        if (move != st->st_hashmove && LegalMove(p, move)) {
+        if (move != st->st_hashmove && dbase_legal_move(p, move)) {
             st->st_phase = CounterMv;
             st->st_k2 = move;
 
@@ -532,7 +532,7 @@ move_t next_evasion(struct SearchData *sd) {
             move = sd->counterTab[p->turn][lmove & 4095];
 
             if (move != M_NONE && move != st->st_hashmove &&
-                move != st->st_k1 && move != st->st_k2 && LegalMove(p, move)) {
+                move != st->st_k1 && move != st->st_k2 && dbase_legal_move(p, move)) {
                 st->st_phase = Killer3;
                 st->st_cm = move;
 
@@ -550,11 +550,11 @@ move_t next_evasion(struct SearchData *sd) {
             move = (sd->killer - 2)->killer1;
 
             if (move == st->st_hashmove || move == st->st_k1 ||
-                move == st->st_k2 || move == st->st_cm || !LegalMove(p, move))
+                move == st->st_k2 || move == st->st_cm || !dbase_legal_move(p, move))
                 move = (sd->killer - 2)->killer2;
 
             if (move != st->st_hashmove && move != st->st_k1 &&
-                move != st->st_k2 && move != st->st_cm && LegalMove(p, move)) {
+                move != st->st_k2 && move != st->st_cm && dbase_legal_move(p, move)) {
                 st->st_phase = /* HistoryMoves; */ LoosingCapture;
                 st->st_k3 = move;
 
@@ -938,12 +938,12 @@ static void test_next_move(struct SearchData *sd,
         if (move == M_NONE)
             break;
 
-        if (LegalMove(sd->position, move)) {
+        if (dbase_legal_move(sd->position, move)) {
             if (comma) {
                 print(0, ", ");
             }
             char san_buffer[16];
-            print(0, "%s", SAN(sd->position, move, san_buffer));
+            print(0, "%s", dbase_san(sd->position, move, san_buffer));
             comma = true;
         }
     }

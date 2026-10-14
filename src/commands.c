@@ -164,9 +164,9 @@ struct Command *ParseInput(char *line) {
      * Try to interpret as move.
      */
 
-    move = ParseSAN(CurrentPosition, token);
+    move = dbase_parse_san(CurrentPosition, token);
     if (move == M_NONE) {
-        move = ParseGSAN(CurrentPosition, token);
+        move = dbase_parse_gsan(CurrentPosition, token);
     }
 
     if (move != M_NONE) {
@@ -194,7 +194,7 @@ struct Command *ParseInput(char *line) {
 
 void ExecuteCommand(struct Command *theCommand) {
     if (theCommand->move != M_NONE) {
-        DoMove(CurrentPosition, theCommand->move);
+        dbase_do_move(CurrentPosition, theCommand->move);
     } else {
         COMMAND cfunc = theCommand->command_func;
         cfunc(theCommand->args);
@@ -206,14 +206,14 @@ static void Quit(char *args) {
 #if MP
     StopHelpers();
 #endif
-    FreePosition(CurrentPosition);
+    dbase_free_position(CurrentPosition);
     print(0, "\n\nI'll be back.\n");
     exit(0);
 }
 
 static void Show(char *args) {
     (void)args;
-    ShowPosition(CurrentPosition);
+    dbase_show_position(CurrentPosition);
 }
 
 static void ShowEco(char *args) {
@@ -256,8 +256,8 @@ static void Test(char *fname) {
         if (fgets(line, 256, fin) == NULL)
             break;
         print(0, "Problem %d:\n", i);
-        p = CreatePositionFromEPD(line);
-        ShowPosition(p);
+        p = dbase_create_position_from_epd(line);
+        dbase_show_position(p);
 
         /* TestSwap(); */
 
@@ -308,7 +308,7 @@ static void Test(char *fname) {
               solved, total, btval, lctval, bsval);
         print(0, "-----------------------------------------------\n\n");
 
-        FreePosition(p);
+        dbase_free_position(p);
     }
 
     if (fin)
@@ -339,7 +339,7 @@ static void TestScore(char *fname) {
 
         if (fgets(line, 256, fin) == NULL)
             break;
-        p = CreatePositionFromEPD(line);
+        p = dbase_create_position_from_epd(line);
         InitEvaluation(p);
         int score = EvaluatePosition(p);
 
@@ -355,7 +355,7 @@ static void TestScore(char *fname) {
             fprintf(fout, "%s; score %d;\n", line, score);
         }
 
-        FreePosition(p);
+        dbase_free_position(p);
     }
 
     if (fin)
@@ -409,8 +409,8 @@ void NewGame(char *args) {
     get_tmp_file_name(AutoSaveFileName, sizeof(AutoSaveFileName));
 
     ForceMode = false;
-    FreePosition(CurrentPosition);
-    CurrentPosition = InitialPosition();
+    dbase_free_position(CurrentPosition);
+    CurrentPosition = dbase_initial_position();
     if (State != STATE_ANALYZING) {
         State = STATE_WAITING;
     }
@@ -478,7 +478,7 @@ void Edit(char *args) {
 
     p->castle = p->enPassant = 0;
 
-    RecalcAttacks(p);
+    dbase_recalc_attacks(p);
     if (p->piece[e1] == King) {
         if (p->piece[h1] == Rook)
             p->castle |= CastleMask[White][0];
@@ -491,14 +491,14 @@ void Edit(char *args) {
         if (p->piece[a8] == -Rook)
             p->castle |= CastleMask[Black][1];
     }
-    RecalcAttacks(p);
-    ShowPosition(p);
+    dbase_recalc_attacks(p);
+    dbase_show_position(p);
 }
 
 static void Undo(char *args) {
     (void)args;
     if (CurrentPosition->ply > 0) {
-        UndoMove(CurrentPosition, (CurrentPosition->actLog - 1)->gl_Move);
+        dbase_undo_move(CurrentPosition, (CurrentPosition->actLog - 1)->gl_Move);
     }
 }
 
@@ -529,7 +529,7 @@ static void Hard(char *args) {
 
 static void MovesCmd(char *args) {
     (void)args;
-    ShowMoves(CurrentPosition);
+    dbase_show_moves(CurrentPosition);
 }
 
 static void SetEPD(char *args) {
@@ -537,8 +537,8 @@ static void SetEPD(char *args) {
         print(0, "Usage: epd <EPD>\n");
         return;
     }
-    FreePosition(CurrentPosition);
-    CurrentPosition = CreatePositionFromEPD(args);
+    dbase_free_position(CurrentPosition);
+    CurrentPosition = dbase_create_position_from_epd(args);
 }
 
 static void RunAnnotate(char *fname, int side) {
@@ -550,22 +550,22 @@ static void RunAnnotate(char *fname, int side) {
         char move[16];
 
         while (!pgn_scan_header(fin, &header)) {
-            p = InitialPosition();
+            p = dbase_initial_position();
             while (!pgn_scan_move(fin, move)) {
-                int themove = ParseSAN(p, move);
+                int themove = dbase_parse_san(p, move);
                 if (themove != M_NONE) {
                     char san_buffer[16];
-                    ShowPosition(p);
+                    dbase_show_position(p);
                     print(0, "%s(%d): ", p->turn == White ? "White" : "Black",
                           (p->ply / 2) + 1);
-                    print(0, "%s\n", SAN(p, themove, san_buffer));
+                    print(0, "%s\n", dbase_san(p, themove, san_buffer));
                     if (side == -1 || (side == p->turn)) {
                         Iterate(p, NULL, M_NONE, NULL);
                     }
-                    DoMove(p, themove);
+                    dbase_do_move(p, themove);
                 }
             }
-            FreePosition(p);
+            dbase_free_position(p);
             free_header(&header);
         }
         fclose(fin);
@@ -676,13 +676,13 @@ static void Benchmark(char *args) {
     double elapsed;
     struct Position *p;
 
-    p = InitialPosition();
+    p = dbase_initial_position();
 
     start = get_time();
 
     for (i = cycles; i > 0; i--) {
-        DoMove(p, move);
-        UndoMove(p, move);
+        dbase_do_move(p, move);
+        dbase_undo_move(p, move);
     }
 
     end = get_time();
@@ -691,7 +691,7 @@ static void Benchmark(char *args) {
 
     print(0, "Nf3: %.2g secs, %g moves/sec\n", elapsed, cycles / elapsed);
 
-    FreePosition(p);
+    dbase_free_position(p);
 }
 
 static BitBoard SearchFully(struct Position *p, BitBoard cnt, int depth,
@@ -703,19 +703,19 @@ static BitBoard SearchFully(struct Position *p, BitBoard cnt, int depth,
     }
 
     heap_push_section(heap);
-    PLegalMoves(p, heap);
+    dbase_plegal_moves(p, heap);
 
     for (i = heap->current_section->start; i < heap->current_section->end;
          i++) {
         int move = heap->data[i];
-        if (move & M_CANY && !MayCastle(p, move))
+        if (move & M_CANY && !dbase_may_castle(p, move))
             continue;
 
-        DoMove(p, move);
+        dbase_do_move(p, move);
         if (!InCheck(p, OPP(p->turn))) {
             cnt = SearchFully(p, cnt, depth - 1, heap);
         }
-        UndoMove(p, move);
+        dbase_undo_move(p, move);
     }
     heap_pop_section(heap);
 
@@ -752,7 +752,7 @@ static void Load(char *args) {
         print(0, "Usage: load <filename>\n");
         return;
     }
-    CurrentPosition = InitialPosition();
+    CurrentPosition = dbase_initial_position();
     pgn_load_game(CurrentPosition, args);
 }
 
@@ -828,7 +828,7 @@ static void Conf(char *args) {
     }
 
     LoadEvaluationConfig(args);
-    RecalcAttacks(CurrentPosition);
+    dbase_recalc_attacks(CurrentPosition);
 }
 
 static void SaveConf(char *args) {

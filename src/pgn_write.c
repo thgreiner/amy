@@ -92,7 +92,7 @@ static void save_moves(FILE *fout, struct Position *p) {
     for (int i = ply; i > 0; i--) {
         int move = (p->actLog - 1)->gl_Move;
         history[i - 1] = move;
-        UndoMove(p, move);
+        dbase_undo_move(p, move);
     }
 
     int width = 0;
@@ -104,11 +104,11 @@ static void save_moves(FILE *fout, struct Position *p) {
         }
 
         char san_buffer[16];
-        char *san = SAN(p, move, san_buffer);
+        char *san = dbase_san(p, move, san_buffer);
 
         pgn_emit_line(fout, &width, "%s ", san);
 
-        DoMove(p, move);
+        dbase_do_move(p, move);
     }
 
     free(history);
@@ -129,7 +129,7 @@ void pgn_save_game(struct Position *p, char *file_name) {
             get_hostname(hostname_buf);
             get_date_time(date_buf, time_buf);
 
-            gameend = GameEnd(CurrentPosition);
+            gameend = dbase_game_end(CurrentPosition);
             if (gameend == NULL) {
                 gameend = "*";
                 strcpy(shortgameend, gameend);
