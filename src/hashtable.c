@@ -37,9 +37,11 @@
 #include <string.h>
 
 #include "hashtable.h"
+#include "dbase.h"
 #include "random.h"
 #include "safe_malloc.h"
 #include "search.h"
+#include "types.h"
 #include "utils.h"
 
 #define HT_AGE (0x3f)
@@ -180,7 +182,7 @@ static inline void PutHTEntry(hash_t key, struct HTEntry entry) {
 /**
  *
  */
-static inline bool PutHTEntryBestEffort(hash_t key, struct HTEntry entry,
+static inline bool PutHTEntryBestEffort(const hash_t key, struct HTEntry entry,
                                         int depth) {
     const hash_t key1 = key;
     const hash_t key2 = key + 1;
@@ -189,11 +191,11 @@ static inline bool PutHTEntryBestEffort(hash_t key, struct HTEntry entry,
     struct HTEntry entry2 = GetHTEntry(key2);
 
     /* Overwrite any matching entry. */
-    if (entry1.ht_Signature == (unsigned int)key) {
+    if (entry1.ht_Key == key) {
         PutHTEntry(key1, entry);
         return true;
     }
-    if (entry2.ht_Signature == (unsigned int)key) {
+    if (entry2.ht_Key == key) {
         PutHTEntry(key2, entry);
         return true;
     }
@@ -233,22 +235,22 @@ static inline bool PutHTEntryBestEffort(hash_t key, struct HTEntry entry,
 }
 
 #if MP
-LookupResult ProbeHT(hash_t key, int *score, int depth, move_t *bestm,
+LookupResult ProbeHT(const hash_t key, int *score, int depth, move_t *bestm,
                      bool *threat, int ply, int exclusiveP,
                      struct HTEntry *localHT)
 #else
-LookupResult ProbeHT(hash_t key, int *score, int depth, move_t *bestm,
+LookupResult ProbeHT(const hash_t key, int *score, int depth, move_t *bestm,
                      bool *threat, int ply)
 #endif
 {
     hash_t effective_key = key;
     struct HTEntry h = GetHTEntry(effective_key);
-    bool found = h.ht_Signature == (unsigned int)key;
+    bool found = h.ht_Key == key;
 
     if (!found) {
         effective_key++;
         h = GetHTEntry(effective_key);
-        found = h.ht_Signature == (unsigned int)key;
+        found = h.ht_Key == key;
     }
 
     int result = Useless;
@@ -256,7 +258,7 @@ LookupResult ProbeHT(hash_t key, int *score, int depth, move_t *bestm,
 #if MP
     if (localHT != NULL && !found) {
         h = localHT[(key >> 32) & L_HT_Mask];
-        found = h.ht_Signature == (unsigned int)key;
+        found = h.ht_Key == key;
     }
 #endif
 
@@ -314,7 +316,7 @@ LookupResult ProbeHT(hash_t key, int *score, int depth, move_t *bestm,
     else {
         h.ht_Depth = (short)depth;
         h.ht_Flags = HT_NCPU_INCREMENT;
-        h.ht_Signature = (int)key;
+        h.ht_Key = key;
         PutHTEntryBestEffort(key, h, depth);
     }
 #endif /* MP */
@@ -333,7 +335,7 @@ LookupResult ProbePT(hash_t key, int *score, struct PawnFacts *pf) {
     release_read_lock(PawnMutex + ((key >> 32) & MUTEX_MASK));
 #endif /* MP && HAVE_LIBPTHREAD */
 
-    if (h.pt_Signature == (unsigned int)key && h.pt_Score != PT_INVALID) {
+    if (h.pt_Key == key && h.pt_Score != PT_INVALID) {
         *score = h.pt_Score;
         *pf = h.pt_PawnFacts;
         return Useful;
@@ -353,7 +355,7 @@ LookupResult ProbeST(hash_t key, int *score) {
     release_read_lock(ScoreMutex + ((key >> 32) & MUTEX_MASK));
 #endif /* MP && HAVE_LIBPTHREAD */
 
-    if (h.st_Signature == (unsigned int)key && h.st_Score != PT_INVALID) {
+    if (h.st_Key == key && h.st_Score != PT_INVALID) {
         *score = h.st_Score;
         return Useful;
     }
@@ -370,12 +372,12 @@ void StoreHT(hash_t key, int best, int alpha, int beta, int bestm, int depth,
 ) {
     hash_t effective_key = key;
     struct HTEntry entry = GetHTEntry(effective_key);
-    bool found = entry.ht_Signature == (unsigned int)key;
+    bool found = entry.ht_Key == key;
 
     if (!found) {
         effective_key++;
         entry = GetHTEntry(effective_key);
-        found = entry.ht_Signature == (unsigned int)key;
+        found = entry.ht_Key == key;
     }
 
     HTStoreTried++;
@@ -402,16 +404,16 @@ void StoreHT(hash_t key, int best, int alpha, int beta, int bestm, int depth,
     }
 
 #if MP
-    if (entry.ht_Signature == (unsigned int)key && depth == entry.ht_Depth) {
+    if (entry.ht_Key == key && depth == entry.ht_Depth) {
         if ((entry.ht_Flags & HT_NCPU) > 0) {
             entry.ht_Flags = (entry.ht_Flags & HT_NCPU) - HT_NCPU_INCREMENT;
         }
     } else {
-        entry.ht_Signature = (unsigned int)key;
+        entry.ht_Key = key;
         entry.ht_Flags = 0;
     }
 #else
-    entry.ht_Signature = (unsigned int)key;
+    entry.ht_Key = key;
 #endif /* MP */
 
     entry.ht_Move = bestm;
@@ -442,7 +444,7 @@ void StoreHT(hash_t key, int best, int alpha, int beta, int bestm, int depth,
 }
 
 void StorePT(hash_t key, int score, struct PawnFacts *pf) {
-    struct PTEntry h = {.pt_Signature = (unsigned int)key,
+    struct PTEntry h = {.pt_Key = key,
                         .pt_Score = score,
                         .pt_PawnFacts = *pf};
 
@@ -458,7 +460,7 @@ void StorePT(hash_t key, int score, struct PawnFacts *pf) {
 }
 
 void StoreST(hash_t key, int score) {
-    struct STEntry h = {.st_Signature = (unsigned int)key, .st_Score = score};
+    struct STEntry h = {.st_Key = key, .st_Score = score};
 
 #if MP && HAVE_LIBPTHREAD
     acquire_write_lock(ScoreMutex + ((key >> 32) & MUTEX_MASK));
@@ -480,7 +482,7 @@ void ClearHashTable(void) {
     struct HTEntry *h = TranspositionTable;
 
     for (i = 0; i < HT_Size; i++, h++) {
-        h->ht_Signature = 0;
+        h->ht_Key = 0;
         h->ht_Flags = 0;
     }
 }
@@ -638,23 +640,21 @@ void GuessHTSizes(char *size) {
 }
 
 void HashInit(void) {
-    int i, j, k;
-
     InitRandom(0);
 
-    for (i = 0; i < 2; i++) {
-        for (j = 0; j < 8; j++) {
-            for (k = 0; k < 64; k++) {
+    for (int i = 0; i < 2; i++) {
+        for (int j = 0; j < 8; j++) {
+            for (int k = 0; k < 64; k++) {
                 HashKeys[i][j][k] = Random64();
             }
         }
     }
 
-    for (i = 0; i < 64; i++) {
+    for (int i = 0; i < 64; i++) {
         HashKeysEP[i] = Random64();
     }
 
-    for (i = 0; i < 16; i++) {
+    for (int i = 0; i < 16; i++) {
         HashKeysCastle[i] = Random64();
     }
 
