@@ -48,6 +48,7 @@
 #include "test_blunder.h"
 #include "test_dbase.h"
 #include "test_pgn_write.h"
+#include "test_utils.h"
 #include "test_yaml.h"
 #include "utils.h"
 
@@ -68,6 +69,7 @@ static void main_run_tests(void) {
     test_all_yaml();
     test_all_dbase();
     test_all_pgn_write();
+    test_all_utils();
     print(0, "All tests passed.\n");
 }
 

@@ -35,6 +35,7 @@
 
 #include "config.h"
 
+#include <ctype.h>
 #include <limits.h>
 #include <stdarg.h>
 #include <string.h>
@@ -339,17 +340,16 @@ int utils_percentage(unsigned long dividend, unsigned long divisor) {
 }
 
 char *utils_strip(char *buffer) {
-    char *start = buffer;
-    while (*start == ' ') {
-        start++;
-    }
+    if (!buffer)
+        return NULL;
 
-    char *end = start + strlen(start) - 1;
+    while (isspace((unsigned char)*buffer))
+        buffer++;
 
-    while (end > start && *end == ' ') {
-        *end = 0;
+    char *end = buffer + strlen(buffer);
+    while (end > buffer && isspace((unsigned char)end[-1]))
         end--;
-    }
 
-    return start;
+    *end = 0;
+    return buffer;
 }
