@@ -167,7 +167,7 @@ move_t NextMove(struct SearchData *sd) {
 
         grow_data_heap(sd);
         for (unsigned int j = section->start; j < section->end; j++) {
-            sd->data_heap[j] = SwapOff(p, sd->heap->data[j]);
+            sd->data_heap[j] = swap_off(p, sd->heap->data[j]);
         }
 
         unsigned int last_end = section->end;
@@ -453,7 +453,7 @@ move_t NextEvasion(struct SearchData *sd) {
 
         grow_data_heap(sd);
         for (unsigned int j = section->start; j < section->end; j++) {
-            sd->data_heap[j] = SwapOff(p, sd->heap->data[j]);
+            sd->data_heap[j] = swap_off(p, sd->heap->data[j]);
         }
 
         unsigned int last_end = section->end;
@@ -738,7 +738,7 @@ static void GenerateQCaptures(struct SearchData *sd, int alpha) {
         if (p->piece[next] == Neutral) {
             move_t move = make_promotion(i, next, Queen, 0);
             int sw;
-            if ((sw = SwapOff(p, move)) >= 0) {
+            if ((sw = swap_off(p, move)) >= 0) {
                 heap_append(sd->heap, move);
                 grow_data_heap(sd);
                 sd->data_heap[section->end - 1] = sw;
@@ -751,7 +751,7 @@ static void GenerateQCaptures(struct SearchData *sd, int alpha) {
             j = FindSetBit(tmp);
             tmp &= tmp - 1;
             move_t move = make_promotion(i, j, Queen, M_CAPTURE);
-            if ((sw = SwapOff(p, move)) >= 0) {
+            if ((sw = swap_off(p, move)) >= 0) {
                 heap_append(sd->heap, move);
                 grow_data_heap(sd);
                 sd->data_heap[section->end - 1] = sw;
@@ -778,7 +778,7 @@ static void GenerateQCaptures(struct SearchData *sd, int alpha) {
             j = FindSetBit(tmp2);
             tmp2 &= tmp2 - 1;
             move_t move = make_move(j, i, M_CAPTURE);
-            int sw = SwapOff(p, move);
+            int sw = swap_off(p, move);
             if (sw >= 0) {
                 heap_append(sd->heap, move);
                 grow_data_heap(sd);
@@ -799,7 +799,7 @@ static void GenerateQCaptures(struct SearchData *sd, int alpha) {
             j = FindSetBit(tmp2);
             tmp2 &= tmp2 - 1;
             move_t move = make_move(j, i, M_CAPTURE);
-            int sw = SwapOff(p, move);
+            int sw = swap_off(p, move);
             if (sw >= 0) {
                 heap_append(sd->heap, move);
                 grow_data_heap(sd);
@@ -820,7 +820,7 @@ static void GenerateQCaptures(struct SearchData *sd, int alpha) {
             j = FindSetBit(tmp2);
             tmp2 &= tmp2 - 1;
             move_t move = make_move(j, i, M_CAPTURE);
-            int sw = SwapOff(p, move);
+            int sw = swap_off(p, move);
             if (sw >= 0) {
                 heap_append(sd->heap, move);
                 grow_data_heap(sd);
@@ -841,7 +841,7 @@ static void GenerateQCaptures(struct SearchData *sd, int alpha) {
             j = FindSetBit(tmp2);
             tmp2 &= tmp2 - 1;
             move_t move = make_move(j, i, M_CAPTURE);
-            int sw = SwapOff(p, move);
+            int sw = swap_off(p, move);
             if (sw >= 0) {
                 heap_append(sd->heap, move);
                 grow_data_heap(sd);

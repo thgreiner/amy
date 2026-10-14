@@ -2121,7 +2121,7 @@ void ShowMoves(struct Position *p) {
             print(0, "(rejected?!) ");
         }
         if (move & (M_CAPTURE | M_ENPASSANT)) {
-            print(0, "(%d) ", SwapOff(p, move));
+            print(0, "(%d) ", swap_off(p, move));
         }
     }
     print(0, "\n");

@@ -849,7 +849,7 @@ static int negascout(struct SearchData *sd, int alpha, int beta,
 
             if (((p->turn == White && to >= a7) ||
                  (p->turn == Black && to <= h2)) &&
-                IsPassed(p, to, p->turn) && SwapOff(p, move) >= 0) {
+                IsPassed(p, to, p->turn) && swap_off(p, move) >= 0) {
                 next_depth += ExtendPassedPawn;
                 PPExt += 1;
             }

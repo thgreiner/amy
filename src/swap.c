@@ -46,7 +46,7 @@ static int SwapValue[] = {
     10000      /* King, whose value is basically infinity */
 };
 
-static void SwapReRay(struct Position *p, int side, BitBoard atks[2], int from,
+static void swap_re_ray(struct Position *p, int side, BitBoard atks[2], int from,
                       int to, BitBoard *exclude) {
     BitBoard tmp;
     int i;
@@ -84,7 +84,7 @@ static void SwapReRay(struct Position *p, int side, BitBoard atks[2], int from,
     }
 }
 
-int SwapOff(struct Position *p, int move) {
+int swap_off(struct Position *p, int move) {
     int to = M_TO(move);
     int fr = M_FROM(move);
     int side = COLOR(p->piece[fr]);
@@ -112,7 +112,7 @@ int SwapOff(struct Position *p, int move) {
 
     exclude = p->mask[White][0] | p->mask[Black][0];
 
-    SwapReRay(p, side, atks, fr, to, &exclude);
+    swap_re_ray(p, side, atks, fr, to, &exclude);
 
     while (atks[swapside]) {
         int at;
@@ -146,7 +146,7 @@ int SwapOff(struct Position *p, int move) {
         swapval = SwapValue[TYPE(p->piece[at])];
         swapsign = -swapsign;
 
-        SwapReRay(p, swapside, atks, at, to, &exclude);
+        swap_re_ray(p, swapside, atks, at, to, &exclude);
 
         swapside = !swapside;
     }
