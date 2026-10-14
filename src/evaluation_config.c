@@ -63,7 +63,7 @@ void eval_config_load(char *file_name) {
     if (buffer == NULL)
         return;
 
-    struct Node *node = parse_yaml(buffer);
+    struct Node *node = yaml_parse_yaml(buffer);
     free(buffer);
 
     if (node == NULL) {
@@ -79,7 +79,7 @@ void eval_config_load(char *file_name) {
     configure_queen_scores(node);
     configure_king_scores(node);
 
-    free_yaml_node(node);
+    yaml_free_node(node);
 }
 
 /**
@@ -234,7 +234,7 @@ static void print_array(FILE *fout, char *prefix, int16_t *array,
  * Set a named parameter.
  */
 static void set_parameter(struct Node *node, char *name, int *parameter) {
-    struct IntLookupResult result = get_as_int(node, name);
+    struct IntLookupResult result = yaml_get_as_int(node, name);
     if (result.result_code == OK) {
         print(9, "%s: %d\n", name, result.result);
         *parameter = result.result;
@@ -246,7 +246,7 @@ static void set_piece_square_table(struct Node *node, char *name,
     int piece_square_table[64];
 
     struct IntArrayLookupResult array_result =
-        get_as_int_array(node, name, piece_square_table, 64);
+        yaml_get_as_int_array(node, name, piece_square_table, 64);
 
     if (array_result.result_code == OK) {
         if (array_result.elements_read != 64) {
@@ -269,7 +269,7 @@ static void set_array(struct Node *node, char *name, int16_t *target_array,
     int *destination = safe_malloc(sizeof(int) * count);
 
     struct IntArrayLookupResult array_result =
-        get_as_int_array(node, name, destination, count);
+        yaml_get_as_int_array(node, name, destination, count);
 
     if (array_result.result_code == OK) {
         if (array_result.elements_read != count) {
@@ -288,7 +288,7 @@ static void set_array(struct Node *node, char *name, int16_t *target_array,
 }
 
 static void configure_name(struct Node *node) {
-    struct StringLookupResult result = get_as_string(node, "name");
+    struct StringLookupResult result = yaml_get_as_string(node, "name");
 
     if (result.result_code == OK) {
         ConfigurationName = result.result;

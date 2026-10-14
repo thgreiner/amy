@@ -48,23 +48,23 @@ struct TokenizerState {
     bool in_sequence;
 };
 
-void free_yaml_node(struct Node *);
-void free_list_node(struct ListNode *);
-void free_tree_node(tree_node_t *tree);
+void yaml_free_node(struct Node *);
+void yaml_free_list_node(struct ListNode *);
+void yaml_free_tree_node(tree_node_t *tree);
 
-static bool is_word_char(char c) { return isalnum(c) || c == '_' || c == '-'; }
+static bool yaml_is_word_char(char c) { return isalnum(c) || c == '_' || c == '-'; }
 
-static struct Token token_from_type(TokenType type) {
+static struct Token yaml_token_from_type(TokenType type) {
     struct Token result = {.type = type, .text = NULL};
     return result;
 }
 
-struct Token parse_word(struct TokenizerState *state) {
+struct Token yaml_parse_word(struct TokenizerState *state) {
     unsigned int length = 0;
     unsigned int trailing_blanks = 0;
 
     const char *begin = state->ptr;
-    while (is_word_char(*state->ptr) || *state->ptr == ' ') {
+    while (yaml_is_word_char(*state->ptr) || *state->ptr == ' ') {
         if (*state->ptr == ' ') {
             trailing_blanks++;
         } else {
@@ -86,53 +86,53 @@ struct Token parse_word(struct TokenizerState *state) {
     return result;
 }
 
-static bool is_sequence_header(struct TokenizerState *state) {
+static bool yaml_is_sequence_header(struct TokenizerState *state) {
     return *state->ptr == '-' && *(state->ptr + 1) == ' ';
 }
 
-static struct Token handle_indent(struct TokenizerState *state,
+static struct Token yaml_handle_indent(struct TokenizerState *state,
                                   unsigned int indent) {
     state->check_indent = false;
 
     if (!state->flow_style) {
         if (indent > state->indent_level) {
             state->indent_level = indent;
-            return token_from_type(OPENING_BRACE);
+            return yaml_token_from_type(OPENING_BRACE);
         }
 
         if (indent < state->indent_level) {
             if (state->in_sequence) {
                 state->in_sequence = false;
                 state->check_indent = true;
-                return token_from_type(CLOSING_BRACKET);
+                return yaml_token_from_type(CLOSING_BRACKET);
             } else {
                 state->indent_level = indent;
-                return token_from_type(CLOSING_BRACE);
+                return yaml_token_from_type(CLOSING_BRACE);
             }
         }
 
-        if (is_sequence_header(state)) {
+        if (yaml_is_sequence_header(state)) {
             state->ptr += 2;
             if (state->in_sequence) {
-                return token_from_type(COMMA);
+                return yaml_token_from_type(COMMA);
             }
             state->in_sequence = true;
-            return token_from_type(OPENING_BRACKET);
+            return yaml_token_from_type(OPENING_BRACKET);
         } else {
             if (state->in_sequence) {
                 state->in_sequence = false;
-                return token_from_type(CLOSING_BRACKET);
+                return yaml_token_from_type(CLOSING_BRACKET);
             }
         }
     }
 
-    return token_from_type(CONTINUE);
+    return yaml_token_from_type(CONTINUE);
 }
 
 /**
  * The lexer function - parses the input and returns the next token.
  */
-static struct Token next_token(struct TokenizerState *state) {
+static struct Token yaml_next_token(struct TokenizerState *state) {
     for (;;) {
         unsigned int indent = 0;
 
@@ -158,8 +158,8 @@ static struct Token next_token(struct TokenizerState *state) {
         }
 
         if (state->check_indent) {
-            struct Token result = handle_indent(state, indent);
-            // printf("handle_indent() returned %d\n", result.type);
+            struct Token result = yaml_handle_indent(state, indent);
+            // printf("yaml_handle_indent() returned %d\n", result.type);
             if (result.type != CONTINUE) {
                 return result;
             }
@@ -168,46 +168,46 @@ static struct Token next_token(struct TokenizerState *state) {
         if (*state->ptr == '\0') {
             if (state->in_sequence) {
                 state->in_sequence = false;
-                return token_from_type(CLOSING_BRACKET);
+                return yaml_token_from_type(CLOSING_BRACKET);
             }
-            return token_from_type(END);
+            return yaml_token_from_type(END);
         }
 
         if (*state->ptr == ':') {
             state->ptr++;
-            return token_from_type(COLON);
+            return yaml_token_from_type(COLON);
         }
 
         if (*state->ptr == '[') {
             state->ptr++;
             state->flow_style = true;
-            return token_from_type(OPENING_BRACKET);
+            return yaml_token_from_type(OPENING_BRACKET);
         }
 
         if (*state->ptr == ']') {
             state->ptr++;
             state->flow_style = false;
-            return token_from_type(CLOSING_BRACKET);
+            return yaml_token_from_type(CLOSING_BRACKET);
         }
 
         if (*state->ptr == ',') {
             state->ptr++;
-            return token_from_type(COMMA);
+            return yaml_token_from_type(COMMA);
         }
 
-        if (is_word_char(*state->ptr)) {
-            return parse_word(state);
+        if (yaml_is_word_char(*state->ptr)) {
+            return yaml_parse_word(state);
         }
 
-        return token_from_type(UNKNOWN);
+        return yaml_token_from_type(UNKNOWN);
     }
 }
 
-struct ListNode *parse_list(struct TokenizerState *state) {
+struct ListNode *yaml_parse_list(struct TokenizerState *state) {
     struct ListNode *result = NULL;
     struct ListNode *last_node = NULL;
 
-    struct Token token = next_token(state);
+    struct Token token = yaml_next_token(state);
 
     for (;;) {
         if (token.type == WORD) {
@@ -230,37 +230,37 @@ struct ListNode *parse_list(struct TokenizerState *state) {
                 last_node = next_node;
             }
 
-            token = next_token(state);
+            token = yaml_next_token(state);
             if (token.type == CLOSING_BRACKET) {
                 // printf("List done.\n");
                 return result;
             } else if (token.type == COMMA) {
-                token = next_token(state);
+                token = yaml_next_token(state);
                 continue;
             }
         } else if (token.type == CLOSING_BRACKET) {
             // printf("List done.\n");
             return result;
         }
-        // printf("parse_list: Unexpected token %d!\n", token.type);
-        free_list_node(result);
+        // printf("yaml_parse_list: Unexpected token %d!\n", token.type);
+        yaml_free_list_node(result);
         return NULL;
     }
 }
 
-struct Node *parse_dict(struct TokenizerState *state) {
+struct Node *yaml_parse_dict(struct TokenizerState *state) {
     tree_node_t *result_dict = NULL;
 
     for (;;) {
-        struct Token token = next_token(state);
+        struct Token token = yaml_next_token(state);
         if (token.type == WORD) {
-            struct Token expected_colon = next_token(state);
+            struct Token expected_colon = yaml_next_token(state);
             if (expected_colon.type != COLON) {
                 free(token.text);
                 printf("Expected ':', got token %d!\n", expected_colon.type);
                 return NULL;
             }
-            struct Token expected_value = next_token(state);
+            struct Token expected_value = yaml_next_token(state);
             if (expected_value.type == WORD) {
                 struct Node node = {.type = SCALAR,
                                     .payload = expected_value.text};
@@ -268,10 +268,10 @@ struct Node *parse_dict(struct TokenizerState *state) {
                     tree_add_node(result_dict, token.text, strlen(token.text) + 1,
                              &node, sizeof(struct Node));
             } else if (expected_value.type == OPENING_BRACKET) {
-                struct ListNode *list_node = parse_list(state);
+                struct ListNode *list_node = yaml_parse_list(state);
                 if (list_node == NULL) {
                     free(token.text);
-                    free_tree_node(result_dict);
+                    yaml_free_tree_node(result_dict);
                     // printf("Failed to parse list!\n");
                     return NULL;
                 }
@@ -280,10 +280,10 @@ struct Node *parse_dict(struct TokenizerState *state) {
                     tree_add_node(result_dict, token.text, strlen(token.text) + 1,
                              &node, sizeof(struct Node));
             } else if (expected_value.type == OPENING_BRACE) {
-                struct Node *dict_node = parse_dict(state);
+                struct Node *dict_node = yaml_parse_dict(state);
                 if (dict_node == NULL) {
                     free(token.text);
-                    free_tree_node(result_dict);
+                    yaml_free_tree_node(result_dict);
                     // printf("Failed to parse dict!\n");
                     return NULL;
                 }
@@ -294,7 +294,7 @@ struct Node *parse_dict(struct TokenizerState *state) {
             } else {
                 // printf("Unexpected token %d!\n", expected_value.type);
                 free(token.text);
-                free_tree_node(result_dict);
+                yaml_free_tree_node(result_dict);
                 return NULL;
             }
 
@@ -314,16 +314,16 @@ struct Node *parse_dict(struct TokenizerState *state) {
     return result;
 }
 
-struct Node *parse_yaml(char *text) {
+struct Node *yaml_parse_yaml(char *text) {
     struct TokenizerState state = {.ptr = text,
                                    .indent_level = 0,
                                    .check_indent = true,
                                    .flow_style = false,
                                    .in_sequence = false};
-    return parse_dict(&state);
+    return yaml_parse_dict(&state);
 }
 
-struct Node *get_node(struct Node *node, char *path) {
+struct Node *yaml_get_node(struct Node *node, char *path) {
     // Make a copy of path because strtok will clobber it
     char *path_buffer = safe_malloc(strlen(path) + 1);
     memcpy(path_buffer, path, strlen(path) + 1);
@@ -376,8 +376,8 @@ struct Node *get_node(struct Node *node, char *path) {
  * Returns .result_code = TYPE_ERROR if the node identified by path is
  * not a scalar.
  */
-struct StringLookupResult get_as_string(struct Node *node, char *path) {
-    struct Node *target = get_node(node, path);
+struct StringLookupResult yaml_get_as_string(struct Node *node, char *path) {
+    struct Node *target = yaml_get_node(node, path);
 
     if (target == NULL) {
         struct StringLookupResult lookup_result = {.result_code = NOT_FOUND,
@@ -400,8 +400,8 @@ struct StringLookupResult get_as_string(struct Node *node, char *path) {
     return lookup_result;
 }
 
-struct IntLookupResult get_as_int(struct Node *node, char *path) {
-    struct Node *target = get_node(node, path);
+struct IntLookupResult yaml_get_as_int(struct Node *node, char *path) {
+    struct Node *target = yaml_get_node(node, path);
 
     if (target == NULL) {
         struct IntLookupResult lookup_result = {.result_code = NOT_FOUND,
@@ -437,8 +437,8 @@ struct IntLookupResult get_as_int(struct Node *node, char *path) {
     return lookup_result;
 }
 
-struct ListLookupResult get_as_list(struct Node *node, char *path) {
-    struct Node *target = get_node(node, path);
+struct ListLookupResult yaml_get_as_list(struct Node *node, char *path) {
+    struct Node *target = yaml_get_node(node, path);
 
     if (target == NULL) {
         struct ListLookupResult lookup_result = {.result_code = NOT_FOUND,
@@ -461,9 +461,9 @@ struct ListLookupResult get_as_list(struct Node *node, char *path) {
     return lookup_result;
 }
 
-struct IntArrayLookupResult get_as_int_array(struct Node *node, char *path,
+struct IntArrayLookupResult yaml_get_as_int_array(struct Node *node, char *path,
                                              int *buffer, int count) {
-    struct Node *target = get_node(node, path);
+    struct Node *target = yaml_get_node(node, path);
 
     if (target == NULL) {
         struct IntArrayLookupResult lookup_result = {.result_code = NOT_FOUND,
@@ -512,39 +512,39 @@ struct IntArrayLookupResult get_as_int_array(struct Node *node, char *path,
     return lookup_result;
 }
 
-void free_yaml_node(struct Node *);
+void yaml_free_node(struct Node *);
 
-void free_list_node(struct ListNode *list_node) {
+void yaml_free_list_node(struct ListNode *list_node) {
     if (list_node == NULL)
         return;
-    free_yaml_node(list_node->value);
+    yaml_free_node(list_node->value);
     struct ListNode *next = list_node->next;
     free(list_node);
-    free_list_node(next);
+    yaml_free_list_node(next);
 }
 
-void free_tree_node(tree_node_t *tree) {
+void yaml_free_tree_node(tree_node_t *tree) {
     if (tree == NULL) {
         return;
     }
-    free_tree_node(tree->left_child);
-    free_tree_node(tree->right_child);
+    yaml_free_tree_node(tree->left_child);
+    yaml_free_tree_node(tree->right_child);
 
-    free_yaml_node(tree->value_data);
+    yaml_free_node(tree->value_data);
     free(tree->key_data);
 
     free(tree);
 }
 
-void free_yaml_node(struct Node *node) {
+void yaml_free_node(struct Node *node) {
     if (node->type == DICT) {
         tree_node_t *tree = node->payload;
-        free_tree_node(tree);
+        yaml_free_tree_node(tree);
     } else if (node->type == SCALAR) {
         free(node->payload);
     } else if (node->type == LIST) {
         struct ListNode *list = node->payload;
-        free_list_node(list);
+        yaml_free_list_node(list);
     } else {
         printf("Unknown node type: %d\n", node->type);
     }
