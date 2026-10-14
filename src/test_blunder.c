@@ -45,7 +45,7 @@ static void test_get_best_move_from_comment(void) {
                      "g3:12, h3:8, Na3:11, Nc3:19, Nf3:35, Nh3:7, a4:7, b4:31, "
                      "c4:24, d4:62, e4:64, f4:9, g4:10, h4:9]";
 
-    int move = get_best_move_from_comment(comment, p, eval_buf);
+    int move = blunder_get_best_move_from_comment(comment, p, eval_buf);
 
     assert(move == make_move(e2, e4, M_PAWND));
     assert(strcmp(eval_buf, "0.5003") == 0);

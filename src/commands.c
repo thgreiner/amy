@@ -99,7 +99,7 @@ static struct CommandEntry Commands[] = {
     {"analyze", &Analyze, false, false, "enter analyze mode (xboard)", NULL},
     {"anno", &Anno, false, false, "annotate a game", NULL},
     {"bench", &Benchmark, false, false, "run a benchmark", NULL},
-    {"blunder", &BlunderCheck, false, false, "check for blunders", NULL},
+    {"blunder", &blunder_check, false, false, "check for blunders", NULL},
     {"book", &Book, false, false, "display book moves", NULL},
     {"bk", &Book, false, false, "display book moves (xboard)", NULL},
     {"bookup", &Bookup, false, false, "create a book", NULL},

@@ -42,7 +42,7 @@
 
 #define THRESHOLD 2000
 
-move_t get_best_move_from_comment(const char *comment, struct Position *p,
+move_t blunder_get_best_move_from_comment(const char *comment, struct Position *p,
                                   char *eval_buf) {
     const char *ptr = comment;
 
@@ -101,7 +101,7 @@ move_t get_best_move_from_comment(const char *comment, struct Position *p,
     return best_move;
 }
 
-void BlunderCheck(char *file_name) {
+void blunder_check(char *file_name) {
     struct PGNHeader header;
     char move[12];
     char comment[2048];
@@ -152,7 +152,7 @@ void BlunderCheck(char *file_name) {
                 UndoMove(p, last_move);
 
                 move_t best_move =
-                    get_best_move_from_comment(comment, p, evalbuf);
+                    blunder_get_best_move_from_comment(comment, p, evalbuf);
 
                 int search_evaluation;
                 int alternate_evaluation;
