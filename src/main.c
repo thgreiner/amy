@@ -172,7 +172,7 @@ int main(int argc, char *argv[]) {
 
     open_log_file("Amy.log");
 
-    InitMoves();
+    movedata_init();
 
     InitAll();
     HashInit();

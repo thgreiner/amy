@@ -304,7 +304,7 @@ const BitBoard PawnEPM[2][64] = {{0x200ULL,
                                   0xa0000000000000ULL,
                                   0x40000000000000ULL}};
 
-void InitMoves(void) {
+void movedata_init(void) {
     int sq, sq2;
 
     for (sq = 0; sq < 128; sq++) {

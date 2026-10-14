@@ -32,6 +32,6 @@
 #ifndef MOVEDATA_H
 #define MOVEDATA_H
 
-void InitMoves(void);
+void movedata_init(void);
 
 #endif
