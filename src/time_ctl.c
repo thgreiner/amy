@@ -64,7 +64,7 @@ static struct TimeControl globalTimeControl = {.first.moves = 60,
                                                .first.total_time = 5 * 60,
                                                .hasSecondTimeControl = false};
 
-void DoTC(struct Position *p, int mtime) {
+void do_tc(struct Position *p, int mtime) {
     Time[p->turn] += -mtime + Increment;
 
     if (Moves[p->turn] > 0) {
@@ -82,7 +82,7 @@ void DoTC(struct Position *p, int mtime) {
     }
 }
 
-void CalcTime(struct Position *p, float *soft, float *hard) {
+void calc_time(struct Position *p, float *soft, float *hard) {
     char time_as_text[16];
     if (TMoves >= 0) {
         if (Moves[p->turn] > 0) {
@@ -234,13 +234,13 @@ static struct TimeControl parse_timecontrol(char *args[]) {
  *     xboard_flag: indicates whether the format is expected to be
  *         for xboard or not
  */
-void SetTimeControl(char *args[], bool xboard_flag) {
+void set_time_control(char *args[], bool xboard_flag) {
     if (xboard_flag) {
         globalTimeControl = parse_timecontrol_xboard(args);
     } else {
         globalTimeControl = parse_timecontrol(args);
     }
-    ResetTimeControl(!xboard_flag);
+    reset_time_control(!xboard_flag);
 }
 
 /**
@@ -249,7 +249,7 @@ void SetTimeControl(char *args[], bool xboard_flag) {
  * Args:
  *     verbose: if true, the settings are printed
  */
-void ResetTimeControl(bool verbose) {
+void reset_time_control(bool verbose) {
     TMoves = globalTimeControl.first.moves;
     TTime = globalTimeControl.first.total_time;
     Increment = globalTimeControl.first.increment;

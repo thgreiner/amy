@@ -371,7 +371,7 @@ static void SetTime(char *arg) {
     args[1] = strtok(NULL, " \t");
     args[2] = strtok(NULL, " \t");
 
-    SetTimeControl(args, XBoardMode);
+    set_time_control(args, XBoardMode);
 }
 
 static void SetXBoard(char *args) {
@@ -414,7 +414,7 @@ void NewGame(char *args) {
     if (State != STATE_ANALYZING) {
         State = STATE_WAITING;
     }
-    ResetTimeControl(!XBoardMode);
+    reset_time_control(!XBoardMode);
 }
 
 static void MoveNow(char *args) {

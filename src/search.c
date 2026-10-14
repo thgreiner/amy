@@ -1721,7 +1721,7 @@ int Iterate(struct Position *p, int *score_ptr, move_t alternate_move,
     CurTime = StartTime;
     WallTimeStart = StartTime;
 
-    CalcTime(p, &soft, &hard);
+    calc_time(p, &soft, &hard);
 
     heap_t heap = allocate_heap();
     cnt = LegalMoves(p, heap);
@@ -1817,7 +1817,7 @@ void SearchRoot(struct Position *p) {
 
     if (move != M_NONE) {
         double elapsed = (double)(CurTime - StartTime) / (double)ONE_SECOND;
-        DoTC(p, (int)(elapsed + 0.5));
+        do_tc(p, (int)(elapsed + 0.5));
 
         char san_buffer[16];
         print(0, REVERSE "%s(%d): %s" NORMAL "\n",
@@ -1928,7 +1928,7 @@ pb_result_t PermanentBrain(struct Position *p) {
                   (p->ply / 2) + 1, SAN(p, PBActMove, san_buffer));
 
             DoMove(p, PBActMove);
-            DoTC(p, (int)(elapsed + 0.5));
+            do_tc(p, (int)(elapsed + 0.5));
 
             print(0, REVERSE "%s(%d): %s" NORMAL "\n",
                   p->turn == White ? "White" : "Black", (p->ply / 2) + 1,
