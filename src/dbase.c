@@ -179,14 +179,14 @@ static void AtkSet(struct Position *p, Piece type, Color color, Square square) {
         attacks = KnightEPM[square];
         break;
     case Bishop:
-        attacks = bishop_attacks(square, p->mask[0][0] | p->mask[1][0]);
+        attacks = magic_bishop_attacks(square, p->mask[0][0] | p->mask[1][0]);
         break;
     case Rook:
-        attacks = rook_attacks(square, p->mask[0][0] | p->mask[1][0]);
+        attacks = magic_rook_attacks(square, p->mask[0][0] | p->mask[1][0]);
         break;
     case Queen:
-        attacks = bishop_attacks(square, p->mask[0][0] | p->mask[1][0]) |
-                  rook_attacks(square, p->mask[0][0] | p->mask[1][0]);
+        attacks = magic_bishop_attacks(square, p->mask[0][0] | p->mask[1][0]) |
+                  magic_rook_attacks(square, p->mask[0][0] | p->mask[1][0]);
         break;
     case King:
         attacks = KingEPM[square];

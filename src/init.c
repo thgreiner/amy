@@ -297,5 +297,5 @@ void InitAll(void) {
     InitPawnMasks();
     InitGeometry();
     InitMiscMasks();
-    InitMagic();
+    magic_init();
 }
