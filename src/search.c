@@ -493,7 +493,7 @@ static int quies(struct SearchData *sd, int alpha, int beta, int depth) {
     int talpha;
     int tmp;
 
-    EnterNode(sd);
+    next_enter_node(sd);
 
     sd->qnodes_cnt++;
     TotalNodes++;
@@ -538,7 +538,7 @@ static int quies(struct SearchData *sd, int alpha, int beta, int depth) {
 
     talpha = MAX(alpha, best);
 
-    while ((move = NextMoveQ(sd, alpha)) != M_NONE) {
+    while ((move = next_move_q(sd, alpha)) != M_NONE) {
         DoMove(p, move);
         if (InCheck(p, OPP(p->turn)))
             UndoMove(p, move);
@@ -560,7 +560,7 @@ static int quies(struct SearchData *sd, int alpha, int beta, int depth) {
 
 EXIT:
 
-    LeaveNode(sd);
+    next_leave_node(sd);
 
     return best;
 }
@@ -602,7 +602,7 @@ static int negascout(struct SearchData *sd, int alpha, int beta,
     int optimistic = 0;
 #endif
 
-    EnterNode(sd);
+    next_enter_node(sd);
 
     sd->nodes_cnt++;
     TotalNodes++;
@@ -821,7 +821,7 @@ static int negascout(struct SearchData *sd, int alpha, int beta,
      * Search all legal moves
      */
 
-    while ((move = incheck ? NextEvasion(sd) : NextMove(sd)) != M_NONE) {
+    while ((move = incheck ? next_evasion(sd) : next_move(sd)) != M_NONE) {
         int next_depth = extend;
 
         if (move & M_CANY && !MayCastle(p, move))
@@ -985,7 +985,7 @@ static int negascout(struct SearchData *sd, int alpha, int beta,
 
                 if (tmp >= beta) {
                     if (!(move & M_TACTICAL)) {
-                        PutKiller(sd, move);
+                        next_put_killer(sd, move);
                         sd->counterTab[p->turn][lmove & 4095] = move;
                     }
                     StoreResult(sd, tmp, alpha, beta, move, depth, threat);
@@ -1049,7 +1049,7 @@ static int negascout(struct SearchData *sd, int alpha, int beta,
 
         if (tmp >= beta) {
             if (!(move & M_TACTICAL)) {
-                PutKiller(sd, move);
+                next_put_killer(sd, move);
                 sd->counterTab[p->turn][lmove & 4095] = move;
             }
             StoreResult(sd, tmp, alpha, beta, move, depth, threat);
@@ -1097,7 +1097,7 @@ EXIT:
         sd->pv_save[sd->ply] = bestm;
     }
 
-    LeaveNode(sd);
+    next_leave_node(sd);
     return best;
 }
 
@@ -1266,7 +1266,7 @@ static void *IterateInt(void *x) {
     sd->best_score = p->material[p->turn] - p->material[OPP(p->turn)];
 
     if (!(mvs[0] & M_TACTICAL))
-        PutKiller(sd, mvs[0]);
+        next_put_killer(sd, mvs[0]);
 
     MaxDepth = MAX_TREE_SIZE - 1;
 
@@ -1397,7 +1397,7 @@ static void *IterateInt(void *x) {
                     nodes[0] = tn;
 
                     if (!(move & M_TACTICAL))
-                        PutKiller(sd, move);
+                        next_put_killer(sd, move);
                     PBMove = M_NONE;
                     is_pv = true;
 
@@ -1632,7 +1632,7 @@ final:
 
     if (!sd->master) {
         FreePosition(sd->position);
-        FreeSearchData(sd);
+        next_free_data(sd);
     }
 
     return NULL;
@@ -1777,7 +1777,7 @@ int Iterate(struct Position *p, int *score_ptr, move_t alternate_move,
         *alternate_score_ptr = sd->alternate_score;
     }
 
-    FreeSearchData(sd);
+    next_free_data(sd);
 
 #if MP
     StopHelpers();
@@ -1845,7 +1845,7 @@ int QuiescenceSearch(struct Position *p) {
     InitSearch(sd);
 
     int score = quies(sd, -INF, INF, 0);
-    FreeSearchData(sd);
+    next_free_data(sd);
 
     return score;
 }

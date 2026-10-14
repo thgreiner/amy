@@ -71,7 +71,7 @@ struct SearchData *CreateSearchData(struct Position *p) {
     return sd;
 }
 
-void FreeSearchData(struct SearchData *sd) {
+void next_free_data(struct SearchData *sd) {
     free(sd->statusTable);
     free(sd->killerTable);
     free(sd->data_heap);
@@ -85,7 +85,7 @@ void FreeSearchData(struct SearchData *sd) {
     free(sd);
 }
 
-void EnterNode(struct SearchData *sd) {
+void next_enter_node(struct SearchData *sd) {
     struct SearchStatus *st;
 
     st = ++(sd->current);
@@ -100,7 +100,7 @@ void EnterNode(struct SearchData *sd) {
 #endif
 }
 
-void LeaveNode(struct SearchData *sd) {
+void next_leave_node(struct SearchData *sd) {
     heap_pop_section(sd->heap);
     sd->current--;
     sd->killer--;
@@ -122,7 +122,7 @@ static inline void grow_data_heap(struct SearchData *sd) {
     }
 }
 
-move_t NextMove(struct SearchData *sd) {
+move_t next_move(struct SearchData *sd) {
     heap_section_t section = sd->heap->current_section;
     struct SearchStatus *st = sd->current;
     struct Position *p = sd->position;
@@ -411,7 +411,7 @@ move_t NextMove(struct SearchData *sd) {
     return M_NONE;
 }
 
-move_t NextEvasion(struct SearchData *sd) {
+move_t next_evasion(struct SearchData *sd) {
     heap_section_t section = sd->heap->current_section;
     struct SearchStatus *st = sd->current;
     struct Position *p = sd->position;
@@ -712,7 +712,7 @@ move_t NextEvasion(struct SearchData *sd) {
     return M_NONE;
 }
 
-static void GenerateQCaptures(struct SearchData *sd, int alpha) {
+static void next_generate_qcaptures(struct SearchData *sd, int alpha) {
     heap_section_t section = sd->heap->current_section;
     struct Position *p = sd->position;
     BitBoard pwn7th;
@@ -851,7 +851,7 @@ static void GenerateQCaptures(struct SearchData *sd, int alpha) {
     }
 }
 
-move_t NextMoveQ(struct SearchData *sd, int alpha) {
+move_t next_move_q(struct SearchData *sd, int alpha) {
     heap_section_t section = sd->heap->current_section;
     struct SearchStatus *st = sd->current;
     move_t move;
@@ -862,7 +862,7 @@ move_t NextMoveQ(struct SearchData *sd, int alpha) {
 #ifdef VERBOSE
         print(9, "GenerateCaptures\n");
 #endif
-        GenerateQCaptures(sd, alpha);
+        next_generate_qcaptures(sd, alpha);
         st->st_phase = GainingCapture;
 
         /* fall through */
@@ -899,7 +899,7 @@ move_t NextMoveQ(struct SearchData *sd, int alpha) {
  * Enter move in Killertable
  */
 
-void PutKiller(struct SearchData *sd, move_t m) {
+void next_put_killer(struct SearchData *sd, move_t m) {
     struct KillerEntry *k = sd->killer;
 
     if (m == k->killer1) {
@@ -931,7 +931,7 @@ void PutKiller(struct SearchData *sd, move_t m) {
 static void test_next_move(struct SearchData *sd,
                            move_t (*func)(struct SearchData *)) {
     bool comma = false;
-    EnterNode(sd);
+    next_enter_node(sd);
 
     while (true) {
         move_t move = func(sd);
@@ -947,20 +947,20 @@ static void test_next_move(struct SearchData *sd,
             comma = true;
         }
     }
-    LeaveNode(sd);
+    next_leave_node(sd);
     print(0, "\n");
 }
 
 move_t next_move_q_fixed_alpha(struct SearchData *sd) {
-    return NextMoveQ(sd, -500000);
+    return next_move_q(sd, -500000);
 }
 
-void TestNextGenerators(struct Position *p) {
+void next_test_generators(struct Position *p) {
     struct SearchData *sd = CreateSearchData(p);
-    print(0, "NextMove:\n");
-    test_next_move(sd, &NextMove);
+    print(0, "next_move:\n");
+    test_next_move(sd, &next_move);
     print(0, "\nNextEvasion:\n");
-    test_next_move(sd, &NextEvasion);
+    test_next_move(sd, &next_evasion);
     print(0, "\nNextMoveQ:\n");
     test_next_move(sd, &next_move_q_fixed_alpha);
 }

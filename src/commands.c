@@ -818,7 +818,7 @@ static void SelfPlay(char *args) {
 
 static void TestNext(char *args) {
     (void)args;
-    TestNextGenerators(CurrentPosition);
+    next_test_generators(CurrentPosition);
 }
 
 static void Conf(char *args) {
