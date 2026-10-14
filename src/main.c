@@ -202,7 +202,7 @@ int main(int argc, char *argv[]) {
     /* Ensure true random behavior. */
     random_init(get_time());
 
-    StateMachine();
+    state_machine_run();
 
     return 0;
 }

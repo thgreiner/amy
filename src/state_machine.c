@@ -56,7 +56,7 @@ int ComputerSide;
 /**
  * Implements the state machine.
  */
-void StateMachine(void) {
+void state_machine_run(void) {
     const char *gameend;
 
     NewGame(NULL);
