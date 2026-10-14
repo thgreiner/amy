@@ -34,6 +34,8 @@
  */
 
 #include <stddef.h>
+#include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "hashtable.h"
@@ -180,6 +182,30 @@ static inline void PutHTEntry(hash_t key, struct HTEntry entry) {
 }
 
 /**
+ * Increment the processor counter of the entry matching 'key', working on
+ * a fresh copy read under the write lock so no concurrent update is
+ * clobbered. If the slot was meanwhile replaced by another position we
+ * leave it alone.
+ */
+#if MP
+static void IncrementHTCPUs(hash_t key) {
+#if HAVE_LIBPTHREAD
+    atomic_int *mutex = TranspositionMutex + ((key >> 32) & MUTEX_MASK);
+    acquire_write_lock(mutex);
+#endif /* HAVE_LIBPTHREAD */
+
+    struct HTEntry *h = &TranspositionTable[(key >> 32) & HT_Mask];
+
+    if (h->ht_Key == key)
+        h->ht_Flags += HT_NCPU_INCREMENT;
+
+#if HAVE_LIBPTHREAD
+    release_write_lock(mutex);
+#endif /* HAVE_LIBPTHREAD */
+}
+#endif /* MP */
+
+/**
  *
  */
 static inline bool PutHTEntryBestEffort(const hash_t key, struct HTEntry entry,
@@ -303,8 +329,7 @@ LookupResult ProbeHT(const hash_t key, int *score, int depth, move_t *bestm,
                  * increment processor count
                  */
 
-                h.ht_Flags += HT_NCPU_INCREMENT;
-                PutHTEntry(effective_key, h);
+                IncrementHTCPUs(effective_key);
             }
 #endif /* MP */
 
@@ -595,46 +620,83 @@ void ShowHashStatistics(void) {
 }
 
 void GuessHTSizes(char *size) {
-    size_t last = strlen(size) - 1;
-    int64_t total_size;
-    int64_t tmp;
+    const int64_t min_size = 64LL * 1024LL;
+    const int64_t max_size = 1024LL * 1024LL * 1024LL; /* 1 TB is plenty */
+    int64_t total_size = min_size;
+    int64_t budget;
+    bool valid = false;
 
-    if (size[last] == 'k') {
-        total_size = atoi(size) * 1024L;
-    } else if (size[last] == 'm') {
-        total_size = atoi(size) * 1024L * 1024L;
-    } else {
-        total_size = atoi(size) * 1024;
+    if (size != NULL && *size != '\0') {
+        char *endptr = NULL;
+        long long value = strtoll(size, &endptr, 10);
+
+        if (value > 0 && endptr != NULL) {
+            int64_t multiplier = 1024LL; /* default: kilobytes */
+
+            switch (*endptr) {
+            case '\0':
+                break;
+            case 'k':
+            case 'K':
+                break;
+            case 'm':
+            case 'M':
+                multiplier = 1024LL * 1024LL;
+                break;
+            case 'g':
+            case 'G':
+                multiplier = 1024LL * 1024LL * 1024LL;
+                break;
+            default:
+                break; /* invalid suffix */
+            }
+
+            if (*endptr == '\0' || *endptr == 'k' || *endptr == 'K'
+                || *endptr == 'm' || *endptr == 'M'
+                || *endptr == 'g' || *endptr == 'G') {
+                /* Avoid overflowing int64_t when multiplying. */
+                if (value > max_size / multiplier)
+                    value = max_size / multiplier;
+                total_size = value * multiplier;
+                valid = true;
+            }
+        }
     }
 
-    if (total_size < 64 * 1024) {
+    if (!valid)
+        Print(0, "Invalid hashtable size, using 64k.\n");
+
+    if (total_size < min_size) {
         Print(0, "I need at least 64k of hashtables.\n");
-        total_size = 64 * 1024;
+        total_size = min_size;
     }
 
-    tmp = total_size * 4 / 5;
+    if (total_size > max_size)
+        total_size = max_size;
 
-    for (HT_Bits = 1; HT_Bits < 32; HT_Bits++) {
-        long tmp2 = (1 << (HT_Bits + 1)) * sizeof(struct HTEntry);
-        if (tmp2 > tmp)
+    budget = total_size * 4 / 5;
+
+    for (HT_Bits = 1; HT_Bits < 31; HT_Bits++) {
+        if ((1ULL << (HT_Bits + 1)) * (uint64_t)sizeof(struct HTEntry)
+            > (uint64_t)budget)
             break;
     }
 
-    total_size -= (1 << HT_Bits) * sizeof(struct HTEntry);
+    total_size -= (1LL << HT_Bits) * sizeof(struct HTEntry);
 
-    tmp = 3 * total_size / 4;
+    budget = total_size * 3 / 4;
 
-    for (ST_Bits = 1; ST_Bits < 32; ST_Bits++) {
-        long tmp2 = (1 << (ST_Bits + 1)) * sizeof(struct STEntry);
-        if (tmp2 > tmp)
+    for (ST_Bits = 1; ST_Bits < 31; ST_Bits++) {
+        if ((1ULL << (ST_Bits + 1)) * (uint64_t)sizeof(struct STEntry)
+            > (uint64_t)budget)
             break;
     }
 
-    total_size -= (1 << ST_Bits) * sizeof(struct STEntry);
+    total_size -= (1LL << ST_Bits) * sizeof(struct STEntry);
 
-    for (PT_Bits = 1; PT_Bits < 32; PT_Bits++) {
-        long tmp2 = (1 << (PT_Bits + 1)) * sizeof(struct PTEntry);
-        if (tmp2 > total_size)
+    for (PT_Bits = 1; PT_Bits < 31; PT_Bits++) {
+        if ((1ULL << (PT_Bits + 1)) * (uint64_t)sizeof(struct PTEntry)
+            > (uint64_t)total_size)
             break;
     }
 }
