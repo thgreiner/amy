@@ -192,7 +192,7 @@ int main(int argc, char *argv[]) {
     }
 
     ht_allocate();
-    InitEGTB(EGTBPath);
+    probe_init(EGTBPath);
     recog_init();
 
     learn_book();

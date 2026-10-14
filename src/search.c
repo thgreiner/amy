@@ -684,7 +684,7 @@ static int negascout(struct SearchData *sd, int alpha, int beta,
      * Probe EGTB
      */
 
-    if (depth > EGTBDepth && ProbeEGTB(p, &tmp, sd->ply)) {
+    if (depth > EGTBDepth && probe_egtb(p, &tmp, sd->ply)) {
         best = tmp;
         goto EXIT;
     }

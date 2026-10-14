@@ -65,7 +65,7 @@ int EGTBProbe, EGTBProbeSucc;
 static pthread_mutex_t EGTBMutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
-void InitEGTB(char *tbpath) {
+void probe_init(char *tbpath) {
     TB_CRC_CHECK = 0;
     EGTBMenCount = IInitializeTb(tbpath);
     if (EGTBMenCount != 0) {
@@ -75,7 +75,7 @@ void InitEGTB(char *tbpath) {
     }
 }
 
-void InitializeCounters(int *pieceCounter, int *squares, int type,
+void probe_init_counters(int *pieceCounter, int *squares, int type,
                         BitBoard mask) {
     int count = 0;
     while (mask) {
@@ -87,7 +87,7 @@ void InitializeCounters(int *pieceCounter, int *squares, int type,
     *pieceCounter = count;
 }
 
-int ProbeEGTB(const struct Position *p, int *score, int ply) {
+int probe_egtb(const struct Position *p, int *score, int ply) {
     int pcCount[10];
     int wSquares[16], bSquares[16];
     int iTB;
@@ -103,16 +103,16 @@ int ProbeEGTB(const struct Position *p, int *score, int ply) {
         return 0;
 
     EGTBProbe++;
-    InitializeCounters(pcCount, wSquares, 0, p->mask[White][Pawn]);
-    InitializeCounters(pcCount + 1, wSquares, 1, p->mask[White][Knight]);
-    InitializeCounters(pcCount + 2, wSquares, 2, p->mask[White][Bishop]);
-    InitializeCounters(pcCount + 3, wSquares, 3, p->mask[White][Rook]);
-    InitializeCounters(pcCount + 4, wSquares, 4, p->mask[White][Queen]);
-    InitializeCounters(pcCount + 5, bSquares, 0, p->mask[Black][Pawn]);
-    InitializeCounters(pcCount + 6, bSquares, 1, p->mask[Black][Knight]);
-    InitializeCounters(pcCount + 7, bSquares, 2, p->mask[Black][Bishop]);
-    InitializeCounters(pcCount + 8, bSquares, 3, p->mask[Black][Rook]);
-    InitializeCounters(pcCount + 9, bSquares, 4, p->mask[Black][Queen]);
+    probe_init_counters(pcCount, wSquares, 0, p->mask[White][Pawn]);
+    probe_init_counters(pcCount + 1, wSquares, 1, p->mask[White][Knight]);
+    probe_init_counters(pcCount + 2, wSquares, 2, p->mask[White][Bishop]);
+    probe_init_counters(pcCount + 3, wSquares, 3, p->mask[White][Rook]);
+    probe_init_counters(pcCount + 4, wSquares, 4, p->mask[White][Queen]);
+    probe_init_counters(pcCount + 5, bSquares, 0, p->mask[Black][Pawn]);
+    probe_init_counters(pcCount + 6, bSquares, 1, p->mask[Black][Knight]);
+    probe_init_counters(pcCount + 7, bSquares, 2, p->mask[Black][Bishop]);
+    probe_init_counters(pcCount + 8, bSquares, 3, p->mask[Black][Rook]);
+    probe_init_counters(pcCount + 9, bSquares, 4, p->mask[Black][Queen]);
 
 #if MP && HAVE_LIBPTHREAD
     pthread_mutex_lock(&EGTBMutex);
