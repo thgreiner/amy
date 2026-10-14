@@ -157,7 +157,7 @@ void blunder_check(char *file_name) {
                 int search_evaluation;
                 int alternate_evaluation;
 
-                move_t optimal_move = Iterate(p, &search_evaluation, best_move,
+                move_t optimal_move = search_iterate(p, &search_evaluation, best_move,
                                               &alternate_evaluation);
                 int score_diff = search_evaluation - alternate_evaluation;
 

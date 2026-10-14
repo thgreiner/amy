@@ -204,7 +204,7 @@ void ExecuteCommand(struct Command *theCommand) {
 static void Quit(char *args) {
     (void)args;
 #if MP
-    StopHelpers();
+    search_stop_helpers();
 #endif
     dbase_free_position(CurrentPosition);
     print(0, "\n\nI'll be back.\n");
@@ -261,7 +261,7 @@ static void Test(char *fname) {
 
         /* TestSwap(); */
 
-        move = Iterate(p, NULL, M_NONE, NULL);
+        move = search_iterate(p, NULL, M_NONE, NULL);
         for (j = 0; goodmove[j] != M_NONE; j++)
             if (move == goodmove[j])
                 correct = true;
@@ -560,7 +560,7 @@ static void RunAnnotate(char *fname, int side) {
                           (p->ply / 2) + 1);
                     print(0, "%s\n", dbase_san(p, themove, san_buffer));
                     if (side == -1 || (side == p->turn)) {
-                        Iterate(p, NULL, M_NONE, NULL);
+                        search_iterate(p, NULL, M_NONE, NULL);
                     }
                     dbase_do_move(p, themove);
                 }
@@ -853,5 +853,5 @@ static void SetSearchDepth(char *args) {
         return;
     }
 
-    setMaxSearchDepth(atoi(args));
+    search_set_max_depth(atoi(args));
 }
