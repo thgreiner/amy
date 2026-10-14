@@ -155,32 +155,32 @@ static int magic_poplsb(BitBoard *x) {
 static uint64_t magic_rook_attack_mask(int sq, uint64_t blockers) {
     uint64_t x = 0;
 
-    uint64_t m = dbase_shift_left(bitboard_set_mask(sq));
+    uint64_t m = bitboard_shift_left(bitboard_set_mask(sq));
     while (m) {
         x |= m;
         m &= ~blockers;
-        m = dbase_shift_left(m);
+        m = bitboard_shift_left(m);
     }
 
-    m = dbase_shift_right(bitboard_set_mask(sq));
+    m = bitboard_shift_right(bitboard_set_mask(sq));
     while (m) {
         x |= m;
         m &= ~blockers;
-        m = dbase_shift_right(m);
+        m = bitboard_shift_right(m);
     }
 
-    m = dbase_shift_up(bitboard_set_mask(sq));
+    m = bitboard_shift_up(bitboard_set_mask(sq));
     while (m) {
         x |= m;
         m &= ~blockers;
-        m = dbase_shift_up(m);
+        m = bitboard_shift_up(m);
     }
 
-    m = dbase_shift_down(bitboard_set_mask(sq));
+    m = bitboard_shift_down(bitboard_set_mask(sq));
     while (m) {
         x |= m;
         m &= ~blockers;
-        m = dbase_shift_down(m);
+        m = bitboard_shift_down(m);
     }
 
     return x;
@@ -189,32 +189,32 @@ static uint64_t magic_rook_attack_mask(int sq, uint64_t blockers) {
 static uint64_t magic_bishop_attack_mask(int sq, uint64_t blockers) {
     uint64_t x = 0;
 
-    uint64_t m = dbase_shift_up(dbase_shift_left(bitboard_set_mask(sq)));
+    uint64_t m = bitboard_shift_up(bitboard_shift_left(bitboard_set_mask(sq)));
     while (m) {
         x |= m;
         m &= ~blockers;
-        m = dbase_shift_up(dbase_shift_left(m));
+        m = bitboard_shift_up(bitboard_shift_left(m));
     }
 
-    m = dbase_shift_up(dbase_shift_right(bitboard_set_mask(sq)));
+    m = bitboard_shift_up(bitboard_shift_right(bitboard_set_mask(sq)));
     while (m) {
         x |= m;
         m &= ~blockers;
-        m = dbase_shift_up(dbase_shift_right(m));
+        m = bitboard_shift_up(bitboard_shift_right(m));
     }
 
-    m = dbase_shift_down(dbase_shift_left(bitboard_set_mask(sq)));
+    m = bitboard_shift_down(bitboard_shift_left(bitboard_set_mask(sq)));
     while (m) {
         x |= m;
         m &= ~blockers;
-        m = dbase_shift_down(dbase_shift_left(m));
+        m = bitboard_shift_down(bitboard_shift_left(m));
     }
 
-    m = dbase_shift_down(dbase_shift_right(bitboard_set_mask(sq)));
+    m = bitboard_shift_down(bitboard_shift_right(bitboard_set_mask(sq)));
     while (m) {
         x |= m;
         m &= ~blockers;
-        m = dbase_shift_down(dbase_shift_right(m));
+        m = bitboard_shift_down(bitboard_shift_right(m));
     }
 
     return x;

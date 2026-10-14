@@ -46,17 +46,17 @@ static const BitBoard ShiftDownMask = 0xffffffffffffff;
 static const BitBoard ShiftLeftMask = 0xfefefefefefefefe;
 static const BitBoard ShiftRightMask = 0x7f7f7f7f7f7f7f7f;
 
-static inline BitBoard dbase_shift_up(BitBoard x) { return (x << 8) & ShiftUpMask; }
+static inline BitBoard bitboard_shift_up(BitBoard x) { return (x << 8) & ShiftUpMask; }
 
-static inline BitBoard dbase_shift_down(BitBoard x) {
+static inline BitBoard bitboard_shift_down(BitBoard x) {
     return (x >> 8) & ShiftDownMask;
 }
 
-static inline BitBoard dbase_shift_left(BitBoard x) {
+static inline BitBoard bitboard_shift_left(BitBoard x) {
     return (x << 1) & ShiftLeftMask;
 }
 
-static inline BitBoard dbase_shift_right(BitBoard x) {
+static inline BitBoard bitboard_shift_right(BitBoard x) {
     return (x >> 1) & ShiftRightMask;
 }
 

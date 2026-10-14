@@ -343,9 +343,9 @@ move_t next_move(struct SearchData *sd) {
         BitBoard tmp = p->mask[p->turn][Pawn] & ~SeventhRank[p->turn];
 
         if (p->turn == White)
-            tmp = dbase_shift_up(tmp);
+            tmp = bitboard_shift_up(tmp);
         else
-            tmp = dbase_shift_down(tmp);
+            tmp = bitboard_shift_down(tmp);
 
         BitBoard tmp2 = tmp &= empty;
 
@@ -360,9 +360,9 @@ move_t next_move(struct SearchData *sd) {
         tmp &= ThirdRank[p->turn];
 
         if (p->turn == White)
-            tmp = dbase_shift_up(tmp);
+            tmp = bitboard_shift_up(tmp);
         else
-            tmp = dbase_shift_down(tmp);
+            tmp = bitboard_shift_down(tmp);
 
         tmp &= empty;
 
@@ -639,9 +639,9 @@ move_t next_evasion(struct SearchData *sd) {
         BitBoard pawns = p->mask[p->turn][Pawn];
 
         if (p->turn == White)
-            pawns = dbase_shift_up(pawns);
+            pawns = bitboard_shift_up(pawns);
         else
-            pawns = dbase_shift_down(pawns);
+            pawns = bitboard_shift_down(pawns);
 
         BitBoard pawns_to = pawns = (pawns & empty);
 
@@ -662,9 +662,9 @@ move_t next_evasion(struct SearchData *sd) {
         pawns &= ThirdRank[p->turn];
 
         if (p->turn == White)
-            pawns = dbase_shift_up(pawns);
+            pawns = bitboard_shift_up(pawns);
         else
-            pawns = dbase_shift_down(pawns);
+            pawns = bitboard_shift_down(pawns);
 
         pawns &= empty;
 
