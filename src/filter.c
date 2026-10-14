@@ -76,7 +76,7 @@ void filter_quiescent_positions(char *file_name) {
             p = dbase_initial_position();
         }
 
-        print_header(fout, &header);
+        pgn_print_header(fout, &header);
 
         bool last_position_was_quiet = false;
         int last_position_evaluation = 0;

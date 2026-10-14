@@ -132,7 +132,7 @@ void blunder_check(char *file_name) {
             p = dbase_initial_position();
         }
 
-        print_header(fout, &header);
+        pgn_print_header(fout, &header);
 
         move_t last_move = M_NONE;
         int width = 0;
