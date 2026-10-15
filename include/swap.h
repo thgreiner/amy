@@ -32,6 +32,6 @@
 #ifndef SWAP_H
 #define SWAP_H
 
-int SwapOff(struct Position *, int);
+int swap_off(struct Position *, int);
 
 #endif

@@ -146,93 +146,93 @@ const uint64_t bishop_magics[64] = {
     0x40102000a0a60140ULL,
 };
 
-static int poplsb(BitBoard *x) {
-    int lsb = FindSetBit(*x);
+static int magic_poplsb(BitBoard *x) {
+    int lsb = bitboard_find_set_bit(*x);
     *x &= *x - 1;
     return lsb;
 }
 
-static uint64_t rook_attack_mask(int sq, uint64_t blockers) {
+static uint64_t magic_rook_attack_mask(int sq, uint64_t blockers) {
     uint64_t x = 0;
 
-    uint64_t m = ShiftLeft(SetMask(sq));
+    uint64_t m = bitboard_shift_left(bitboard_set_mask(sq));
     while (m) {
         x |= m;
         m &= ~blockers;
-        m = ShiftLeft(m);
+        m = bitboard_shift_left(m);
     }
 
-    m = ShiftRight(SetMask(sq));
+    m = bitboard_shift_right(bitboard_set_mask(sq));
     while (m) {
         x |= m;
         m &= ~blockers;
-        m = ShiftRight(m);
+        m = bitboard_shift_right(m);
     }
 
-    m = ShiftUp(SetMask(sq));
+    m = bitboard_shift_up(bitboard_set_mask(sq));
     while (m) {
         x |= m;
         m &= ~blockers;
-        m = ShiftUp(m);
+        m = bitboard_shift_up(m);
     }
 
-    m = ShiftDown(SetMask(sq));
+    m = bitboard_shift_down(bitboard_set_mask(sq));
     while (m) {
         x |= m;
         m &= ~blockers;
-        m = ShiftDown(m);
+        m = bitboard_shift_down(m);
     }
 
     return x;
 }
 
-static uint64_t bishop_attack_mask(int sq, uint64_t blockers) {
+static uint64_t magic_bishop_attack_mask(int sq, uint64_t blockers) {
     uint64_t x = 0;
 
-    uint64_t m = ShiftUp(ShiftLeft(SetMask(sq)));
+    uint64_t m = bitboard_shift_up(bitboard_shift_left(bitboard_set_mask(sq)));
     while (m) {
         x |= m;
         m &= ~blockers;
-        m = ShiftUp(ShiftLeft(m));
+        m = bitboard_shift_up(bitboard_shift_left(m));
     }
 
-    m = ShiftUp(ShiftRight(SetMask(sq)));
+    m = bitboard_shift_up(bitboard_shift_right(bitboard_set_mask(sq)));
     while (m) {
         x |= m;
         m &= ~blockers;
-        m = ShiftUp(ShiftRight(m));
+        m = bitboard_shift_up(bitboard_shift_right(m));
     }
 
-    m = ShiftDown(ShiftLeft(SetMask(sq)));
+    m = bitboard_shift_down(bitboard_shift_left(bitboard_set_mask(sq)));
     while (m) {
         x |= m;
         m &= ~blockers;
-        m = ShiftDown(ShiftLeft(m));
+        m = bitboard_shift_down(bitboard_shift_left(m));
     }
 
-    m = ShiftDown(ShiftRight(SetMask(sq)));
+    m = bitboard_shift_down(bitboard_shift_right(bitboard_set_mask(sq)));
     while (m) {
         x |= m;
         m &= ~blockers;
-        m = ShiftDown(ShiftRight(m));
+        m = bitboard_shift_down(bitboard_shift_right(m));
     }
 
     return x;
 }
 
-static BitBoard blockers_from_index(int index, BitBoard mask) {
+static BitBoard magic_blockers_from_index(int index, BitBoard mask) {
     uint64_t blockers = 0;
     int bits = __builtin_popcountll(mask);
     for (int i = 0; i < bits; i++) {
-        int bit = poplsb(&mask);
+        int bit = magic_poplsb(&mask);
         if (index & (1 << i)) {
-            SetBit(blockers, bit);
+            bitboard_set_bit(blockers, bit);
         }
     }
     return blockers;
 }
 
-static void init_rook_table(void) {
+static void magic_init_rook_table(void) {
     int offset = 0;
 
     for (int sq = 0; sq < 64; sq++) {
@@ -242,10 +242,11 @@ static void init_rook_table(void) {
 
         for (int index = 0; index < (1 << bits); index++) {
             uint64_t blockers =
-                blockers_from_index(index, rook_blocker_mask[sq]);
+                magic_blockers_from_index(index, rook_blocker_mask[sq]);
             uint64_t magic_index =
                 (blockers * rook_magics[sq]) >> (64 - rook_index_bits[sq]);
-            rook_table[offset + magic_index] = rook_attack_mask(sq, blockers);
+            rook_table[offset + magic_index] =
+                magic_rook_attack_mask(sq, blockers);
         }
 
         offset += 1 << bits;
@@ -254,7 +255,7 @@ static void init_rook_table(void) {
     assert(offset == 102400);
 }
 
-static void init_bishop_table(void) {
+static void magic_init_bishop_table(void) {
     int offset = 0;
 
     for (int sq = 0; sq < 64; sq++) {
@@ -264,11 +265,11 @@ static void init_bishop_table(void) {
 
         for (int index = 0; index < (1 << bits); index++) {
             uint64_t blockers =
-                blockers_from_index(index, bishop_blocker_mask[sq]);
+                magic_blockers_from_index(index, bishop_blocker_mask[sq]);
             uint64_t magic_index =
                 (blockers * bishop_magics[sq]) >> (64 - bishop_index_bits[sq]);
             bishop_table[offset + magic_index] =
-                bishop_attack_mask(sq, blockers);
+                magic_bishop_attack_mask(sq, blockers);
         }
 
         offset += 1 << bits;
@@ -280,7 +281,7 @@ static void init_bishop_table(void) {
 /**
  * Initializes the tables needed for attack generation with magic bitboards.
  */
-void InitMagic(void) {
-    init_rook_table();
-    init_bishop_table();
+void magic_init(void) {
+    magic_init_rook_table();
+    magic_init_bishop_table();
 }

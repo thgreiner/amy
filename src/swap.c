@@ -46,24 +46,24 @@ static int SwapValue[] = {
     10000      /* King, whose value is basically infinity */
 };
 
-static void SwapReRay(struct Position *p, int side, BitBoard atks[2], int from,
-                      int to, BitBoard *exclude) {
+static void swap_re_ray(struct Position *p, int side, BitBoard atks[2],
+                        int from, int to, BitBoard *exclude) {
     BitBoard tmp;
     int i;
     int pc = TYPE(p->piece[from]);
 
-    ClrBit(atks[side], from);
-    ClrBit(*exclude, from);
+    bitboard_clr_bit(atks[side], from);
+    bitboard_clr_bit(*exclude, from);
 
     if (pc == Pawn || pc == Bishop || pc == Queen) {
         tmp = p->atkFr[from] & *exclude & Ray[to][from];
         if (tmp) {
-            i = FindSetBit(tmp);
+            i = bitboard_find_set_bit(tmp);
             if (TYPE(p->piece[i]) == Bishop || TYPE(p->piece[i]) == Queen) {
                 if (p->piece[i] > 0) {
-                    SetBit(atks[White], i);
+                    bitboard_set_bit(atks[White], i);
                 } else {
-                    SetBit(atks[Black], i);
+                    bitboard_set_bit(atks[Black], i);
                 }
             }
         }
@@ -72,19 +72,19 @@ static void SwapReRay(struct Position *p, int side, BitBoard atks[2], int from,
     if (pc == Rook || pc == Queen) {
         tmp = p->atkFr[from] & *exclude & Ray[to][from];
         if (tmp) {
-            i = FindSetBit(tmp);
+            i = bitboard_find_set_bit(tmp);
             if (TYPE(p->piece[i]) == Rook || TYPE(p->piece[i]) == Queen) {
                 if (p->piece[i] > 0) {
-                    SetBit(atks[White], i);
+                    bitboard_set_bit(atks[White], i);
                 } else {
-                    SetBit(atks[Black], i);
+                    bitboard_set_bit(atks[Black], i);
                 }
             }
         }
     }
 }
 
-int SwapOff(struct Position *p, int move) {
+int swap_off(struct Position *p, int move) {
     int to = M_TO(move);
     int fr = M_FROM(move);
     int side = COLOR(p->piece[fr]);
@@ -98,7 +98,7 @@ int SwapOff(struct Position *p, int move) {
     BitBoard exclude;
 
     if (move & M_PROMOTION_MASK) {
-        swapval = SwapValue[PromoType(move)];
+        swapval = SwapValue[dbase_promo_type(move)];
         swaplist[0] = SwapValue[TYPE(p->piece[to])] - SwapValue[Pawn] + swapval;
     } else {
         swapval = SwapValue[TYPE(p->piece[fr])];
@@ -112,7 +112,7 @@ int SwapOff(struct Position *p, int move) {
 
     exclude = p->mask[White][0] | p->mask[Black][0];
 
-    SwapReRay(p, side, atks, fr, to, &exclude);
+    swap_re_ray(p, side, atks, fr, to, &exclude);
 
     while (atks[swapside]) {
         int at;
@@ -121,22 +121,22 @@ int SwapOff(struct Position *p, int move) {
         /* find last valuable attacker */
         tmp = p->mask[swapside][Pawn] & atks[swapside];
         if (tmp)
-            at = FindSetBit(tmp);
+            at = bitboard_find_set_bit(tmp);
         else {
             tmp = (p->mask[swapside][Knight] | p->mask[swapside][Bishop]) &
                   atks[swapside];
             if (tmp)
-                at = FindSetBit(tmp);
+                at = bitboard_find_set_bit(tmp);
             else {
                 tmp = p->mask[swapside][Rook] & atks[swapside];
                 if (tmp)
-                    at = FindSetBit(tmp);
+                    at = bitboard_find_set_bit(tmp);
                 else {
                     tmp = p->mask[swapside][Queen] & atks[swapside];
                     if (tmp)
-                        at = FindSetBit(tmp);
+                        at = bitboard_find_set_bit(tmp);
                     else
-                        at = FindSetBit(p->mask[swapside][King]);
+                        at = bitboard_find_set_bit(p->mask[swapside][King]);
                 }
             }
         }
@@ -146,7 +146,7 @@ int SwapOff(struct Position *p, int move) {
         swapval = SwapValue[TYPE(p->piece[at])];
         swapsign = -swapsign;
 
-        SwapReRay(p, swapside, atks, at, to, &exclude);
+        swap_re_ray(p, swapside, atks, at, to, &exclude);
 
         swapside = !swapside;
     }

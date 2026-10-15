@@ -46,17 +46,19 @@ static const BitBoard ShiftDownMask = 0xffffffffffffff;
 static const BitBoard ShiftLeftMask = 0xfefefefefefefefe;
 static const BitBoard ShiftRightMask = 0x7f7f7f7f7f7f7f7f;
 
-static inline BitBoard ShiftUp(BitBoard x) { return (x << 8) & ShiftUpMask; }
+static inline BitBoard bitboard_shift_up(BitBoard x) {
+    return (x << 8) & ShiftUpMask;
+}
 
-static inline BitBoard ShiftDown(BitBoard x) {
+static inline BitBoard bitboard_shift_down(BitBoard x) {
     return (x >> 8) & ShiftDownMask;
 }
 
-static inline BitBoard ShiftLeft(BitBoard x) {
+static inline BitBoard bitboard_shift_left(BitBoard x) {
     return (x << 1) & ShiftLeftMask;
 }
 
-static inline BitBoard ShiftRight(BitBoard x) {
+static inline BitBoard bitboard_shift_right(BitBoard x) {
     return (x >> 1) & ShiftRightMask;
 }
 
@@ -64,7 +66,7 @@ static inline BitBoard ShiftRight(BitBoard x) {
  * Calculate the 'king distance' between two squares.
  * This the number of king moves to go from sq1 to sq2.
  */
-static inline int KingDist(int sq1, int sq2) {
+static inline int dbase_king_dist(int sq1, int sq2) {
     int file_dist = ABS((sq1 & 7) - (sq2 & 7));
     int rank_dist = ABS((sq1 >> 3) - (sq2 >> 3));
 
@@ -75,7 +77,7 @@ static inline int KingDist(int sq1, int sq2) {
  * Calculate the 'minimum distance' between two squares.
  * This the minimum of the file and rank distances.
  */
-static inline int MinDist(int sq1, int sq2) {
+static inline int dbase_min_dist(int sq1, int sq2) {
     int file_dist = ABS((sq1 & 7) - (sq2 & 7));
     int rank_dist = ABS((sq1 >> 3) - (sq2 >> 3));
 
@@ -85,21 +87,21 @@ static inline int MinDist(int sq1, int sq2) {
 /**
  * Calculate the 'Manhattan distance' between two squares.
  */
-static inline int ManhattanDist(int sq1, int sq2) {
+static inline int dbase_manhattan_dist(int sq1, int sq2) {
     int file_dist = ABS((sq1 & 7) - (sq2 & 7));
     int rank_dist = ABS((sq1 >> 3) - (sq2 >> 3));
 
     return file_dist + rank_dist;
 }
 
-static inline int FileDist(int sq1, int sq2) {
+static inline int dbase_file_dist(int sq1, int sq2) {
     return ABS((sq1 & 7) - (sq2 & 7));
 }
 
 /**
  * Calculate the distance of 'sq' to any edge on the chessboard
  */
-static inline int EdgeDist(int sq) {
+static inline int dbase_edge_dist(int sq) {
     int filedist = MIN(sq & 7, 7 - (sq & 7));
     int rankdist = MIN(sq >> 3, 7 - (sq >> 3));
 
@@ -109,21 +111,22 @@ static inline int EdgeDist(int sq) {
 /**
  * Create a move from from square, to square and flags.
  */
-static inline move_t make_move(int from, int to, int flags) {
+static inline move_t dbase_make_move(int from, int to, int flags) {
     return (move_t)(from | (to << 6) | flags);
 }
 
 /**
  * Create a promotion move from from square, to square and flags.
  */
-static inline move_t make_promotion(int from, int to, int type, int flags) {
+static inline move_t dbase_make_promotion(int from, int to, int type,
+                                          int flags) {
     return (move_t)(from | (to << 6) | (type << M_PROMOTION_OFFSET) | flags);
 }
 
 /**
  * Returns if the square is a promotion square.
  */
-static inline bool is_promo_square(int sq) {
+static inline bool dbase_is_promo_square(int sq) {
     int rank = sq >> 3;
     return rank == 0 || rank == 7;
 }
@@ -131,7 +134,7 @@ static inline bool is_promo_square(int sq) {
 /*
  * Test whether a side is in check
  */
-static inline bool InCheck(struct Position *p, int side) {
+static inline bool dbase_in_check(struct Position *p, int side) {
     int sq = p->kingSq[side];
     return (p->atkFr[sq] & p->mask[!side][0]);
 }
@@ -139,7 +142,7 @@ static inline bool InCheck(struct Position *p, int side) {
 /*
  * Determine type of promotion from move
  */
-static inline int8_t PromoType(move_t move) {
+static inline int8_t dbase_promo_type(move_t move) {
     return (move & M_PROMOTION_MASK) >> M_PROMOTION_OFFSET;
 }
 

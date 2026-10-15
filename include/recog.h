@@ -40,7 +40,7 @@
     CALCULATE_INDEX((p)->material_signature[White],                            \
                     (p)->material_signature[Black])
 
-void RecogInit(void);
-int ProbeRecognizer(const struct Position *p, int *score);
+void recog_init(void);
+int recog_probe(const struct Position *p, int *score);
 
 #endif

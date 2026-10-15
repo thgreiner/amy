@@ -43,7 +43,7 @@
 #include "safe_malloc.h"
 #include "utils.h"
 
-static char *read_line(FILE *fin) {
+static char *pgn_read_line(FILE *fin) {
 #if HAVE_GETLINE
     char *line = NULL;
     size_t len = 0;
@@ -72,18 +72,18 @@ static char *read_line(FILE *fin) {
 #endif
 }
 
-int scanHeader(FILE *fin, struct PGNHeader *header) {
+int pgn_scan_header(FILE *fin, struct PGNHeader *header) {
     char *current_line;
     int state = 0;
 
     /* Clear it */
     memset(header, 0, sizeof(struct PGNHeader));
 
-    while ((current_line = read_line(fin)) != NULL) {
+    while ((current_line = pgn_read_line(fin)) != NULL) {
         if (current_line[0] == '[') {
             char *x = current_line + 1;
-            char *key = nextToken(&x, " \"");
-            char *value = nextToken(&x, "\"");
+            char *key = utils_next_token(&x, " \"");
+            char *value = utils_next_token(&x, "\"");
             size_t len = strlen(value);
 
             if (!strcmp("Event", key)) {
@@ -148,7 +148,7 @@ int scanHeader(FILE *fin, struct PGNHeader *header) {
     return 1;
 }
 
-void free_header(struct PGNHeader *header) {
+void pgn_free_header(struct PGNHeader *header) {
     free(header->event);
     free(header->site);
     free(header->date);
@@ -164,7 +164,7 @@ void free_header(struct PGNHeader *header) {
 static char comment_buffer[2048] = "";
 static char *comment_ptr = comment_buffer;
 
-int scanMove(FILE *fin, char *nextMove) {
+int pgn_scan_move(FILE *fin, char *nextMove) {
     static char *current_line = NULL;
     static int haveLine = 0;
     static char *x;
@@ -177,7 +177,7 @@ int scanMove(FILE *fin, char *nextMove) {
     do {
         if (!haveLine) {
             free(current_line);
-            current_line = read_line(fin);
+            current_line = pgn_read_line(fin);
 
             if (current_line == NULL)
                 return 1;
@@ -229,7 +229,7 @@ int scanMove(FILE *fin, char *nextMove) {
                 x++;
                 continue;
             }
-            token = nextToken(&x, " .\n\r\t");
+            token = utils_next_token(&x, " .\n\r\t");
 
             if (token == NULL) {
                 haveLine = 0;
@@ -255,28 +255,28 @@ int scanMove(FILE *fin, char *nextMove) {
     return 1;
 }
 
-void get_and_reset_comment(char *destination, unsigned int length) {
+void pgn_get_and_reset_comment(char *destination, unsigned int length) {
     strncpy(destination, comment_buffer, length);
 
     comment_ptr = comment_buffer;
     *comment_buffer = 0;
 }
 
-void LoadGame(struct Position *p, char *file_name) {
+void pgn_load_game(struct Position *p, char *file_name) {
     FILE *fin = fopen(file_name, "r");
 
     if (fin) {
         struct PGNHeader header;
         char move[16];
-        if (!scanHeader(fin, &header)) {
-            while (!scanMove(fin, move)) {
-                int themove = ParseSAN(p, move);
+        if (!pgn_scan_header(fin, &header)) {
+            while (!pgn_scan_move(fin, move)) {
+                int themove = dbase_parse_san(p, move);
                 if (themove != M_NONE) {
-                    DoMove(p, themove);
+                    dbase_do_move(p, themove);
                 }
             }
         }
         fclose(fin);
-        free_header(&header);
+        pgn_free_header(&header);
     }
 }

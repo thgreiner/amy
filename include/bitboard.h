@@ -34,25 +34,27 @@
 
 #include <stdint.h>
 
-#define SetMask(i) (1ULL << (i))
-#define ClrMask(i) (~SetMask(i))
+#define bitboard_set_mask(i) (1ULL << (i))
+#define bitboard_clr_mask(i) (~bitboard_set_mask(i))
 
-#define SetBit(b, i) ((b) |= SetMask(i))
-#define ClrBit(b, i) ((b) &= ClrMask(i))
-#define TstBit(b, i) ((b) & SetMask(i))
+#define bitboard_set_bit(b, i) ((b) |= bitboard_set_mask(i))
+#define bitboard_clr_bit(b, i) ((b) &= bitboard_clr_mask(i))
+#define bitboard_tst_bit(b, i) ((b) & bitboard_set_mask(i))
 
 typedef uint64_t BitBoard;
 
 #if HAVE___BUILTIN_POPCOUNTLL
-#define CountBits(x) __builtin_popcountll(x)
+#define bitboard_count_bits(x) __builtin_popcountll(x)
 #else
-int CountBits(BitBoard);
+int bitboard_count_bits(BitBoard);
 #endif
 
 #if HAVE___BUILTIN_CTZLL
-#define FindSetBit(x) __builtin_ctzll(x)
+#define bitboard_find_set_bit(x) __builtin_ctzll(x)
 #else
-int FindSetBit(BitBoard);
+int bitboard_find_set_bit(BitBoard);
 #endif
+
+void bitboard_print(BitBoard);
 
 #endif

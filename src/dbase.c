@@ -36,6 +36,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "bitboard.h"
 #include "dbase.h"
 #include "hashtable.h"
 #include "heap.h"
@@ -77,34 +78,34 @@ const int8_t CastleMask[2][2] = {
 /* local prototypes
  */
 
-static void AtkSet(struct Position *, Piece, Color, Square);
-static void AtkClr(struct Position *, Square);
-static void GainAttack(struct Position *, Square, Square);
-static void LooseAttack(struct Position *, Square, Square);
-static void GainAttacks(struct Position *, Square);
-static void LooseAttacks(struct Position *, Square);
+static void dbase_atk_set(struct Position *, Piece, Color, Square);
+static void dbase_atk_clr(struct Position *, Square);
+static void dbase_gain_attack(struct Position *, Square, Square);
+static void dbase_loose_attack(struct Position *, Square, Square);
+static void dbase_gain_attacks(struct Position *, Square);
+static void dbase_loose_attacks(struct Position *, Square);
 
 /*
  * Routines to up/downdate the global database
  */
 
-static void ShowMoveList(struct Position *p) {
+static void dbase_show_move_list(struct Position *p) {
     int ply;
     for (ply = 0; ply < p->ply; ply++) {
         int move = p->gameLog[ply].gl_Move;
-        Print(0, "%s\n", ICS_SAN(move));
+        print(0, "%s\n", dbase_ics_san(move));
     }
 }
 
-static void Panic(struct Position *p) {
-    ShowPosition(p);
-    ShowMoveList(p);
+static void dbase_panic(struct Position *p) {
+    dbase_show_position(p);
+    dbase_show_move_list(p);
     fflush(stdout);
     abort();
 }
 
 #ifdef DEBUG
-static void DebugEngine(struct Position *p) {
+static void dbase_debug_engine(struct Position *p) {
     int kingSq = p->kingSq[White];
     int i, color;
     BitBoard temp;
@@ -112,13 +113,13 @@ static void DebugEngine(struct Position *p) {
     for (i = 0; i < 64; i++) {
         temp = p->atkTo[i];
         while (temp) {
-            int sq = FindSetBit(temp);
+            int sq = bitboard_find_set_bit(temp);
             temp &= temp - 1;
-            if (!TstBit(p->atkFr[sq], i)) {
-                Print(0, "AtkFr or AtkTo is bad on %c%c or %c%c\n", SQUARE(i),
+            if (!bitboard_tst_bit(p->atkFr[sq], i)) {
+                print(0, "AtkFr or AtkTo is bad on %c%c or %c%c\n", SQUARE(i),
                       SQUARE(sq));
-                ShowMoveList(p);
-                ShowPosition(p);
+                dbase_show_move_list(p);
+                dbase_show_position(p);
                 abort();
             }
         }
@@ -128,14 +129,14 @@ static void DebugEngine(struct Position *p) {
         for (i = Pawn; i <= King; i++) {
             temp = p->mask[color][i];
             while (temp) {
-                int sq = FindSetBit(temp);
+                int sq = bitboard_find_set_bit(temp);
                 temp &= temp - 1;
                 int pc = (1 - 2 * color) * i;
                 if (p->piece[sq] != pc) {
-                    Print(0, "Piece on %c%c is %d, expected %d!\n", SQUARE(sq),
+                    print(0, "Piece on %c%c is %d, expected %d!\n", SQUARE(sq),
                           p->piece[sq], pc);
-                    ShowMoveList(p);
-                    ShowPosition(p);
+                    dbase_show_move_list(p);
+                    dbase_show_position(p);
                     abort();
                 }
             }
@@ -143,22 +144,22 @@ static void DebugEngine(struct Position *p) {
     }
 
     if (p->atkTo[kingSq] != KingEPM[kingSq]) {
-        Print(0, "White king is bad:\n");
-        PrintBitBoard(p->atkTo[kingSq]);
-        Print(0, "should be:\n");
-        PrintBitBoard(KingEPM[kingSq]);
-        ShowMoveList(p);
-        ShowPosition(p);
+        print(0, "White king is bad:\n");
+        bitboard_print(p->atkTo[kingSq]);
+        print(0, "should be:\n");
+        bitboard_print(KingEPM[kingSq]);
+        dbase_show_move_list(p);
+        dbase_show_position(p);
         abort();
     }
     kingSq = p->kingSq[Black];
     if (p->atkTo[kingSq] != KingEPM[kingSq]) {
-        Print(0, "Black king is bad:\n");
-        PrintBitBoard(p->atkTo[kingSq]);
-        Print(0, "should be:\n");
-        PrintBitBoard(KingEPM[kingSq]);
-        ShowMoveList(p);
-        ShowPosition(p);
+        print(0, "Black king is bad:\n");
+        bitboard_print(p->atkTo[kingSq]);
+        print(0, "should be:\n");
+        bitboard_print(KingEPM[kingSq]);
+        dbase_show_move_list(p);
+        dbase_show_position(p);
         abort();
     }
 }
@@ -168,7 +169,8 @@ static void DebugEngine(struct Position *p) {
  * Generate attacks for a piece "type" of "color" on square "square"
  */
 
-static void AtkSet(struct Position *p, Piece type, Color color, Square square) {
+static void dbase_atk_set(struct Position *p, Piece type, Color color,
+                          Square square) {
     BitBoard attacks;
 
     switch (type) {
@@ -179,40 +181,40 @@ static void AtkSet(struct Position *p, Piece type, Color color, Square square) {
         attacks = KnightEPM[square];
         break;
     case Bishop:
-        attacks = bishop_attacks(square, p->mask[0][0] | p->mask[1][0]);
+        attacks = magic_bishop_attacks(square, p->mask[0][0] | p->mask[1][0]);
         break;
     case Rook:
-        attacks = rook_attacks(square, p->mask[0][0] | p->mask[1][0]);
+        attacks = magic_rook_attacks(square, p->mask[0][0] | p->mask[1][0]);
         break;
     case Queen:
-        attacks = bishop_attacks(square, p->mask[0][0] | p->mask[1][0]) |
-                  rook_attacks(square, p->mask[0][0] | p->mask[1][0]);
+        attacks = magic_bishop_attacks(square, p->mask[0][0] | p->mask[1][0]) |
+                  magic_rook_attacks(square, p->mask[0][0] | p->mask[1][0]);
         break;
     case King:
         attacks = KingEPM[square];
         break;
     default:
-        printf("AtkSet(%d, %d, %d)\n", type, color, square);
-        Panic(p);
+        printf("dbase_atk_set(%d, %d, %d)\n", type, color, square);
+        dbase_panic(p);
         return; // never reached
     }
 
     p->atkTo[square] = attacks;
     while (attacks) {
-        int i = FindSetBit(attacks);
+        int i = bitboard_find_set_bit(attacks);
         attacks &= attacks - 1;
-        SetBit(p->atkFr[i], square);
+        bitboard_set_bit(p->atkFr[i], square);
     }
 }
 
-static void AtkClr(struct Position *p, Square square) {
+static void dbase_atk_clr(struct Position *p, Square square) {
     BitBoard tmp = p->atkTo[square];
     p->atkTo[square] = 0;
 
     while (tmp) {
-        int i = FindSetBit(tmp);
+        int i = bitboard_find_set_bit(tmp);
         tmp &= tmp - 1;
-        ClrBit(p->atkFr[i], square);
+        bitboard_clr_bit(p->atkFr[i], square);
     }
 }
 
@@ -221,7 +223,8 @@ static void AtkClr(struct Position *p, Square square) {
  * been removed
  */
 
-static void GainAttack(struct Position *p, const Square from, const Square to) {
+static void dbase_gain_attack(struct Position *p, const Square from,
+                              const Square to) {
     signed char *nsq = NextSQ[from];
     int sq = to;
     const BitBoard all = p->mask[0][0] | p->mask[1][0];
@@ -231,10 +234,10 @@ static void GainAttack(struct Position *p, const Square from, const Square to) {
         if (sq < 0)
             break;
 
-        SetBit(p->atkTo[from], sq);
-        SetBit(p->atkFr[sq], from);
+        bitboard_set_bit(p->atkTo[from], sq);
+        bitboard_set_bit(p->atkFr[sq], from);
 
-        if (TstBit(all, sq))
+        if (bitboard_tst_bit(all, sq))
             break;
     }
 }
@@ -244,8 +247,8 @@ static void GainAttack(struct Position *p, const Square from, const Square to) {
  * onto "to"
  */
 
-static void LooseAttack(struct Position *p, const Square from,
-                        const Square to) {
+static void dbase_loose_attack(struct Position *p, const Square from,
+                               const Square to) {
     signed char *nsq = NextSQ[from];
     int sq = to;
     const BitBoard all = p->mask[0][0] | p->mask[1][0];
@@ -255,10 +258,10 @@ static void LooseAttack(struct Position *p, const Square from,
         if (sq < 0)
             break;
 
-        ClrBit(p->atkTo[from], sq);
-        ClrBit(p->atkFr[sq], from);
+        bitboard_clr_bit(p->atkTo[from], sq);
+        bitboard_clr_bit(p->atkFr[sq], from);
 
-        if (TstBit(all, sq))
+        if (bitboard_tst_bit(all, sq))
             break;
     }
 }
@@ -268,14 +271,14 @@ static void LooseAttack(struct Position *p, const Square from,
  * the piece on this square has been removed
  */
 
-static void GainAttacks(struct Position *p, Square to) {
+static void dbase_gain_attacks(struct Position *p, Square to) {
     BitBoard tmp = p->atkFr[to] & p->slidingPieces;
     int i;
 
     while (tmp) {
-        i = FindSetBit(tmp);
+        i = bitboard_find_set_bit(tmp);
         tmp &= tmp - 1;
-        GainAttack(p, i, to);
+        dbase_gain_attack(p, i, to);
     }
 }
 
@@ -284,14 +287,14 @@ static void GainAttacks(struct Position *p, Square to) {
  * a piece has been put onto this square
  */
 
-static void LooseAttacks(struct Position *p, Square to) {
+static void dbase_loose_attacks(struct Position *p, Square to) {
     BitBoard tmp = p->atkFr[to] & p->slidingPieces;
     int i;
 
     while (tmp) {
-        i = FindSetBit(tmp);
+        i = bitboard_find_set_bit(tmp);
         tmp &= tmp - 1;
-        LooseAttack(p, i, to);
+        dbase_loose_attack(p, i, to);
     }
 }
 
@@ -302,53 +305,53 @@ static inline bool is_sliding(Piece tp) { return tp >= Bishop && tp <= Queen; }
 
 /*
  * Make a castle move
- * I separated this routine from the normal DoMove routine since it has
+ * I separated this routine from the normal dbase_do_move routine since it has
  * to move two pieces
  */
 
-static void DoCastle(struct Position *p, move_t move) {
+static void dbase_do_castle(struct Position *p, move_t move) {
     int8_t from = M_FROM(move);
     int8_t to = M_TO(move);
     int8_t or = (move & M_SCASTLE) ? from + 3 : from - 4;
     int8_t nr = (move & M_SCASTLE) ? from + 1 : from - 1;
 
     /* king looses its attacks */
-    AtkClr(p, from);
+    dbase_atk_clr(p, from);
 
     /* rook looses its attacks */
-    AtkClr(p, or);
+    dbase_atk_clr(p, or);
 
     /* move king on the board */
     p->piece[to] = p->piece[from];
     p->piece[from] = Neutral;
-    ClrBit(p->mask[p->turn][0], from);
-    ClrBit(p->mask[p->turn][King], from);
-    SetBit(p->mask[p->turn][0], to);
-    SetBit(p->mask[p->turn][King], to);
+    bitboard_clr_bit(p->mask[p->turn][0], from);
+    bitboard_clr_bit(p->mask[p->turn][King], from);
+    bitboard_set_bit(p->mask[p->turn][0], to);
+    bitboard_set_bit(p->mask[p->turn][King], to);
 
     /* move rook on the board */
     p->piece[nr] = p->piece[or];
     p->piece[or] = Neutral;
-    ClrBit(p->mask[p->turn][0], or);
-    ClrBit(p->mask[p->turn][Rook], or);
-    ClrBit(p->slidingPieces, or);
-    SetBit(p->mask[p->turn][0], nr);
-    SetBit(p->mask[p->turn][Rook], nr);
-    SetBit(p->slidingPieces, nr);
+    bitboard_clr_bit(p->mask[p->turn][0], or);
+    bitboard_clr_bit(p->mask[p->turn][Rook], or);
+    bitboard_clr_bit(p->slidingPieces, or);
+    bitboard_set_bit(p->mask[p->turn][0], nr);
+    bitboard_set_bit(p->mask[p->turn][Rook], nr);
+    bitboard_set_bit(p->slidingPieces, nr);
 
     /* re-calculate attacks through king-square
      * no need to do it for the rook, since it was on the edge of the board
-     * For the same reason we don't have to LooseAttacks on any of the
+     * For the same reason we don't have to dbase_loose_attacks on any of the
      * new king/rook squares
      */
 
-    GainAttacks(p, from);
+    dbase_gain_attacks(p, from);
 
     /* King and rook gain their attacks
      */
 
-    AtkSet(p, King, p->turn, to);
-    AtkSet(p, Rook, p->turn, nr);
+    dbase_atk_set(p, King, p->turn, to);
+    dbase_atk_set(p, Rook, p->turn, nr);
     p->kingSq[p->turn] = to;
 
     /* update hashkey */
@@ -362,48 +365,48 @@ static void DoCastle(struct Position *p, move_t move) {
  * Unmake a castle move
  */
 
-static void UndoCastle(struct Position *p, move_t move) {
+static void dbase_undo_castle(struct Position *p, move_t move) {
     int8_t from = M_FROM(move);
     int8_t to = M_TO(move);
     int8_t or = (move & M_SCASTLE) ? from + 3 : from - 4;
     int8_t nr = (move & M_SCASTLE) ? from + 1 : from - 1;
 
     /* king looses its attacks */
-    AtkClr(p, to);
+    dbase_atk_clr(p, to);
 
     /* rook looses its attacks */
-    AtkClr(p, nr);
+    dbase_atk_clr(p, nr);
 
     /* re-calculate attacks through king-square
      * no need to do it for the rook, since it was on the edge of the board
-     * For the same reason we don't have to LooseAttacks on any of the
+     * For the same reason we don't have to dbase_loose_attacks on any of the
      * new king/rook squares
      */
-    LooseAttacks(p, from);
+    dbase_loose_attacks(p, from);
 
     /* move king on the board */
     p->piece[from] = p->piece[to];
     p->piece[to] = Neutral;
-    ClrBit(p->mask[p->turn][0], to);
-    ClrBit(p->mask[p->turn][King], to);
-    SetBit(p->mask[p->turn][0], from);
-    SetBit(p->mask[p->turn][King], from);
+    bitboard_clr_bit(p->mask[p->turn][0], to);
+    bitboard_clr_bit(p->mask[p->turn][King], to);
+    bitboard_set_bit(p->mask[p->turn][0], from);
+    bitboard_set_bit(p->mask[p->turn][King], from);
 
     /* move rook on the board */
     p->piece[or] = p->piece[nr];
     p->piece[nr] = Neutral;
-    ClrBit(p->mask[p->turn][0], nr);
-    ClrBit(p->mask[p->turn][Rook], nr);
-    ClrBit(p->slidingPieces, nr);
-    SetBit(p->mask[p->turn][0], or);
-    SetBit(p->mask[p->turn][Rook], or);
-    SetBit(p->slidingPieces, or);
+    bitboard_clr_bit(p->mask[p->turn][0], nr);
+    bitboard_clr_bit(p->mask[p->turn][Rook], nr);
+    bitboard_clr_bit(p->slidingPieces, nr);
+    bitboard_set_bit(p->mask[p->turn][0], or);
+    bitboard_set_bit(p->mask[p->turn][Rook], or);
+    bitboard_set_bit(p->slidingPieces, or);
 
     /* King and rook gain their attacks
      */
 
-    AtkSet(p, King, p->turn, from);
-    AtkSet(p, Rook, p->turn, or);
+    dbase_atk_set(p, King, p->turn, from);
+    dbase_atk_set(p, Rook, p->turn, or);
     p->kingSq[p->turn] = from;
 }
 
@@ -412,7 +415,7 @@ static void UndoCastle(struct Position *p, move_t move) {
  * updates the global database
  */
 
-void DoMove(struct Position *p, move_t move) {
+void dbase_do_move(struct Position *p, move_t move) {
     int8_t from = M_FROM(move);
     int8_t to = M_TO(move);
     int8_t tp = TYPE(p->piece[from]);
@@ -424,11 +427,11 @@ void DoMove(struct Position *p, move_t move) {
     p->actLog->gl_PawnKey = p->pkey;
 
     if (move & M_CANY) {
-        DoCastle(p, move);
+        dbase_do_castle(p, move);
         p->castle &= ~(CastleMask[p->turn][0] | CastleMask[p->turn][1]);
     } else {
         /* piece looses its attacks */
-        AtkClr(p, from);
+        dbase_atk_clr(p, from);
 
         if (tp == King) {
             p->kingSq[p->turn] = to;
@@ -436,12 +439,12 @@ void DoMove(struct Position *p, move_t move) {
 
         /* remove it from the board */
         p->piece[from] = Neutral;
-        ClrBit(p->mask[p->turn][0], from);
-        ClrBit(p->mask[p->turn][tp], from);
+        bitboard_clr_bit(p->mask[p->turn][0], from);
+        bitboard_clr_bit(p->mask[p->turn][tp], from);
         if (is_sliding(tp))
-            ClrBit(p->slidingPieces, from);
+            bitboard_clr_bit(p->slidingPieces, from);
         /* re-calculate attacks through from-square */
-        GainAttacks(p, from);
+        dbase_gain_attacks(p, from);
 
         /* update hashkey */
         p->hkey ^= HashKeys[p->turn][tp][from];
@@ -461,15 +464,15 @@ void DoMove(struct Position *p, move_t move) {
             int sp = TYPE(p->piece[to]);
 
             /* piece looses its attacks */
-            AtkClr(p, to);
+            dbase_atk_clr(p, to);
 
             /* remember type of captured piece */
             p->actLog->gl_Piece = p->piece[to];
 
-            ClrBit(p->mask[OPP(p->turn)][0], to);
-            ClrBit(p->mask[OPP(p->turn)][sp], to);
+            bitboard_clr_bit(p->mask[OPP(p->turn)][0], to);
+            bitboard_clr_bit(p->mask[OPP(p->turn)][sp], to);
             if (is_sliding(sp))
-                ClrBit(p->slidingPieces, to);
+                bitboard_clr_bit(p->slidingPieces, to);
 
             /* Update oppponents material and PawnCount */
             p->material[OPP(p->turn)] -= Value[sp];
@@ -495,16 +498,16 @@ void DoMove(struct Position *p, move_t move) {
             int so = to ^ 8;
 
             /* piece looses its attacks */
-            AtkClr(p, so);
+            dbase_atk_clr(p, so);
 
             /* captured piece must be a pawn */
             p->actLog->gl_Piece = ((OPP(p->turn) == White) ? Pawn : -Pawn);
 
-            ClrBit(p->mask[OPP(p->turn)][0], so);
-            ClrBit(p->mask[OPP(p->turn)][Pawn], so);
+            bitboard_clr_bit(p->mask[OPP(p->turn)][0], so);
+            bitboard_clr_bit(p->mask[OPP(p->turn)][Pawn], so);
 
             /* re-calculate attacks through to-square */
-            GainAttacks(p, so);
+            dbase_gain_attacks(p, so);
 
             /* remove captured pawn from the board */
             p->piece[so] = Neutral;
@@ -522,15 +525,15 @@ void DoMove(struct Position *p, move_t move) {
             p->pkey ^= HashKeys[OPP(p->turn)][Pawn][so];
 
             /* re-calculate attacks through to-square */
-            LooseAttacks(p, to);
+            dbase_loose_attacks(p, to);
         } else {
             /* re-calculate attacks through to-square */
-            LooseAttacks(p, to);
+            dbase_loose_attacks(p, to);
         }
 
         if (move & M_PROMOTION_MASK) {
             /* Promote piece */
-            tp = PromoType(move);
+            tp = dbase_promo_type(move);
 
             /* Update own material */
             p->material[p->turn] += Value[tp] - Value[Pawn];
@@ -544,13 +547,13 @@ void DoMove(struct Position *p, move_t move) {
 
         /* put it on the board again */
         p->piece[to] = (p->turn == White) ? tp : -tp;
-        SetBit(p->mask[p->turn][0], to);
-        SetBit(p->mask[p->turn][tp], to);
+        bitboard_set_bit(p->mask[p->turn][0], to);
+        bitboard_set_bit(p->mask[p->turn][tp], to);
         if (is_sliding(tp))
-            SetBit(p->slidingPieces, to);
+            bitboard_set_bit(p->slidingPieces, to);
 
         /* piece gains its attacks */
-        AtkSet(p, tp, p->turn, to);
+        dbase_atk_set(p, tp, p->turn, to);
 
         /* update hashkey */
         p->hkey ^= HashKeys[p->turn][tp][to];
@@ -610,7 +613,7 @@ void DoMove(struct Position *p, move_t move) {
     p->hkey ^= STMKey;
 }
 
-void UndoMove(struct Position *p, move_t move) {
+void dbase_undo_move(struct Position *p, move_t move) {
     int8_t from = M_FROM(move);
     int8_t to = M_TO(move);
     int8_t tp = TYPE(p->piece[to]);
@@ -623,20 +626,20 @@ void UndoMove(struct Position *p, move_t move) {
     p->ply--;
 
     if (move & M_CANY) {
-        UndoCastle(p, move);
+        dbase_undo_castle(p, move);
     } else {
         /* piece looses its attacks */
-        AtkClr(p, to);
+        dbase_atk_clr(p, to);
 
         if (tp == King) {
             p->kingSq[p->turn] = from;
         }
 
         /* update masks */
-        ClrBit(p->mask[p->turn][0], to);
-        ClrBit(p->mask[p->turn][tp], to);
+        bitboard_clr_bit(p->mask[p->turn][0], to);
+        bitboard_clr_bit(p->mask[p->turn][tp], to);
         if (is_sliding(tp))
-            ClrBit(p->slidingPieces, to);
+            bitboard_clr_bit(p->slidingPieces, to);
 
         if (move & M_PROMOTION_MASK) {
             /* Update own material */
@@ -659,14 +662,14 @@ void UndoMove(struct Position *p, move_t move) {
             int8_t sp = p->actLog->gl_Piece;
 
             /* piece gains its attacks */
-            AtkSet(p, TYPE(sp), OPP(p->turn), to);
+            dbase_atk_set(p, TYPE(sp), OPP(p->turn), to);
 
             p->piece[to] = sp;
             sp = TYPE(sp);
-            SetBit(p->mask[OPP(p->turn)][0], to);
-            SetBit(p->mask[OPP(p->turn)][sp], to);
+            bitboard_set_bit(p->mask[OPP(p->turn)][0], to);
+            bitboard_set_bit(p->mask[OPP(p->turn)][sp], to);
             if (is_sliding(sp))
-                SetBit(p->slidingPieces, to);
+                bitboard_set_bit(p->slidingPieces, to);
 
             /* Update oppponents material and PawnCount */
             p->material[OPP(p->turn)] += Value[sp];
@@ -679,20 +682,20 @@ void UndoMove(struct Position *p, move_t move) {
             int so = to ^ 8;
 
             /* piece looses its attacks */
-            AtkSet(p, Pawn, OPP(p->turn), so);
+            dbase_atk_set(p, Pawn, OPP(p->turn), so);
 
-            SetBit(p->mask[OPP(p->turn)][0], so);
-            SetBit(p->mask[OPP(p->turn)][Pawn], so);
+            bitboard_set_bit(p->mask[OPP(p->turn)][0], so);
+            bitboard_set_bit(p->mask[OPP(p->turn)][Pawn], so);
 
             /* re-calculate attacks through to-square */
-            LooseAttacks(p, so);
+            dbase_loose_attacks(p, so);
 
             /* remove captured pawn from the board */
             p->piece[so] = (OPP(p->turn) == White) ? Pawn : -Pawn;
             p->piece[to] = Neutral;
 
             /* re-calculate attacks through to-square */
-            GainAttacks(p, to);
+            dbase_gain_attacks(p, to);
 
             /* Update oppponents material */
             p->material[OPP(p->turn)] += Value[Pawn];
@@ -703,21 +706,21 @@ void UndoMove(struct Position *p, move_t move) {
             p->piece[to] = Neutral;
 
             /* re-calculate attacks through to-square */
-            GainAttacks(p, to);
+            dbase_gain_attacks(p, to);
         }
 
         /* re-calculate attacks through from-square */
-        LooseAttacks(p, from);
+        dbase_loose_attacks(p, from);
 
         /* put it on the board again */
         p->piece[from] = (p->turn == White) ? tp : -tp;
-        SetBit(p->mask[p->turn][0], from);
-        SetBit(p->mask[p->turn][tp], from);
+        bitboard_set_bit(p->mask[p->turn][0], from);
+        bitboard_set_bit(p->mask[p->turn][tp], from);
         if (is_sliding(tp))
-            SetBit(p->slidingPieces, from);
+            bitboard_set_bit(p->slidingPieces, from);
 
         /* piece gains its attacks */
-        AtkSet(p, tp, p->turn, from);
+        dbase_atk_set(p, tp, p->turn, from);
     }
 
     /* restore EnPassant and Castling */
@@ -728,7 +731,7 @@ void UndoMove(struct Position *p, move_t move) {
     p->pkey = p->actLog->gl_PawnKey;
 
     /*
-    DebugEngine(move);
+    dbase_debug_engine(move);
     */
 }
 
@@ -736,7 +739,7 @@ void UndoMove(struct Position *p, move_t move) {
  * Make a null move, i.e. swap the p->turn on the move
  */
 
-void DoNull(struct Position *p) {
+void dbase_do_null(struct Position *p) {
     /* Update GameLog */
     p->actLog->gl_Move = M_NULL;
     p->actLog->gl_EnPassant = p->enPassant;
@@ -773,7 +776,7 @@ void DoNull(struct Position *p) {
  * Unmake a null move
  */
 
-void UndoNull(struct Position *p) {
+void dbase_undo_null(struct Position *p) {
     p->turn = OPP(p->turn);
 
     /* Decrement ActLog */
@@ -788,7 +791,7 @@ void UndoNull(struct Position *p) {
  * Given the Masks and the p->piece[] array, recalculate all necessary data
  */
 
-void RecalcAttacks(struct Position *p) {
+void dbase_recalc_attacks(struct Position *p) {
     int i;
     BitBoard tmp;
 
@@ -808,12 +811,12 @@ void RecalcAttacks(struct Position *p) {
 
     tmp = p->mask[White][0];
     while (tmp) {
-        int i = FindSetBit(tmp);
+        int i = bitboard_find_set_bit(tmp);
         int pc = p->piece[i];
         tmp &= tmp - 1;
-        SetBit(p->mask[White][pc], i);
+        bitboard_set_bit(p->mask[White][pc], i);
         if (is_sliding(pc))
-            SetBit(p->slidingPieces, i);
+            bitboard_set_bit(p->slidingPieces, i);
         p->material[White] += Value[pc];
         p->hkey ^= HashKeys[White][pc][i];
         if (pc != Pawn)
@@ -829,12 +832,12 @@ void RecalcAttacks(struct Position *p) {
 
     tmp = p->mask[Black][0];
     while (tmp) {
-        int i = FindSetBit(tmp);
+        int i = bitboard_find_set_bit(tmp);
         int pc = -p->piece[i];
         tmp &= tmp - 1;
-        SetBit(p->mask[Black][pc], i);
+        bitboard_set_bit(p->mask[Black][pc], i);
         if (is_sliding(pc))
-            SetBit(p->slidingPieces, i);
+            bitboard_set_bit(p->slidingPieces, i);
         p->material[Black] += Value[pc];
         p->hkey ^= HashKeys[Black][pc][i];
         if (pc != Pawn)
@@ -850,20 +853,20 @@ void RecalcAttacks(struct Position *p) {
 
     tmp = p->mask[White][0];
     while (tmp) {
-        int i = FindSetBit(tmp);
+        int i = bitboard_find_set_bit(tmp);
         tmp &= tmp - 1;
-        AtkSet(p, p->piece[i], White, i);
+        dbase_atk_set(p, p->piece[i], White, i);
     }
 
     tmp = p->mask[Black][0];
     while (tmp) {
-        int i = FindSetBit(tmp);
+        int i = bitboard_find_set_bit(tmp);
         tmp &= tmp - 1;
-        AtkSet(p, -p->piece[i], Black, i);
+        dbase_atk_set(p, -p->piece[i], Black, i);
     }
 
-    p->kingSq[White] = (int8_t)FindSetBit(p->mask[White][King]);
-    p->kingSq[Black] = (int8_t)FindSetBit(p->mask[Black][King]);
+    p->kingSq[White] = (int8_t)bitboard_find_set_bit(p->mask[White][King]);
+    p->kingSq[Black] = (int8_t)bitboard_find_set_bit(p->mask[Black][King]);
 
     p->hkey ^= HashKeysCastle[p->castle];
     if (p->turn == Black)
@@ -877,24 +880,27 @@ void RecalcAttacks(struct Position *p) {
 /*
  * Generate all capturing moves to a square "square"
  */
-void GenTo(struct Position *p, Square square, heap_t heap) {
+void dbase_gen_to(struct Position *p, Square square, heap_t heap) {
     BitBoard tmp = p->atkFr[square] & p->mask[p->turn][0];
 
     while (tmp) {
-        int i = FindSetBit(tmp);
+        int i = bitboard_find_set_bit(tmp);
         tmp &= tmp - 1;
-        if (TYPE(p->piece[i]) == Pawn && is_promo_square(square)) {
-            append_to_heap(heap, make_promotion(i, square, Queen, M_CAPTURE));
-            append_to_heap(heap, make_promotion(i, square, Knight, M_CAPTURE));
-            append_to_heap(heap, make_promotion(i, square, Rook, M_CAPTURE));
-            append_to_heap(heap, make_promotion(i, square, Bishop, M_CAPTURE));
+        if (TYPE(p->piece[i]) == Pawn && dbase_is_promo_square(square)) {
+            heap_append(heap,
+                        dbase_make_promotion(i, square, Queen, M_CAPTURE));
+            heap_append(heap,
+                        dbase_make_promotion(i, square, Knight, M_CAPTURE));
+            heap_append(heap, dbase_make_promotion(i, square, Rook, M_CAPTURE));
+            heap_append(heap,
+                        dbase_make_promotion(i, square, Bishop, M_CAPTURE));
         } else {
-            append_to_heap(heap, make_move(i, square, M_CAPTURE));
+            heap_append(heap, dbase_make_move(i, square, M_CAPTURE));
         }
     }
 }
 
-void GenEnpas(struct Position *p, heap_t heap) {
+void dbase_gen_enpas(struct Position *p, heap_t heap) {
     BitBoard tmp;
 
     if (!p->enPassant)
@@ -902,9 +908,9 @@ void GenEnpas(struct Position *p, heap_t heap) {
 
     tmp = p->atkFr[p->enPassant] & p->mask[p->turn][Pawn];
     while (tmp) {
-        int i = FindSetBit(tmp);
+        int i = bitboard_find_set_bit(tmp);
         tmp &= tmp - 1;
-        append_to_heap(heap, make_move(i, p->enPassant, M_ENPASSANT));
+        heap_append(heap, dbase_make_move(i, p->enPassant, M_ENPASSANT));
     }
 }
 
@@ -912,16 +918,16 @@ void GenEnpas(struct Position *p, heap_t heap) {
  * Generate all non-capturing moves from "square"
  */
 
-void GenFrom(struct Position *p, Square square, heap_t heap) {
+void dbase_gen_from(struct Position *p, Square square, heap_t heap) {
     if (TYPE(p->piece[square]) != Pawn) {
         BitBoard tmp;
 
         tmp = p->atkTo[square] & ~(p->mask[White][0] | p->mask[Black][0]);
 
         while (tmp) {
-            int i = FindSetBit(tmp);
+            int i = bitboard_find_set_bit(tmp);
             tmp &= tmp - 1;
-            append_to_heap(heap, make_move(square, i, 0));
+            heap_append(heap, dbase_make_move(square, i, 0));
         }
 
         /* Generate castling moves
@@ -931,33 +937,33 @@ void GenFrom(struct Position *p, Square square, heap_t heap) {
         if (TYPE(p->piece[square]) == King) {
             if (p->castle & CastleMask[p->turn][0]) {
                 /* OK, we might castle king p->turn */
-                append_to_heap(heap, make_move(p->turn == White ? e1 : e8,
-                                               p->turn == White ? g1 : g8,
-                                               M_SCASTLE));
+                heap_append(heap, dbase_make_move(p->turn == White ? e1 : e8,
+                                                  p->turn == White ? g1 : g8,
+                                                  M_SCASTLE));
             }
             if (p->castle & CastleMask[p->turn][1]) {
-                append_to_heap(heap, make_move(p->turn == White ? e1 : e8,
-                                               p->turn == White ? c1 : c8,
-                                               M_LCASTLE));
+                heap_append(heap, dbase_make_move(p->turn == White ? e1 : e8,
+                                                  p->turn == White ? c1 : c8,
+                                                  M_LCASTLE));
             }
         }
     } else {
         int sq = (p->turn == White ? square + 8 : square - 8);
 
         if (p->piece[sq] == Neutral) {
-            if (is_promo_square(sq)) {
-                append_to_heap(heap, make_promotion(square, sq, Queen, 0));
-                append_to_heap(heap, make_promotion(square, sq, Knight, 0));
-                append_to_heap(heap, make_promotion(square, sq, Rook, 0));
-                append_to_heap(heap, make_promotion(square, sq, Bishop, 0));
+            if (dbase_is_promo_square(sq)) {
+                heap_append(heap, dbase_make_promotion(square, sq, Queen, 0));
+                heap_append(heap, dbase_make_promotion(square, sq, Knight, 0));
+                heap_append(heap, dbase_make_promotion(square, sq, Rook, 0));
+                heap_append(heap, dbase_make_promotion(square, sq, Bishop, 0));
             } else {
-                append_to_heap(heap, make_move(square, sq, 0));
+                heap_append(heap, dbase_make_move(square, sq, 0));
 
                 if ((p->turn == White && square <= h2) ||
                     (p->turn == Black && square >= a7)) {
                     sq = (p->turn == White ? sq + 8 : sq - 8);
                     if (p->piece[sq] == Neutral) {
-                        append_to_heap(heap, make_move(square, sq, M_PAWND));
+                        heap_append(heap, dbase_make_move(square, sq, M_PAWND));
                     }
                 }
             }
@@ -969,13 +975,13 @@ void GenFrom(struct Position *p, Square square, heap_t heap) {
  * Test if castling is legal
  */
 
-bool MayCastle(struct Position *p, move_t move) {
+bool dbase_may_castle(struct Position *p, move_t move) {
     /* Sometimes there might be a legal castling move, but for the
        wrong p->turn, probably from the Countermove table */
     if (M_FROM(move) != ((p->turn == White) ? e1 : e8))
         return false;
 
-    if (InCheck(p, p->turn))
+    if (dbase_in_check(p, p->turn))
         return false;
 
     /* king p->turn castling */
@@ -1017,7 +1023,7 @@ bool MayCastle(struct Position *p, move_t move) {
  * Test if a move is legal
  */
 
-bool LegalMove(struct Position *p, move_t move) {
+bool dbase_legal_move(struct Position *p, move_t move) {
     int fr = M_FROM(move);
     int to = M_TO(move);
 
@@ -1045,7 +1051,7 @@ bool LegalMove(struct Position *p, move_t move) {
          */
 
         if (!SAME_COLOR(p->piece[to], OPP(p->turn)) ||
-            !TstBit(p->atkTo[fr], to)) {
+            !bitboard_tst_bit(p->atkTo[fr], to)) {
             return false;
         }
         return true;
@@ -1058,13 +1064,13 @@ bool LegalMove(struct Position *p, move_t move) {
             return false;
         if (TYPE(p->piece[fr]) != Pawn || to != p->enPassant)
             return false;
-        if (!TstBit(p->atkTo[fr], to))
+        if (!bitboard_tst_bit(p->atkTo[fr], to))
             return false;
 
         return true;
     } else if (move & M_CANY) {
         /* Call the castling test routine */
-        return MayCastle(p, move);
+        return dbase_may_castle(p, move);
     } else {
         /* target sqaure must be empty */
         if (p->piece[to] != Neutral)
@@ -1072,7 +1078,7 @@ bool LegalMove(struct Position *p, move_t move) {
 
         if (TYPE(p->piece[fr]) != Pawn) {
             /* if no pawn, we must attack to square */
-            if (!TstBit(p->atkTo[fr], to))
+            if (!bitboard_tst_bit(p->atkTo[fr], to))
                 return false;
             if (move & M_PAWND)
                 return false;
@@ -1103,37 +1109,37 @@ bool LegalMove(struct Position *p, move_t move) {
  * Test wether a move will give check
  */
 
-bool IsCheckingMove(struct Position *p, move_t move) {
+bool dbase_is_checking_move(struct Position *p, move_t move) {
     int fr = M_FROM(move);
     int to = M_TO(move);
     int tp = TYPE(p->piece[fr]);
-    int kp = FindSetBit(p->mask[OPP(p->turn)][King]);
+    int kp = bitboard_find_set_bit(p->mask[OPP(p->turn)][King]);
     BitBoard tmp;
 
     /* Is it a direct check ? */
 
     if (move & M_PROMOTION_MASK)
-        tp = PromoType(move);
+        tp = dbase_promo_type(move);
 
     switch (tp) {
     case Knight:
-        if (TstBit(KnightEPM[kp], to))
+        if (bitboard_tst_bit(KnightEPM[kp], to))
             return true;
         break;
     case Bishop:
-        if (TstBit(BishopEPM[kp], to)) {
+        if (bitboard_tst_bit(BishopEPM[kp], to)) {
             if (!((p->mask[White][0] | p->mask[Black][0]) & InterPath[kp][to]))
                 return true;
         }
         break;
     case Rook:
-        if (TstBit(RookEPM[kp], to)) {
+        if (bitboard_tst_bit(RookEPM[kp], to)) {
             if (!((p->mask[White][0] | p->mask[Black][0]) & InterPath[kp][to]))
                 return true;
         }
         break;
     case Queen:
-        if (TstBit(QueenEPM[kp], to)) {
+        if (bitboard_tst_bit(QueenEPM[kp], to)) {
             if (!((p->mask[White][0] | p->mask[Black][0]) & InterPath[kp][to]))
                 return true;
         }
@@ -1163,17 +1169,17 @@ bool IsCheckingMove(struct Position *p, move_t move) {
           QueenEPM[kp];
 
     while (tmp) {
-        int i = FindSetBit(tmp);
+        int i = bitboard_find_set_bit(tmp);
         BitBoard tmp2;
 
         tmp &= tmp - 1;
-        if (TYPE(p->piece[i]) == Bishop && !TstBit(BishopEPM[kp], i))
+        if (TYPE(p->piece[i]) == Bishop && !bitboard_tst_bit(BishopEPM[kp], i))
             continue;
-        if (TYPE(p->piece[i]) == Rook && !TstBit(RookEPM[kp], i))
+        if (TYPE(p->piece[i]) == Rook && !bitboard_tst_bit(RookEPM[kp], i))
             continue;
 
         tmp2 = (p->mask[White][0] | p->mask[Black][0]) & InterPath[kp][i];
-        if (CountBits(tmp2) == 1 && FindSetBit(tmp2) == fr)
+        if (bitboard_count_bits(tmp2) == 1 && bitboard_find_set_bit(tmp2) == fr)
             return true;
     }
 
@@ -1186,7 +1192,7 @@ bool IsCheckingMove(struct Position *p, move_t move) {
  * not be checks!
  */
 
-void GenChecks(struct Position *p, heap_t heap) {
+void dbase_gen_checks(struct Position *p, heap_t heap) {
     BitBoard tmp;
     BitBoard fr;
     int kp = p->kingSq[OPP(p->turn)];
@@ -1201,17 +1207,17 @@ void GenChecks(struct Position *p, heap_t heap) {
     tmp = (p->mask[p->turn][Bishop] | p->mask[p->turn][Queen]) & BishopEPM[kp];
 
     while (tmp) {
-        int i = FindSetBit(tmp);
+        int i = bitboard_find_set_bit(tmp);
         tmp &= tmp - 1;
         if (ip[i] && !(ip[i] & p->mask[OPP(p->turn)][0])) {
             BitBoard tmp2 = p->mask[p->turn][0] & ip[i];
 
-            if (CountBits(tmp2) == 1) {
-                int j = FindSetBit(tmp2);
+            if (bitboard_count_bits(tmp2) == 1) {
+                int j = bitboard_find_set_bit(tmp2);
 
-                if (TstBit(fsq, j)) {
-                    GenFrom(p, j, heap);
-                    ClrBit(fsq, j);
+                if (bitboard_tst_bit(fsq, j)) {
+                    dbase_gen_from(p, j, heap);
+                    bitboard_clr_bit(fsq, j);
                 }
             }
         }
@@ -1220,17 +1226,17 @@ void GenChecks(struct Position *p, heap_t heap) {
     tmp = (p->mask[p->turn][Rook] | p->mask[p->turn][Queen]) & RookEPM[kp];
 
     while (tmp) {
-        int i = FindSetBit(tmp);
+        int i = bitboard_find_set_bit(tmp);
         tmp &= tmp - 1;
         if (ip[i] && !(ip[i] & p->mask[OPP(p->turn)][0])) {
             BitBoard tmp2 = p->mask[p->turn][0] & ip[i];
 
-            if (CountBits(tmp2) == 1) {
-                int j = FindSetBit(tmp2);
+            if (bitboard_count_bits(tmp2) == 1) {
+                int j = bitboard_find_set_bit(tmp2);
 
-                if (TstBit(fsq, j)) {
-                    GenFrom(p, j, heap);
-                    ClrBit(fsq, j);
+                if (bitboard_tst_bit(fsq, j)) {
+                    dbase_gen_from(p, j, heap);
+                    bitboard_clr_bit(fsq, j);
                 }
             }
         }
@@ -1244,16 +1250,16 @@ void GenChecks(struct Position *p, heap_t heap) {
     fr &= fsq;
 
     while (fr) {
-        int sq = FindSetBit(fr);
+        int sq = bitboard_find_set_bit(fr);
         BitBoard tmp2 = p->atkTo[sq] & tmp;
         fr &= fr - 1;
 
         while (tmp2) {
-            int sq2 = FindSetBit(tmp2);
+            int sq2 = bitboard_find_set_bit(tmp2);
             tmp2 &= tmp2 - 1;
             if (InterPath[kp][sq2] & all)
                 continue;
-            append_to_heap(heap, make_move(sq, sq2, 0));
+            heap_append(heap, dbase_make_move(sq, sq2, 0));
         }
     }
 
@@ -1265,16 +1271,16 @@ void GenChecks(struct Position *p, heap_t heap) {
     fr &= fsq;
 
     while (fr) {
-        int sq = FindSetBit(fr);
+        int sq = bitboard_find_set_bit(fr);
         BitBoard tmp2 = p->atkTo[sq] & tmp;
         fr &= fr - 1;
 
         while (tmp2) {
-            int sq2 = FindSetBit(tmp2);
+            int sq2 = bitboard_find_set_bit(tmp2);
             tmp2 &= tmp2 - 1;
             if (InterPath[kp][sq2] & all)
                 continue;
-            append_to_heap(heap, make_move(sq, sq2, 0));
+            heap_append(heap, dbase_make_move(sq, sq2, 0));
         }
     }
 
@@ -1286,16 +1292,16 @@ void GenChecks(struct Position *p, heap_t heap) {
     fr &= fsq;
 
     while (fr) {
-        int sq = FindSetBit(fr);
+        int sq = bitboard_find_set_bit(fr);
         BitBoard tmp2;
 
         fr &= fr - 1;
         tmp2 = p->atkTo[sq] & tmp;
 
         while (tmp2) {
-            int sq2 = FindSetBit(tmp2);
+            int sq2 = bitboard_find_set_bit(tmp2);
             tmp2 &= tmp2 - 1;
-            append_to_heap(heap, make_move(sq, sq2, 0));
+            heap_append(heap, dbase_make_move(sq, sq2, 0));
         }
     }
 
@@ -1307,16 +1313,16 @@ void GenChecks(struct Position *p, heap_t heap) {
     tmp &= ~(p->mask[White][0] | p->mask[Black][0]);
 
     while (tmp) {
-        int sq = FindSetBit(tmp);
+        int sq = bitboard_find_set_bit(tmp);
         tmp &= tmp - 1;
 
         if (p->turn == White) {
             if (p->piece[sq - 8] == Pawn) {
-                append_to_heap(heap, make_move(sq - 8, sq, 0));
+                heap_append(heap, dbase_make_move(sq - 8, sq, 0));
             }
         } else {
             if (p->piece[sq + 8] == -Pawn) {
-                append_to_heap(heap, make_move(sq + 8, sq, 0));
+                heap_append(heap, dbase_make_move(sq + 8, sq, 0));
             }
         }
     }
@@ -1328,7 +1334,7 @@ void GenChecks(struct Position *p, heap_t heap) {
  * if mode = false, only check if current position is repeated
  */
 
-int Repeated(struct Position *p, int mode) {
+int dbase_repeated(struct Position *p, int mode) {
     int i, cnt = 0;
     struct GameLog *gl;
 
@@ -1364,7 +1370,7 @@ int Repeated(struct Position *p, int mode) {
  * Returns:
  *   the pointer to the generated string (buffer)
  */
-char *SAN(struct Position *p, move_t move, char *buffer) {
+char *dbase_san(struct Position *p, move_t move, char *buffer) {
     char *x = buffer;
 
     int8_t to = M_TO(move);
@@ -1381,7 +1387,7 @@ char *SAN(struct Position *p, move_t move, char *buffer) {
 
         if (move & M_PROMOTION_MASK) {
             *(x++) = '=';
-            *(x++) = PieceName[PromoType(move)];
+            *(x++) = PieceName[dbase_promo_type(move)];
         }
     } else if (move & M_CANY) {
         *(x++) = 'O';
@@ -1402,7 +1408,7 @@ char *SAN(struct Position *p, move_t move, char *buffer) {
 
         /* check for ambigous move */
         while (tmp) {
-            i = FindSetBit(tmp);
+            i = bitboard_find_set_bit(tmp);
             tmp &= tmp - 1;
             if (i != fr) {
                 int incheck;
@@ -1416,9 +1422,9 @@ char *SAN(struct Position *p, move_t move, char *buffer) {
                 if (p->piece[to])
                     tmove |= M_CAPTURE;
 
-                DoMove(p, tmove);
-                incheck = InCheck(p, OPP(p->turn));
-                UndoMove(p, tmove);
+                dbase_do_move(p, tmove);
+                incheck = dbase_in_check(p, OPP(p->turn));
+                dbase_undo_move(p, tmove);
 
                 if (incheck)
                     continue;
@@ -1452,14 +1458,14 @@ char *SAN(struct Position *p, move_t move, char *buffer) {
         *(x++) = '1' + (to >> 3);
     }
 
-    DoMove(p, move);
-    if (InCheck(p, p->turn)) {
-        if (!LegalMoves(p, NULL))
+    dbase_do_move(p, move);
+    if (dbase_in_check(p, p->turn)) {
+        if (!dbase_legal_moves(p, NULL))
             *(x++) = '#';
         else
             *(x++) = '+';
     }
-    UndoMove(p, move);
+    dbase_undo_move(p, move);
 
     *x = '\0';
     return buffer;
@@ -1469,7 +1475,7 @@ char *SAN(struct Position *p, move_t move, char *buffer) {
  * Generate the ICS SAN for a move
  */
 
-char *ICS_SAN(move_t move) {
+char *dbase_ics_san(move_t move) {
     static char buffer[16];
     char *x = buffer;
 
@@ -1484,7 +1490,7 @@ char *ICS_SAN(move_t move) {
     *(x++) = 'a' + (to & 7);
     *(x++) = '1' + (to >> 3);
     if (move & M_PROMOTION_MASK) {
-        *(x++) = PieceName[PromoType(move)];
+        *(x++) = PieceName[dbase_promo_type(move)];
     }
     *x = '\0';
     return buffer;
@@ -1499,7 +1505,7 @@ move_t parse_gsan_internal(struct Position *p, char *san, heap_t heap) {
         !strncmp(san, "0-0-0", 5)) {
         move_t move =
             M_LCASTLE | (p->turn == White ? (c1 << 6) + e1 : (c8 << 6) + e8);
-        if (MayCastle(p, move))
+        if (dbase_may_castle(p, move))
             return move;
     }
 
@@ -1507,7 +1513,7 @@ move_t parse_gsan_internal(struct Position *p, char *san, heap_t heap) {
         !strncmp(san, "0-0", 3)) {
         move_t move =
             M_SCASTLE | (p->turn == White ? (g1 << 6) + e1 : (g8 << 6) + e8);
-        if (MayCastle(p, move))
+        if (dbase_may_castle(p, move))
             return move;
     }
 
@@ -1515,7 +1521,7 @@ move_t parse_gsan_internal(struct Position *p, char *san, heap_t heap) {
         return M_NONE;
     }
 
-    (void)LegalMoves(p, heap);
+    (void)dbase_legal_moves(p, heap);
 
     int fr = *san - 'a' + 8 * (*(san + 1) - '1');
     int to = *(san + 2) - 'a' + 8 * (*(san + 3) - '1');
@@ -1545,10 +1551,10 @@ move_t parse_gsan_internal(struct Position *p, char *san, heap_t heap) {
     return M_NONE;
 }
 
-move_t ParseGSAN(struct Position *p, char *san) {
-    heap_t heap = allocate_heap();
+move_t dbase_parse_gsan(struct Position *p, char *san) {
+    heap_t heap = heap_allocate();
     move_t move = parse_gsan_internal(p, san, heap);
-    free_heap(heap);
+    heap_free(heap);
 
     return move;
 }
@@ -1557,7 +1563,7 @@ move_t ParseGSAN(struct Position *p, char *san) {
  * Parse a move string in e2e4 notation against a supplied move list
  */
 
-move_t ParseGSANList(char *san, Color side, move_t *mvs, int cnt) {
+move_t dbase_parse_gsan_list(char *san, Color side, move_t *mvs, int cnt) {
     int fr, to;
     int mask;
     int i;
@@ -1614,11 +1620,11 @@ move_t ParseGSANList(char *san, Color side, move_t *mvs, int cnt) {
  * Test a pseudolegal move for legality
  */
 
-static bool TryMove(struct Position *p, move_t move) {
+static bool dbase_try_move(struct Position *p, move_t move) {
     bool tmp;
-    DoMove(p, move);
-    tmp = InCheck(p, OPP(p->turn));
-    UndoMove(p, move);
+    dbase_do_move(p, move);
+    tmp = dbase_in_check(p, OPP(p->turn));
+    dbase_undo_move(p, move);
 
     return !tmp;
 }
@@ -1638,7 +1644,7 @@ static move_t parse_san_with_heap(struct Position *p, char *san, heap_t heap) {
     if (!strncmp(san, "O-O-O", 5) || !strncmp(san, "o-o-o", 5) ||
         !strncmp(san, "0-0-0", 5)) {
         move = M_LCASTLE | (p->turn == White ? (c1 << 6) + e1 : (c8 << 6) + e8);
-        if (MayCastle(p, move))
+        if (dbase_may_castle(p, move))
             return move;
         else
             return M_NONE;
@@ -1647,13 +1653,13 @@ static move_t parse_san_with_heap(struct Position *p, char *san, heap_t heap) {
     if (!strncmp(san, "O-O", 3) || !strncmp(san, "o-o", 3) ||
         !strncmp(san, "0-0", 3)) {
         move = M_SCASTLE | (p->turn == White ? (g1 << 6) + e1 : (g8 << 6) + e8);
-        if (MayCastle(p, move))
+        if (dbase_may_castle(p, move))
             return move;
         else
             return M_NONE;
     }
 
-    PLegalMoves(p, heap);
+    dbase_plegal_moves(p, heap);
 
     /* special handling of pawn captures a la 'cd' */
     if (strlen(san) == 2 && *san >= 'a' && *san <= 'h' && *(san + 1) >= 'a' &&
@@ -1669,7 +1675,7 @@ static move_t parse_san_with_heap(struct Position *p, char *san, heap_t heap) {
 
             if (TYPE(p->piece[fr]) == Pawn &&
                 (move & (M_CAPTURE | M_ENPASSANT)) && (fr & 7) == ffl &&
-                (to & 7) == tfl && TryMove(p, move))
+                (to & 7) == tfl && dbase_try_move(p, move))
                 return move;
         }
         return M_NONE;
@@ -1755,9 +1761,9 @@ static move_t parse_san_with_heap(struct Position *p, char *san, heap_t heap) {
             continue;
         if (frk != -1 && (fr >> 3) != frk)
             continue;
-        if (pro && (PromoType(move) != pro))
+        if (pro && (dbase_promo_type(move) != pro))
             continue;
-        if (!TryMove(p, move))
+        if (!dbase_try_move(p, move))
             continue;
 
         return move;
@@ -1766,10 +1772,10 @@ static move_t parse_san_with_heap(struct Position *p, char *san, heap_t heap) {
     return M_NONE;
 }
 
-move_t ParseSAN(struct Position *p, char *san) {
-    heap_t heap = allocate_heap();
+move_t dbase_parse_san(struct Position *p, char *san) {
+    heap_t heap = heap_allocate();
     move_t move = parse_san_with_heap(p, san, heap);
-    free_heap(heap);
+    heap_free(heap);
     return move;
 }
 
@@ -1777,7 +1783,8 @@ move_t ParseSAN(struct Position *p, char *san) {
  * Parse a move string (in SAN) against supplied move list
  */
 
-move_t ParseSANList(char *san, Color side, move_t *mvs, int cnt, int *pmap) {
+move_t dbase_parse_san_list(char *san, Color side, move_t *mvs, int cnt,
+                            int *pmap) {
     int tp = Neutral;
     int frk = -1, ffl = -1, trk = -1, tfl = -1;
     int pro = 0;
@@ -1899,7 +1906,7 @@ move_t ParseSANList(char *san, Color side, move_t *mvs, int cnt, int *pmap) {
             continue;
         if (frk != -1 && (fr >> 3) != frk)
             continue;
-        if (pro && (PromoType(mvs[i]) != pro))
+        if (pro && (dbase_promo_type(mvs[i]) != pro))
             continue;
 
         return mvs[i];
@@ -1913,26 +1920,26 @@ move_t ParseSANList(char *san, Color side, move_t *mvs, int cnt, int *pmap) {
  * or test if there are any, if mvs = NULL
  */
 
-void PLegalMoves(struct Position *p, heap_t heap) {
+void dbase_plegal_moves(struct Position *p, heap_t heap) {
     BitBoard tmp;
 
     tmp = p->mask[OPP(p->turn)][0];
     while (tmp) {
-        int j = FindSetBit(tmp);
+        int j = bitboard_find_set_bit(tmp);
         tmp &= tmp - 1;
 
-        GenTo(p, j, heap);
+        dbase_gen_to(p, j, heap);
     }
 
     tmp = p->mask[p->turn][0];
     while (tmp) {
-        int j = FindSetBit(tmp);
+        int j = bitboard_find_set_bit(tmp);
         tmp &= tmp - 1;
 
-        GenFrom(p, j, heap);
+        dbase_gen_from(p, j, heap);
     }
 
-    GenEnpas(p, heap);
+    dbase_gen_enpas(p, heap);
 }
 
 /**
@@ -1947,74 +1954,74 @@ void legal_moves_internal(struct Position *p, heap_t heap, heap_t tmp_heap) {
 
     tmp = p->mask[OPP(p->turn)][0];
     while (tmp) {
-        int j = FindSetBit(tmp);
+        int j = bitboard_find_set_bit(tmp);
         unsigned int i;
         tmp &= tmp - 1;
 
-        push_section(tmp_heap);
-        GenTo(p, j, tmp_heap);
+        heap_push_section(tmp_heap);
+        dbase_gen_to(p, j, tmp_heap);
 
         for (i = tmp_heap->current_section->start;
              i < tmp_heap->current_section->end; i++) {
             move_t move = tmp_heap->data[i];
-            DoMove(p, move);
-            if (!InCheck(p, OPP(p->turn))) {
-                append_to_heap(heap, move);
+            dbase_do_move(p, move);
+            if (!dbase_in_check(p, OPP(p->turn))) {
+                heap_append(heap, move);
             }
-            UndoMove(p, move);
+            dbase_undo_move(p, move);
         }
 
-        pop_section(tmp_heap);
+        heap_pop_section(tmp_heap);
     }
 
     tmp = p->mask[p->turn][0];
     while (tmp) {
-        int j = FindSetBit(tmp);
+        int j = bitboard_find_set_bit(tmp);
         unsigned int i;
         tmp &= tmp - 1;
 
-        push_section(tmp_heap);
-        GenFrom(p, j, tmp_heap);
+        heap_push_section(tmp_heap);
+        dbase_gen_from(p, j, tmp_heap);
 
         for (i = tmp_heap->current_section->start;
              i < tmp_heap->current_section->end; i++) {
             move_t move = tmp_heap->data[i];
-            if ((move & M_CANY) && !MayCastle(p, move))
+            if ((move & M_CANY) && !dbase_may_castle(p, move))
                 continue;
 
-            DoMove(p, move);
-            if (!InCheck(p, OPP(p->turn))) {
-                append_to_heap(heap, move);
+            dbase_do_move(p, move);
+            if (!dbase_in_check(p, OPP(p->turn))) {
+                heap_append(heap, move);
             }
-            UndoMove(p, move);
+            dbase_undo_move(p, move);
         }
 
-        pop_section(tmp_heap);
+        heap_pop_section(tmp_heap);
     }
 
-    push_section(tmp_heap);
-    GenEnpas(p, tmp_heap);
+    heap_push_section(tmp_heap);
+    dbase_gen_enpas(p, tmp_heap);
     {
         unsigned int i;
         for (i = tmp_heap->current_section->start;
              i < tmp_heap->current_section->end; i++) {
             move_t move = tmp_heap->data[i];
-            DoMove(p, move);
-            if (!InCheck(p, OPP(p->turn))) {
-                append_to_heap(heap, move);
+            dbase_do_move(p, move);
+            if (!dbase_in_check(p, OPP(p->turn))) {
+                heap_append(heap, move);
             }
-            UndoMove(p, move);
+            dbase_undo_move(p, move);
         }
     }
-    pop_section(tmp_heap);
+    heap_pop_section(tmp_heap);
 }
 
-int LegalMoves(struct Position *p, heap_t heap) {
-    heap_t tmp_heap = allocate_heap();
+int dbase_legal_moves(struct Position *p, heap_t heap) {
+    heap_t tmp_heap = heap_allocate();
     heap_t destination = heap;
 
     if (heap == NULL) {
-        destination = allocate_heap();
+        destination = heap_allocate();
     }
 
     legal_moves_internal(p, destination, tmp_heap);
@@ -2023,125 +2030,125 @@ int LegalMoves(struct Position *p, heap_t heap) {
         destination->current_section->end - destination->current_section->start;
 
     if (heap == NULL) {
-        free_heap(destination);
+        heap_free(destination);
     }
 
-    free_heap(tmp_heap);
+    heap_free(tmp_heap);
 
     return cnt;
 }
 
 /*
- * Print the current position
+ * print the current position
  */
 
-void ShowPosition(struct Position *p) {
+void dbase_show_position(struct Position *p) {
     int rk, fl;
 
-    Print(0, "        +---+---+---+---+---+---+---+---+\n");
+    print(0, "        +---+---+---+---+---+---+---+---+\n");
     for (rk = 7; rk >= 0; rk--) {
         char indicator =
             ((rk == 7) && (p->turn)) || ((rk == 0) && (!p->turn)) ? '>' : ' ';
-        Print(0, "    %c %c ", indicator, '1' + rk);
+        print(0, "    %c %c ", indicator, '1' + rk);
         for (fl = 0; fl < 8; fl++) {
             int i = (rk << 3) + fl;
 
-            Print(0, "|");
+            print(0, "|");
             if (p->enPassant && i == p->enPassant)
-                Print(0, "<E>");
+                print(0, "<E>");
             else {
                 if (p->piece[i] < 0)
-                    Print(0, "*");
+                    print(0, "*");
                 else
-                    Print(0, " ");
-                Print(0, "%c", PieceName[TYPE(p->piece[i])]);
+                    print(0, " ");
+                print(0, "%c", PieceName[TYPE(p->piece[i])]);
                 if (p->piece[i] < 0)
-                    Print(0, "*");
+                    print(0, "*");
                 else
-                    Print(0, " ");
+                    print(0, " ");
             }
         }
         if (rk == 4) {
             int bit;
-            Print(0, "|   Black (%5d, %5d)  ", p->material[Black],
+            print(0, "|   Black (%5d, %5d)  ", p->material[Black],
                   p->nonPawn[Black]);
             for (bit = 0; bit < 5; bit++) {
-                Print(0, "%c",
+                print(0, "%c",
                       (p->material_signature[Black] & (1 << bit))
                           ? PieceName[bit + 1]
                           : '.');
             }
-            Print(0, "\n");
+            print(0, "\n");
         } else if (rk == 3) {
             int bit;
-            Print(0, "|   White (%5d, %5d)  ", p->material[White],
+            print(0, "|   White (%5d, %5d)  ", p->material[White],
                   p->nonPawn[White]);
             for (bit = 0; bit < 5; bit++) {
-                Print(0, "%c",
+                print(0, "%c",
                       (p->material_signature[White] & (1 << bit))
                           ? PieceName[bit + 1]
                           : '.');
             }
-            Print(0, "\n");
+            print(0, "\n");
         } else if (rk == 6) {
-            Print(0, "|   Hashkey: %llx\n", p->hkey);
+            print(0, "|   Hashkey: %llx\n", p->hkey);
         } else if (rk == 1) {
-            Print(0, "|   Index: %d\n", RECOGNIZER_INDEX(p));
+            print(0, "|   Index: %d\n", RECOGNIZER_INDEX(p));
         } else if (rk == 0) {
-            Print(0, "|   MateThreat: %d %d\n", MateThreat(p, White),
-                  MateThreat(p, Black));
+            print(0, "|   mates_threat: %d %d\n", mates_threat(p, White),
+                  mates_threat(p, Black));
         } else {
-            Print(0, "|\n");
+            print(0, "|\n");
         }
-        Print(0, "        +---+---+---+---+---+---+---+---+\n");
+        print(0, "        +---+---+---+---+---+---+---+---+\n");
     }
-    Print(0, "          a   b   c   d   e   f   g   h\n");
+    print(0, "          a   b   c   d   e   f   g   h\n");
 }
 
 /*
  * Display all legal moves.
  */
 
-void ShowMoves(struct Position *p) {
+void dbase_show_moves(struct Position *p) {
     unsigned int i;
     char san_buffer[16];
 
-    heap_t heap = allocate_heap();
+    heap_t heap = heap_allocate();
 
-    push_section(heap);
-    LegalMoves(p, heap);
+    heap_push_section(heap);
+    dbase_legal_moves(p, heap);
 
     for (i = heap->current_section->start; i < heap->current_section->end;
          i++) {
         move_t move = heap->data[i];
-        Print(0, "%s ", SAN(p, move, san_buffer));
-        if (IsCheckingMove(p, move))
-            Print(0, "(check) ");
-        if (!LegalMove(p, move)) {
-            Print(0, "(rejected?!) ");
+        print(0, "%s ", dbase_san(p, move, san_buffer));
+        if (dbase_is_checking_move(p, move))
+            print(0, "(check) ");
+        if (!dbase_legal_move(p, move)) {
+            print(0, "(rejected?!) ");
         }
         if (move & (M_CAPTURE | M_ENPASSANT)) {
-            Print(0, "(%d) ", SwapOff(p, move));
+            print(0, "(%d) ", swap_off(p, move));
         }
     }
-    Print(0, "\n");
+    print(0, "\n");
 
-    pop_section(heap);
+    heap_pop_section(heap);
 
-    push_section(heap);
-    GenChecks(p, heap);
+    heap_push_section(heap);
+    dbase_gen_checks(p, heap);
 
     if (heap->current_section->end > heap->current_section->start) {
-        Print(0, "Checks: ");
+        print(0, "Checks: ");
         for (i = heap->current_section->start; i < heap->current_section->end;
              i++) {
             move_t move = heap->data[i];
-            Print(0, "%s ", SAN(p, move, san_buffer));
+            print(0, "%s ", dbase_san(p, move, san_buffer));
         }
-        Print(0, "\n");
+        print(0, "\n");
     }
 
-    free_heap(heap);
+    heap_free(heap);
 }
 
 /*
@@ -2154,7 +2161,7 @@ int badmove[MAX_EPD_MOVES];
 /**
  * Read a position from an EPD string.
  */
-static void ReadEPD(struct Position *p, char *x) {
+static void dbase_read_epd(struct Position *p, char *x) {
     int rk = 7, fl = 0;
     int i;
     char *ops[MAX_EPD_OPS];
@@ -2191,62 +2198,62 @@ static void ReadEPD(struct Position *p, char *x) {
             break;
         case 'P':
             p->piece[fl + (rk << 3)] = Pawn;
-            SetBit(p->mask[White][0], fl + (rk << 3));
+            bitboard_set_bit(p->mask[White][0], fl + (rk << 3));
             fl++;
             break;
         case 'N':
             p->piece[fl + (rk << 3)] = Knight;
-            SetBit(p->mask[White][0], fl + (rk << 3));
+            bitboard_set_bit(p->mask[White][0], fl + (rk << 3));
             fl++;
             break;
         case 'B':
             p->piece[fl + (rk << 3)] = Bishop;
-            SetBit(p->mask[White][0], fl + (rk << 3));
+            bitboard_set_bit(p->mask[White][0], fl + (rk << 3));
             fl++;
             break;
         case 'R':
             p->piece[fl + (rk << 3)] = Rook;
-            SetBit(p->mask[White][0], fl + (rk << 3));
+            bitboard_set_bit(p->mask[White][0], fl + (rk << 3));
             fl++;
             break;
         case 'Q':
             p->piece[fl + (rk << 3)] = Queen;
-            SetBit(p->mask[White][0], fl + (rk << 3));
+            bitboard_set_bit(p->mask[White][0], fl + (rk << 3));
             fl++;
             break;
         case 'K':
             p->piece[fl + (rk << 3)] = King;
-            SetBit(p->mask[White][0], fl + (rk << 3));
+            bitboard_set_bit(p->mask[White][0], fl + (rk << 3));
             fl++;
             break;
         case 'p':
             p->piece[fl + (rk << 3)] = -Pawn;
-            SetBit(p->mask[Black][0], fl + (rk << 3));
+            bitboard_set_bit(p->mask[Black][0], fl + (rk << 3));
             fl++;
             break;
         case 'n':
             p->piece[fl + (rk << 3)] = -Knight;
-            SetBit(p->mask[Black][0], fl + (rk << 3));
+            bitboard_set_bit(p->mask[Black][0], fl + (rk << 3));
             fl++;
             break;
         case 'b':
             p->piece[fl + (rk << 3)] = -Bishop;
-            SetBit(p->mask[Black][0], fl + (rk << 3));
+            bitboard_set_bit(p->mask[Black][0], fl + (rk << 3));
             fl++;
             break;
         case 'r':
             p->piece[fl + (rk << 3)] = -Rook;
-            SetBit(p->mask[Black][0], fl + (rk << 3));
+            bitboard_set_bit(p->mask[Black][0], fl + (rk << 3));
             fl++;
             break;
         case 'q':
             p->piece[fl + (rk << 3)] = -Queen;
-            SetBit(p->mask[Black][0], fl + (rk << 3));
+            bitboard_set_bit(p->mask[Black][0], fl + (rk << 3));
             fl++;
             break;
         case 'k':
             p->piece[fl + (rk << 3)] = -King;
-            SetBit(p->mask[Black][0], fl + (rk << 3));
+            bitboard_set_bit(p->mask[Black][0], fl + (rk << 3));
             fl++;
             break;
         case '/':
@@ -2306,7 +2313,7 @@ static void ReadEPD(struct Position *p, char *x) {
     while (*(++x) == ' ')
         ;
 
-    RecalcAttacks(p);
+    dbase_recalc_attacks(p);
     p->ply = 0;
 
     i = 0;
@@ -2329,11 +2336,11 @@ static void ReadEPD(struct Position *p, char *x) {
                 int cnt = 0;
 
                 while ((op = strtok(NULL, " "))) {
-                    int mv = ParseSAN(p, op);
+                    int mv = dbase_parse_san(p, op);
                     if (mv != 0) {
                         goodmove[cnt] = mv;
-                        Print(0, "best move is %s\n",
-                              SAN(p, goodmove[cnt], san_buffer));
+                        print(0, "best move is %s\n",
+                              dbase_san(p, goodmove[cnt], san_buffer));
                         cnt++;
                         if (cnt >= MAX_EPD_MOVES - 1)
                             break;
@@ -2344,11 +2351,11 @@ static void ReadEPD(struct Position *p, char *x) {
                 int cnt = 0;
 
                 while ((op = strtok(NULL, " "))) {
-                    int mv = ParseSAN(p, op);
+                    int mv = dbase_parse_san(p, op);
                     if (mv != 0) {
                         badmove[cnt] = mv;
-                        Print(0, "bad move is %s\n",
-                              SAN(p, badmove[cnt], san_buffer));
+                        print(0, "bad move is %s\n",
+                              dbase_san(p, badmove[cnt], san_buffer));
                         cnt++;
                         if (cnt >= MAX_EPD_MOVES - 1)
                             break;
@@ -2369,7 +2376,7 @@ static void ReadEPD(struct Position *p, char *x) {
  * Create an EPD of the current position
  */
 
-char *MakeEPD(struct Position *p) {
+char *dbase_make_epd(struct Position *p) {
     static char epdbuffer[2048];
     char wname[] = " PNBRQK";
     char bname[] = " pnbrqk";
@@ -2429,7 +2436,7 @@ char *MakeEPD(struct Position *p) {
         strcat(epdbuffer, " bm");
         for (i = 0; goodmove[i] != M_NONE; i++) {
             strcat(epdbuffer, " ");
-            strcat(epdbuffer, SAN(p, goodmove[i], san_buffer));
+            strcat(epdbuffer, dbase_san(p, goodmove[i], san_buffer));
         }
         strcat(epdbuffer, ";");
     }
@@ -2439,7 +2446,7 @@ char *MakeEPD(struct Position *p) {
         strcat(epdbuffer, " am");
         for (i = 0; badmove[i] != M_NONE; i++) {
             strcat(epdbuffer, " ");
-            strcat(epdbuffer, SAN(p, badmove[i], san_buffer));
+            strcat(epdbuffer, dbase_san(p, badmove[i], san_buffer));
         }
         strcat(epdbuffer, ";");
     }
@@ -2453,12 +2460,12 @@ char *MakeEPD(struct Position *p) {
  *
  */
 
-const char *GameEnd(struct Position *p) {
+const char *dbase_game_end(struct Position *p) {
     if (p->actLog->gl_IrrevCount >= 100) {
         return "1/2-1/2 {50 move rule}";
     }
 
-    if (Repeated(p, true) >= 2) {
+    if (dbase_repeated(p, true) >= 2) {
         return "1/2-1/2 {Draw by repetition}";
     }
 
@@ -2466,8 +2473,8 @@ const char *GameEnd(struct Position *p) {
         return "1/2-1/2 {Insufficient material}";
     }
 
-    if (!LegalMoves(p, NULL)) {
-        if (InCheck(p, p->turn)) {
+    if (!dbase_legal_moves(p, NULL)) {
+        if (dbase_in_check(p, p->turn)) {
             if (p->turn == Black) {
                 return "1-0 {White mates}";
             } else {
@@ -2493,7 +2500,7 @@ static bool has_only_bishops(const struct Position *p, Color side) {
 /*
  * Check if this is a theoretical draw
  */
-bool CheckDraw(const struct Position *p) {
+bool dbase_check_draw(const struct Position *p) {
     if (p->material[Black] == 0) {
         if (p->nonPawn[White] == 0) {
             if (!(p->mask[White][Pawn] & NotAFileMask)) {
@@ -2547,7 +2554,7 @@ bool CheckDraw(const struct Position *p) {
  * Check if the pawn is passed
  */
 
-bool IsPassed(const struct Position *p, int sq, int side) {
+bool dbase_is_passed(const struct Position *p, int sq, int side) {
     if (side == White)
         return !(p->mask[Black][Pawn] & PassedMaskW[sq]);
     else
@@ -2558,12 +2565,12 @@ bool IsPassed(const struct Position *p, int sq, int side) {
  * Create a position from an EPD
  */
 
-struct Position *CreatePositionFromEPD(char *epd) {
+struct Position *dbase_create_position_from_epd(char *epd) {
     struct Position *p = safe_calloc(1, sizeof(struct Position));
     p->gameLogSize = INITIAL_GAME_LOG_SIZE;
     p->gameLog = safe_calloc(p->gameLogSize, sizeof(struct GameLog));
     p->actLog = p->gameLog;
-    ReadEPD(p, epd);
+    dbase_read_epd(p, epd);
     p->actLog->gl_IrrevCount = 0;
 
     /* default for book usage is no book */
@@ -2576,8 +2583,8 @@ struct Position *CreatePositionFromEPD(char *epd) {
  * Create a position in the usual starting position
  */
 
-struct Position *InitialPosition(void) {
-    struct Position *p = CreatePositionFromEPD(
+struct Position *dbase_initial_position(void) {
+    struct Position *p = dbase_create_position_from_epd(
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -");
 
     /* we are 'in book' in the InitalPosition */
@@ -2586,7 +2593,7 @@ struct Position *InitialPosition(void) {
     return p;
 }
 
-struct Position *ClonePosition(struct Position *src) {
+struct Position *dbase_clone_position(struct Position *src) {
     struct Position *p = safe_calloc(1, sizeof(struct Position));
     memcpy(p, src, sizeof(struct Position));
 
@@ -2603,7 +2610,7 @@ struct Position *ClonePosition(struct Position *src) {
  * Release the resources connected with a Position
  */
 
-void FreePosition(struct Position *p) {
+void dbase_free_position(struct Position *p) {
     if (p) {
         free(p->gameLog);
         free(p);

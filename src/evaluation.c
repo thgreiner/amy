@@ -310,32 +310,42 @@ static const int MaxPosInit = 2000;
 static int RootGamePhase;
 
 /**
- * Masks used in EvaluatePawns.
+ * Masks used in eval_pawns.
  */
 
 static const BitBoard FianchettoMaskWhiteKingSide =
-    SetMask(f2) | SetMask(g3) | SetMask(h2);
+    bitboard_set_mask(f2) | bitboard_set_mask(g3) | bitboard_set_mask(h2);
 static const BitBoard FianchettoMaskBlackKingSide =
-    SetMask(f7) | SetMask(g6) | SetMask(h7);
+    bitboard_set_mask(f7) | bitboard_set_mask(g6) | bitboard_set_mask(h7);
 static const BitBoard FianchettoMaskWhiteQueenSide =
-    SetMask(c2) | SetMask(b3) | SetMask(a2);
+    bitboard_set_mask(c2) | bitboard_set_mask(b3) | bitboard_set_mask(a2);
 static const BitBoard FianchettoMaskBlackQueenSide =
-    SetMask(c7) | SetMask(b6) | SetMask(a7);
+    bitboard_set_mask(c7) | bitboard_set_mask(b6) | bitboard_set_mask(a7);
 
 /**
- * Masks used in EvaluateDevelopment.
+ * Masks used in eval_development.
  */
-static const BitBoard WKingOpeningMask = SetMask(e1) | SetMask(d1);
-static const BitBoard BKingOpeningMask = SetMask(e8) | SetMask(d8);
+static const BitBoard WKingOpeningMask =
+    bitboard_set_mask(e1) | bitboard_set_mask(d1);
+static const BitBoard BKingOpeningMask =
+    bitboard_set_mask(e8) | bitboard_set_mask(d8);
 
-static const BitBoard WKingTrapsRook1 = SetMask(f1) | SetMask(g1);
-static const BitBoard WRookTrapped1 = SetMask(g1) | SetMask(h1) | SetMask(h2);
-static const BitBoard WKingTrapsRook2 = SetMask(c1) | SetMask(b1);
-static const BitBoard WRookTrapped2 = SetMask(b1) | SetMask(a1) | SetMask(a2);
-static const BitBoard BKingTrapsRook1 = SetMask(f8) | SetMask(g8);
-static const BitBoard BRookTrapped1 = SetMask(g8) | SetMask(h8) | SetMask(h7);
-static const BitBoard BKingTrapsRook2 = SetMask(c8) | SetMask(b8);
-static const BitBoard BRookTrapped2 = SetMask(b8) | SetMask(a8) | SetMask(a7);
+static const BitBoard WKingTrapsRook1 =
+    bitboard_set_mask(f1) | bitboard_set_mask(g1);
+static const BitBoard WRookTrapped1 =
+    bitboard_set_mask(g1) | bitboard_set_mask(h1) | bitboard_set_mask(h2);
+static const BitBoard WKingTrapsRook2 =
+    bitboard_set_mask(c1) | bitboard_set_mask(b1);
+static const BitBoard WRookTrapped2 =
+    bitboard_set_mask(b1) | bitboard_set_mask(a1) | bitboard_set_mask(a2);
+static const BitBoard BKingTrapsRook1 =
+    bitboard_set_mask(f8) | bitboard_set_mask(g8);
+static const BitBoard BRookTrapped1 =
+    bitboard_set_mask(g8) | bitboard_set_mask(h8) | bitboard_set_mask(h7);
+static const BitBoard BKingTrapsRook2 =
+    bitboard_set_mask(c8) | bitboard_set_mask(b8);
+static const BitBoard BRookTrapped2 =
+    bitboard_set_mask(b8) | bitboard_set_mask(a8) | bitboard_set_mask(a7);
 
 static void create_mirrored_piece_square_table(int16_t *, int16_t *);
 static bool is_edge(unsigned int);
@@ -351,8 +361,7 @@ static bool is_edge(unsigned int);
  *
  */
 
-static int EvaluatePawns(const struct Position *p,
-                         struct PawnFacts *pawnFacts) {
+static int eval_pawns(const struct Position *p, struct PawnFacts *pawnFacts) {
     BitBoard pcs = 0;
     int score = 0;
     int file = 0;
@@ -374,7 +383,7 @@ static int EvaluatePawns(const struct Position *p,
 
     pcs = p->mask[White][Pawn];
     while (pcs) {
-        int sq = FindSetBit(pcs);
+        int sq = bitboard_find_set_bit(pcs);
         pcs &= pcs - 1;
 
         score += WPawnPos[sq];
@@ -384,7 +393,7 @@ static int EvaluatePawns(const struct Position *p,
          */
 
         if (!(p->mask[Black][Pawn] & PassedMaskW[sq])) {
-            SetBit(pawnFacts->pf_WhitePassers, sq);
+            bitboard_set_bit(pawnFacts->pf_WhitePassers, sq);
         }
 
         /*
@@ -402,7 +411,7 @@ static int EvaluatePawns(const struct Position *p,
             score += IsolatedPawn[sq & 7];
 #ifdef DEBUG
             if (DebugWhat & DebugPawnStructure)
-                Print(2, "isolated pawn on %c%c\n", SQUARE(sq));
+                print(2, "isolated pawn on %c%c\n", SQUARE(sq));
 #endif
         } else if (!(p->mask[White][Pawn] & WPawnBackwardMask[sq]) &&
                    (p->atkFr[sq + 8] & p->mask[Black][Pawn])) {
@@ -410,18 +419,18 @@ static int EvaluatePawns(const struct Position *p,
                 score += HiddenBackwardPawn;
 #ifdef DEBUG
                 if (DebugWhat & DebugPawnStructure)
-                    Print(2, "hidden backward pawn on %c%c\n", SQUARE(sq));
+                    print(2, "hidden backward pawn on %c%c\n", SQUARE(sq));
 #endif
             } else {
 #ifdef DEBUG
                 if (DebugWhat & DebugPawnStructure)
-                    Print(2, "backward pawn on %c%c\n", SQUARE(sq));
+                    print(2, "backward pawn on %c%c\n", SQUARE(sq));
 #endif
                 score += BackwardPawn;
             }
         }
 
-        if ((sq & 7) < 7 && TstBit(p->mask[White][Pawn], sq + 1)) {
+        if ((sq & 7) < 7 && bitboard_tst_bit(p->mask[White][Pawn], sq + 1)) {
             score += PawnDuo;
         }
     }
@@ -430,7 +439,7 @@ static int EvaluatePawns(const struct Position *p,
     pcs = p->mask[Black][Pawn];
 
     while (pcs) {
-        int sq = FindSetBit(pcs);
+        int sq = bitboard_find_set_bit(pcs);
 
         pcs &= pcs - 1;
         score -= BPawnPos[sq];
@@ -440,7 +449,7 @@ static int EvaluatePawns(const struct Position *p,
          */
 
         if (!(p->mask[White][Pawn] & PassedMaskB[sq])) {
-            SetBit(pawnFacts->pf_BlackPassers, sq);
+            bitboard_set_bit(pawnFacts->pf_BlackPassers, sq);
         }
 
         /*
@@ -458,7 +467,7 @@ static int EvaluatePawns(const struct Position *p,
             score -= IsolatedPawn[sq & 7];
 #ifdef DEBUG
             if (DebugWhat & DebugPawnStructure)
-                Print(2, "isolated pawn on %c%c\n", SQUARE(sq));
+                print(2, "isolated pawn on %c%c\n", SQUARE(sq));
 #endif
         } else if (!(p->mask[Black][Pawn] & BPawnBackwardMask[sq]) &&
                    (p->atkFr[sq - 8] & p->mask[White][Pawn])) {
@@ -466,18 +475,18 @@ static int EvaluatePawns(const struct Position *p,
                 score -= HiddenBackwardPawn;
 #ifdef DEBUG
                 if (DebugWhat & DebugPawnStructure)
-                    Print(2, "hidden backward pawn on %c%c\n", SQUARE(sq));
+                    print(2, "hidden backward pawn on %c%c\n", SQUARE(sq));
 #endif
             } else {
                 score -= BackwardPawn;
 #ifdef DEBUG
                 if (DebugWhat & DebugPawnStructure)
-                    Print(2, "backward pawn on %c%c\n", SQUARE(sq));
+                    print(2, "backward pawn on %c%c\n", SQUARE(sq));
 #endif
             }
         }
 
-        if ((sq & 7) < 7 && TstBit(p->mask[Black][Pawn], sq + 1)) {
+        if ((sq & 7) < 7 && bitboard_tst_bit(p->mask[Black][Pawn], sq + 1)) {
             score -= PawnDuo;
         }
     }
@@ -487,8 +496,8 @@ static int EvaluatePawns(const struct Position *p,
      * without doubled pawns.
      */
 
-    tmp_w = CountBits(p->mask[White][Pawn] & KingSideMask);
-    tmp_b = CountBits(p->mask[Black][Pawn] & KingSideMask);
+    tmp_w = bitboard_count_bits(p->mask[White][Pawn] & KingSideMask);
+    tmp_b = bitboard_count_bits(p->mask[Black][Pawn] & KingSideMask);
 
     if (tmp_w != tmp_b) {
         tmp_w = tmp_b = 0;
@@ -506,8 +515,8 @@ static int EvaluatePawns(const struct Position *p,
         }
     }
 
-    tmp_w = CountBits(p->mask[White][Pawn] & QueenSideMask);
-    tmp_b = CountBits(p->mask[Black][Pawn] & QueenSideMask);
+    tmp_w = bitboard_count_bits(p->mask[White][Pawn] & QueenSideMask);
+    tmp_b = bitboard_count_bits(p->mask[Black][Pawn] & QueenSideMask);
 
     if (tmp_w != tmp_b) {
         tmp_w = tmp_b = 0;
@@ -539,9 +548,9 @@ static int EvaluatePawns(const struct Position *p,
             if (open_w) {
                 qside_hopen_files_w++;
             } else {
-                if (!TstBit(p->mask[White][Pawn], a2 + file)) {
+                if (!bitboard_tst_bit(p->mask[White][Pawn], a2 + file)) {
                     qside_pawns_w++;
-                    if (!TstBit(p->mask[White][Pawn], a3 + file)) {
+                    if (!bitboard_tst_bit(p->mask[White][Pawn], a3 + file)) {
                         qside_pawns_w++;
                     }
                 }
@@ -549,9 +558,9 @@ static int EvaluatePawns(const struct Position *p,
             if (open_b) {
                 qside_hopen_files_b++;
             } else {
-                if (!TstBit(p->mask[Black][Pawn], a7 + file)) {
+                if (!bitboard_tst_bit(p->mask[Black][Pawn], a7 + file)) {
                     qside_pawns_b++;
-                    if (!TstBit(p->mask[Black][Pawn], a6 + file)) {
+                    if (!bitboard_tst_bit(p->mask[Black][Pawn], a6 + file)) {
                         qside_pawns_b++;
                     }
                 }
@@ -571,9 +580,9 @@ static int EvaluatePawns(const struct Position *p,
             if (open_w) {
                 kside_hopen_files_w++;
             } else {
-                if (!TstBit(p->mask[White][Pawn], h2 - file)) {
+                if (!bitboard_tst_bit(p->mask[White][Pawn], h2 - file)) {
                     kside_pawns_w++;
-                    if (!TstBit(p->mask[White][Pawn], h3 - file)) {
+                    if (!bitboard_tst_bit(p->mask[White][Pawn], h3 - file)) {
                         kside_pawns_w++;
                     }
                 }
@@ -582,9 +591,9 @@ static int EvaluatePawns(const struct Position *p,
             if (open_b) {
                 kside_hopen_files_b++;
             } else {
-                if (!TstBit(p->mask[Black][Pawn], h7 - file)) {
+                if (!bitboard_tst_bit(p->mask[Black][Pawn], h7 - file)) {
                     kside_pawns_b++;
-                    if (!TstBit(p->mask[Black][Pawn], h6 - file)) {
+                    if (!bitboard_tst_bit(p->mask[Black][Pawn], h6 - file)) {
                         kside_pawns_b++;
                     }
                 }
@@ -594,10 +603,10 @@ static int EvaluatePawns(const struct Position *p,
 
 #ifdef DEBUG
     if (DebugWhat & DebugPawnStructure) {
-        Print(0, "open : %d %d hopen k: %d %d hopen q: %d %d\n",
+        print(0, "open : %d %d hopen k: %d %d hopen q: %d %d\n",
               kside_open_files, qside_open_files, kside_hopen_files_w,
               kside_hopen_files_b, qside_hopen_files_w, qside_hopen_files_b);
-        Print(0, "pawns w: %d %d pawns b: %d %d\n", kside_pawns_w,
+        print(0, "pawns w: %d %d pawns b: %d %d\n", kside_pawns_w,
               qside_pawns_w, kside_pawns_b, qside_pawns_b);
     }
 #endif /* DEBUG */
@@ -624,10 +633,10 @@ static int EvaluatePawns(const struct Position *p,
 
 #ifdef DEBUG
     if (DebugWhat & DebugPawnStructure) {
-        Print(0, "king safety white: %d %d\n", pawnFacts->pf_WhiteKingSide,
+        print(0, "king safety white: %d %d\n", pawnFacts->pf_WhiteKingSide,
               pawnFacts->pf_WhiteQueenSide);
 
-        Print(0, "king safety black: %d %d\n", pawnFacts->pf_BlackKingSide,
+        print(0, "king safety black: %d %d\n", pawnFacts->pf_BlackKingSide,
               pawnFacts->pf_BlackQueenSide);
     }
 #endif /* DEBUG */
@@ -664,13 +673,14 @@ static int EvaluatePawns(const struct Position *p,
         pawnFacts->pf_Flags |= FianchettoBlackQueenSide;
     }
 
-    if (TstBit(p->mask[White][Pawn], d4) && TstBit(p->mask[Black][Pawn], d5)) {
+    if (bitboard_tst_bit(p->mask[White][Pawn], d4) &&
+        bitboard_tst_bit(p->mask[Black][Pawn], d5)) {
         pawnFacts->pf_Flags |= QueensPawnOpening;
     }
 
 #ifdef DEBUG
     if (DebugWhat & DebugPawnStructure) {
-        Print(2, "EvaluatePawns returns %d\n", score);
+        print(2, "eval_pawns returns %d\n", score);
     }
 #endif
 
@@ -679,19 +689,19 @@ static int EvaluatePawns(const struct Position *p,
 
 /**
  * Look up current pawn structure in pawn hashtable. If not present,
- * use EvaluatePawns() to score the pawn structure. Store result in the
+ * use eval_pawns() to score the pawn structure. Store result in the
  * pawn hashtable.
  *
  */
 
-static int EvaluatePawnsHashed(const struct Position *p,
-                               struct PawnFacts *pawnFacts) {
+static int eval_pawns_hashed(const struct Position *p,
+                             struct PawnFacts *pawnFacts) {
     int score;
 
     PTry++;
-    if (ProbePT(p->pkey, &score, pawnFacts) != Useful) {
-        score = EvaluatePawns(p, pawnFacts);
-        StorePT(p->pkey, score, pawnFacts);
+    if (ht_probe_pawn(p->pkey, &score, pawnFacts) != Useful) {
+        score = eval_pawns(p, pawnFacts);
+        ht_store_pawn(p->pkey, score, pawnFacts);
     } else {
         PHit++;
     }
@@ -703,8 +713,8 @@ static int EvaluatePawnsHashed(const struct Position *p,
  * Evaluate passed pawns
  */
 
-static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
-                               struct PawnFacts *pawnFacts) {
+static int eval_passed_pawns(const struct Position *p, int wphase, int bphase,
+                             struct PawnFacts *pawnFacts) {
     int score = 0;
     int wdistant = 0;
     int bdistant = 0;
@@ -722,7 +732,7 @@ static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
 #ifdef DEBUG
         int score_at_start = score;
 #endif
-        int sq = FindSetBit(pcs);
+        int sq = bitboard_find_set_bit(pcs);
         int rank = sq >> 3;
         int file = sq & 7;
 
@@ -730,7 +740,7 @@ static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
 
         /* Basic score */
 
-        if (!TstBit(p->mask[Black][0], sq + 8)) {
+        if (!bitboard_tst_bit(p->mask[Black][0], sq + 8)) {
             score += ScaleDown[wphase] * PassedPawn[rank] / 16;
         } else {
             score += ScaleDown[wphase] * PassedPawnBlocked[rank] / 16;
@@ -739,7 +749,7 @@ static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
 #ifdef DEBUG
         if (DebugWhat & DebugPassedPawns) {
             int increment = score - score_at_start;
-            Print(0, "score increment from %c%c: %d\n", SQUARE(sq), increment);
+            print(0, "score increment from %c%c: %d\n", SQUARE(sq), increment);
         }
 #endif
 
@@ -757,7 +767,7 @@ static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
 #ifdef DEBUG
         if (DebugWhat & DebugPassedPawns) {
             int increment = score - score_at_start;
-            Print(0, "score increment from %c%c: %d\n", SQUARE(sq), increment);
+            print(0, "score increment from %c%c: %d\n", SQUARE(sq), increment);
         }
 #endif
 
@@ -765,7 +775,7 @@ static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
             int max_rank = rank;
             BitBoard tmp2 = ConnectedMask[sq] & pawnFacts->pf_WhitePassers;
             while (tmp2) {
-                int sq2 = FindSetBit(tmp2);
+                int sq2 = bitboard_find_set_bit(tmp2);
                 tmp2 &= tmp2 - 1;
                 int rank2 = sq2 >> 3;
                 max_rank = MAX(rank2, max_rank);
@@ -776,7 +786,7 @@ static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
 #ifdef DEBUG
         if (DebugWhat & DebugPassedPawns) {
             int increment = score - score_at_start;
-            Print(0, "score increment from %c%c: %d\n", SQUARE(sq), increment);
+            print(0, "score increment from %c%c: %d\n", SQUARE(sq), increment);
         }
 #endif
 
@@ -793,7 +803,7 @@ static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
 #ifdef DEBUG
         if (DebugWhat & DebugPassedPawns) {
             int increment = score - score_at_start;
-            Print(0, "score increment from %c%c: %d\n", SQUARE(sq), increment);
+            print(0, "score increment from %c%c: %d\n", SQUARE(sq), increment);
         }
 #endif
 
@@ -801,10 +811,10 @@ static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
         if (p->nonPawn[Black] == 0) {
             int sq2 = (p->turn == White) ? sq : sq - 8;
             if (!(p->mask[Black][King] & KingSquareW[sq2])) {
-                SetBit(wrunner, sq);
+                bitboard_set_bit(wrunner, sq);
 #ifdef DEBUG
                 if (DebugWhat & DebugPassedPawns) {
-                    Print(0, "white runner on %c%c\n", SQUARE(sq));
+                    print(0, "white runner on %c%c\n", SQUARE(sq));
                 }
 #endif
             }
@@ -816,7 +826,7 @@ static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
             !(p->mask[Black][Pawn] & LeftOf[file + 2])) {
 #ifdef DEBUG
             if (DebugWhat & DebugPassedPawns) {
-                Print(0, "white outside passed pawn on %c%c\n", SQUARE(sq));
+                print(0, "white outside passed pawn on %c%c\n", SQUARE(sq));
             }
 #endif
 
@@ -828,7 +838,7 @@ static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
             !(p->mask[Black][Pawn] & RightOf[file - 2])) {
 #ifdef DEBUG
             if (DebugWhat & DebugPassedPawns) {
-                Print(0, "white outside passed pawn on %c%c\n", SQUARE(sq));
+                print(0, "white outside passed pawn on %c%c\n", SQUARE(sq));
             }
 #endif
 
@@ -838,7 +848,7 @@ static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
 
 #ifdef DEBUG
     if (DebugWhat & DebugPassedPawns) {
-        Print(0, "After white pawn basic scoring: %d\n", score);
+        print(0, "After white pawn basic scoring: %d\n", score);
     }
 #endif
 
@@ -848,7 +858,7 @@ static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
 #ifdef DEBUG
         int score_at_start = score;
 #endif
-        int sq = FindSetBit(pcs);
+        int sq = bitboard_find_set_bit(pcs);
         int rank = 7 - (sq >> 3);
         int file = sq & 7;
 
@@ -856,7 +866,7 @@ static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
 
         /* Basic score */
 
-        if (!TstBit(p->mask[White][0], sq - 8)) {
+        if (!bitboard_tst_bit(p->mask[White][0], sq - 8)) {
             score -= ScaleDown[bphase] * PassedPawn[rank] / 16;
         } else {
             score -= ScaleDown[bphase] * PassedPawnBlocked[rank] / 16;
@@ -865,7 +875,7 @@ static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
 #ifdef DEBUG
         if (DebugWhat & DebugPassedPawns) {
             int increment = score - score_at_start;
-            Print(0, "score increment from %c%c: %d\n", SQUARE(sq), increment);
+            print(0, "score increment from %c%c: %d\n", SQUARE(sq), increment);
         }
 #endif
 
@@ -883,7 +893,7 @@ static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
 #ifdef DEBUG
         if (DebugWhat & DebugPassedPawns) {
             int increment = score - score_at_start;
-            Print(0, "score increment from %c%c: %d\n", SQUARE(sq), increment);
+            print(0, "score increment from %c%c: %d\n", SQUARE(sq), increment);
         }
 #endif
 
@@ -891,7 +901,7 @@ static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
             int max_rank = rank;
             BitBoard tmp2 = ConnectedMask[sq] & pawnFacts->pf_BlackPassers;
             while (tmp2) {
-                int sq2 = FindSetBit(tmp2);
+                int sq2 = bitboard_find_set_bit(tmp2);
                 tmp2 &= tmp2 - 1;
                 int rank2 = 7 - (sq2 >> 3);
                 max_rank = MAX(rank2, max_rank);
@@ -902,7 +912,7 @@ static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
 #ifdef DEBUG
         if (DebugWhat & DebugPassedPawns) {
             int increment = score - score_at_start;
-            Print(0, "score increment from %c%c: %d\n", SQUARE(sq), increment);
+            print(0, "score increment from %c%c: %d\n", SQUARE(sq), increment);
         }
 #endif
 
@@ -919,7 +929,7 @@ static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
 #ifdef DEBUG
         if (DebugWhat & DebugPassedPawns) {
             int increment = score - score_at_start;
-            Print(0, "score increment from %c%c: %d\n", SQUARE(sq), increment);
+            print(0, "score increment from %c%c: %d\n", SQUARE(sq), increment);
         }
 #endif
 
@@ -927,10 +937,10 @@ static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
         if (p->nonPawn[White] == 0) {
             int sq2 = (p->turn == Black) ? sq : sq + 8;
             if (!(p->mask[White][King] & KingSquareB[sq2])) {
-                SetBit(brunner, sq);
+                bitboard_set_bit(brunner, sq);
 #ifdef DEBUG
                 if (DebugWhat & DebugPassedPawns) {
-                    Print(0, "black runner on %c%c\n", SQUARE(sq));
+                    print(0, "black runner on %c%c\n", SQUARE(sq));
                 }
 #endif
             }
@@ -942,7 +952,7 @@ static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
             !(p->mask[White][Pawn] & LeftOf[file + 2])) {
 #ifdef DEBUG
             if (DebugWhat & DebugPassedPawns) {
-                Print(0, "black outside passed pawn on %c%c\n", SQUARE(sq));
+                print(0, "black outside passed pawn on %c%c\n", SQUARE(sq));
             }
 #endif
 
@@ -954,7 +964,7 @@ static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
             !(p->mask[White][Pawn] & RightOf[file - 2])) {
 #ifdef DEBUG
             if (DebugWhat & DebugPassedPawns) {
-                Print(0, "black outside passed pawn on %c%c\n", SQUARE(sq));
+                print(0, "black outside passed pawn on %c%c\n", SQUARE(sq));
             }
 #endif
 
@@ -964,7 +974,7 @@ static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
 
 #ifdef DEBUG
     if (DebugWhat & DebugPassedPawns) {
-        Print(0, "After black pawn basic scoring: %d\n", score);
+        print(0, "After black pawn basic scoring: %d\n", score);
     }
 #endif
 
@@ -986,7 +996,7 @@ static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
             int bdist = 5;
 
             while (wrunner) {
-                int sq = FindSetBit(wrunner);
+                int sq = bitboard_find_set_bit(wrunner);
                 int dist = 7 - (sq >> 3);
                 wrunner &= wrunner - 1;
 
@@ -996,7 +1006,7 @@ static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
             }
 
             while (brunner) {
-                int sq = FindSetBit(brunner);
+                int sq = bitboard_find_set_bit(brunner);
                 int dist = (sq >> 3);
                 brunner &= brunner - 1;
 
@@ -1039,7 +1049,7 @@ static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
 
 #ifdef DEBUG
     if (DebugWhat & DebugPassedPawns) {
-        Print(0, "Before runner scoring: wdistant: %d bdistant: %d\n", wdistant,
+        print(0, "Before runner scoring: wdistant: %d bdistant: %d\n", wdistant,
               bdistant);
     }
 #endif
@@ -1058,7 +1068,7 @@ static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
 
 #ifdef DEBUG
     if (DebugWhat & DebugPassedPawns) {
-        Print(0, "After runner scoring: %d\n", score);
+        print(0, "After runner scoring: %d\n", score);
     }
 #endif
 
@@ -1069,8 +1079,8 @@ static int EvaluatePassedPawns(const struct Position *p, int wphase, int bphase,
  * Evaluate the king safety
  */
 
-static int EvaluateKingSafety(const struct Position *p, int wphase, int bphase,
-                              struct PawnFacts *pawnFacts) {
+static int eval_king_safety(const struct Position *p, int wphase, int bphase,
+                            struct PawnFacts *pawnFacts) {
     int score = 0;
 
     int king_safety_w = 0;
@@ -1089,7 +1099,7 @@ static int EvaluateKingSafety(const struct Position *p, int wphase, int bphase,
         /* test for fianchetto */
 
         if (pawnFacts->pf_Flags & FianchettoWhiteKingSide) {
-            if (TstBit(p->mask[White][Bishop], g2)) {
+            if (bitboard_tst_bit(p->mask[White][Bishop], g2)) {
                 king_safety_w -= 1;
             } else if (!(p->mask[White][Bishop] & WhiteSquaresMask) &&
                        (p->mask[Black][Bishop] & WhiteSquaresMask)) {
@@ -1106,7 +1116,7 @@ static int EvaluateKingSafety(const struct Position *p, int wphase, int bphase,
         /* test for fianchetto */
 
         if (pawnFacts->pf_Flags & FianchettoWhiteQueenSide) {
-            if (TstBit(p->mask[White][Bishop], b2)) {
+            if (bitboard_tst_bit(p->mask[White][Bishop], b2)) {
                 king_safety_w -= 1;
             } else if (!(p->mask[White][Bishop] & BlackSquaresMask) &&
                        (p->mask[Black][Bishop] & BlackSquaresMask)) {
@@ -1132,7 +1142,7 @@ static int EvaluateKingSafety(const struct Position *p, int wphase, int bphase,
         /* test for fianchetto, which is ok */
 
         if (pawnFacts->pf_Flags & FianchettoBlackKingSide) {
-            if (TstBit(p->mask[Black][Bishop], g7)) {
+            if (bitboard_tst_bit(p->mask[Black][Bishop], g7)) {
                 king_safety_b -= 1;
             } else if (!(p->mask[Black][Bishop] & BlackSquaresMask) &&
                        (p->mask[White][Bishop] & BlackSquaresMask)) {
@@ -1149,7 +1159,7 @@ static int EvaluateKingSafety(const struct Position *p, int wphase, int bphase,
         /* test for fianchetto, which is ok */
 
         if (pawnFacts->pf_Flags & FianchettoBlackQueenSide) {
-            if (TstBit(p->mask[Black][Bishop], b7)) {
+            if (bitboard_tst_bit(p->mask[Black][Bishop], b7)) {
                 king_safety_b -= 1;
             } else if (!(p->mask[Black][Bishop] & WhiteSquaresMask) &&
                        (p->mask[White][Bishop] & WhiteSquaresMask)) {
@@ -1166,7 +1176,7 @@ static int EvaluateKingSafety(const struct Position *p, int wphase, int bphase,
 
 #ifdef DEBUG
     if (DebugWhat & DebugKingSafety) {
-        Print(0, "king safety w: %d b: %d total: %d\n", king_safety_w,
+        print(0, "king safety w: %d b: %d total: %d\n", king_safety_w,
               king_safety_b, score);
     }
 #endif
@@ -1178,7 +1188,7 @@ static int EvaluateKingSafety(const struct Position *p, int wphase, int bphase,
  * Evaluate the development status
  */
 
-static int EvaluateDevelopment(const struct Position *p) {
+static int eval_development(const struct Position *p) {
     int score = 0;
     BitBoard pcs;
 
@@ -1186,10 +1196,12 @@ static int EvaluateDevelopment(const struct Position *p) {
      * Don't develop pieces to e3/d3 if they block a pawn
      */
 
-    if (TstBit(p->mask[White][Pawn], e2) && TstBit(p->mask[White][0], e3)) {
+    if (bitboard_tst_bit(p->mask[White][Pawn], e2) &&
+        bitboard_tst_bit(p->mask[White][0], e3)) {
         score += PawnDevelopmentBlocked;
     }
-    if (TstBit(p->mask[White][Pawn], d2) && TstBit(p->mask[White][0], d3)) {
+    if (bitboard_tst_bit(p->mask[White][Pawn], d2) &&
+        bitboard_tst_bit(p->mask[White][0], d3)) {
         score += PawnDevelopmentBlocked;
     }
 
@@ -1197,10 +1209,12 @@ static int EvaluateDevelopment(const struct Position *p) {
      * Don't develop pieces to e6/d6 if they block a pawn
      */
 
-    if (TstBit(p->mask[Black][Pawn], e7) && TstBit(p->mask[Black][0], e6)) {
+    if (bitboard_tst_bit(p->mask[Black][Pawn], e7) &&
+        bitboard_tst_bit(p->mask[Black][0], e6)) {
         score -= PawnDevelopmentBlocked;
     }
-    if (TstBit(p->mask[Black][Pawn], d7) && TstBit(p->mask[Black][0], d6)) {
+    if (bitboard_tst_bit(p->mask[Black][Pawn], d7) &&
+        bitboard_tst_bit(p->mask[Black][0], d6)) {
         score -= PawnDevelopmentBlocked;
     }
 
@@ -1222,14 +1236,14 @@ static int EvaluateDevelopment(const struct Position *p) {
 
     pcs = p->mask[White][Queen];
     while (pcs) {
-        int sq = FindSetBit(pcs);
+        int sq = bitboard_find_set_bit(pcs);
         pcs &= pcs - 1;
         score += QueenPosDevelopment[sq];
     }
 
     pcs = p->mask[Black][Queen];
     while (pcs) {
-        int sq = FindSetBit(pcs);
+        int sq = bitboard_find_set_bit(pcs);
         pcs &= pcs - 1;
         score -= QueenPosDevelopment[REFLECT_X(sq)];
     }
@@ -1241,7 +1255,7 @@ static int EvaluateDevelopment(const struct Position *p) {
  * Evaluate the material balance.
  */
 
-int MaterialBalance(const struct Position *p) {
+int eval_material_balance(const struct Position *p) {
     int score = p->material[White] - p->material[Black];
 
     return score;
@@ -1251,7 +1265,7 @@ int MaterialBalance(const struct Position *p) {
  * Evaluate the position from white points of view.
  */
 
-static int EvaluatePositionForWhite(const struct Position *p) {
+static int eval_position_for_white(const struct Position *p) {
     int score;
 
     int wphase;
@@ -1271,26 +1285,26 @@ static int EvaluatePositionForWhite(const struct Position *p) {
 
 #ifndef DEBUG
     STry++;
-    if (ProbeST(p->hkey, &score) == Useful) {
+    if (ht_probe_score(p->hkey, &score) == Useful) {
         SHit++;
         return score;
     }
 #endif
 
-    score = MaterialBalance(p);
+    score = eval_material_balance(p);
     fastscore = score;
 
 #ifdef DEBUG
     if (DebugWhat & DebugPieces) {
-        Print(0, "After material balance: %d\n", score);
+        print(0, "After material balance: %d\n", score);
     }
 #endif
 
-    score += EvaluatePawnsHashed(p, &pawnFacts);
+    score += eval_pawns_hashed(p, &pawnFacts);
 
 #ifdef DEBUG
     if (DebugWhat & DebugPieces) {
-        Print(0, "After hashed pawns: %d\n", score);
+        print(0, "After hashed pawns: %d\n", score);
     }
 #endif
 
@@ -1303,11 +1317,11 @@ static int EvaluatePositionForWhite(const struct Position *p) {
     wphase = MIN(31, p->nonPawn[Black] / Value[Pawn]);
     bphase = MIN(31, p->nonPawn[White] / Value[Pawn]);
 
-    score += EvaluateKingSafety(p, wphase, bphase, &pawnFacts);
+    score += eval_king_safety(p, wphase, bphase, &pawnFacts);
 
 #ifdef DEBUG
     if (DebugWhat & DebugPieces) {
-        Print(0, "After king safety: %d\n", score);
+        print(0, "After king safety: %d\n", score);
     }
 #endif
 
@@ -1317,11 +1331,11 @@ static int EvaluatePositionForWhite(const struct Position *p) {
      *
      *************************************************************/
 
-    score += EvaluatePassedPawns(p, wphase, bphase, &pawnFacts);
+    score += eval_passed_pawns(p, wphase, bphase, &pawnFacts);
 
 #ifdef DEBUG
     if (DebugWhat & DebugPieces) {
-        Print(0, "After passed pawns: %d\n", score);
+        print(0, "After passed pawns: %d\n", score);
     }
 #endif
 
@@ -1331,30 +1345,30 @@ static int EvaluatePositionForWhite(const struct Position *p) {
      *
      *************************************************************/
 
-    if (TstBit(p->mask[White][Bishop], a7) &&
-        TstBit(p->mask[Black][Pawn], b6) &&
+    if (bitboard_tst_bit(p->mask[White][Bishop], a7) &&
+        bitboard_tst_bit(p->mask[Black][Pawn], b6) &&
         (p->atkFr[b6] & p->mask[Black][Pawn])) {
         score += BishopTrapped;
     }
-    if (TstBit(p->mask[White][Bishop], h7) &&
-        TstBit(p->mask[Black][Pawn], g6) &&
+    if (bitboard_tst_bit(p->mask[White][Bishop], h7) &&
+        bitboard_tst_bit(p->mask[Black][Pawn], g6) &&
         (p->atkFr[g6] & p->mask[Black][Pawn])) {
         score += BishopTrapped;
     }
-    if (TstBit(p->mask[Black][Bishop], a2) &&
-        TstBit(p->mask[White][Pawn], b3) &&
+    if (bitboard_tst_bit(p->mask[Black][Bishop], a2) &&
+        bitboard_tst_bit(p->mask[White][Pawn], b3) &&
         (p->atkFr[b3] & p->mask[White][Pawn])) {
         score -= BishopTrapped;
     }
-    if (TstBit(p->mask[Black][Bishop], h2) &&
-        TstBit(p->mask[White][Pawn], g3) &&
+    if (bitboard_tst_bit(p->mask[Black][Bishop], h2) &&
+        bitboard_tst_bit(p->mask[White][Pawn], g3) &&
         (p->atkFr[g3] & p->mask[White][Pawn])) {
         score -= BishopTrapped;
     }
 
 #ifdef DEBUG
     if (DebugWhat & DebugPieces) {
-        Print(0, "After trapped bishops: %d\n", score);
+        print(0, "After trapped bishops: %d\n", score);
     }
 #endif
 
@@ -1365,12 +1379,12 @@ static int EvaluatePositionForWhite(const struct Position *p) {
      *************************************************************/
 
     if (RootGamePhase == Opening) {
-        score += EvaluateDevelopment(p);
+        score += eval_development(p);
     }
 
 #ifdef DEBUG
     if (DebugWhat & DebugPieces) {
-        Print(0, "After development: %d\n", score);
+        print(0, "After development: %d\n", score);
     }
 #endif
 
@@ -1434,7 +1448,7 @@ static int EvaluatePositionForWhite(const struct Position *p) {
 
 #ifdef DEBUG
     if (DebugWhat & DebugPieces) {
-        Print(0, "After king: %d\n", score);
+        print(0, "After king: %d\n", score);
     }
 #endif
 
@@ -1450,7 +1464,7 @@ static int EvaluatePositionForWhite(const struct Position *p) {
 
     pcs = p->mask[White][Knight];
     while (pcs) {
-        sq = FindSetBit(pcs);
+        sq = bitboard_find_set_bit(pcs);
         pcs &= pcs - 1;
 
         score += KnightPos[sq];
@@ -1464,11 +1478,11 @@ static int EvaluatePositionForWhite(const struct Position *p) {
         }
 
         score += (ScaleUp[wphase] * KnightKingProximity *
-                  (4 - KingDist(sq, p->kingSq[Black]))) >>
+                  (4 - dbase_king_dist(sq, p->kingSq[Black]))) >>
                  4;
 
         if (sq == c3 && pawnFacts.pf_Flags & QueensPawnOpening &&
-            TstBit(p->mask[White][Pawn], c2)) {
+            bitboard_tst_bit(p->mask[White][Pawn], c2)) {
             score += KnightBlocksCPawn;
         }
     }
@@ -1479,7 +1493,7 @@ static int EvaluatePositionForWhite(const struct Position *p) {
 
     pcs = p->mask[Black][Knight];
     while (pcs) {
-        sq = FindSetBit(pcs);
+        sq = bitboard_find_set_bit(pcs);
         pcs &= pcs - 1;
 
         score -= KnightPos[REFLECT_X(sq)];
@@ -1493,18 +1507,18 @@ static int EvaluatePositionForWhite(const struct Position *p) {
         }
 
         score -= (ScaleUp[bphase] * KnightKingProximity *
-                  (4 - KingDist(sq, p->kingSq[White]))) >>
+                  (4 - dbase_king_dist(sq, p->kingSq[White]))) >>
                  4;
 
         if (sq == c6 && pawnFacts.pf_Flags & QueensPawnOpening &&
-            TstBit(p->mask[Black][Pawn], c7)) {
+            bitboard_tst_bit(p->mask[Black][Pawn], c7)) {
             score -= KnightBlocksCPawn;
         }
     }
 
 #ifdef DEBUG
     if (DebugWhat & DebugPieces) {
-        Print(0, "After knights: %d\n", score);
+        print(0, "After knights: %d\n", score);
     }
 #endif
 
@@ -1521,20 +1535,20 @@ static int EvaluatePositionForWhite(const struct Position *p) {
     pcs = p->mask[White][Bishop];
 
     if ((pcs & WhiteSquaresMask) && (pcs & BlackSquaresMask)) {
-        score += BishopPair[CountBits(p->mask[White][Pawn])];
+        score += BishopPair[bitboard_count_bits(p->mask[White][Pawn])];
     }
 
     while (pcs) {
-        sq = FindSetBit(pcs);
+        sq = bitboard_find_set_bit(pcs);
         pcs &= pcs - 1;
 
         score += (ScaleUp[wphase] * BishopPos[sq]) >> 4;
 
-        tmp = CountBits(p->atkTo[sq] & ~p->mask[White][0]);
+        tmp = bitboard_count_bits(p->atkTo[sq] & ~p->mask[White][0]);
         score += BishopMobility * (tmp - 7);
 
         score += (ScaleUp[wphase] * BishopKingProximity *
-                  (4 - KingDist(sq, p->kingSq[Black]))) >>
+                  (4 - dbase_king_dist(sq, p->kingSq[Black]))) >>
                  4;
     }
 
@@ -1545,26 +1559,26 @@ static int EvaluatePositionForWhite(const struct Position *p) {
     pcs = p->mask[Black][Bishop];
 
     if ((pcs & WhiteSquaresMask) && (pcs & BlackSquaresMask)) {
-        score -= BishopPair[CountBits(p->mask[Black][Pawn])];
+        score -= BishopPair[bitboard_count_bits(p->mask[Black][Pawn])];
     }
 
     while (pcs) {
-        sq = FindSetBit(pcs);
+        sq = bitboard_find_set_bit(pcs);
         pcs &= pcs - 1;
 
         score -= (ScaleUp[bphase] * BishopPos[REFLECT_X(sq)]) >> 4;
 
-        tmp = CountBits(p->atkTo[sq] & ~p->mask[Black][0]);
+        tmp = bitboard_count_bits(p->atkTo[sq] & ~p->mask[Black][0]);
         score -= BishopMobility * (tmp - 7);
 
         score -= (ScaleUp[bphase] * BishopKingProximity *
-                  (4 - KingDist(sq, p->kingSq[White]))) >>
+                  (4 - dbase_king_dist(sq, p->kingSq[White]))) >>
                  4;
     }
 
 #ifdef DEBUG
     if (DebugWhat & DebugPieces) {
-        Print(0, "After bishops: %d\n", score);
+        print(0, "After bishops: %d\n", score);
     }
 #endif
 
@@ -1582,13 +1596,13 @@ static int EvaluatePositionForWhite(const struct Position *p) {
     while (pcs) {
         int file;
 
-        sq = FindSetBit(pcs);
+        sq = bitboard_find_set_bit(pcs);
         pcs &= pcs - 1;
         file = sq & 7;
 
         score += (ScaleUp[wphase] * RookPos[sq]) >> 4;
 
-        tmp = CountBits(p->atkTo[sq] & ~p->mask[White][0]);
+        tmp = bitboard_count_bits(p->atkTo[sq] & ~p->mask[White][0]);
         score += RookMobility * (tmp - 7);
 
         if (!(FileMask[file] & p->mask[White][Pawn])) {
@@ -1600,7 +1614,7 @@ static int EvaluatePositionForWhite(const struct Position *p) {
         }
 
         score += (ScaleUp[wphase] * RookKingProximity *
-                  (4 - KingDist(sq, p->kingSq[Black]))) >>
+                  (4 - dbase_king_dist(sq, p->kingSq[Black]))) >>
                  4;
 
         tmpboard = p->atkTo[sq] & ForwardRayW[sq];
@@ -1620,13 +1634,13 @@ static int EvaluatePositionForWhite(const struct Position *p) {
     pcs = p->mask[Black][Rook];
     while (pcs) {
         int file;
-        sq = FindSetBit(pcs);
+        sq = bitboard_find_set_bit(pcs);
         pcs &= pcs - 1;
         file = sq & 7;
 
         score -= (ScaleUp[bphase] * RookPos[REFLECT_X(sq)]) >> 4;
 
-        tmp = CountBits(p->atkTo[sq] & ~p->mask[Black][0]);
+        tmp = bitboard_count_bits(p->atkTo[sq] & ~p->mask[Black][0]);
         score -= RookMobility * (tmp - 7);
 
         if (!(FileMask[file] & p->mask[Black][Pawn])) {
@@ -1638,7 +1652,7 @@ static int EvaluatePositionForWhite(const struct Position *p) {
         }
 
         score -= (ScaleUp[bphase] * RookKingProximity *
-                  (4 - KingDist(sq, p->kingSq[White]))) >>
+                  (4 - dbase_king_dist(sq, p->kingSq[White]))) >>
                  4;
 
         tmpboard = p->atkTo[sq] & ForwardRayB[sq];
@@ -1653,7 +1667,7 @@ static int EvaluatePositionForWhite(const struct Position *p) {
 
 #ifdef DEBUG
     if (DebugWhat & DebugPieces) {
-        Print(0, "After rooks: %d\n", score);
+        print(0, "After rooks: %d\n", score);
     }
 #endif
 
@@ -1669,13 +1683,13 @@ static int EvaluatePositionForWhite(const struct Position *p) {
 
     pcs = p->mask[White][Queen];
     while (pcs) {
-        sq = FindSetBit(pcs);
+        sq = bitboard_find_set_bit(pcs);
         pcs &= pcs - 1;
 
         score += QueenPos[sq];
 
         score += (ScaleUp[wphase] * QueenKingProximity *
-                  (4 - KingDist(sq, p->kingSq[Black]))) >>
+                  (4 - dbase_king_dist(sq, p->kingSq[Black]))) >>
                  4;
     }
 
@@ -1685,19 +1699,19 @@ static int EvaluatePositionForWhite(const struct Position *p) {
 
     pcs = p->mask[Black][Queen];
     while (pcs) {
-        sq = FindSetBit(pcs);
+        sq = bitboard_find_set_bit(pcs);
         pcs &= pcs - 1;
 
         score -= QueenPos[REFLECT_X(sq)];
 
         score -= (ScaleUp[bphase] * QueenKingProximity *
-                  (4 - KingDist(sq, p->kingSq[White]))) >>
+                  (4 - dbase_king_dist(sq, p->kingSq[White]))) >>
                  4;
     }
 
 #ifdef DEBUG
     if (DebugWhat & DebugPieces) {
-        Print(0, "After queens: %d\n", score);
+        print(0, "After queens: %d\n", score);
     }
 #endif
 
@@ -1730,7 +1744,7 @@ static int EvaluatePositionForWhite(const struct Position *p) {
 
 #ifdef DEBUG
     if (DebugWhat & DebugPieces) {
-        Print(0, "After bishop adjustment: %d\n", score);
+        print(0, "After bishop adjustment: %d\n", score);
     }
 #endif
 
@@ -1752,7 +1766,7 @@ static int EvaluatePositionForWhite(const struct Position *p) {
         score = -((-score + 7) & ~15);
     }
 
-    StoreST(p->hkey, score);
+    ht_store_score(p->hkey, score);
 
     return score;
 }
@@ -1762,18 +1776,18 @@ static int EvaluatePositionForWhite(const struct Position *p) {
  * if it is not white to move.
  */
 
-int EvaluatePosition(const struct Position *p) {
+int eval_position(const struct Position *p) {
     if (p->turn == White)
-        return EvaluatePositionForWhite(p);
+        return eval_position_for_white(p);
     else
-        return -EvaluatePositionForWhite(p);
+        return -eval_position_for_white(p);
 }
 
 /**
  * Do the pre-search initialization of evaluation.
  */
 
-void InitEvaluation(const struct Position *p) {
+void eval_init(const struct Position *p) {
     int sq;
 
     int eg_threshold = Value[Queen] + Value[Bishop];
@@ -1837,7 +1851,7 @@ void InitEvaluation(const struct Position *p) {
     BPawnPos[d7] += CrampingPawn;
     BPawnPos[e7] += CrampingPawn;
 
-    ClearPawnHashTable();
+    ht_clear_pawn();
 
     /*
      * Set up King piece square table.
@@ -1847,7 +1861,7 @@ void InitEvaluation(const struct Position *p) {
 
 #ifdef DEBUG
     DebugWhat = 255;
-    EvaluatePositionForWhite(p);
+    eval_position_for_white(p);
     DebugWhat = 0;
 #endif
 
@@ -1858,11 +1872,12 @@ void InitEvaluation(const struct Position *p) {
     RootGamePhase = Middlegame;
     if (npmat >= 38) {
         bool devel = (p->castle != 0);
-        int backrank =
-            CountBits((p->mask[White][Knight] | p->mask[White][Bishop]) &
-                      RankMask[0]) +
-            CountBits((p->mask[Black][Knight] | p->mask[Black][Bishop]) &
-                      RankMask[7]);
+        int backrank = bitboard_count_bits(
+                           (p->mask[White][Knight] | p->mask[White][Bishop]) &
+                           RankMask[0]) +
+                       bitboard_count_bits(
+                           (p->mask[Black][Knight] | p->mask[Black][Bishop]) &
+                           RankMask[7]);
         if (backrank > 0)
             devel = true;
 
@@ -1870,7 +1885,7 @@ void InitEvaluation(const struct Position *p) {
             RootGamePhase = Opening;
     }
 
-    // Print(2, "GamePhase: %s\n", GamePhaseName[RootGamePhase]);
+    // print(2, "GamePhase: %s\n", GamePhaseName[RootGamePhase]);
 
     MaxPos = MaxPosInit;
 }

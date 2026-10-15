@@ -40,7 +40,7 @@
 
 #define PV_BUFFER_SIZE 512
 
-static void PrintPV(char *pv) {
+static void searchio_print_pv(char *pv) {
     char PVBuffer[512];
     char *x;
     size_t len = 21;
@@ -59,29 +59,29 @@ static void PrintPV(char *pv) {
         len += strlen(x);
 
         if (len >= 79) {
-            Print(1, "\n                    ");
+            print(1, "\n                    ");
             len = 21 + strlen(x);
         }
-        Print(1, "%s ", x);
+        print(1, "%s ", x);
         len += 1;
         x = y + 1;
     }
-    Print(1, "\n");
+    print(1, "\n");
 }
 
-void SearchHeader(void) {
-    Print(1, "It    Time   Score  principal Variation\n");
+void searchio_header(void) {
+    print(1, "It    Time   Score  principal Variation\n");
 }
 
-void SearchOutput(int depth, unsigned long time, int score, char *line,
-                  unsigned long nodes) {
+void searchio_output(int depth, unsigned long time, int score, char *line,
+                     unsigned long nodes) {
     char time_as_text[16];
     char score_as_text[16];
 
-    Print(1, "%2d  %s %7s  ", depth,
-          FormatTime(time, time_as_text, sizeof(time_as_text)),
-          FormatScore(score, score_as_text, sizeof(score_as_text)));
-    PrintPV(line);
+    print(1, "%2d  %s %7s  ", depth,
+          utils_format_time(time, time_as_text, sizeof(time_as_text)),
+          utils_format_score(score, score_as_text, sizeof(score_as_text)));
+    searchio_print_pv(line);
 
     if (PostMode) {
         char *short_line = strdup(line);
@@ -103,28 +103,31 @@ void SearchOutput(int depth, unsigned long time, int score, char *line,
                 }
                 short_line[idx] = '\0';
             }
-            PrintNoLog(0, "%d %d %d %lu %s\n", depth, s, time, nodes,
-                       short_line);
+            print_no_log(0, "%d %d %d %lu %s\n", depth, s, time, nodes,
+                         short_line);
             free(short_line);
         }
     }
 }
 
-void SearchOutputFailHighLow(int depth, unsigned long time, int isfailhigh,
-                             char *move, unsigned long nodes) {
+void searchio_output_fail_high_low(int depth, unsigned long time,
+                                   int isfailhigh, char *move,
+                                   unsigned long nodes) {
     char time_as_text[16];
 
     if (isfailhigh) {
-        Print(1, "%2d  %s     +++  %s\n", depth,
-              FormatTime(time, time_as_text, sizeof(time_as_text)), move);
+        print(1, "%2d  %s     +++  %s\n", depth,
+              utils_format_time(time, time_as_text, sizeof(time_as_text)),
+              move);
         if (PostMode) {
-            PrintNoLog(0, "%d 0 %d %lu %s!\n", depth, time, nodes, move);
+            print_no_log(0, "%d 0 %d %lu %s!\n", depth, time, nodes, move);
         }
     } else {
-        Print(1, "%2d  %s     ---  %s\n", depth,
-              FormatTime(time, time_as_text, sizeof(time_as_text)), move);
+        print(1, "%2d  %s     ---  %s\n", depth,
+              utils_format_time(time, time_as_text, sizeof(time_as_text)),
+              move);
         if (PostMode) {
-            PrintNoLog(0, "%d 0 %d %lu %s?\n", depth, time, nodes, move);
+            print_no_log(0, "%d 0 %d %lu %s?\n", depth, time, nodes, move);
         }
     }
 }

@@ -65,7 +65,6 @@ static const BitBoard CornerMaskH8 = 0xc0c0000000000000;
 static const BitBoard KingSideMask = 0xf0f0f0f0f0f0f0f0;
 static const BitBoard QueenSideMask = 0xf0f0f0f0f0f0f0f;
 
-void InitAll(void);
-void PrintBitBoard(BitBoard);
+void init_all(void);
 
 #endif

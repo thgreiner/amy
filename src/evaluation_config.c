@@ -57,13 +57,13 @@ static void print_array(FILE *, char *, int16_t *, size_t);
 /**
  * Reads evaluation parameters from a file.
  */
-void LoadEvaluationConfig(char *file_name) {
+void eval_config_load(char *file_name) {
     char *buffer = read_file(file_name);
 
     if (buffer == NULL)
         return;
 
-    struct Node *node = parse_yaml(buffer);
+    struct Node *node = yaml_parse_yaml(buffer);
     free(buffer);
 
     if (node == NULL) {
@@ -79,13 +79,13 @@ void LoadEvaluationConfig(char *file_name) {
     configure_queen_scores(node);
     configure_king_scores(node);
 
-    free_yaml_node(node);
+    yaml_free_node(node);
 }
 
 /**
  * Writes evaluation config to a file.
  */
-void SaveEvaluationConfig(char *file_name) {
+void eval_config_save(char *file_name) {
     FILE *fout = fopen(file_name, "w");
 
     if (!fout) {
@@ -198,7 +198,7 @@ void SaveEvaluationConfig(char *file_name) {
 
     fclose(fout);
 
-    Print(0, "Saved configuration '%s' to '%s'.\n", ConfigurationName,
+    print(0, "Saved configuration '%s' to '%s'.\n", ConfigurationName,
           file_name);
 }
 
@@ -234,9 +234,9 @@ static void print_array(FILE *fout, char *prefix, int16_t *array,
  * Set a named parameter.
  */
 static void set_parameter(struct Node *node, char *name, int *parameter) {
-    struct IntLookupResult result = get_as_int(node, name);
+    struct IntLookupResult result = yaml_get_as_int(node, name);
     if (result.result_code == OK) {
-        Print(9, "%s: %d\n", name, result.result);
+        print(9, "%s: %d\n", name, result.result);
         *parameter = result.result;
     }
 }
@@ -246,19 +246,19 @@ static void set_piece_square_table(struct Node *node, char *name,
     int piece_square_table[64];
 
     struct IntArrayLookupResult array_result =
-        get_as_int_array(node, name, piece_square_table, 64);
+        yaml_get_as_int_array(node, name, piece_square_table, 64);
 
     if (array_result.result_code == OK) {
         if (array_result.elements_read != 64) {
-            Print(0, "Warning: expected 64 entries for %s, got %d!\n", name,
+            print(0, "Warning: expected 64 entries for %s, got %d!\n", name,
                   array_result.elements_read);
         }
-        Print(9, "%s:\n", name);
+        print(9, "%s:\n", name);
         for (unsigned int i = 0; i < array_result.elements_read; i++) {
             target_table[i] = (int16_t)piece_square_table[i];
-            Print(9, "%5d, ", piece_square_table[i]);
+            print(9, "%5d, ", piece_square_table[i]);
             if (i % 8 == 7) {
-                Print(9, "\n");
+                print(9, "\n");
             }
         }
     }
@@ -269,30 +269,30 @@ static void set_array(struct Node *node, char *name, int16_t *target_array,
     int *destination = safe_malloc(sizeof(int) * count);
 
     struct IntArrayLookupResult array_result =
-        get_as_int_array(node, name, destination, count);
+        yaml_get_as_int_array(node, name, destination, count);
 
     if (array_result.result_code == OK) {
         if (array_result.elements_read != count) {
-            Print(0, "Warning: expected %d entries for %s, got %d!\n", count,
+            print(0, "Warning: expected %d entries for %s, got %d!\n", count,
                   name, array_result.elements_read);
         }
-        Print(9, "%s: ", name);
+        print(9, "%s: ", name);
         for (unsigned int i = 0; i < array_result.elements_read; i++) {
             target_array[i] = (int16_t)destination[i];
-            Print(9, "%d, ", destination[i]);
+            print(9, "%d, ", destination[i]);
         }
-        Print(9, "\n");
+        print(9, "\n");
     }
 
     free(destination);
 }
 
 static void configure_name(struct Node *node) {
-    struct StringLookupResult result = get_as_string(node, "name");
+    struct StringLookupResult result = yaml_get_as_string(node, "name");
 
     if (result.result_code == OK) {
         ConfigurationName = result.result;
-        Print(0, "Using configuration name: %s\n", ConfigurationName);
+        print(0, "Using configuration name: %s\n", ConfigurationName);
     }
 }
 

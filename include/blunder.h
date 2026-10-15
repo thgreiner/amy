@@ -35,7 +35,7 @@
 #include "dbase.h"
 #include "types.h"
 
-move_t get_best_move_from_comment(char *, struct Position *, char *);
-void BlunderCheck(char *);
+move_t blunder_get_best_move_from_comment(char *, struct Position *, char *);
+void blunder_check(char *);
 
 #endif

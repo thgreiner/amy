@@ -33,21 +33,22 @@
 #include <assert.h>
 
 static void test_parse_san_promotions(void) {
-    struct Position *p = CreatePositionFromEPD("4K1k1/P7/8/8/8/8/8/8 w - -");
+    struct Position *p =
+        dbase_create_position_from_epd("4K1k1/P7/8/8/8/8/8/8 w - -");
 
-    move_t move = ParseSAN(p, "a8=Q");
-    assert(move == make_promotion(a7, a8, Queen, 0));
+    move_t move = dbase_parse_san(p, "a8=Q");
+    assert(move == dbase_make_promotion(a7, a8, Queen, 0));
 
-    move = ParseSAN(p, "a8=R");
-    assert(move == make_promotion(a7, a8, Rook, 0));
+    move = dbase_parse_san(p, "a8=R");
+    assert(move == dbase_make_promotion(a7, a8, Rook, 0));
 
-    move = ParseSAN(p, "a8=B");
-    assert(move == make_promotion(a7, a8, Bishop, 0));
+    move = dbase_parse_san(p, "a8=B");
+    assert(move == dbase_make_promotion(a7, a8, Bishop, 0));
 
-    move = ParseSAN(p, "a8=N");
-    assert(move == make_promotion(a7, a8, Knight, 0));
+    move = dbase_parse_san(p, "a8=N");
+    assert(move == dbase_make_promotion(a7, a8, Knight, 0));
 
-    FreePosition(p);
+    dbase_free_position(p);
 }
 
 void test_all_dbase(void) { test_parse_san_promotions(); }

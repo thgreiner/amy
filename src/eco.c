@@ -49,13 +49,13 @@
 #warning "ECODIR is not defined!"
 #endif
 
-void ParseEcoPgn(char *fname) {
+void eco_parse_pgn(char *fname) {
     FILE *fin = fopen(fname, "rb");
     char buffer[1024];
     char name[128];
 
     if (!fin) {
-        Print(0, "Cannot open file %s\n", fname);
+        print(0, "Cannot open file %s\n", fname);
         return;
     }
 
@@ -67,46 +67,46 @@ void ParseEcoPgn(char *fname) {
         x = strtok(NULL, "]\n\r");
         strncpy(name, x, sizeof(name) - 1);
 
-        Print(0, ".");
+        print(0, ".");
 
-        struct Position *p = InitialPosition();
+        struct Position *p = dbase_initial_position();
 
         if (fgets(buffer, 1024, fin) != NULL) {
             for (x = strtok(buffer, " \n\r\t"); x;
                  x = strtok(NULL, " \n\r\t")) {
-                move_t move = ParseSAN(p, x);
+                move_t move = dbase_parse_san(p, x);
                 if (move != M_NONE) {
-                    DoMove(p, move);
+                    dbase_do_move(p, move);
                 }
             }
 
-            node = add_node(node, (char *)&(p->hkey), sizeof(p->hkey), name,
-                            strlen(name) + 1);
+            node = tree_add_node(node, (char *)&(p->hkey), sizeof(p->hkey),
+                                 name, strlen(name) + 1);
         }
 
-        FreePosition(p);
+        dbase_free_position(p);
     }
 
     fclose(fin);
 
     FILE *fout = fopen(ECO_NAME, "wb");
     if (fout == NULL) {
-        Print(0, "\nCannot save ECO database to %s: %s\n", ECO_NAME,
+        print(0, "\nCannot save ECO database to %s: %s\n", ECO_NAME,
               strerror(errno));
         return;
     }
 
-    save_tree(node, fout);
+    tree_save(node, fout);
     fclose(fout);
 
-    free_node(node);
+    tree_free_node(node);
 
-    Print(0, "\nECO database created.\n");
+    print(0, "\nECO database created.\n");
 }
 
 static tree_node_t *EcoDB = NULL;
 
-char *GetEcoCode(hash_t hkey) {
+char *eco_get_code(hash_t hkey) {
     char *retval = NULL;
 
     if (EcoDB == NULL) {
@@ -119,21 +119,21 @@ char *GetEcoCode(hash_t hkey) {
 #endif
 
         if (fin == NULL) {
-            Print(0, "Can't open database: %s\n", strerror(errno));
+            print(0, "Can't open database: %s\n", strerror(errno));
             return NULL;
         }
-        EcoDB = load_tree(fin);
+        EcoDB = tree_load(fin);
         fclose(fin);
     }
 
     if (EcoDB != NULL) {
-        retval = lookup_value(EcoDB, (char *)&hkey, sizeof(hkey), NULL);
+        retval = tree_lookup_value(EcoDB, (char *)&hkey, sizeof(hkey), NULL);
     }
 
     return retval;
 }
 
-bool FindEcoCode(const struct Position *p, char *result) {
+bool eco_find_code(const struct Position *p, char *result) {
     int ply = 0;
     char *res;
     bool found = false;
@@ -143,7 +143,7 @@ bool FindEcoCode(const struct Position *p, char *result) {
         if (ply == p->ply) {
             key = p->hkey;
         }
-        res = GetEcoCode(key);
+        res = eco_get_code(key);
         if (res != NULL) {
             strcpy(result, res);
             found = true;

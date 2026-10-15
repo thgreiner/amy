@@ -54,48 +54,34 @@ BitBoard KingSquareW[64], KingSquareB[64];
 BitBoard WPawnBackwardMask[64], BPawnBackwardMask[64];
 BitBoard ConnectedMask[64];
 
-void PrintBitBoard(BitBoard x) {
-    int i, j;
-    for (i = 7; i >= 0; i--) {
-        for (j = 0; j < 8; j++) {
-            int k = i * 8 + j;
-            if (TstBit(x, k))
-                Print(0, "*");
-            else
-                Print(0, ".");
-        }
-        Print(0, "\n");
-    }
-}
-
-void InitPawnMasks(void) {
+void init_pawn_masks(void) {
     int i, j;
 
     for (i = 0; i < 8; i++) {
         FileMask[i] = 0;
         IsoMask[i] = 0;
         for (j = 0; j < 8; j++) {
-            FileMask[i] |= SetMask(8 * j + i);
+            FileMask[i] |= bitboard_set_mask(8 * j + i);
             if (i > 0)
-                IsoMask[i] |= SetMask(8 * j + i - 1);
+                IsoMask[i] |= bitboard_set_mask(8 * j + i - 1);
             if (i < 7)
-                IsoMask[i] |= SetMask(8 * j + i + 1);
+                IsoMask[i] |= bitboard_set_mask(8 * j + i + 1);
         }
 #ifdef DEBUG
-        PrintBitBoard(IsoMask[i]);
+        bitboard_print(IsoMask[i]);
 #endif
     }
     for (i = 0; i < 64; i++) {
         ForwardRayW[i] = ForwardRayB[i] = 0;
         for (j = i + 8; j < 64; j += 8) {
-            ForwardRayW[i] |= SetMask(j);
+            ForwardRayW[i] |= bitboard_set_mask(j);
         }
         for (j = i - 8; j >= 0; j -= 8) {
-            ForwardRayB[i] |= SetMask(j);
+            ForwardRayB[i] |= bitboard_set_mask(j);
         }
 #ifdef DEBUG
-        PrintBitBoard(ForwardRayW[i]);
-        PrintBitBoard(ForwardRayB[i]);
+        bitboard_print(ForwardRayW[i]);
+        bitboard_print(ForwardRayB[i]);
 #endif
     }
     for (i = 0; i < 64; i++) {
@@ -109,8 +95,8 @@ void InitPawnMasks(void) {
             PassedMaskB[i] |= ForwardRayB[i - 1];
         if ((i & 7) < 7)
             PassedMaskB[i] |= ForwardRayB[i + 1];
-        /* PrintBitBoard(PassedMaskW[i]); */
-        /* PrintBitBoard(PassedMaskB[i]); */
+        /* bitboard_print(PassedMaskW[i]); */
+        /* bitboard_print(PassedMaskB[i]); */
         OutpostMaskW[i] = OutpostMaskB[i] = 0;
         if ((i & 7) > 0) {
             OutpostMaskW[i] |= ForwardRayW[i - 1];
@@ -132,18 +118,18 @@ void InitPawnMasks(void) {
         WPawnBackwardMask[i] = BPawnBackwardMask[i] = 0;
         for (sq = i; sq > 0; sq -= 8) {
             if ((sq & 7) > 0) {
-                WPawnBackwardMask[i] |= SetMask(sq - 1);
+                WPawnBackwardMask[i] |= bitboard_set_mask(sq - 1);
             }
             if ((sq & 7) < 7) {
-                WPawnBackwardMask[i] |= SetMask(sq + 1);
+                WPawnBackwardMask[i] |= bitboard_set_mask(sq + 1);
             }
         }
         for (sq = i; sq < 64; sq += 8) {
             if ((sq & 7) > 0) {
-                BPawnBackwardMask[i] |= SetMask(sq - 1);
+                BPawnBackwardMask[i] |= bitboard_set_mask(sq - 1);
             }
             if ((sq & 7) < 7) {
-                BPawnBackwardMask[i] |= SetMask(sq + 1);
+                BPawnBackwardMask[i] |= bitboard_set_mask(sq + 1);
             }
         }
     }
@@ -152,27 +138,27 @@ void InitPawnMasks(void) {
         ConnectedMask[i] = 0;
 
         if ((i & 7) < 7) {
-            SetBit(ConnectedMask[i], i + 1);
+            bitboard_set_bit(ConnectedMask[i], i + 1);
             if ((i >> 3) > 1) {
-                SetBit(ConnectedMask[i], i - 7);
+                bitboard_set_bit(ConnectedMask[i], i - 7);
             }
             if ((i >> 3) < 6) {
-                SetBit(ConnectedMask[i], i + 9);
+                bitboard_set_bit(ConnectedMask[i], i + 9);
             }
         }
         if ((i & 7) > 0) {
-            SetBit(ConnectedMask[i], i - 1);
+            bitboard_set_bit(ConnectedMask[i], i - 1);
             if ((i >> 3) > 1) {
-                SetBit(ConnectedMask[i], i - 9);
+                bitboard_set_bit(ConnectedMask[i], i - 9);
             }
             if ((i >> 3) < 6) {
-                SetBit(ConnectedMask[i], i + 7);
+                bitboard_set_bit(ConnectedMask[i], i + 7);
             }
         }
     }
 }
 
-void InitGeometry(void) {
+void init_geometry(void) {
     int edge[100];
     int trto[100];
     int i, j, k, l;
@@ -214,35 +200,35 @@ void InitGeometry(void) {
             for (k = j + d; !edge[k]; k += d) {
                 int y = trto[k];
                 for (l = j + d; l != k; l += d)
-                    InterPath[x][y] |= SetMask(trto[l]);
+                    InterPath[x][y] |= bitboard_set_mask(trto[l]);
                 for (l = k + d; !edge[l]; l += d)
-                    Ray[x][y] |= SetMask(trto[l]);
+                    Ray[x][y] |= bitboard_set_mask(trto[l]);
             }
         }
         for (i = 0; i < 4; i++) {
             int d = dirb[i];
             for (k = j + d; !edge[k]; k += d) {
-                BishopEPM[x] |= SetMask(trto[k]);
-                QueenEPM[x] |= SetMask(trto[k]);
+                BishopEPM[x] |= bitboard_set_mask(trto[k]);
+                QueenEPM[x] |= bitboard_set_mask(trto[k]);
             }
             d = dirr[i];
             for (k = j + d; !edge[k]; k += d) {
-                RookEPM[x] |= SetMask(trto[k]);
-                QueenEPM[x] |= SetMask(trto[k]);
+                RookEPM[x] |= bitboard_set_mask(trto[k]);
+                QueenEPM[x] |= bitboard_set_mask(trto[k]);
             }
         }
         if (!edge[j + 9])
-            WPawnEPM[x] |= SetMask(x + 7);
+            WPawnEPM[x] |= bitboard_set_mask(x + 7);
         if (!edge[j + 11])
-            WPawnEPM[x] |= SetMask(x + 9);
+            WPawnEPM[x] |= bitboard_set_mask(x + 9);
         if (!edge[j - 9])
-            BPawnEPM[x] |= SetMask(x - 7);
+            BPawnEPM[x] |= bitboard_set_mask(x - 7);
         if (!edge[j - 11])
-            BPawnEPM[x] |= SetMask(x - 9);
+            BPawnEPM[x] |= bitboard_set_mask(x - 9);
     }
 }
 
-void InitMiscMasks(void) {
+void init_misc_masks(void) {
     int i, j;
 
     SeventhRank[White] = SeventhRank[Black] = 0;
@@ -251,15 +237,15 @@ void InitMiscMasks(void) {
 
     for (i = 0; i < 8; i++) {
         RankMask[i] = 0;
-        SeventhRank[White] |= SetMask(a7 + i);
-        SeventhRank[Black] |= SetMask(a2 + i);
-        EighthRank[White] |= SetMask(a8 + i);
-        EighthRank[Black] |= SetMask(a1 + i);
-        ThirdRank[White] |= SetMask(a3 + i);
-        ThirdRank[Black] |= SetMask(a6 + i);
+        SeventhRank[White] |= bitboard_set_mask(a7 + i);
+        SeventhRank[Black] |= bitboard_set_mask(a2 + i);
+        EighthRank[White] |= bitboard_set_mask(a8 + i);
+        EighthRank[Black] |= bitboard_set_mask(a1 + i);
+        ThirdRank[White] |= bitboard_set_mask(a3 + i);
+        ThirdRank[Black] |= bitboard_set_mask(a6 + i);
 
         for (j = 0; j < 8; j++) {
-            RankMask[i] |= SetMask(8 * i + j);
+            RankMask[i] |= bitboard_set_mask(8 * i + j);
         }
     }
 
@@ -283,19 +269,19 @@ void InitMiscMasks(void) {
 
         KingSquareW[i] = KingSquareB[i] = 0;
         for (j = 0; j < 64; j++) {
-            if (KingDist(wtarget, j) <= wdist) {
-                SetBit(KingSquareW[i], j);
+            if (dbase_king_dist(wtarget, j) <= wdist) {
+                bitboard_set_bit(KingSquareW[i], j);
             }
-            if (KingDist(btarget, j) <= bdist) {
-                SetBit(KingSquareB[i], j);
+            if (dbase_king_dist(btarget, j) <= bdist) {
+                bitboard_set_bit(KingSquareB[i], j);
             }
         }
     }
 }
 
-void InitAll(void) {
-    InitPawnMasks();
-    InitGeometry();
-    InitMiscMasks();
-    InitMagic();
+void init_all(void) {
+    init_pawn_masks();
+    init_geometry();
+    init_misc_masks();
+    magic_init();
 }

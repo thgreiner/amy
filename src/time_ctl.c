@@ -64,14 +64,14 @@ static struct TimeControl globalTimeControl = {.first.moves = 60,
                                                .first.total_time = 5 * 60,
                                                .hasSecondTimeControl = false};
 
-void DoTC(struct Position *p, int mtime) {
+void time_ctl_update(struct Position *p, int mtime) {
     Time[p->turn] += -mtime + Increment;
 
     if (Moves[p->turn] > 0) {
         Moves[p->turn] -= 1;
         if (Moves[p->turn] <= 0) {
             if (TwoTimeControls) {
-                Print(0, "Switching to second time control.\n");
+                print(0, "Switching to second time control.\n");
                 TMoves = TMoves2;
                 TTime = TTime2;
                 TwoTimeControls = false;
@@ -82,19 +82,20 @@ void DoTC(struct Position *p, int mtime) {
     }
 }
 
-void CalcTime(struct Position *p, float *soft, float *hard) {
+void time_ctl_calc(struct Position *p, float *soft, float *hard) {
     char time_as_text[16];
     if (TMoves >= 0) {
         if (Moves[p->turn] > 0) {
             /*  int limit = (13*TTime/TMoves)/8 + (3*Increment)/4;  */
-            float limit = (1.625f * TTime / TMoves) + (0.85f * Increment);
+            float limit = (1.625f * (float)TTime / (float)TMoves) +
+                          (0.85f * (float)Increment);
 
-            Print(1, "TC: %d moves in %s\n", Moves[p->turn],
-                  FormatTime((unsigned int)(Time[p->turn]) * ONE_SECOND,
-                             time_as_text, sizeof(time_as_text)));
+            print(1, "TC: %d moves in %s\n", Moves[p->turn],
+                  utils_format_time((unsigned int)(Time[p->turn]) * ONE_SECOND,
+                                    time_as_text, sizeof(time_as_text)));
             /*  *soft = (7*Time[p->turn]/Moves[p->turn])/8 + (3*Increment)/4; */
-            *soft =
-                (0.875f * Time[p->turn] / Moves[p->turn]) + (0.75f * Increment);
+            *soft = (0.875f * (float)Time[p->turn] / (float)Moves[p->turn]) +
+                    (0.75f * (float)Increment);
             if (*soft > limit)
                 *soft = limit;
 
@@ -106,7 +107,7 @@ void CalcTime(struct Position *p, float *soft, float *hard) {
                 soft2 = TTime2 / moves;
                 /*    *soft = ((*soft)+(float)soft2)/2;    */
                 *soft = 0.5f * ((*soft) + (float)soft2);
-                Print(1, "Adjusted timing to %.4f secs\n", (double)*soft);
+                print(1, "Adjusted timing to %.4f secs\n", (double)*soft);
             }
             *hard = 4.0f * (*soft);
         } else {
@@ -115,29 +116,30 @@ void CalcTime(struct Position *p, float *soft, float *hard) {
              */
             /*  rearrange equation to eliminate floating point division  */
             /*  1.625 / 60 = 0.0271  */
-            float limit = 0.0271f * ((float)Time[p->turn] + 60 * Increment);
+            float limit =
+                0.0271f * ((float)Time[p->turn] + (60.0f * (float)Increment));
 
-            Print(1, "TC: all moves in %s\n",
-                  FormatTime((unsigned int)(Time[p->turn]) * ONE_SECOND,
-                             time_as_text, sizeof(time_as_text)));
+            print(1, "TC: all moves in %s\n",
+                  utils_format_time((unsigned int)(Time[p->turn]) * ONE_SECOND,
+                                    time_as_text, sizeof(time_as_text)));
             /*  0.875 / 60.0 = 0.0146  */
-            *soft = 0.0146f * (float)Time[p->turn] + (0.85f * Increment);
+            *soft = 0.0146f * (float)Time[p->turn] + (0.85f * (float)Increment);
             if (*soft > limit)
                 *soft = limit;
             *hard = 4.0f * (*soft);
         }
-        if (*hard > Time[p->turn])
+        if (*hard > (float)Time[p->turn])
             *hard = 0.5f * (float)Time[p->turn];
         if (*soft > *hard)
             *soft = 0.67f * (*hard);
 
-        Print(1, "TL: %.2f/%.2f\n", (double)*soft, (double)*hard);
+        print(1, "TL: %.2f/%.2f\n", (double)*soft, (double)*hard);
     } else {
         *soft = *hard = (float)TTime;
     }
 }
 
-static struct TimeControl parse_timecontrol_xboard(char *args[]) {
+static struct TimeControl time_ctl_parse_xboard(char *args[]) {
     int ttmoves, ttime, tminutes, tseconds, inc = 0;
 
     sscanf(args[0], "%d", &ttmoves);
@@ -165,7 +167,7 @@ static const char *const sudden_death = "sd";
 /** Literal for 'fixed' time control. */
 static const char *const fixed = "fixed";
 
-static struct TimeControl parse_timecontrol(char *args[]) {
+static struct TimeControl time_ctl_parse(char *args[]) {
     int ttmoves, ttime, inc = 0;
     int ttmoves2, ttime2;
 
@@ -234,13 +236,13 @@ static struct TimeControl parse_timecontrol(char *args[]) {
  *     xboard_flag: indicates whether the format is expected to be
  *         for xboard or not
  */
-void SetTimeControl(char *args[], bool xboard_flag) {
+void time_ctl_set(char *args[], bool xboard_flag) {
     if (xboard_flag) {
-        globalTimeControl = parse_timecontrol_xboard(args);
+        globalTimeControl = time_ctl_parse_xboard(args);
     } else {
-        globalTimeControl = parse_timecontrol(args);
+        globalTimeControl = time_ctl_parse(args);
     }
-    ResetTimeControl(!xboard_flag);
+    time_ctl_reset(!xboard_flag);
 }
 
 /**
@@ -249,7 +251,7 @@ void SetTimeControl(char *args[], bool xboard_flag) {
  * Args:
  *     verbose: if true, the settings are printed
  */
-void ResetTimeControl(bool verbose) {
+void time_ctl_reset(bool verbose) {
     TMoves = globalTimeControl.first.moves;
     TTime = globalTimeControl.first.total_time;
     Increment = globalTimeControl.first.increment;
@@ -263,34 +265,34 @@ void ResetTimeControl(bool verbose) {
     Time[White] = Time[Black] = TTime;
 
     if (verbose) {
-        Print(0, "Timecontrol is ");
+        print(0, "Timecontrol is ");
         if (globalTimeControl.first.moves >= 0) {
             if (globalTimeControl.first.moves == 0)
-                Print(0, "all ");
+                print(0, "all ");
             else
-                Print(0, "%d ", globalTimeControl.first.moves);
+                print(0, "%d ", globalTimeControl.first.moves);
 
             if (globalTimeControl.first.increment) {
-                Print(0, "moves in %d mins + %d secs Increment\n",
+                print(0, "moves in %d mins + %d secs Increment\n",
                       globalTimeControl.first.total_time / 60,
                       globalTimeControl.first.increment);
             } else {
-                Print(0, "moves in %d mins\n",
+                print(0, "moves in %d mins\n",
                       globalTimeControl.first.total_time / 60);
             }
 
         } else {
-            Print(0, "%d seconds/move fixed time\n",
+            print(0, "%d seconds/move fixed time\n",
                   globalTimeControl.first.total_time);
         }
 
         if (globalTimeControl.hasSecondTimeControl) {
-            Print(0, "Second Timecontrol is ");
+            print(0, "Second Timecontrol is ");
             if (globalTimeControl.second.moves == 0)
-                Print(0, "all ");
+                print(0, "all ");
             else
-                Print(0, "%d ", globalTimeControl.second.moves);
-            Print(0, "moves in %d mins\n",
+                print(0, "%d ", globalTimeControl.second.moves);
+            print(0, "moves in %d mins\n",
                   globalTimeControl.second.total_time / 60);
         }
     }

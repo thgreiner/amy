@@ -32,6 +32,6 @@
 #ifndef FILTER_H
 #define FILTER_H
 
-void FilterQuiescentPositions(char *);
+void filter_quiescent_positions(char *);
 
 #endif

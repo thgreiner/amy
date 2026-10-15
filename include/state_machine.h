@@ -53,6 +53,6 @@ extern int ComputerSide;
 extern struct Position *CurrentPosition;
 extern bool AutoSave;
 
-void StateMachine(void);
+void state_machine_run(void);
 
 #endif

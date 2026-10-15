@@ -39,7 +39,7 @@
 #include "bookup.h"
 #include "utils.h"
 
-void DoBookLearning(void) {
+void learn_book(void) {
     int cnt = 0;
     char save_file_name[32];
 
@@ -53,8 +53,8 @@ void DoBookLearning(void) {
         if (result < 0) {
             break;
         }
-        Print(2, "Book learning with save file %s\n", save_file_name);
-        BookupQuiet(save_file_name);
+        print(2, "Book learning with save file %s\n", save_file_name);
+        book_up_quiet(save_file_name);
         remove(save_file_name);
     }
 }

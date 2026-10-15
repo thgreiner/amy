@@ -35,11 +35,12 @@
 
 #include "bitboard.h"
 #include "config.h"
+#include "utils.h"
 
 #if !HAVE___BUILTIN_CTZLL
 #include <strings.h>
 
-int FindSetBit(BitBoard b) {
+int bitboard_find_set_bit(BitBoard b) {
 #if HAVE_FFSLL
     return 64 - ffsll(b);
 #else
@@ -49,9 +50,23 @@ int FindSetBit(BitBoard b) {
 #endif
 
 #if !HAVE___BUILTIN_POPCOUNTLL
-int CountBits(BitBoard i) {
+int bitboard_count_bits(BitBoard i) {
     i = i - ((i >> 1) & 0x5555555555555555);
     i = (i & 0x3333333333333333) + ((i >> 2) & 0x3333333333333333);
     return (((i + (i >> 4)) & 0xF0F0F0F0F0F0F0F) * 0x101010101010101) >> 56;
 }
 #endif
+
+void bitboard_print(BitBoard x) {
+    int i, j;
+    for (i = 7; i >= 0; i--) {
+        for (j = 0; j < 8; j++) {
+            int k = i * 8 + j;
+            if (bitboard_tst_bit(x, k))
+                print(0, "*");
+            else
+                print(0, ".");
+        }
+        print(0, "\n");
+    }
+}

@@ -59,7 +59,7 @@
 
 char OpponentName[OPP_NAME_LENGTH] = "Opponent";
 
-static void get_date_time(char *date_buf, char *time_buf) {
+static void pgn_get_date_time(char *date_buf, char *time_buf) {
     time_t tnow;
     struct tm *now;
 
@@ -69,7 +69,7 @@ static void get_date_time(char *date_buf, char *time_buf) {
     strftime(time_buf, 15, "%H:%M:%S", now);
 }
 
-static void get_hostname(char *hostname_buf) {
+static void pgn_get_hostname(char *hostname_buf) {
 #if HAVE_GETHOSTNAME
     gethostname(hostname_buf, 256);
 #else
@@ -77,22 +77,22 @@ static void get_hostname(char *hostname_buf) {
 #endif
 }
 
-static char *getWhiteName(void) {
+static char *pgn_get_white_name(void) {
     return (ComputerSide == White) ? (AMY_NAME) : (OpponentName);
 }
 
-static char *getBlackName(void) {
+static char *pgn_get_black_name(void) {
     return (ComputerSide == Black) ? (AMY_NAME) : (OpponentName);
 }
 
-static void save_moves(FILE *fout, struct Position *p) {
+static void pgn_save_moves(FILE *fout, struct Position *p) {
     int ply = p->ply;
     move_t *history = safe_calloc(ply, sizeof(int));
 
     for (int i = ply; i > 0; i--) {
         int move = (p->actLog - 1)->gl_Move;
         history[i - 1] = move;
-        UndoMove(p, move);
+        dbase_undo_move(p, move);
     }
 
     int width = 0;
@@ -100,21 +100,21 @@ static void save_moves(FILE *fout, struct Position *p) {
     for (int i = 0; i < ply; i++) {
         int move = history[i];
         if ((i & 1) == 0) {
-            EmitPgnLine(fout, &width, "%d. ", (i / 2) + 1);
+            pgn_emit_line(fout, &width, "%d. ", (i / 2) + 1);
         }
 
         char san_buffer[16];
-        char *san = SAN(p, move, san_buffer);
+        char *san = dbase_san(p, move, san_buffer);
 
-        EmitPgnLine(fout, &width, "%s ", san);
+        pgn_emit_line(fout, &width, "%s ", san);
 
-        DoMove(p, move);
+        dbase_do_move(p, move);
     }
 
     free(history);
 }
 
-void SaveGame(struct Position *p, char *file_name) {
+void pgn_save_game(struct Position *p, char *file_name) {
     /* Do not save if no move made yet. */
     if (p->ply > 0) {
         FILE *fout = fopen(file_name, "w");
@@ -126,10 +126,10 @@ void SaveGame(struct Position *p, char *file_name) {
             char time_buf[16];
             char hostname_buf[256];
 
-            get_hostname(hostname_buf);
-            get_date_time(date_buf, time_buf);
+            pgn_get_hostname(hostname_buf);
+            pgn_get_date_time(date_buf, time_buf);
 
-            gameend = GameEnd(CurrentPosition);
+            gameend = dbase_game_end(CurrentPosition);
             if (gameend == NULL) {
                 gameend = "*";
                 strcpy(shortgameend, gameend);
@@ -151,16 +151,16 @@ void SaveGame(struct Position *p, char *file_name) {
             header.date = date_buf;
             header.time = time_buf;
 
-            if (FindEcoCode(p, eco)) {
+            if (eco_find_code(p, eco)) {
                 header.eco = eco;
             }
 
-            header.white = getWhiteName();
-            header.black = getBlackName();
+            header.white = pgn_get_white_name();
+            header.black = pgn_get_black_name();
 
-            print_header(fout, &header);
+            pgn_print_header(fout, &header);
 
-            save_moves(fout, p);
+            pgn_save_moves(fout, p);
 
             fprintf(fout, "\n%s\n\n", gameend);
             fclose(fout);
@@ -169,12 +169,12 @@ void SaveGame(struct Position *p, char *file_name) {
 }
 
 /*
- * Print a formatted message to fout as fprintf would, track the current
+ * print a formatted message to fout as fprintf would, track the current
  * line width, and start a new line when it exceeds 72 characters.
  * The width is derived from the number of characters actually written,
  * so callers no longer need to compute it by hand.
  */
-void EmitPgnLine(FILE *fout, int *width, const char *fmt, ...) {
+void pgn_emit_line(FILE *fout, int *width, const char *fmt, ...) {
     va_list ap, copy;
 
     va_start(ap, fmt);
@@ -201,26 +201,26 @@ void EmitPgnLine(FILE *fout, int *width, const char *fmt, ...) {
     }
 }
 
-static inline char *str_or_empty(char *str) { return str ? str : ""; }
+static inline char *pgn_str_or_empty(char *str) { return str ? str : ""; }
 
-void print_header(FILE *fout, struct PGNHeader *header) {
-    fprintf(fout, "[Event \"%s\"]\n", str_or_empty(header->event));
-    fprintf(fout, "[Site \"%s\"]\n", str_or_empty(header->site));
-    fprintf(fout, "[Date \"%s\"]\n", str_or_empty(header->date));
+void pgn_print_header(FILE *fout, struct PGNHeader *header) {
+    fprintf(fout, "[Event \"%s\"]\n", pgn_str_or_empty(header->event));
+    fprintf(fout, "[Site \"%s\"]\n", pgn_str_or_empty(header->site));
+    fprintf(fout, "[Date \"%s\"]\n", pgn_str_or_empty(header->date));
 
     if (header->time) {
         fprintf(fout, "[Time \"%s\"]\n", header->time);
     }
 
-    fprintf(fout, "[Round \"%s\"]\n", str_or_empty(header->round));
+    fprintf(fout, "[Round \"%s\"]\n", pgn_str_or_empty(header->round));
 
     if (header->eco) {
         fprintf(fout, "[ECO \"%s\"]\n", header->eco);
     }
 
-    fprintf(fout, "[White \"%s\"]\n", str_or_empty(header->white));
-    fprintf(fout, "[Black \"%s\"]\n", str_or_empty(header->black));
-    fprintf(fout, "[Result \"%s\"]\n", str_or_empty(header->result));
+    fprintf(fout, "[White \"%s\"]\n", pgn_str_or_empty(header->white));
+    fprintf(fout, "[Black \"%s\"]\n", pgn_str_or_empty(header->black));
+    fprintf(fout, "[Result \"%s\"]\n", pgn_str_or_empty(header->result));
 
     if (header->fen) {
         fprintf(fout, "[SetUp \"1\"]\n");

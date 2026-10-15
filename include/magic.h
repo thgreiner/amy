@@ -63,7 +63,7 @@ extern const uint8_t bishop_index_bits[];
  * Returns:
  *     the bitboard of squares attacked by the rook.
  */
-static inline uint64_t rook_attacks(int sq, uint64_t occupied) {
+static inline uint64_t magic_rook_attacks(int sq, uint64_t occupied) {
     uint64_t blockers = occupied & rook_blocker_mask[sq];
     uint64_t magic_index =
         (blockers * rook_magics[sq]) >> (64 - rook_index_bits[sq]);
@@ -80,13 +80,13 @@ static inline uint64_t rook_attacks(int sq, uint64_t occupied) {
  * Returns:
  *     the bitboard of squares attacked by the bishop.
  */
-static inline uint64_t bishop_attacks(int sq, uint64_t occupied) {
+static inline uint64_t magic_bishop_attacks(int sq, uint64_t occupied) {
     uint64_t blockers = occupied & bishop_blocker_mask[sq];
     uint64_t magic_index =
         (blockers * bishop_magics[sq]) >> (64 - bishop_index_bits[sq]);
     return bishop_table[bishop_table_offsets[sq] + magic_index];
 }
 
-void InitMagic(void);
+void magic_init(void);
 
 #endif /* MAGIC_H */

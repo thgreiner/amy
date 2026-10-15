@@ -1,6 +1,6 @@
         .text
-.globl _CountBits
-_CountBits:
+.globl _bitboard_count_bits
+_bitboard_count_bits:
         movl    4(%esp), %ecx
         xorl    %eax, %eax
         testl   %ecx, %ecx
@@ -24,8 +24,8 @@ l3:
 
 /*----------------------------------------------------------------------------*/
 
-        .globl  _FindSetBit
-_FindSetBit:
+        .globl  _bitboard_find_set_bit
+_bitboard_find_set_bit:
         cmpl    $1, 8(%esp)
         sbbl    %eax, %eax
         movl    8(%esp,%eax,4), %edx

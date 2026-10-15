@@ -32,7 +32,7 @@
 #ifndef EVALUATION_CONFIG_H
 #define EVALUATION_CONFIG_H
 
-void LoadEvaluationConfig(char *);
-void SaveEvaluationConfig(char *);
+void eval_config_load(char *);
+void eval_config_save(char *);
 
 #endif /* EVALUATION_H */

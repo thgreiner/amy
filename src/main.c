@@ -48,6 +48,7 @@
 #include "test_blunder.h"
 #include "test_dbase.h"
 #include "test_pgn_write.h"
+#include "test_utils.h"
 #include "test_yaml.h"
 #include "utils.h"
 
@@ -63,22 +64,23 @@ static char EGTBPath[1024] = "TB";
 
 static char *ConfigFileName = NULL;
 
-static void RunAllTests(void) {
+static void main_run_tests(void) {
     test_all_blunder();
     test_all_yaml();
     test_all_dbase();
     test_all_pgn_write();
-    Print(0, "All tests passed.\n");
+    test_all_utils();
+    print(0, "All tests passed.\n");
 }
 
-static void ProcessOptions(int argc, char *argv[]) {
+static void main_process_options(int argc, char *argv[]) {
     int i;
 
     for (i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "-ht")) {
             i++;
             if (i < argc) {
-                GuessHTSizes(argv[i]);
+                ht_guess_sizes(argv[i]);
             }
         }
 
@@ -90,7 +92,7 @@ static void ProcessOptions(int argc, char *argv[]) {
         }
 
         if (!strcmp(argv[i], "--test")) {
-            RunAllTests();
+            main_run_tests();
             exit(0);
         }
 #if MP
@@ -104,7 +106,7 @@ static void ProcessOptions(int argc, char *argv[]) {
     }
 }
 
-static void ProcessRCFile(void) {
+static void main_process_rc_file(void) {
     FILE *rcFile = fopen(".amyrc", "r");
     char buf[1024];
 
@@ -128,16 +130,16 @@ static void ProcessRCFile(void) {
         if (buf[0] == '#')
             continue;
 
-        key = nextToken(&x, "=\t\n\r");
+        key = utils_next_token(&x, "=\t\n\r");
         if (key == NULL)
             continue;
 
-        value = nextToken(&x, "\n\n\r");
+        value = utils_next_token(&x, "\n\n\r");
         if (value == NULL)
             continue;
 
         if (!strcmp(key, "ht")) {
-            GuessHTSizes(value);
+            ht_guess_sizes(value);
         } else if (!strcmp(key, "tbpath")) {
             strncpy(EGTBPath, value, sizeof(EGTBPath) - 1);
         } else if (!strcmp(key, "cpu")) {
@@ -155,13 +157,13 @@ static void ProcessRCFile(void) {
 /**
  * Show the version of Amy.
  */
-static void ShowVersion(void) {
-    Print(0, "\n");
-    Print(0, CopyrightNotice);
+static void main_show_version(void) {
+    print(0, "\n");
+    print(0, CopyrightNotice);
 #if MP
-    Print(0, "    Multiprocessor support (%d CPUs).\n\n", NumberOfCPUs);
+    print(0, "    Multiprocessor support (%d CPUs).\n\n", NumberOfCPUs);
 #else
-    Print(0, "    No multiprocessor support.\n\n");
+    print(0, "    No multiprocessor support.\n\n");
 #endif
 }
 
@@ -170,39 +172,39 @@ int main(int argc, char *argv[]) {
     setbuf(stdin, NULL);
 #endif
 
-    OpenLogFile("Amy.log");
+    utils_open_log_file("Amy.log");
 
-    InitMoves();
+    movedata_init();
 
-    InitAll();
-    HashInit();
+    init_all();
+    ht_init();
 
     /*
      * Process rc file first, then command line options. This way command
      * line options can override rc file settings.
      */
 
-    ProcessRCFile();
-    ProcessOptions(argc, argv);
+    main_process_rc_file();
+    main_process_options(argc, argv);
 
-    ShowVersion();
+    main_show_version();
 
     if (ConfigFileName) {
-        LoadEvaluationConfig(ConfigFileName);
+        eval_config_load(ConfigFileName);
     }
 
-    AllocateHT();
-    InitEGTB(EGTBPath);
-    RecogInit();
+    ht_allocate();
+    probe_init(EGTBPath);
+    recog_init();
 
-    DoBookLearning();
+    learn_book();
 
-    Print(0, "\n");
+    print(0, "\n");
 
     /* Ensure true random behavior. */
-    InitRandom(GetTime());
+    random_init(utils_get_time());
 
-    StateMachine();
+    state_machine_run();
 
     return 0;
 }

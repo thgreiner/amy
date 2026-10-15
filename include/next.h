@@ -101,14 +101,14 @@ struct SearchData {
     uint16_t movenum;
 };
 
-struct SearchData *CreateSearchData(struct Position *);
-void FreeSearchData(struct SearchData *);
-void EnterNode(struct SearchData *);
-void LeaveNode(struct SearchData *);
-int NextMove(struct SearchData *);
-int NextEvasion(struct SearchData *);
-int NextMoveQ(struct SearchData *, int);
-void PutKiller(struct SearchData *, move_t);
-void TestNextGenerators(struct Position *);
+struct SearchData *next_create_data(struct Position *);
+void next_free_data(struct SearchData *);
+void next_enter_node(struct SearchData *);
+void next_leave_node(struct SearchData *);
+int next_move(struct SearchData *);
+int next_evasion(struct SearchData *);
+int next_move_q(struct SearchData *, int);
+void next_put_killer(struct SearchData *, move_t);
+void next_test_generators(struct Position *);
 
 #endif

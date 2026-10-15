@@ -82,14 +82,14 @@ struct BookQuery {
 static tree_node_t *BookDB = NULL;
 static tree_node_t *LearnDB = NULL;
 
-static tree_node_t *PutBookEntry(tree_node_t *database, hash_t hk, int result,
-                                 int elo) {
-    Print(9, "storing position\n");
+static tree_node_t *book_put_entry(tree_node_t *database, hash_t hk, int result,
+                                   int elo) {
+    print(9, "storing position\n");
     struct BookEntry *entry = NULL;
 
     if (database != NULL) {
-        entry = (struct BookEntry *)lookup_value(database, (char *)&hk,
-                                                 sizeof(hk), NULL);
+        entry = (struct BookEntry *)tree_lookup_value(database, (char *)&hk,
+                                                      sizeof(hk), NULL);
     }
 
     if (entry == NULL) {
@@ -110,14 +110,14 @@ static tree_node_t *PutBookEntry(tree_node_t *database, hash_t hk, int result,
     }
 #endif
 
-    database = add_node(database, (char *)&hk, sizeof(hk), (char *)entry,
-                        sizeof(struct BookEntry));
+    database = tree_add_node(database, (char *)&hk, sizeof(hk), (char *)entry,
+                             sizeof(struct BookEntry));
     free(entry);
 
     return database;
 }
 
-static void OpenBookFile(tree_node_t **db) {
+static void book_open_file(tree_node_t **db) {
     static bool error_printed = false;
 
     FILE *fin = fopen(BOOK_NAME, "rb");
@@ -130,53 +130,53 @@ static void OpenBookFile(tree_node_t **db) {
 
     if (fin == NULL) {
         if (!error_printed) {
-            Print(0, "Can't open database: %s\n", strerror(errno));
+            print(0, "Can't open database: %s\n", strerror(errno));
             error_printed = true;
         }
         return;
     }
 
-    *db = load_tree(fin);
+    *db = tree_load(fin);
     fclose(fin);
 }
 
-static struct BookEntry *GetBookEntry(hash_t hk) {
+static struct BookEntry *book_get_entry(hash_t hk) {
     struct BookEntry *retval = NULL;
     if (BookDB == NULL) {
-        OpenBookFile(&BookDB);
+        book_open_file(&BookDB);
     }
     if (BookDB != NULL) {
-        retval = (struct BookEntry *)lookup_value(BookDB, (char *)&hk,
-                                                  sizeof(hk), NULL);
+        retval = (struct BookEntry *)tree_lookup_value(BookDB, (char *)&hk,
+                                                       sizeof(hk), NULL);
     }
 
     return retval;
 }
 
-static struct LearnEntry *GetLearnEntry(hash_t hk) {
+static struct LearnEntry *book_get_learn_entry(hash_t hk) {
     struct LearnEntry *retval = NULL;
 
     if (LearnDB == NULL) {
         FILE *fin = fopen(LEARN_NAME, "rb");
         if (fin != NULL) {
-            LearnDB = load_tree(fin);
+            LearnDB = tree_load(fin);
             fclose(fin);
         }
     }
     if (LearnDB != NULL) {
-        retval = (struct LearnEntry *)lookup_value(LearnDB, (char *)&hk,
-                                                   sizeof(hk), NULL);
+        retval = (struct LearnEntry *)tree_lookup_value(LearnDB, (char *)&hk,
+                                                        sizeof(hk), NULL);
     }
 
     return retval;
 }
 
-void CloseBook(void) {
-    free_node(BookDB);
+void book_close(void) {
+    tree_free_node(BookDB);
     BookDB = NULL;
 }
 
-static void BookupInternal(char *file_name, int verbosity) {
+static void book_up_internal(char *file_name, int verbosity) {
     struct Position *p;
     FILE *fin;
     int afterEco = 0;
@@ -188,15 +188,15 @@ static void BookupInternal(char *file_name, int verbosity) {
 
     fin = fopen(file_name, "rb");
     if (fin == NULL) {
-        Print(0, "Can't open bookfile.\n");
+        print(0, "Can't open bookfile.\n");
         return;
     } else {
-        Print(verbosity, "   Parsing PGN file %s. '.'= 100 Games\n", file_name);
+        print(verbosity, "   Parsing PGN file %s. '.'= 100 Games\n", file_name);
     }
 
-    CloseBook();
+    book_close();
 
-    while (!scanHeader(fin, &header)) {
+    while (!pgn_scan_header(fin, &header)) {
         int result;
 
         if (!strcmp(header.result, "1-0"))
@@ -208,18 +208,18 @@ static void BookupInternal(char *file_name, int verbosity) {
         else
             continue;
 
-        p = InitialPosition();
+        p = dbase_initial_position();
 
-        while (!scanMove(fin, move)) {
+        while (!pgn_scan_move(fin, move)) {
             if (!(strlen(move) < 12)) {
                 printf("\n<%s>\n", move);
                 exit(1);
             }
 
-            move_t themove = ParseSAN(p, move);
+            move_t themove = dbase_parse_san(p, move);
             if (themove != M_NONE) {
-                DoMove(p, themove);
-                char *eco_code = GetEcoCode(p->hkey);
+                dbase_do_move(p, themove);
+                char *eco_code = eco_get_code(p->hkey);
                 if (eco_code) {
                     afterEco = 0;
                     free(eco_code);
@@ -229,55 +229,55 @@ static void BookupInternal(char *file_name, int verbosity) {
                 if (afterEco <= 20) {
                     if (p->turn == Black) {
                         /* white played the move */
-                        database = PutBookEntry(database, p->hkey, result,
-                                                header.white_elo);
+                        database = book_put_entry(database, p->hkey, result,
+                                                  header.white_elo);
                     } else {
                         /* black played the move */
-                        database = PutBookEntry(database, p->hkey, -result,
-                                                header.black_elo);
+                        database = book_put_entry(database, p->hkey, -result,
+                                                  header.black_elo);
                     }
                 }
             }
         }
 
-        FreePosition(p);
-        free_header(&header);
+        dbase_free_position(p);
+        pgn_free_header(&header);
 
         lines++;
         if ((lines % 100) == 0) {
-            Print(0, ".");
+            print(0, ".");
 
             if ((lines % 7000) == 0) {
-                Print(0, "(%d)\n", lines);
+                print(0, "(%d)\n", lines);
             }
         }
     }
 
-    Print(verbosity, "(%d)\n", lines);
+    print(verbosity, "(%d)\n", lines);
     fclose(fin);
 
     FILE *fout = fopen(BOOK_NAME, "wb");
     if (fout == NULL) {
-        Print(0, "Can't write database: %s\n", strerror(errno));
+        print(0, "Can't write database: %s\n", strerror(errno));
         return;
     }
 
-    save_tree(database, fout);
+    tree_save(database, fout);
     fclose(fout);
 
-    free_node(database);
+    tree_free_node(database);
 }
 
-void Bookup(char *file_name) { BookupInternal(file_name, 0); }
+void book_up(char *file_name) { book_up_internal(file_name, 0); }
 
-void BookupQuiet(char *file_name) { BookupInternal(file_name, 9); }
+void book_up_quiet(char *file_name) { book_up_internal(file_name, 9); }
 
-static void GetAllBookMoves(struct Position *p, int *cnt, move_t *book_moves,
-                            struct BookQuery *entries) {
+static void book_get_all_moves(struct Position *p, int *cnt, move_t *book_moves,
+                               struct BookQuery *entries) {
     unsigned int i;
 
-    heap_t heap = allocate_heap();
-    LegalMoves(p, heap);
+    heap_t heap = heap_allocate();
+    dbase_legal_moves(p, heap);
 
     for (i = heap->current_section->start; i < heap->current_section->end;
          i++) {
@@ -285,13 +285,13 @@ static void GetAllBookMoves(struct Position *p, int *cnt, move_t *book_moves,
         struct BookEntry *be = NULL;
         struct LearnEntry *le = NULL;
 
-        DoMove(p, move);
+        dbase_do_move(p, move);
         /* If the move leads to a repetition, do not accept it. */
-        if (!Repeated(p, false)) {
-            be = GetBookEntry(p->hkey);
-            le = GetLearnEntry(p->hkey);
+        if (!dbase_repeated(p, false)) {
+            be = book_get_entry(p->hkey);
+            le = book_get_learn_entry(p->hkey);
         }
-        UndoMove(p, move);
+        dbase_undo_move(p, move);
 
         if (be) {
             memset(entries + *cnt, 0, sizeof(struct BookQuery));
@@ -306,10 +306,10 @@ static void GetAllBookMoves(struct Position *p, int *cnt, move_t *book_moves,
         }
     }
 
-    free_heap(heap);
+    heap_free(heap);
 }
 
-static void SortBook(int cnt, move_t *mvs, struct BookQuery *entries) {
+static void book_sort(int cnt, move_t *mvs, struct BookQuery *entries) {
     bool done = false;
 
     while (!done) {
@@ -337,8 +337,8 @@ static void SortBook(int cnt, move_t *mvs, struct BookQuery *entries) {
     }
 }
 
-static void CalculatePropabilities(int cnt, struct BookQuery *entries,
-                                   double *props) {
+static void book_calculate_probabilities(int cnt, struct BookQuery *entries,
+                                         double *props) {
     int total = 0;
     double totalprops;
     int limit;
@@ -400,18 +400,18 @@ static void CalculatePropabilities(int cnt, struct BookQuery *entries,
     }
 }
 
-int SelectBook(struct Position *p) {
+int book_select(struct Position *p) {
     int i, cnt = 0;
     struct BookQuery be[32];
     move_t moves[32];
     double props[32];
-    double random_value = Random();
+    double random_value = random_double();
 
-    GetAllBookMoves(p, &cnt, moves, be);
+    book_get_all_moves(p, &cnt, moves, be);
 
     if (cnt != 0) {
-        SortBook(cnt, moves, be);
-        CalculatePropabilities(cnt, be, props);
+        book_sort(cnt, moves, be);
+        book_calculate_probabilities(cnt, be, props);
 
         for (i = 0; i < cnt; i++) {
             if (props[i] > 0.0) {
@@ -426,17 +426,17 @@ int SelectBook(struct Position *p) {
     return M_NONE;
 }
 
-void QueryBook(struct Position *p) {
+void book_query(struct Position *p) {
     int i, cnt = 0;
     struct BookQuery be[32];
     move_t moves[32];
     double props[32];
 
-    GetAllBookMoves(p, &cnt, moves, be);
-    SortBook(cnt, moves, be);
-    CalculatePropabilities(cnt, be, props);
+    book_get_all_moves(p, &cnt, moves, be);
+    book_sort(cnt, moves, be);
+    book_calculate_probabilities(cnt, be, props);
 
-    Print(0, "\tmove    count  win loss draw av. elo prop\n");
+    print(0, "\tmove    count  win loss draw av. elo prop\n");
     for (i = 0; i < cnt; i++) {
         struct BookQuery *entry = be + i;
         int freq = entry->be.win + entry->be.loss + entry->be.draw;
@@ -450,8 +450,8 @@ void QueryBook(struct Position *p) {
         }
 
         char san_buffer[16];
-        Print(0, "\t%5s%c %6d %3d%% %3d%% %3d%% %5d %3.f\n",
-              SAN(p, moves[i], san_buffer), modifier, freq,
+        print(0, "\t%5s%c %6d %3d%% %3d%% %3d%% %5d %3.f\n",
+              dbase_san(p, moves[i], san_buffer), modifier, freq,
               (100 * entry->be.win) / freq, (100 * entry->be.loss) / freq,
               (100 * entry->be.draw) / freq,
 #if WITH_ELO
@@ -462,14 +462,14 @@ void QueryBook(struct Position *p) {
               props[i] * 100.0);
     }
 
-    Print(0, "\n");
+    print(0, "\n");
 }
 
-static void PutLearnEntry(hash_t hk, int learn_value, int flags) {
+static void book_put_learn_entry(hash_t hk, int learn_value, int flags) {
     if (LearnDB == NULL) {
         FILE *fin = fopen(LEARN_NAME, "rb");
         if (fin != NULL) {
-            LearnDB = load_tree(fin);
+            LearnDB = tree_load(fin);
             fclose(fin);
         }
     }
@@ -479,17 +479,17 @@ static void PutLearnEntry(hash_t hk, int learn_value, int flags) {
     entry.learn_value = learn_value;
     entry.flags = flags;
 
-    LearnDB = add_node(LearnDB, (char *)&hk, sizeof(hk), (char *)&entry,
-                       sizeof(entry));
+    LearnDB = tree_add_node(LearnDB, (char *)&hk, sizeof(hk), (char *)&entry,
+                            sizeof(entry));
 }
 
-void CreateLearnDB(char *file_name) {
+void book_create_learn_db(char *file_name) {
     FILE *fin = fopen(file_name, "rb");
     char buffer[1024];
     struct Position *p;
 
     if (fin == NULL) {
-        Print(0, "Can't open learn file %s\n", file_name);
+        print(0, "Can't open learn file %s\n", file_name);
         return;
     }
 
@@ -500,9 +500,9 @@ void CreateLearnDB(char *file_name) {
         if (buffer[0] == '#')
             continue;
 
-        p = InitialPosition();
+        p = dbase_initial_position();
 
-        while ((move = nextToken(&x, " \n\r\t")) != NULL) {
+        while ((move = utils_next_token(&x, " \n\r\t")) != NULL) {
             int flags = 0;
             char *modifier = move + strlen(move) - 1;
             move_t themove;
@@ -515,24 +515,24 @@ void CreateLearnDB(char *file_name) {
                 *modifier = '\0';
             }
 
-            themove = ParseSAN(p, move);
+            themove = dbase_parse_san(p, move);
             if (themove != M_NONE) {
                 char san_buffer[16];
-                Print(0, "%s ", SAN(p, themove, san_buffer));
+                print(0, "%s ", dbase_san(p, themove, san_buffer));
 
-                DoMove(p, themove);
+                dbase_do_move(p, themove);
 
                 if (flags != 0) {
-                    PutLearnEntry(p->hkey, 0, flags);
+                    book_put_learn_entry(p->hkey, 0, flags);
                 }
             } else {
-                Print(0, "can't parse >%s<\n", move);
+                print(0, "can't parse >%s<\n", move);
                 break;
             }
         }
 
-        Print(0, "\n");
-        FreePosition(p);
+        print(0, "\n");
+        dbase_free_position(p);
     }
 
     fclose(fin);
@@ -540,10 +540,10 @@ void CreateLearnDB(char *file_name) {
     if (LearnDB != NULL) {
         FILE *fout = fopen(LEARN_NAME, "wb");
         if (fout != NULL) {
-            save_tree(LearnDB, fout);
+            tree_save(LearnDB, fout);
             fclose(fout);
         } else {
-            Print(0, "Failed to save learn file: %s\n", strerror(errno));
+            print(0, "Failed to save learn file: %s\n", strerror(errno));
         }
     }
 }
@@ -557,8 +557,8 @@ static tree_node_t *flatten_internal(tree_node_t *source, tree_node_t *target,
     struct BookEntry *entry = (struct BookEntry *)source->value_data;
     (*read)++;
     if ((entry->win + entry->draw + entry->loss) > threshold) {
-        target = add_node(target, source->key_data, source->key_len,
-                          source->value_data, source->value_len);
+        target = tree_add_node(target, source->key_data, source->key_len,
+                               source->value_data, source->value_len);
         (*written)++;
     }
 
@@ -570,27 +570,27 @@ static tree_node_t *flatten_internal(tree_node_t *source, tree_node_t *target,
     return target;
 }
 
-void FlattenBook(unsigned int threshold) {
+void book_flatten(unsigned int threshold) {
     int read = 0;
     int written = 0;
 
     if (BookDB == NULL) {
-        OpenBookFile(&BookDB);
+        book_open_file(&BookDB);
     }
     if (BookDB != NULL) {
         tree_node_t *flattened =
             flatten_internal(BookDB, NULL, threshold, &read, &written);
 
-        PrintNoLog(0, "Read %d entries, wrote %d entries\n", read, written);
+        print_no_log(0, "Read %d entries, wrote %d entries\n", read, written);
 
         FILE *fout = fopen("Book2.db", "wb");
         if (fout != NULL) {
-            save_tree(flattened, fout);
+            tree_save(flattened, fout);
             fclose(fout);
         } else {
-            Print(0, "Can't write database: %s\n", strerror(errno));
+            print(0, "Can't write database: %s\n", strerror(errno));
         }
 
-        free_node(flattened);
+        tree_free_node(flattened);
     }
 }

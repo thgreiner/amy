@@ -87,13 +87,13 @@ struct IntArrayLookupResult {
     unsigned int elements_read;
 };
 
-struct Node *parse_yaml(char *);
-struct StringLookupResult get_as_string(struct Node *, char *);
-struct IntLookupResult get_as_int(struct Node *, char *);
-struct ListLookupResult get_as_list(struct Node *, char *);
-struct IntArrayLookupResult get_as_int_array(struct Node *, char *, int *, int);
-void abort_if_allocation_failed(void *x);
+struct Node *yaml_parse_yaml(char *);
+struct StringLookupResult yaml_get_as_string(struct Node *, char *);
+struct IntLookupResult yaml_get_as_int(struct Node *, char *);
+struct ListLookupResult yaml_get_as_list(struct Node *, char *);
+struct IntArrayLookupResult yaml_get_as_int_array(struct Node *, char *, int *,
+                                                  int);
 
-void free_yaml_node(struct Node *);
+void yaml_free_node(struct Node *);
 
 #endif

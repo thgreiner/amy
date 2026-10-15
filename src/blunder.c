@@ -42,8 +42,8 @@
 
 #define THRESHOLD 2000
 
-move_t get_best_move_from_comment(const char *comment, struct Position *p,
-                                  char *eval_buf) {
+move_t blunder_get_best_move_from_comment(const char *comment,
+                                          struct Position *p, char *eval_buf) {
     const char *ptr = comment;
 
     move_t best_move = M_NONE;
@@ -85,7 +85,7 @@ move_t get_best_move_from_comment(const char *comment, struct Position *p,
         char *move = strtok_r(elem, ":", &brki);
         char *count = strtok_r(NULL, ":", &brki);
 
-        move_t parsed_move = ParseSAN(p, move);
+        move_t parsed_move = dbase_parse_san(p, move);
 
         if (parsed_move != M_NONE && count != NULL) {
             int parsed_count = atoi(count);
@@ -101,7 +101,7 @@ move_t get_best_move_from_comment(const char *comment, struct Position *p,
     return best_move;
 }
 
-void BlunderCheck(char *file_name) {
+void blunder_check(char *file_name) {
     struct PGNHeader header;
     char move[12];
     char comment[2048];
@@ -109,7 +109,7 @@ void BlunderCheck(char *file_name) {
 
     FILE *fin = fopen(file_name, "r");
     if (fin == NULL) {
-        Print(0, "Cannot open input file %s\n");
+        print(0, "Cannot open input file %s\n");
         return;
     }
 
@@ -121,102 +121,103 @@ void BlunderCheck(char *file_name) {
     unsigned int count_games = 0;
     unsigned int count_blunders = 0;
 
-    while (!scanHeader(fin, &header)) {
+    while (!pgn_scan_header(fin, &header)) {
         struct Position *p;
 
         count_games++;
 
         if (header.fen != NULL) {
-            p = CreatePositionFromEPD(header.fen);
+            p = dbase_create_position_from_epd(header.fen);
         } else {
-            p = InitialPosition();
+            p = dbase_initial_position();
         }
 
-        print_header(fout, &header);
+        pgn_print_header(fout, &header);
 
         move_t last_move = M_NONE;
         int width = 0;
 
-        while (!scanMove(fin, move)) {
+        while (!pgn_scan_move(fin, move)) {
             if (!(strlen(move) < 12)) {
-                Print(0, "\nMalformed move: <%s>\n", move);
+                print(0, "\nMalformed move: <%s>\n", move);
                 exit(1);
             }
 
-            get_and_reset_comment(comment, sizeof(comment) - 1);
-            // Print(1, "**** %s\n", comment);
+            pgn_get_and_reset_comment(comment, sizeof(comment) - 1);
+            // print(1, "**** %s\n", comment);
 
             if (last_move != M_NONE && strlen(comment) != 0) {
                 char sanbuf[16], evalbuf[16];
 
-                UndoMove(p, last_move);
+                dbase_undo_move(p, last_move);
 
                 move_t best_move =
-                    get_best_move_from_comment(comment, p, evalbuf);
+                    blunder_get_best_move_from_comment(comment, p, evalbuf);
 
                 int search_evaluation;
                 int alternate_evaluation;
 
-                move_t optimal_move = Iterate(p, &search_evaluation, best_move,
-                                              &alternate_evaluation);
+                move_t optimal_move = search_iterate(
+                    p, &search_evaluation, best_move, &alternate_evaluation);
                 int score_diff = search_evaluation - alternate_evaluation;
 
                 if (optimal_move != best_move && score_diff >= 1500) {
                     count_blunders++;
 
-                    ShowPosition(p);
+                    dbase_show_position(p);
 
                     // Logging
-                    Print(1, ">>> best move from comment: %s\n",
-                          SAN(p, best_move, sanbuf));
-                    Print(1, ">>> optimal move: %s\n",
-                          SAN(p, optimal_move, sanbuf));
-                    Print(1, ">>> score diff: %d\n",
+                    print(1, ">>> best move from comment: %s\n",
+                          dbase_san(p, best_move, sanbuf));
+                    print(1, ">>> optimal move: %s\n",
+                          dbase_san(p, optimal_move, sanbuf));
+                    print(1, ">>> score diff: %d\n",
                           search_evaluation - alternate_evaluation);
 
-                    EmitPgnLine(fout, &width, "{ q=%s; p=[%s:100] } ", evalbuf,
-                                SAN(p, optimal_move, sanbuf));
+                    pgn_emit_line(fout, &width, "{ q=%s; p=[%s:100] } ",
+                                  evalbuf, dbase_san(p, optimal_move, sanbuf));
                 } else {
-                    EmitPgnLine(fout, &width, "{%s} ", comment);
+                    pgn_emit_line(fout, &width, "{%s} ", comment);
                 }
 
-                DoMove(p, last_move);
+                dbase_do_move(p, last_move);
             }
 
-            move_t themove = ParseSAN(p, move);
+            move_t themove = dbase_parse_san(p, move);
 
             if (themove == M_NONE) {
-                get_and_reset_comment(comment, sizeof(comment) - 1);
+                pgn_get_and_reset_comment(comment, sizeof(comment) - 1);
                 if (strlen(comment) != 0) {
-                    EmitPgnLine(fout, &width, "{%s} ", comment);
+                    pgn_emit_line(fout, &width, "{%s} ", comment);
                 }
                 break;
             }
 
             if ((p->ply % 2) == 0) {
-                EmitPgnLine(fout, &width, "%d. ", 1 + p->ply / 2);
+                pgn_emit_line(fout, &width, "%d. ", 1 + p->ply / 2);
             }
 
-            EmitPgnLine(fout, &width, "%s ", SAN(p, themove, san_buffer));
+            pgn_emit_line(fout, &width, "%s ",
+                          dbase_san(p, themove, san_buffer));
 
-            DoMove(p, themove);
+            dbase_do_move(p, themove);
             last_move = themove;
         }
 
-        get_and_reset_comment(comment, sizeof(comment) - 1);
+        pgn_get_and_reset_comment(comment, sizeof(comment) - 1);
         if (strlen(comment) != 0) {
             fprintf(fout, "{%s} ", comment);
         }
 
         fprintf(fout, "%s\n\n", header.result);
 
-        FreePosition(p);
-        free_header(&header);
+        dbase_free_position(p);
+        pgn_free_header(&header);
     }
 
     fclose(fin);
 
     Verbosity = verbosity_safe;
 
-    Print(0, "Games: %u Blunders: %u\n", count_games, count_blunders);
+    print(0, "Games: %u Blunders: %u\n", count_games, count_blunders);
 }

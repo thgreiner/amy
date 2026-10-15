@@ -35,6 +35,7 @@
 
 #include "config.h"
 
+#include <ctype.h>
 #include <limits.h>
 #include <stdarg.h>
 #include <string.h>
@@ -56,7 +57,7 @@ int Verbosity = 9;
 /**
  * Open a log file, remember fp in global variable LogFile
  */
-void OpenLogFile(char *name) {
+void utils_open_log_file(char *name) {
     if (LogFile) {
         fclose(LogFile);
     }
@@ -64,9 +65,9 @@ void OpenLogFile(char *name) {
 }
 
 /**
- * Print something to stdout and to the logfile.
+ * print something to stdout and to the logfile.
  */
-void CDECL Print(int vb, char *fmt, ...) {
+void CDECL print(int vb, char *fmt, ...) {
     if (vb < Verbosity) {
         va_list va;
         va_start(va, fmt);
@@ -84,9 +85,9 @@ void CDECL Print(int vb, char *fmt, ...) {
 }
 
 /**
- * Print to stdout only.
+ * print to stdout only.
  */
-void CDECL PrintNoLog(int vb, char *fmt, ...) {
+void CDECL print_no_log(int vb, char *fmt, ...) {
     va_list va;
     va_start(va, fmt);
     if (vb < Verbosity) {
@@ -99,14 +100,14 @@ void CDECL PrintNoLog(int vb, char *fmt, ...) {
 /**
  * Read a line from stdin.
  */
-int ReadLine(char *buffer, int cnt) {
+int utils_read_line(char *buffer, int cnt) {
     return fgets(buffer, cnt, stdin) != NULL;
 }
 
 /**
  * Convert an int representing a time in seconds to a string.
  */
-char *FormatTime(unsigned long secs, char *buffer, size_t len) {
+char *utils_format_time(unsigned long secs, char *buffer, size_t len) {
     if (secs >= 60 * ONE_SECOND) {
         long mins;
         secs = secs / ONE_SECOND;
@@ -131,7 +132,7 @@ char *FormatTime(unsigned long secs, char *buffer, size_t len) {
 /**
  * Convert a score to a string.
  */
-char *FormatScore(int score, char *buffer, size_t len) {
+char *utils_format_score(int score, char *buffer, size_t len) {
     if (score > CMLIMIT) {
         snprintf(buffer, len, "+M%d", (INF - score) / 2 + 1);
     } else if (score < -CMLIMIT) {
@@ -159,29 +160,29 @@ char *FormatScore(int score, char *buffer, size_t len) {
  * Returns:
  *     the pointer to the buffer
  */
-char *FormatCount(unsigned long count, char *buffer, size_t len) {
+char *utils_format_count(unsigned long count, char *buffer, size_t len) {
     if (count < 1000) {
         snprintf(buffer, len, "%lu", count);
     } else if (count < 10000ull) {
-        double scaled = count * 1e-3;
+        double scaled = (double)count * 1e-3;
         snprintf(buffer, len, "%.2fk", scaled);
     } else if (count < 100000ull) {
-        double scaled = count * 1e-3;
+        double scaled = (double)count * 1e-3;
         snprintf(buffer, len, "%.1fk", scaled);
     } else if (count < 1000000ull) {
-        int scaled = (int)(count * 1e-3);
+        int scaled = (int)((double)count * 1e-3);
         snprintf(buffer, len, "%dk", scaled);
     } else if (count < 10000000ull) {
-        double scaled = count * 1e-6;
+        double scaled = (double)count * 1e-6;
         snprintf(buffer, len, "%.2fM", scaled);
     } else if (count < 100000000ull) {
-        double scaled = count * 1e-6;
+        double scaled = (double)count * 1e-6;
         snprintf(buffer, len, "%.1fM", scaled);
     } else if (count < 1000000000ull) {
-        int scaled = (int)(count * 1e-6);
+        int scaled = (int)((double)count * 1e-6);
         snprintf(buffer, len, "%dM", scaled);
     } else {
-        double scaled = count * 1e-9;
+        double scaled = (double)count * 1e-9;
         snprintf(buffer, len, "%.2fG", scaled);
     }
     return buffer;
@@ -190,7 +191,7 @@ char *FormatCount(unsigned long count, char *buffer, size_t len) {
 /**
  * Get the current time.
  */
-unsigned long GetTime(void) {
+unsigned long utils_get_time(void) {
 #if HAVE_GETTIMEOFDAY
     static struct timeval timeval;
 
@@ -208,7 +209,7 @@ unsigned long GetTime(void) {
 /**
  * Create a filename for a temporary file
  */
-void GetTmpFileName(char *file_name, size_t len) {
+void utils_get_tmp_file_name(char *file_name, size_t len) {
     for (int cnt = 0;; cnt++) {
         int result;
         struct stat dummy;
@@ -223,7 +224,7 @@ void GetTmpFileName(char *file_name, size_t len) {
 /**
  * Check if we can read from stdin without blocking.
  */
-int InputReady(void) {
+int utils_input_ready(void) {
 #if HAVE_SELECT
     fd_set rfd;
     struct timeval timeout;
@@ -278,7 +279,7 @@ int InputReady(void) {
 /**
  * Tokenize a string.
  */
-char *nextToken(char **string, const char *delim) {
+char *utils_next_token(char **string, const char *delim) {
     char *start = *string;
     char *end;
     const char *t;
@@ -322,10 +323,10 @@ char *nextToken(char **string, const char *delim) {
 }
 
 /**
- * Returns the ratio of dividend / divisor as percentage.
+ * Returns the ratio of dividend / divisor as utils_percentage.
  * Handles some edge cases for convenience.
  */
-int Percentage(unsigned long dividend, unsigned long divisor) {
+int utils_percentage(unsigned long dividend, unsigned long divisor) {
     if (dividend == 0) {
         return 0;
     }
@@ -338,18 +339,17 @@ int Percentage(unsigned long dividend, unsigned long divisor) {
     return (int)(ratio * 100.0 + 0.5);
 }
 
-char *strip(char *buffer) {
-    char *start = buffer;
-    while (*start == ' ') {
-        start++;
-    }
+char *utils_strip(char *buffer) {
+    if (!buffer)
+        return NULL;
 
-    char *end = start + strlen(start) - 1;
+    while (isspace((unsigned char)*buffer))
+        buffer++;
 
-    while (end > start && *end == ' ') {
-        *end = 0;
+    char *end = buffer + strlen(buffer);
+    while (end > buffer && isspace((unsigned char)end[-1]))
         end--;
-    }
 
-    return start;
+    *end = 0;
+    return buffer;
 }

@@ -56,33 +56,33 @@ int ComputerSide;
 /**
  * Implements the state machine.
  */
-void StateMachine(void) {
+void state_machine_run(void) {
     const char *gameend;
 
-    NewGame(NULL);
+    cmd_newgame(NULL);
 
     ComputerSide = Black;
 
     while (State != STATE_END) {
 
         if (AutoSave) {
-            SaveGame(CurrentPosition, AutoSaveFileName);
+            pgn_save_game(CurrentPosition, AutoSaveFileName);
         }
 
         switch (State) {
         case STATE_WAITING:
             if (!XBoardMode) {
-                Print(0, "%s(%d): ",
+                print(0, "%s(%d): ",
                       CurrentPosition->turn == White ? "White" : "Black",
                       (CurrentPosition->ply / 2) + 1);
             }
 
-            if (!ReadLine(InputBuffer, 1023)) {
+            if (!utils_read_line(InputBuffer, 1023)) {
                 State = STATE_END;
             } else {
-                struct Command *command = ParseInput(InputBuffer);
+                struct Command *command = cmd_parse_input(InputBuffer);
                 if (command) {
-                    ExecuteCommand(command);
+                    cmd_execute(command);
                     if (command->move != M_NONE) {
                         if (!ForceMode)
                             State = STATE_CALCULATING;
@@ -92,7 +92,7 @@ void StateMachine(void) {
             break;
         case STATE_CALCULATING:
             ComputerSide = CurrentPosition->turn;
-            SearchRoot(CurrentPosition);
+            search_root(CurrentPosition);
             if (EasyMode || ForceMode) {
                 State = STATE_WAITING;
             } else if (!SelfPlayMode) {
@@ -100,7 +100,7 @@ void StateMachine(void) {
             }
             break;
         case STATE_PONDERING:
-            switch (PermanentBrain(CurrentPosition)) {
+            switch (search_permanent_brain(CurrentPosition)) {
             case PB_NO_PB_MOVE:
                 State = STATE_WAITING;
                 break;
@@ -117,7 +117,7 @@ void StateMachine(void) {
             }
             break;
         case STATE_ANALYZING:
-            AnalysisMode(CurrentPosition);
+            search_analysis(CurrentPosition);
             break;
         case STATE_END:
             break;
@@ -127,9 +127,9 @@ void StateMachine(void) {
          * Check for game termination
          */
 
-        gameend = GameEnd(CurrentPosition);
+        gameend = dbase_game_end(CurrentPosition);
         if (gameend != NULL) {
-            Print(0, "%s\n", gameend);
+            print(0, "%s\n", gameend);
             if (State == STATE_ANALYZING) {
                 State = STATE_WAITING;
             }
@@ -137,5 +137,5 @@ void StateMachine(void) {
         }
     }
 
-    FreePosition(CurrentPosition);
+    dbase_free_position(CurrentPosition);
 }
