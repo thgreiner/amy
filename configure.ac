@@ -36,7 +36,7 @@ AC_DEFINE_UNQUOTED(MP, $mp_val, Enable multithreaded search)
 AC_CHECK_INCLUDES_DEFAULT
 AC_PROG_EGREP
 
-AC_CHECK_HEADERS(fcntl.h sys/time.h unistd.h stdint.h stdatomic.h)
+AC_CHECK_HEADERS(fcntl.h sys/time.h unistd.h stdint.h stdatomic.h termios.h)
 
 dnl Check for typedefs, structures and compiler characteristics
 AC_TYPE_SIZE_T
@@ -47,7 +47,14 @@ AC_C_BIGENDIAN
 AC_C_CONST
 
 AC_FUNC_MEMCMP
-AC_CHECK_FUNCS(gettimeofday select strerror strstr setbuf gethostname ffsll getline)
+AC_CHECK_FUNCS(gettimeofday select strerror strstr setbuf gethostname ffsll getline tcgetattr)
+
+if test "x$ac_cv_header_termios_h" = "xyes" -a "x$ac_cv_func_tcgetattr" = "xyes"; then
+  AC_DEFINE([HAVE_LINENOISE], [1],
+            [Define to 1 to use linenoise for interactive line editing])
+fi
+AM_CONDITIONAL([HAVE_LINENOISE],
+  [test "x$ac_cv_header_termios_h" = "xyes" -a "x$ac_cv_func_tcgetattr" = "xyes"])
 
 AX_GCC_BUILTIN(__builtin_ctzll)
 AX_GCC_BUILTIN(__builtin_popcountll)

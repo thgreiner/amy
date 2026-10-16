@@ -50,6 +50,9 @@
 #include "amy.h"
 #include "search.h"
 #include "utils.h"
+#ifdef HAVE_LINENOISE
+#include "linenoise.h"
+#endif
 
 FILE *LogFile = NULL;
 int Verbosity = 9;
@@ -104,6 +107,42 @@ int utils_read_line(char *buffer, int cnt) {
     return fgets(buffer, cnt, stdin) != NULL;
 }
 
+/**
+ * Read a line from stdin, showing the given prompt.
+ *
+ * On POSIX systems with a usable terminal this uses linenoise(3) command
+ * line editing (history recall, in-line editing). On non-tty input (pipes,
+ * redirected stdin, xboard connections) and on systems where linenoise is
+ * not available (e.g. Windows) it falls back to a plain fgets() read.
+ */
+int utils_read_line_prompt(char *buffer, int cnt, const char *prompt) {
+#ifndef HAVE_LINENOISE
+    return fgets(buffer, cnt, stdin) != NULL;
+#else
+    char *line = linenoise(prompt ? prompt : "");
+
+    if (line == NULL)
+        return 0;
+
+    size_t len = strlen(line);
+
+    if (len >= (size_t)cnt)
+        len = cnt - 1;
+    memcpy(buffer, line, len);
+    buffer[len] = 0;
+
+    linenoiseHistoryAdd(line);
+    linenoiseFree(line);
+
+    return 1;
+#endif
+}
+
+void utils_enable_history(void) {
+#ifdef HAVE_LINENOISE
+    linenoiseHistorySetMaxLen(10);
+#endif
+}
 /**
  * Convert an int representing a time in seconds to a string.
  */
