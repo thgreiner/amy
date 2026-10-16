@@ -43,6 +43,8 @@ void print(int, char *, ...);
 void print_no_log(int, char *, ...);
 int utils_input_ready(void);
 int utils_read_line(char *buffer, int cnt);
+int utils_read_line_prompt(char *buffer, int cnt, const char *prompt);
+void utils_enable_history(void);
 char *utils_format_time(unsigned long, char *, size_t);
 char *utils_format_score(int, char *, size_t);
 char *utils_format_count(unsigned long, char *, size_t);

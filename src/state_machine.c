@@ -70,14 +70,21 @@ void state_machine_run(void) {
         }
 
         switch (State) {
-        case STATE_WAITING:
-            if (!XBoardMode) {
-                print(0, "%s(%d): ",
-                      CurrentPosition->turn == White ? "White" : "Black",
-                      (CurrentPosition->ply / 2) + 1);
-            }
+        case STATE_WAITING: {
+            /*
+             * The prompt is passed to the line editing code (linenoise)
+             * instead of being printed separately.
+             */
+            char prompt[64];
 
-            if (!utils_read_line(InputBuffer, 1023)) {
+            if (XBoardMode)
+                prompt[0] = 0;
+            else
+                snprintf(prompt, sizeof(prompt), "%s(%d): ",
+                         CurrentPosition->turn == White ? "White" : "Black",
+                         (CurrentPosition->ply / 2) + 1);
+
+            if (!utils_read_line_prompt(InputBuffer, 1023, prompt)) {
                 State = STATE_END;
             } else {
                 struct Command *command = cmd_parse_input(InputBuffer);
@@ -89,7 +96,7 @@ void state_machine_run(void) {
                     }
                 }
             }
-            break;
+        } break;
         case STATE_CALCULATING:
             ComputerSide = CurrentPosition->turn;
             search_root(CurrentPosition);

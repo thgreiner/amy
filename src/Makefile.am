@@ -7,6 +7,10 @@ Amy_SOURCES = bitboard.c blunder.c bookup.c commands.c dbase.c eco.c \
               search_io.c state_machine.c swap.c test_blunder.c \
               test_dbase.c test_pgn_write.c test_utils.c test_yaml.c time_ctl.c tree.c utils.c yaml.c
 
+if HAVE_LINENOISE
+Amy_SOURCES += linenoise.c
+endif
+
 Amy_DEPENDENCIES = bitboard.o blunder.o bookup.o commands.o dbase.o eco.o \
                    evaluation.o evaluation_config.o filter.c hashtable.o \
                    heap.o init.o learn.o magic.o main.o mates.o movedata.o \
