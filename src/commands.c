@@ -39,6 +39,7 @@
 #include "bitboard.h"
 #include "blunder.h"
 #include "bookup.h"
+#include "bpd.h"
 #include "commands.h"
 #include "dbase.h"
 #include "eco.h"
@@ -58,6 +59,7 @@
 static void cmd_quit(char *);
 static void cmd_show(char *);
 static void cmd_show_eco(char *);
+static void cmd_bpd_test(char *);
 static void cmd_test(char *);
 static void cmd_set_time(char *);
 static void cmd_set_xboard(char *);
@@ -104,6 +106,7 @@ static struct CommandEntry Commands[] = {
     {"book", &cmd_book, false, false, "display book moves", NULL},
     {"bk", &cmd_book, false, false, "display book moves (xboard)", NULL},
     {"bookup", &book_up, false, false, "create a book", NULL},
+    {"bpd-test", &cmd_bpd_test, false, false, "write bpd test data", NULL},
     {"conf", &cmd_conf, false, false, "load scoring config", NULL},
     {"conf-save", &cmd_save_conf, false, false, "save scoring config", NULL},
     {"d", &cmd_show, true, false, "display current position", NULL},
@@ -769,6 +772,14 @@ static void cmd_save(char *args) {
 }
 
 static void cmd_prefs(char *args) { book_create_learn_db(args); }
+
+static void cmd_bpd_test(char *args) {
+    if (args == NULL) {
+        print(0, "Usage: bpd-test <filename>\n");
+        return;
+    }
+    bpd_write_test_data(args);
+}
 
 static void cmd_flatten(char *args) {
     int threshold;
