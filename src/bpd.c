@@ -90,6 +90,12 @@ static const int8_t nibblePiece[16] = {
     Neutral /* PN_EN_PASSANT   */
 };
 
+/*
+ * When true, evaluations are logged in all modes; when false, they are
+ * logged only during selfplay (see bpd.h).
+ */
+bool EvalLog = false;
+
 /* Buffer to store logged evaluations */
 static BinaryPosition *log_buffer = NULL;
 

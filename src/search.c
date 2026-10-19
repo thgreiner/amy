@@ -1653,7 +1653,8 @@ final:
 
         ht_show_statistics();
 
-        bpd_log_evaluation(p, sd->best_score);
+        if (EvalLog || SelfPlayMode)
+            bpd_log_evaluation(p, sd->best_score);
     }
 
     sd->best_move = mvs[0];

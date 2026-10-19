@@ -32,6 +32,7 @@
 #ifndef BPD_H
 #define BPD_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 /*
@@ -94,6 +95,13 @@ void bpd_encode(const struct Position *p, int score, BinaryPosition *out);
  * of one of the colors). Release with dbase_free_position().
  */
 struct Position *bpd_decode(const BinaryPosition *in);
+
+/*
+ * When true, evaluations are logged in all modes; when false, they are
+ * logged only during selfplay. Set via the 'evallog' option in the
+ * resource file (.amyrc / Amy.ini).
+ */
+extern bool EvalLog;
 
 /*
  * Log the position with its score to the evaluation log.

@@ -39,11 +39,15 @@ A typical resource file might look like this:
     #
     # Enable game autosaving to allow booklearning
     autosave=true
+    #
+    # Log root position evaluations (see table below)
+    evallog=true
 
 | Option | Description |
 |----|----|
 | autosave | If set to `true` games played by Amy will be automatically saved. This also enables booklearning. |
 | cpu | Specifies the number of cpu to use for parallel search. |
+| evallog | If set to `true`, Amy logs the evaluation of each root position to `evaluation_log.bin` (binary BPD format) in all modes. During selfplay, evaluations are logged unconditionally. |
 | ht | Determines the size of the hashtable. Use the suffixes `k` to specify the size in kilobytes or `m` to specify the size in megabyes. |
 | tbpath | Specifies the path were the endgame tablebases are located. |
 

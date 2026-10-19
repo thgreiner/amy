@@ -152,6 +152,10 @@ cpu=2
 #
 # Enable game autosaving to allow booklearning
 autosave=true
+#
+# Log root position evaluations to evaluation_log.bin
+# (also done unconditionally during selfplay)
+evallog=true
 ```
 
 Since people using Windows have reported that they have to resort to DOS mode
