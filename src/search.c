@@ -1846,8 +1846,8 @@ void search_root(struct Position *p) {
 
         char san_buffer[16];
         print_no_log(0, REVERSE);
-        print(0, "%s(%d): %s\n", p->turn == White ? "White" : "Black",
-              (p->ply / 2) + 1, dbase_san(p, move, san_buffer));
+        print(0, "%s(%d): %s\n", dbase_color_name(p->turn), (p->ply / 2) + 1,
+              dbase_san(p, move, san_buffer));
         print_no_log(0, NORMAL);
 
         if (XBoardMode)
@@ -1918,9 +1918,8 @@ pb_result_t search_permanent_brain(struct Position *p) {
         PBAltMove = M_NONE;
         PBHit = false;
 
-        print(0, "%s(%d): %s (in Permanent Brain)\n",
-              p->turn == White ? "White" : "Black", (p->ply / 2) + 1,
-              dbase_san(p, PBActMove, san_buffer));
+        print(0, "%s(%d): %s (in Permanent Brain)\n", dbase_color_name(p->turn),
+              (p->ply / 2) + 1, dbase_san(p, PBActMove, san_buffer));
 
         dbase_do_move(q, PBActMove);
 
@@ -1950,14 +1949,14 @@ pb_result_t search_permanent_brain(struct Position *p) {
                 (double)(CurTime - WallTimeStart) / (double)ONE_SECOND;
             print(2, "PB Hit! (elapsed %g secs)\n", elapsed);
 
-            print(0, "%s(%d): %s\n", p->turn == White ? "White" : "Black",
+            print(0, "%s(%d): %s\n", dbase_color_name(p->turn),
                   (p->ply / 2) + 1, dbase_san(p, PBActMove, san_buffer));
 
             dbase_do_move(p, PBActMove);
             time_ctl_update(p, (int)(elapsed + 0.5));
 
             print_no_log(0, REVERSE);
-            print(0, "%s(%d): %s\n", p->turn == White ? "White" : "Black",
+            print(0, "%s(%d): %s\n", dbase_color_name(p->turn),
                   (p->ply / 2) + 1, dbase_san(p, move, san_buffer));
             print_no_log(0, NORMAL);
 

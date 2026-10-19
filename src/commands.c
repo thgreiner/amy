@@ -560,7 +560,7 @@ static void cmd_run_annotate(char *fname, int side) {
                 if (themove != M_NONE) {
                     char san_buffer[16];
                     dbase_show_position(p);
-                    print(0, "%s(%d): ", p->turn == White ? "White" : "Black",
+                    print(0, "%s(%d): ", dbase_color_name(p->turn),
                           (p->ply / 2) + 1);
                     print(0, "%s\n", dbase_san(p, themove, san_buffer));
                     if (side == -1 || (side == p->turn)) {
