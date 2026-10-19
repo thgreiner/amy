@@ -768,7 +768,7 @@ static void cmd_save(char *args) {
         print(0, "Usage: save <filename>\n");
         return;
     }
-    pgn_save_game(CurrentPosition, args);
+    pgn_save_game(CurrentPosition, args, false);
 }
 
 static void cmd_prefs(char *args) { book_create_learn_db(args); }
@@ -826,7 +826,10 @@ static void cmd_name(char *args) {
 }
 
 static void cmd_selfplay(char *args) {
-    (void)args;
+    if (args) {
+        self_play_games_remaining = atoi(args) - 1;
+    }
+
     SelfPlayMode = true;
     State = STATE_CALCULATING;
 }

@@ -65,6 +65,11 @@ void bpd_encode(const struct Position *p, int score, BinaryPosition *out);
 struct Position *bpd_decode(const BinaryPosition *in);
 
 /*
+ * Log the position with its score to the evaluation log.
+ */
+void bpd_log_evaluation(const struct Position *, int );
+
+/*
  * Create the cross-implementation test data for the nnue project: one
  * BinaryPosition per EPD in the internal test table (see the test plan
  * in ../nnue, nnue/TEST_PLAN_BPD.md), encoded with the 1-based table

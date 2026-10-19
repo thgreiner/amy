@@ -51,6 +51,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "bpd.h"
 #include "dbase.h"
@@ -61,6 +62,8 @@
  * Initial size of the game history, mirroring dbase.c.
  */
 #define BPD_INITIAL_GAME_LOG_SIZE 40
+#define BPD_LOG_BUFFER_SIZE 1024
+#define BPD_LOG_FILE_NAME "evaluation_log.bin"
 
 /*
  * Mapping Piece value (Pawn..King) -> PieceNibble for white pieces.
@@ -86,6 +89,11 @@ static const int8_t nibblePiece[16] = {
     -Pawn,   -Knight, -Bishop, -Rook, -Rook, -Queen, -King, /* black */
     Neutral /* PN_EN_PASSANT   */
 };
+
+/* Buffer to store logged evaluations */
+static BinaryPosition *log_buffer = NULL;
+
+static int log_index = 0;
 
 void bpd_encode(const struct Position *p, int score, BinaryPosition *out) {
     int i;
@@ -126,6 +134,28 @@ void bpd_encode(const struct Position *p, int score, BinaryPosition *out) {
             nibble = PN_EN_PASSANT;
 
         out->pos[i >> 4] |= (uint64_t)nibble << (4 * (i & 15));
+    }
+}
+
+void bpd_log_evaluation(const struct Position *p, int score) {
+    if (!log_buffer) {
+        log_buffer = safe_calloc(BPD_LOG_BUFFER_SIZE, sizeof(BinaryPosition));
+    }
+
+    bpd_encode(p, score, &log_buffer[log_index++]);
+
+    if (log_index == BPD_LOG_BUFFER_SIZE) {
+        FILE *fout = fopen(BPD_LOG_FILE_NAME, "a");
+        if (fout == NULL) {
+            print(0, "Could not open " BPD_LOG_FILE_NAME ".");
+            exit(1);
+        }
+
+        fwrite(log_buffer, sizeof(BinaryPosition), log_index, fout);
+
+        fclose(fout);
+
+        log_index = 0;
     }
 }
 

@@ -39,6 +39,7 @@
 #include "pgn_write.h"
 #include "search.h"
 #include "utils.h"
+#include <stdio.h>
 
 static char InputBuffer[1024];
 
@@ -53,6 +54,8 @@ bool SelfPlayMode = false;
 struct Position *CurrentPosition = NULL;
 int ComputerSide;
 
+int self_play_games_remaining = 0;
+
 /**
  * Implements the state machine.
  */
@@ -66,7 +69,7 @@ void state_machine_run(void) {
     while (State != STATE_END) {
 
         if (AutoSave) {
-            pgn_save_game(CurrentPosition, AutoSaveFileName);
+            pgn_save_game(CurrentPosition, AutoSaveFileName, false);
         }
 
         switch (State) {
@@ -140,7 +143,19 @@ void state_machine_run(void) {
             if (State == STATE_ANALYZING) {
                 State = STATE_WAITING;
             }
-            SelfPlayMode = false;
+
+            if (SelfPlayMode) {
+                pgn_save_game(CurrentPosition, "selfplay.pgn", true);
+            }
+
+            if (SelfPlayMode && self_play_games_remaining > 0) {
+                self_play_games_remaining--;
+                cmd_newgame(NULL);
+                ComputerSide = White;
+                State = STATE_CALCULATING;
+            } else {
+                SelfPlayMode = false;
+            }
         }
     }
 

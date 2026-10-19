@@ -33,6 +33,7 @@
  * evaluation.c - positional evaluation routines
  */
 
+#include "bpd.h"
 #include "dbase.h"
 #include "hashtable.h"
 #include "init.h"
@@ -1775,12 +1776,9 @@ static int eval_position_for_white(const struct Position *p) {
  * This is just a convenience routine which handles sign switches
  * if it is not white to move.
  */
-
 int eval_position(const struct Position *p) {
-    if (p->turn == White)
-        return eval_position_for_white(p);
-    else
-        return -eval_position_for_white(p);
+    return (p->turn == White) ? eval_position_for_white(p)
+                              : -eval_position_for_white(p);
 }
 
 /**

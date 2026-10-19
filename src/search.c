@@ -35,6 +35,7 @@
 
 #include "search.h"
 #include "bookup.h"
+#include "bpd.h"
 #include "commands.h"
 #include "config.h"
 #include "dbase.h"
@@ -1651,6 +1652,8 @@ final:
         }
 
         ht_show_statistics();
+
+        bpd_log_evaluation(p, sd->best_score);
     }
 
     sd->best_move = mvs[0];
@@ -1826,7 +1829,7 @@ void search_root(struct Position *p) {
 
         if (move != M_NONE) {
             char san_buffer[32];
-            print(1, "cmd_book move found: %s\n",
+            print(1, "Book move found: %s\n",
                   search_numbered_san(p, move, san_buffer, sizeof(san_buffer)));
             p->outOfBookCnt[p->turn] = 0;
         } else {
