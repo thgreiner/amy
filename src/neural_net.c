@@ -48,7 +48,7 @@
 
 #define N_FEATURES (64 * 64 * 10)
 
-#define SCALE 16384
+#define SCALE 8192
 #define SCALE_HALF (SCALE / 2 - 1)
 #define SCALE_OUTPUT 3200
 
@@ -102,6 +102,21 @@ void nn_read_weights_quantized(void) {
     fclose(fin);
 
     print(0, "Read weights.\n");
+}
+
+static int nn_compare_memory(void *a, void *b, size_t s) {
+    uint8_t *x = (uint8_t *)a;
+    uint8_t *y = (uint8_t *)b;
+
+    for (size_t i = 0; i < s; i++, x++, y++) {
+        if (*x != *y) {
+            print(0, "Found differing bytes at offset %llu of %llu: %x != %x\n",
+                  i, s, *x, *y);
+            return 1;
+        }
+    }
+
+    return 0;
 }
 
 void nn_read_weights_compressed(void) {
@@ -159,41 +174,43 @@ void nn_read_weights_compressed(void) {
 
     int8_t *ptr = (int8_t *)decompressed;
 
-    assert(0 ==
-           memcmp(input_layer_weights_q, ptr, sizeof(input_layer_weights_q)));
+    assert(0 == nn_compare_memory(input_layer_weights_q, ptr,
+                                  sizeof(input_layer_weights_q)));
     memcpy(input_layer_weights_q, ptr, sizeof(input_layer_weights_q));
     ptr += sizeof(input_layer_weights_q);
 
-    assert(0 == memcmp(input_layer_bias_q, ptr, sizeof(input_layer_bias_q)));
+    assert(0 == nn_compare_memory(input_layer_bias_q, ptr,
+                                  sizeof(input_layer_bias_q)));
     memcpy(input_layer_bias_q, ptr, sizeof(input_layer_bias_q));
     ptr += sizeof(input_layer_bias_q);
 
-    assert(0 == memcmp(hidden_layer_1_weights_q, ptr,
-                       sizeof(hidden_layer_1_weights_q)));
+    assert(0 == nn_compare_memory(hidden_layer_1_weights_q, ptr,
+                                  sizeof(hidden_layer_1_weights_q)));
     memcpy(hidden_layer_1_weights_q, ptr, sizeof(hidden_layer_1_weights_q));
     ptr += sizeof(hidden_layer_1_weights_q);
 
-    assert(0 ==
-           memcmp(hidden_layer_1_bias_q, ptr, sizeof(hidden_layer_1_bias_q)));
+    assert(0 == nn_compare_memory(hidden_layer_1_bias_q, ptr,
+                                  sizeof(hidden_layer_1_bias_q)));
     memcpy(hidden_layer_1_bias_q, ptr, sizeof(hidden_layer_1_bias_q));
     ptr += sizeof(hidden_layer_1_bias_q);
 
-    assert(0 == memcmp(hidden_layer_2_weights_q, ptr,
-                       sizeof(hidden_layer_2_weights_q)));
+    assert(0 == nn_compare_memory(hidden_layer_2_weights_q, ptr,
+                                  sizeof(hidden_layer_2_weights_q)));
     memcpy(hidden_layer_2_weights_q, ptr, sizeof(hidden_layer_2_weights_q));
     ptr += sizeof(hidden_layer_2_weights_q);
 
-    assert(0 ==
-           memcmp(hidden_layer_2_bias_q, ptr, sizeof(hidden_layer_2_bias_q)));
+    assert(0 == nn_compare_memory(hidden_layer_2_bias_q, ptr,
+                                  sizeof(hidden_layer_2_bias_q)));
     memcpy(hidden_layer_2_bias_q, ptr, sizeof(hidden_layer_2_bias_q));
     ptr += sizeof(hidden_layer_2_bias_q);
 
-    assert(0 ==
-           memcmp(output_layer_weights_q, ptr, sizeof(output_layer_weights_q)));
+    assert(0 == nn_compare_memory(output_layer_weights_q, ptr,
+                                  sizeof(output_layer_weights_q)));
     memcpy(output_layer_weights_q, ptr, sizeof(output_layer_weights_q));
     ptr += sizeof(output_layer_weights_q);
 
-    assert(0 == memcmp(output_layer_bias_q, ptr, sizeof(output_layer_bias_q)));
+    assert(0 == nn_compare_memory(output_layer_bias_q, ptr,
+                                  sizeof(output_layer_bias_q)));
     memcpy(output_layer_bias_q, ptr, sizeof(output_layer_bias_q));
     ptr += sizeof(output_layer_bias_q);
 
@@ -358,6 +375,10 @@ int nn_evaluate_position(struct Position *p) {
         if (accumulator[i] < 0) {
             accumulator[i] = 0;
         }
+
+        if (accumulator[i] > SCALE) {
+            accumulator[i] = SCALE;
+        }
     }
 
     for (int i = 0; i < 32; i++) {
@@ -379,15 +400,19 @@ int nn_evaluate_position(struct Position *p) {
     for (int i = 0; i < 32; i++) {
         if (hidden_layer_1_q[i] <= 0) {
             hidden_layer_1_q16[i] = 0;
+        } else if (hidden_layer_1_q[i] > SCALE * SCALE) {
+            hidden_layer_1_q16[i] = SCALE;
         } else {
             hidden_layer_1_q16[i] =
                 (int16_t)((hidden_layer_1_q[i] + SCALE_HALF) / SCALE);
         }
+
+        assert(hidden_layer_1_q16[i] >= 0);
     }
 
 #ifdef DEBUG
     print(1, "hidden_layer_1_q:\n");
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 16; i++) {
         print(1, "%d, ", hidden_layer_1_q16[i]);
     }
     print(1, "\n");
@@ -408,10 +433,14 @@ int nn_evaluate_position(struct Position *p) {
     for (int i = 0; i < 32; i++) {
         if (hidden_layer_2_q[i] <= 0) {
             hidden_layer_2_q16[i] = 0;
+        } else if (hidden_layer_2_q[i] >= SCALE * SCALE) {
+            hidden_layer_2_q16[i] = SCALE;
         } else {
             hidden_layer_2_q16[i] =
                 (int16_t)((hidden_layer_2_q[i] + SCALE_HALF) / SCALE);
         }
+
+        assert(hidden_layer_2_q16[i] >= 0);
     }
 
 #ifdef DEBUG
@@ -426,10 +455,11 @@ int nn_evaluate_position(struct Position *p) {
 
     for (int j = 0; j < 32; j++) {
         output_layer_q += hidden_layer_2_q16[j] * output_layer_weights_q[j];
-#ifdef DEBUG
-        print(1, "output_layer_q: %d\n", output_layer_q);
-#endif
     }
+
+#ifdef DEBUG
+    print(1, "output_layer_q: %d\n", output_layer_q);
+#endif
 
 #ifdef STATISTICS_Q
     if (print_stats_q) {
@@ -603,10 +633,9 @@ static void nn_show_weights(void) {
         print(1, "%d, ", output_layer_weights_q[i]);
     }
     print(1, "\n");
+#endif
 
     print(1, "output bias: %d\n", *output_layer_bias_q);
-
-#endif
 }
 
 void nn_read_weights(void) {
