@@ -1401,6 +1401,10 @@ int dbase_repeated(struct Position *p, int mode) {
  * Returns:
  *   the pointer to the generated string (buffer)
  */
+const char *dbase_color_name(Color c) {
+    return (c == White) ? "White" : "Black";
+}
+
 char *dbase_san(struct Position *p, move_t move, char *buffer) {
     char *x = buffer;
 
