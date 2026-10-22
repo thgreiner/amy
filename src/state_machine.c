@@ -80,8 +80,8 @@ void state_machine_run(void) {
             if (XBoardMode)
                 prompt[0] = 0;
             else
-                snprintf(prompt, sizeof(prompt), "%s(%d): ",
-                         CurrentPosition->turn == White ? "White" : "Black",
+                snprintf(prompt, sizeof(prompt),
+                         "%s(%d): ", dbase_color_name(CurrentPosition->turn),
                          (CurrentPosition->ply / 2) + 1);
 
             if (!utils_read_line_prompt(InputBuffer, 1023, prompt)) {
