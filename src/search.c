@@ -184,6 +184,14 @@ static int search_negascout(struct SearchData *, int, int, int, int, int);
 static int search_negascout(struct SearchData *, int, int, int, int);
 #endif
 
+/*
+ * Threshold for bpd logging: log only "quiet" positions, i.e. those
+ * where the search evaluation is within this many millipawns of the
+ * static evaluation. This filters out tactical positions, mate and
+ * EGTB scores.
+ */
+static const int bpd_log_eval_diff_threshold = 650;
+
 /* search routines */
 
 /*
@@ -1653,8 +1661,14 @@ final:
 
         ht_show_statistics();
 
-        if (EvalLog || SelfPlayMode)
-            bpd_log_evaluation(p, sd->best_score);
+        if (EvalLog || SelfPlayMode) {
+            int static_evaluation = eval_position(p);
+            int eval_diff = ABS(sd->best_score - static_evaluation);
+
+            if (eval_diff < bpd_log_eval_diff_threshold) {
+                bpd_log_evaluation(p, sd->best_score);
+            }
+        }
     }
 
     sd->best_move = mvs[0];
