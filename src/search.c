@@ -1845,9 +1845,10 @@ void search_root(struct Position *p) {
         time_ctl_update(p, (int)(elapsed + 0.5));
 
         char san_buffer[16];
-        print(0, REVERSE "%s(%d): %s" NORMAL "\n",
-              p->turn == White ? "White" : "Black", (p->ply / 2) + 1,
-              dbase_san(p, move, san_buffer));
+        print_no_log(0, REVERSE);
+        print(0, "%s(%d): %s\n", p->turn == White ? "White" : "Black",
+              (p->ply / 2) + 1, dbase_san(p, move, san_buffer));
+        print_no_log(0, NORMAL);
 
         if (XBoardMode)
             print_no_log(0, "move %s\n", dbase_ics_san(move));
@@ -1955,9 +1956,10 @@ pb_result_t search_permanent_brain(struct Position *p) {
             dbase_do_move(p, PBActMove);
             time_ctl_update(p, (int)(elapsed + 0.5));
 
-            print(0, REVERSE "%s(%d): %s" NORMAL "\n",
-                  p->turn == White ? "White" : "Black", (p->ply / 2) + 1,
-                  dbase_san(p, move, san_buffer));
+            print_no_log(0, REVERSE);
+            print(0, "%s(%d): %s\n", p->turn == White ? "White" : "Black",
+                  (p->ply / 2) + 1, dbase_san(p, move, san_buffer));
+            print_no_log(0, NORMAL);
 
             if (XBoardMode) {
                 print_no_log(0, "move %s\n", dbase_ics_san(move));
