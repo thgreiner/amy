@@ -165,6 +165,7 @@ bool dbase_is_checking_move(struct Position *, move_t move);
 int dbase_legal_moves(struct Position *, heap_t);
 void dbase_plegal_moves(struct Position *, heap_t);
 int dbase_repeated(struct Position *, int mode);
+const char *dbase_color_name(Color c);
 char *dbase_san(struct Position *, move_t, char *);
 move_t dbase_parse_san(struct Position *, char *);
 move_t dbase_parse_san_list(char *, Color, move_t *, int, int *);
