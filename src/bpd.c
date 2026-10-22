@@ -43,8 +43,9 @@
  *   (or a black rook on a8/h8) that can still castle is stored as
  *   PN_W_ROOK_CASTLE / PN_B_ROOK_CASTLE.
  * - The en passant target square (if any) is stored as PN_EN_PASSANT.
- *   In a legal position that square (on rank 3 or 6) is always empty,
- *   so no piece information is lost.
+ *   For a fresh en passant flag (set by the opponent's immediately
+ *   preceding double push) that square (on rank 3 or 6) is always
+ *   empty, so no piece information is lost.
  *
  * The side to move does not fit into the 64 nibbles and is stored in
  * BinaryPosition.turn.
@@ -57,6 +58,14 @@
 #include "dbase.h"
 #include "safe_malloc.h"
 #include "utils.h"
+
+/*
+ * The on-disk format of the evaluation log and of the test data files
+ * depends on the exact size of BinaryPosition.
+ */
+static_assert(sizeof(BinaryPosition) == 40,
+              "BinaryPosition size changed; the on-disk format is no "
+              "longer 40 bytes");
 
 /*
  * Initial size of the game history, mirroring dbase.c.
@@ -101,6 +110,39 @@ static BinaryPosition *log_buffer = NULL;
 
 static int log_index = 0;
 
+/*
+ * Once the log file could not be opened, logging is permanently
+ * disabled for the rest of the run.
+ */
+static bool log_disabled = false;
+
+/*
+ * Write all buffered evaluations to the log file. Returns true on
+ * success. If the file cannot be opened, the buffered evaluations are
+ * discarded and false is returned.
+ */
+static bool bpd_write_log(void) {
+    FILE *fout;
+
+    if (log_index == 0)
+        return true;
+
+    fout = fopen(BPD_LOG_FILE_NAME, "a");
+    if (fout == NULL) {
+        print(0, "Could not open " BPD_LOG_FILE_NAME
+              "; evaluation logging is disabled.\n");
+        log_index = 0;
+        return false;
+    }
+
+    fwrite(log_buffer, sizeof(BinaryPosition), log_index, fout);
+
+    fclose(fout);
+
+    log_index = 0;
+    return true;
+}
+
 void bpd_encode(const struct Position *p, int score, BinaryPosition *out) {
     int i;
 
@@ -144,25 +186,28 @@ void bpd_encode(const struct Position *p, int score, BinaryPosition *out) {
 }
 
 void bpd_log_evaluation(const struct Position *p, int score) {
+    if (log_disabled)
+        return;
+
     if (!log_buffer) {
         log_buffer = safe_calloc(BPD_LOG_BUFFER_SIZE, sizeof(BinaryPosition));
+        /*
+         * Make sure the evaluations still in the buffer reach the log
+         * file when the program exits. This also covers the exit() in
+         * cmd_quit(), which does not run the cleanup code in main().
+         */
+        atexit(bpd_flush_log);
     }
 
-    bpd_encode(p, score, &log_buffer[log_index++]);
+    bpd_encode(p, score, &log_buffer[log_index]);
 
-    if (log_index == BPD_LOG_BUFFER_SIZE) {
-        FILE *fout = fopen(BPD_LOG_FILE_NAME, "a");
-        if (fout == NULL) {
-            print(0, "Could not open " BPD_LOG_FILE_NAME ".");
-            exit(1);
-        }
+    if (++log_index == BPD_LOG_BUFFER_SIZE && !bpd_write_log())
+        log_disabled = true;
+}
 
-        fwrite(log_buffer, sizeof(BinaryPosition), log_index, fout);
-
-        fclose(fout);
-
-        log_index = 0;
-    }
+void bpd_flush_log(void) {
+    if (!log_disabled)
+        bpd_write_log();
 }
 
 /*
@@ -243,11 +288,12 @@ struct Position *bpd_decode(const BinaryPosition *in) {
     }
 
     /*
-     * A chess position must have a king for both colors;
-     * dbase_recalc_attacks() would hit bitboard_find_set_bit(0)
-     * otherwise.
+     * A chess position must have exactly one king for each color;
+     * with none, dbase_recalc_attacks() would hit
+     * bitboard_find_set_bit(0), and with more than one it would pick
+     * an arbitrary king square.
      */
-    if (!whiteKing || !blackKing) {
+    if (whiteKing != 1 || blackKing != 1) {
         dbase_free_position(p);
         return NULL;
     }

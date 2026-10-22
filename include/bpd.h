@@ -106,7 +106,14 @@ extern bool EvalLog;
 /*
  * Log the position with its score to the evaluation log.
  */
-void bpd_log_evaluation(const struct Position *, int );
+void bpd_log_evaluation(const struct Position *, int);
+
+/*
+ * Write all buffered evaluations to the log file. The log is buffered
+ * and only written to the file once the buffer is full, so this is
+ * registered with atexit() to make sure the last records are not lost.
+ */
+void bpd_flush_log(void);
 
 /*
  * Create the cross-implementation test data for the nnue project: one

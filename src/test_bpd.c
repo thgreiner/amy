@@ -197,6 +197,20 @@ static void test_decode_rejects_missing_king(void) {
     assert(bpd_decode(&bp) == NULL);
 }
 
+/* A position with two white kings must be rejected, even if a black
+ * king is present. */
+static void test_decode_rejects_double_king(void) {
+    BinaryPosition bp;
+
+    memset(&bp, 0, sizeof(bp));
+    bp.pos[0] = PN_W_KING;                  /* king on a1 */
+    bp.pos[0] |= (uint64_t)PN_W_KING << 4;  /* king on b1 */
+    bp.pos[0] |= (uint64_t)PN_B_KING << 28; /* king on h2 */
+    bp.turn = White;
+
+    assert(bpd_decode(&bp) == NULL);
+}
+
 void test_all_bpd(void) {
     test_roundtrip_initial();
     test_roundtrip_enpassant_white();
@@ -208,4 +222,5 @@ void test_all_bpd(void) {
     test_encode_partial_castling_nibbles();
     test_encode_enpassant_nibble();
     test_decode_rejects_missing_king();
+    test_decode_rejects_double_king();
 }

@@ -33,13 +33,14 @@
  * state_machine.c - the state machine which handles program states
  */
 
+#include <stdio.h>
+
 #include "state_machine.h"
 #include "commands.h"
 #include "dbase.h"
 #include "pgn_write.h"
 #include "search.h"
 #include "utils.h"
-#include <stdio.h>
 
 static char InputBuffer[1024];
 
@@ -151,9 +152,15 @@ void state_machine_run(void) {
             if (SelfPlayMode && self_play_games_remaining > 0) {
                 self_play_games_remaining--;
                 cmd_newgame(NULL);
-                ComputerSide = White;
                 State = STATE_CALCULATING;
             } else {
+                /*
+                 * Do not let the state machine continue a finished
+                 * selfplay game by playing another move in it; wait
+                 * for input instead.
+                 */
+                if (SelfPlayMode && State == STATE_CALCULATING)
+                    State = STATE_WAITING;
                 SelfPlayMode = false;
             }
         }

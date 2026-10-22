@@ -47,7 +47,7 @@ A typical resource file might look like this:
 |----|----|
 | autosave | If set to `true` games played by Amy will be automatically saved. This also enables booklearning. |
 | cpu | Specifies the number of cpu to use for parallel search. |
-| evallog | If set to `true`, Amy logs the evaluation of each root position to `evaluation_log.bin` (binary BPD format) in all modes. During selfplay, evaluations are logged unconditionally. |
+| evallog | If set to `true`, Amy logs the evaluation of each searched root position to `evaluation_log.bin` (binary BPD format) in all modes. During selfplay, evaluations are logged unconditionally. |
 | ht | Determines the size of the hashtable. Use the suffixes `k` to specify the size in kilobytes or `m` to specify the size in megabyes. |
 | tbpath | Specifies the path were the endgame tablebases are located. |
 
@@ -117,6 +117,24 @@ test.
 To simplify the evaluation of several standard test suites Amy outputs
 the scores as calculated by the formulae given for the test suites
 BT2630, LCT2 and BS2830.
+
+## Selfplay
+
+Amy can play a game against itself using the `self` command. It
+optionally takes the number of games to play, as in the following
+example which plays two games:
+
+    White(1): self 2
+
+Finished selfplay games are appended to `selfplay.pgn`.
+
+## Creating BPD test data
+
+The `bpd-test` command writes a set of test positions in the binary
+position (BPD) format, the same format used for `evaluation_log.bin`,
+to a file:
+
+    White(1): bpd-test bpd_test.bin
 
 # Using a graphical user interface
 
