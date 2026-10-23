@@ -50,7 +50,7 @@
 
 #define SCALE 8192
 #define SCALE_HALF (SCALE / 2 - 1)
-#define SCALE_OUTPUT 3200
+#define SCALE_OUTPUT 10000
 
 int16_t input_layer_weights_q[N_FEATURES][ACCUMULATOR_SIZE];
 int16_t input_layer_bias_q[ACCUMULATOR_SIZE];
@@ -641,8 +641,10 @@ static void nn_show_weights(void) {
 void nn_read_weights(void) {
     nn_read_weights_quantized();
     nn_show_weights();
+    /*
     nn_read_weights_compressed();
     nn_show_weights();
+    */
 }
 
 void nn_randomize_weights(void) {
