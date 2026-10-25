@@ -35,11 +35,11 @@
 
 #include <stdio.h>
 
-#include "state_machine.h"
 #include "commands.h"
 #include "dbase.h"
 #include "pgn_write.h"
 #include "search.h"
+#include "state_machine.h"
 #include "utils.h"
 
 static char InputBuffer[1024];
@@ -147,6 +147,9 @@ void state_machine_run(void) {
 
             if (SelfPlayMode) {
                 pgn_save_game(CurrentPosition, "selfplay.pgn", true);
+                if (AutoSave) {
+                    pgn_save_game(CurrentPosition, AutoSaveFileName, false);
+                }
             }
 
             if (SelfPlayMode && self_play_games_remaining > 0) {

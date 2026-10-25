@@ -71,7 +71,7 @@ static_assert(sizeof(BinaryPosition) == 40,
  * Initial size of the game history, mirroring dbase.c.
  */
 #define BPD_INITIAL_GAME_LOG_SIZE 40
-#define BPD_LOG_BUFFER_SIZE 1024
+#define BPD_LOG_BUFFER_SIZE 256
 #define BPD_LOG_FILE_NAME "evaluation_log.bin"
 
 /*
@@ -130,7 +130,7 @@ static bool bpd_write_log(void) {
     fout = fopen(BPD_LOG_FILE_NAME, "a");
     if (fout == NULL) {
         print(0, "Could not open " BPD_LOG_FILE_NAME
-              "; evaluation logging is disabled.\n");
+                 "; evaluation logging is disabled.\n");
         log_index = 0;
         return false;
     }

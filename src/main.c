@@ -151,6 +151,9 @@ static void main_process_rc_file(void) {
 #endif /* MP */
         } else if (!strcmp(key, "autosave")) {
             AutoSave = !strcmp(value, "true");
+            if (AutoSave) {
+                print(0, "Autosave is enabled.");
+            }
         } else if (!strcmp(key, "evallog")) {
             EvalLog = !strcmp(value, "true");
         }

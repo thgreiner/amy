@@ -38,6 +38,7 @@
 #include "hashtable.h"
 #include "init.h"
 #include "inline.h"
+#include "random.h"
 #include "recog.h"
 #include <stdint.h>
 
@@ -1748,6 +1749,9 @@ static int eval_position_for_white(const struct Position *p) {
         print(0, "After bishop adjustment: %d\n", score);
     }
 #endif
+
+    /** Add a bit of fuzz. */
+    score += random_fuzz();
 
     /*
      * Adjust MaxPos if necessary. If the current difference is greater than

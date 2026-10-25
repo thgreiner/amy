@@ -45,6 +45,7 @@
 #include "safe_malloc.h"
 #include "tree.h"
 #include "utils.h"
+#include <math.h>
 
 #define BOOK_NAME "Book.db"
 #define LEARN_NAME "Learn.db"
@@ -345,10 +346,11 @@ static void book_calculate_probabilities(int cnt, struct BookQuery *entries,
     int i;
 
     for (i = 0; i < cnt; i++) {
-        total += entries[i].be.win + entries[i].be.loss + entries[i].be.draw;
+        total += (int)sqrt(entries[i].be.win + entries[i].be.loss +
+                           entries[i].be.draw);
     }
 
-    limit = total / 16;
+    limit = total / 33;
     totalprops = 0.0;
 
     for (i = 0; i < cnt; i++) {
@@ -365,9 +367,7 @@ static void book_calculate_probabilities(int cnt, struct BookQuery *entries,
             }
 #endif
 
-            props[i] = avelo * freq *
-                       (double)(2 * entry->be.win + entry->be.draw) /
-                       (double)(freq);
+            props[i] = avelo * sqrt(2 * entry->be.win + entry->be.draw);
 
             if (entry->le.flags & GoodMove) {
                 props[i] *= 2;
