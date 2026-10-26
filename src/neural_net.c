@@ -37,7 +37,6 @@
 #include "hashtable.h"
 #include "inline.h"
 #include "random.h"
-#include "safe_malloc.h"
 #include "utils.h"
 #include <stdint.h>
 #include <stdio.h>
@@ -48,14 +47,16 @@
 
 #define N_FEATURES (64 * 64 * 10)
 
+#define SCALE_INPUT 64
+#define SCALE_INPUT_HALF (SCALE_INPUT / 2 - 1)
 #define SCALE 8192
 #define SCALE_HALF (SCALE / 2 - 1)
 #define SCALE_OUTPUT 10000
 
-int16_t input_layer_weights_q[N_FEATURES][ACCUMULATOR_SIZE];
+int8_t input_layer_weights_q[N_FEATURES][ACCUMULATOR_SIZE];
 int16_t input_layer_bias_q[ACCUMULATOR_SIZE];
-int16_t hidden_layer_1_weights_q[32][2 * ACCUMULATOR_SIZE];
-int32_t hidden_layer_1_bias_q[32];
+int8_t hidden_layer_1_weights_q[32][2 * ACCUMULATOR_SIZE];
+int16_t hidden_layer_1_bias_q[32];
 int16_t hidden_layer_2_weights_q[32][32];
 int32_t hidden_layer_2_bias_q[32];
 int32_t output_layer_weights_q[32];
@@ -72,7 +73,7 @@ void nn_read_weights_quantized(void) {
         return;
     }
 
-    items_read = fread(input_layer_weights_q, sizeof(int16_t),
+    items_read = fread(input_layer_weights_q, sizeof(int8_t),
                        ACCUMULATOR_SIZE * N_FEATURES, fin);
     assert(items_read == ACCUMULATOR_SIZE * N_FEATURES);
 
@@ -80,11 +81,11 @@ void nn_read_weights_quantized(void) {
         fread(input_layer_bias_q, sizeof(int16_t), ACCUMULATOR_SIZE, fin);
     assert(items_read == ACCUMULATOR_SIZE);
 
-    items_read = fread(hidden_layer_1_weights_q, sizeof(int16_t),
+    items_read = fread(hidden_layer_1_weights_q, sizeof(int8_t),
                        32 * 2 * ACCUMULATOR_SIZE, fin);
     assert(items_read == 32 * 2 * ACCUMULATOR_SIZE);
 
-    items_read = fread(hidden_layer_1_bias_q, sizeof(int32_t), 32, fin);
+    items_read = fread(hidden_layer_1_bias_q, sizeof(int16_t), 32, fin);
     assert(items_read == 32);
 
     items_read = fread(hidden_layer_2_weights_q, sizeof(int16_t), 32 * 32, fin);
@@ -102,120 +103,6 @@ void nn_read_weights_quantized(void) {
     fclose(fin);
 
     print(0, "Read weights.\n");
-}
-
-static int nn_compare_memory(void *a, void *b, size_t s) {
-    uint8_t *x = (uint8_t *)a;
-    uint8_t *y = (uint8_t *)b;
-
-    for (size_t i = 0; i < s; i++, x++, y++) {
-        if (*x != *y) {
-            print(0, "Found differing bytes at offset %llu of %llu: %x != %x\n",
-                  i, s, *x, *y);
-            return 1;
-        }
-    }
-
-    return 0;
-}
-
-void nn_read_weights_compressed(void) {
-    FILE *fin = fopen("network.quant.z", "rb");
-    if (fin == NULL) {
-        print(0, "No weights found.\n");
-        return;
-    }
-
-    fseek(fin, 0L, SEEK_END);
-    long file_size = ftell(fin);
-    fseek(fin, 0, SEEK_SET);
-
-    char *buffer = safe_malloc(file_size);
-
-    size_t items_read = fread(buffer, file_size, 1, fin);
-    assert(items_read == 1);
-    fclose(fin);
-
-    size_t total_network_size =
-        sizeof(input_layer_weights_q) + sizeof(input_layer_bias_q) +
-        sizeof(hidden_layer_1_weights_q) + sizeof(hidden_layer_1_bias_q) +
-        sizeof(hidden_layer_2_weights_q) + sizeof(hidden_layer_2_bias_q) +
-        sizeof(output_layer_weights_q) + sizeof(output_layer_bias_q) + 8;
-
-    int16_t *decompressed = safe_malloc(total_network_size);
-
-    uint8_t *src = (uint8_t *)buffer;
-    uint8_t *src_end = src + file_size;
-
-    int16_t *dest = decompressed;
-
-    while (src < src_end) {
-        uint8_t descriptor = *(src++);
-        for (int i = 0; i < 8; i++) {
-            // print(1, "descriptor: %x\n", descriptor);
-
-            if (descriptor & 0x80) {
-                // 16 bit value
-                int16_t tmp = (int16_t)*src;
-                tmp |= ((int16_t)*(++src)) << 8;
-                *dest = tmp;
-            } else {
-                // 8 bit value
-                int8_t *x = (int8_t *)src;
-                *dest = *x;
-            }
-            // print(1, "Read %d\n", *dest);
-            src++;
-            dest++;
-            descriptor <<= 1;
-        }
-        // break;
-    }
-
-    int8_t *ptr = (int8_t *)decompressed;
-
-    assert(0 == nn_compare_memory(input_layer_weights_q, ptr,
-                                  sizeof(input_layer_weights_q)));
-    memcpy(input_layer_weights_q, ptr, sizeof(input_layer_weights_q));
-    ptr += sizeof(input_layer_weights_q);
-
-    assert(0 == nn_compare_memory(input_layer_bias_q, ptr,
-                                  sizeof(input_layer_bias_q)));
-    memcpy(input_layer_bias_q, ptr, sizeof(input_layer_bias_q));
-    ptr += sizeof(input_layer_bias_q);
-
-    assert(0 == nn_compare_memory(hidden_layer_1_weights_q, ptr,
-                                  sizeof(hidden_layer_1_weights_q)));
-    memcpy(hidden_layer_1_weights_q, ptr, sizeof(hidden_layer_1_weights_q));
-    ptr += sizeof(hidden_layer_1_weights_q);
-
-    assert(0 == nn_compare_memory(hidden_layer_1_bias_q, ptr,
-                                  sizeof(hidden_layer_1_bias_q)));
-    memcpy(hidden_layer_1_bias_q, ptr, sizeof(hidden_layer_1_bias_q));
-    ptr += sizeof(hidden_layer_1_bias_q);
-
-    assert(0 == nn_compare_memory(hidden_layer_2_weights_q, ptr,
-                                  sizeof(hidden_layer_2_weights_q)));
-    memcpy(hidden_layer_2_weights_q, ptr, sizeof(hidden_layer_2_weights_q));
-    ptr += sizeof(hidden_layer_2_weights_q);
-
-    assert(0 == nn_compare_memory(hidden_layer_2_bias_q, ptr,
-                                  sizeof(hidden_layer_2_bias_q)));
-    memcpy(hidden_layer_2_bias_q, ptr, sizeof(hidden_layer_2_bias_q));
-    ptr += sizeof(hidden_layer_2_bias_q);
-
-    assert(0 == nn_compare_memory(output_layer_weights_q, ptr,
-                                  sizeof(output_layer_weights_q)));
-    memcpy(output_layer_weights_q, ptr, sizeof(output_layer_weights_q));
-    ptr += sizeof(output_layer_weights_q);
-
-    assert(0 == nn_compare_memory(output_layer_bias_q, ptr,
-                                  sizeof(output_layer_bias_q)));
-    memcpy(output_layer_bias_q, ptr, sizeof(output_layer_bias_q));
-    ptr += sizeof(output_layer_bias_q);
-
-    free(decompressed);
-    free(buffer);
 }
 
 #ifdef STATISTICS_Q
@@ -354,9 +241,6 @@ int nn_evaluate_position(struct Position *p) {
     print(1, "\n");
 #endif
 
-    int32_t hidden_layer_1_q[32];
-    memcpy(hidden_layer_1_q, hidden_layer_1_bias_q, 32 * sizeof(int32_t));
-
     int16_t accumulator[2 * ACCUMULATOR_SIZE];
 
     if (p->turn == White) {
@@ -376,9 +260,14 @@ int nn_evaluate_position(struct Position *p) {
             accumulator[i] = 0;
         }
 
-        if (accumulator[i] > SCALE) {
-            accumulator[i] = SCALE;
+        if (accumulator[i] > SCALE_INPUT) {
+            accumulator[i] = SCALE_INPUT;
         }
+    }
+
+    int32_t hidden_layer_1_q[32];
+    for (int i = 0; i < 32; i++) {
+        hidden_layer_1_q[i] = hidden_layer_1_bias_q[i];
     }
 
     for (int i = 0; i < 32; i++) {
@@ -400,11 +289,12 @@ int nn_evaluate_position(struct Position *p) {
     for (int i = 0; i < 32; i++) {
         if (hidden_layer_1_q[i] <= 0) {
             hidden_layer_1_q16[i] = 0;
-        } else if (hidden_layer_1_q[i] > SCALE * SCALE) {
-            hidden_layer_1_q16[i] = SCALE;
+        } else if (hidden_layer_1_q[i] > SCALE_INPUT * SCALE_INPUT) {
+            hidden_layer_1_q16[i] = SCALE_INPUT;
         } else {
             hidden_layer_1_q16[i] =
-                (int16_t)((hidden_layer_1_q[i] + SCALE_HALF) / SCALE);
+                (int16_t)((hidden_layer_1_q[i] + SCALE_INPUT_HALF) /
+                          SCALE_INPUT);
         }
 
         assert(hidden_layer_1_q16[i] >= 0);
@@ -433,11 +323,12 @@ int nn_evaluate_position(struct Position *p) {
     for (int i = 0; i < 32; i++) {
         if (hidden_layer_2_q[i] <= 0) {
             hidden_layer_2_q16[i] = 0;
-        } else if (hidden_layer_2_q[i] >= SCALE * SCALE) {
+        } else if (hidden_layer_2_q[i] >= SCALE_INPUT * SCALE) {
             hidden_layer_2_q16[i] = SCALE;
         } else {
             hidden_layer_2_q16[i] =
-                (int16_t)((hidden_layer_2_q[i] + SCALE_HALF) / SCALE);
+                (int16_t)((hidden_layer_2_q[i] + SCALE_INPUT_HALF) /
+                          SCALE_INPUT);
         }
 
         assert(hidden_layer_2_q16[i] >= 0);
@@ -466,7 +357,8 @@ int nn_evaluate_position(struct Position *p) {
         FILE *stats_file = fopen("activation_q.txt", "w");
         fprintf(stats_file, "max_activation_hidden_1: %d (%f)\n",
                 max_activation_hidden_1_q,
-                (double)max_activation_hidden_1_q / ((double)SCALE * SCALE));
+                (double)max_activation_hidden_1_q /
+                    ((double)SCALE_INPUT * SCALE_INPUT));
         fclose(stats_file);
     }
 #endif
@@ -635,27 +527,24 @@ static void nn_show_weights(void) {
     print(1, "\n");
 #endif
 
-    print(1, "output bias: %d\n", *output_layer_bias_q);
+    print(1, "output bias: %d\n", output_layer_bias_q[0]);
 }
 
 void nn_read_weights(void) {
     nn_read_weights_quantized();
     nn_show_weights();
-    /*
-    nn_read_weights_compressed();
-    nn_show_weights();
-    */
 }
 
 void nn_randomize_weights(void) {
     for (int i = 0; i < N_FEATURES; i++) {
         for (int j = 0; j < ACCUMULATOR_SIZE; j++) {
-            input_layer_weights_q[i][j] =
-                (int16_t)(random_double() * (SCALE / 16));
+            // int8 scale 64 counterpart of (SCALE / 16) at scale 8192
+            input_layer_weights_q[i][j] = (int8_t)(random_double() * 4);
         }
     }
 
     for (int i = 0; i < ACCUMULATOR_SIZE; i++) {
-        input_layer_bias_q[i] = (int16_t)(random_double() * (SCALE / 16));
+        // int8 scale 64 counterpart of (SCALE / 16) at scale 8192
+        input_layer_bias_q[i] = (int16_t)(random_double() * 4);
     }
 }
