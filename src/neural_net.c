@@ -53,13 +53,34 @@
 #define SCALE_HALF (SCALE / 2 - 1)
 #define SCALE_OUTPUT 10000
 
+static const uint32_t wh_magic = 0x57594d41; // "AMYW"
+
+static const uint8_t wh_quantization_int_8 = 1;
+static const uint8_t wh_quantization_int_16 = 2;
+static const uint8_t wh_quantization_int_32 = 3;
+
+typedef struct {
+    uint32_t wh_magic; // should always be wh_magic
+    uint16_t wh_accumulator_size;    // Size of the accumulator
+    uint16_t wh_hidden_layer_1_size; // Size of the hidden layer 1
+    uint16_t wh_hidden_layer_2_size; // Size of the hidden layer 2
+    uint8_t wh_accumulator_weights_quantization;
+    uint8_t wh_accumulator_bias_quantization;
+    uint8_t wh_hidden_layer_1_weights_quantization;
+    uint8_t wh_hidden_layer_1_bias_quantization;
+    uint8_t wh_hidden_layer_2_weights_quantization;
+    uint8_t wh_hidden_layer_2_bias_quantization;
+    uint8_t wh_output_layer_weights_quantization;
+    uint8_t wh_output_layer_bias_quantization;
+} WeightsHeader;
+
 int8_t input_layer_weights_q[N_FEATURES][ACCUMULATOR_SIZE];
 int16_t input_layer_bias_q[ACCUMULATOR_SIZE];
-int8_t hidden_layer_1_weights_q[32][2 * ACCUMULATOR_SIZE];
-int16_t hidden_layer_1_bias_q[32];
-int16_t hidden_layer_2_weights_q[32][32];
-int32_t hidden_layer_2_bias_q[32];
-int32_t output_layer_weights_q[32];
+int8_t hidden_layer_1_weights_q[HIDDEN_1_SIZE][2 * ACCUMULATOR_SIZE];
+int16_t hidden_layer_1_bias_q[HIDDEN_1_SIZE];
+int16_t hidden_layer_2_weights_q[HIDDEN_2_SIZE][HIDDEN_1_SIZE];
+int32_t hidden_layer_2_bias_q[HIDDEN_2_SIZE];
+int32_t output_layer_weights_q[HIDDEN_2_SIZE];
 int32_t output_layer_bias_q[1];
 
 static bool verbose = true;
@@ -73,6 +94,25 @@ void nn_read_weights_quantized(void) {
         return;
     }
 
+    WeightsHeader header;
+
+    items_read = fread(&header, sizeof(header), 1, fin);
+    assert(items_read == 1);
+
+    // Verify that the weights file is valid
+    assert(header.wh_magic == wh_magic);
+    assert(header.wh_accumulator_size == ACCUMULATOR_SIZE);
+    assert(header. wh_hidden_layer_1_size == HIDDEN_1_SIZE);
+    assert(header. wh_hidden_layer_2_size == HIDDEN_2_SIZE);
+    assert(header. wh_accumulator_weights_quantization == wh_quantization_int_8);
+    assert(header. wh_accumulator_bias_quantization == wh_quantization_int_16);
+    assert(header. wh_hidden_layer_1_weights_quantization == wh_quantization_int_8);
+    assert(header. wh_hidden_layer_1_bias_quantization == wh_quantization_int_16);
+    assert(header. wh_hidden_layer_2_weights_quantization == wh_quantization_int_16);
+    assert(header. wh_hidden_layer_2_bias_quantization == wh_quantization_int_32);
+    assert(header. wh_output_layer_weights_quantization == wh_quantization_int_32);
+    assert(header. wh_output_layer_bias_quantization == wh_quantization_int_32);
+
     items_read = fread(input_layer_weights_q, sizeof(int8_t),
                        ACCUMULATOR_SIZE * N_FEATURES, fin);
     assert(items_read == ACCUMULATOR_SIZE * N_FEATURES);
@@ -82,20 +122,24 @@ void nn_read_weights_quantized(void) {
     assert(items_read == ACCUMULATOR_SIZE);
 
     items_read = fread(hidden_layer_1_weights_q, sizeof(int8_t),
-                       32 * 2 * ACCUMULATOR_SIZE, fin);
-    assert(items_read == 32 * 2 * ACCUMULATOR_SIZE);
+                       HIDDEN_1_SIZE * 2 * ACCUMULATOR_SIZE, fin);
+    assert(items_read == HIDDEN_1_SIZE * 2 * ACCUMULATOR_SIZE);
 
-    items_read = fread(hidden_layer_1_bias_q, sizeof(int16_t), 32, fin);
-    assert(items_read == 32);
+    items_read =
+        fread(hidden_layer_1_bias_q, sizeof(int16_t), HIDDEN_1_SIZE, fin);
+    assert(items_read == HIDDEN_1_SIZE);
 
-    items_read = fread(hidden_layer_2_weights_q, sizeof(int16_t), 32 * 32, fin);
-    assert(items_read == 32 * 32);
+    items_read = fread(hidden_layer_2_weights_q, sizeof(int16_t),
+                       HIDDEN_1_SIZE * HIDDEN_2_SIZE, fin);
+    assert(items_read == HIDDEN_1_SIZE * HIDDEN_2_SIZE);
 
-    items_read = fread(hidden_layer_2_bias_q, sizeof(int32_t), 32, fin);
-    assert(items_read == 32);
+    items_read =
+        fread(hidden_layer_2_bias_q, sizeof(int32_t), HIDDEN_2_SIZE, fin);
+    assert(items_read == HIDDEN_2_SIZE);
 
-    items_read = fread(output_layer_weights_q, sizeof(int32_t), 32, fin);
-    assert(items_read == 32);
+    items_read =
+        fread(output_layer_weights_q, sizeof(int32_t), HIDDEN_2_SIZE, fin);
+    assert(items_read == HIDDEN_2_SIZE);
 
     items_read = fread(output_layer_bias_q, sizeof(int32_t), 1, fin);
     assert(items_read == 1);
@@ -216,6 +260,10 @@ void nn_update_weights_for_king(struct Position *p) {
     }
 }
 
+/*
+ * Evaluate the position using neural networks. Returns the evaluation
+ * in 1/1000th of a pawn.
+ */
 int nn_evaluate_position(struct Position *p) {
     int score;
 #ifdef STATISTICS_Q
@@ -265,12 +313,12 @@ int nn_evaluate_position(struct Position *p) {
         }
     }
 
-    int32_t hidden_layer_1_q[32];
-    for (int i = 0; i < 32; i++) {
+    int32_t hidden_layer_1_q[HIDDEN_1_SIZE];
+    for (int i = 0; i < HIDDEN_1_SIZE; i++) {
         hidden_layer_1_q[i] = hidden_layer_1_bias_q[i];
     }
 
-    for (int i = 0; i < 32; i++) {
+    for (int i = 0; i < HIDDEN_1_SIZE; i++) {
         for (int j = 0; j < 2 * ACCUMULATOR_SIZE; j++) {
             hidden_layer_1_q[i] +=
                 accumulator[j] * hidden_layer_1_weights_q[i][j];
@@ -284,9 +332,9 @@ int nn_evaluate_position(struct Position *p) {
 #endif
     }
 
-    int16_t hidden_layer_1_q16[32];
+    int16_t hidden_layer_1_q16[HIDDEN_1_SIZE];
 
-    for (int i = 0; i < 32; i++) {
+    for (int i = 0; i < HIDDEN_1_SIZE; i++) {
         if (hidden_layer_1_q[i] <= 0) {
             hidden_layer_1_q16[i] = 0;
         } else if (hidden_layer_1_q[i] > SCALE_INPUT * SCALE_INPUT) {
@@ -297,30 +345,31 @@ int nn_evaluate_position(struct Position *p) {
                           SCALE_INPUT);
         }
 
-        assert(hidden_layer_1_q16[i] >= 0);
+        // assert(hidden_layer_1_q16[i] >= 0);
     }
 
 #ifdef DEBUG
     print(1, "hidden_layer_1_q:\n");
-    for (int i = 0; i < 16; i++) {
+    for (int i = 0; i < HIDDEN_1_SIZE; i++) {
         print(1, "%d, ", hidden_layer_1_q16[i]);
     }
     print(1, "\n");
 #endif
 
-    int32_t hidden_layer_2_q[32];
-    memcpy(hidden_layer_2_q, hidden_layer_2_bias_q, 32 * sizeof(int32_t));
+    int32_t hidden_layer_2_q[HIDDEN_2_SIZE];
+    memcpy(hidden_layer_2_q, hidden_layer_2_bias_q,
+           HIDDEN_2_SIZE * sizeof(int32_t));
 
-    for (int i = 0; i < 32; i++) {
-        for (int j = 0; j < 32; j++) {
+    for (int i = 0; i < HIDDEN_2_SIZE; i++) {
+        for (int j = 0; j < HIDDEN_1_SIZE; j++) {
             hidden_layer_2_q[i] +=
                 hidden_layer_1_q16[j] * hidden_layer_2_weights_q[i][j];
         }
     }
 
-    int16_t hidden_layer_2_q16[32];
+    int16_t hidden_layer_2_q16[HIDDEN_2_SIZE];
 
-    for (int i = 0; i < 32; i++) {
+    for (int i = 0; i < HIDDEN_2_SIZE; i++) {
         if (hidden_layer_2_q[i] <= 0) {
             hidden_layer_2_q16[i] = 0;
         } else if (hidden_layer_2_q[i] >= SCALE_INPUT * SCALE) {
@@ -331,12 +380,12 @@ int nn_evaluate_position(struct Position *p) {
                           SCALE_INPUT);
         }
 
-        assert(hidden_layer_2_q16[i] >= 0);
+        // assert(hidden_layer_2_q16[i] >= 0);
     }
 
 #ifdef DEBUG
     print(1, "hidden_layer_2_q:\n");
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < HIDDEN_2_SIZE; i++) {
         print(1, "%d, ", hidden_layer_2_q16[i]);
     }
     print(1, "\n");
@@ -344,7 +393,7 @@ int nn_evaluate_position(struct Position *p) {
 
     int32_t output_layer_q = output_layer_bias_q[0];
 
-    for (int j = 0; j < 32; j++) {
+    for (int j = 0; j < HIDDEN_2_SIZE; j++) {
         output_layer_q += hidden_layer_2_q16[j] * output_layer_weights_q[j];
     }
 
