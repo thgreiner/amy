@@ -36,7 +36,7 @@
 #ifndef AMY_H
 #define AMY_H
 
-#define ACCUMULATOR_SIZE 256
+#define ACCUMULATOR_SIZE 128
 
 #ifdef _WIN32
 /*

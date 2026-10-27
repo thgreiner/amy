@@ -34,6 +34,10 @@
 
 #include "dbase.h"
 
+/* Architecture of the quantized network (network.quant layout). */
+#define HIDDEN_1_SIZE 32
+#define HIDDEN_2_SIZE 32
+
 void nn_read_weights(void);
 int nn_evaluate_position(struct Position *);
 void nn_init_accumulator(struct Position *);
