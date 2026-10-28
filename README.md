@@ -168,4 +168,3 @@ THANKS
 - to Dann Corbit for porting Amy to Win32
 
 - to Allen Lake for tuning Amy's timing algorithm
-

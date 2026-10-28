@@ -35,7 +35,9 @@
 
 #include <string.h>
 
+#include "bookup.h"
 #include "bpd.h"
+#include "evaluation.h"
 #include "evaluation_config.h"
 #include "hashtable.h"
 #include "init.h"
@@ -156,6 +158,10 @@ static void main_process_rc_file(void) {
             }
         } else if (!strcmp(key, "evallog")) {
             EvalLog = !strcmp(value, "true");
+        } else if (!strcmp(key, "fuzz")) {
+            bool on = !strcmp(value, "true");
+            wide_book_selection = on;
+            fuzz_evaluation = on;
         }
     }
 

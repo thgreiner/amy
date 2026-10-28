@@ -352,6 +352,8 @@ static const BitBoard BRookTrapped2 =
 static void create_mirrored_piece_square_table(int16_t *, int16_t *);
 static bool is_edge(unsigned int);
 
+bool fuzz_evaluation = false;
+
 /**
  * Evaluate the pawn structure.
  *
@@ -1751,7 +1753,9 @@ static int eval_position_for_white(const struct Position *p) {
 #endif
 
     /** Add a bit of fuzz. */
-    score += random_fuzz();
+    if (fuzz_evaluation) {
+        score += random_fuzz();
+    }
 
     /*
      * Adjust MaxPos if necessary. If the current difference is greater than

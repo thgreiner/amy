@@ -65,6 +65,8 @@ static void cmd_set_time(char *);
 static void cmd_set_xboard(char *);
 static void cmd_go(char *);
 static void cmd_force(char *);
+static void cmd_fuzz(char *);
+static void cmd_no_fuzz(char *);
 static void cmd_name(char *);
 static void cmd_move_now(char *);
 static void cmd_edit(char *);
@@ -124,6 +126,7 @@ static struct CommandEntry Commands[] = {
      "filter quiescent positions", NULL},
     {"flatten", &cmd_flatten, true, false, "flatten book", NULL},
     {"force", &cmd_force, true, false, "switch force mode (xboard)", NULL},
+    {"fuzz", &cmd_fuzz, true, false, "play more randomly", NULL},
     {"go", &cmd_go, false, false, "start searching", NULL},
     {"hard", &cmd_hard, true, false, "switch on permanent brain", NULL},
     {"help", &cmd_help, true, false, "show help", NULL},
@@ -132,6 +135,7 @@ static struct CommandEntry Commands[] = {
     {"moves", &cmd_moves, false, false, "show legal moves", NULL},
     {"name", &cmd_name, true, false, "set the opponents name", NULL},
     {"new", &cmd_newgame, true, true, "start new game", NULL},
+    {"nofuzz", &cmd_no_fuzz, true, false, "play less randomly", NULL},
     {"nopost", &cmd_nopost, true, false, "switch off post mode (xboard)", NULL},
     {"perft", &cmd_perft, false, false, "Run the perft benchmark", NULL},
     {"post", &cmd_post, true, false, "switch on post mode (xboard)", NULL},
@@ -872,4 +876,18 @@ static void cmd_set_search_depth(char *args) {
     }
 
     search_set_max_depth(atoi(args));
+}
+
+static void cmd_fuzz(char *args) {
+    (void)args;
+    wide_book_selection = true;
+    fuzz_evaluation = true;
+    print(0, "Enabled fuzz for book and evaluation.\n");
+}
+
+static void cmd_no_fuzz(char *args) {
+    (void)args;
+    wide_book_selection = false;
+    fuzz_evaluation = false;
+    print(0, "Disabled fuzz for book and evaluation.\n");
 }
