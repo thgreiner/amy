@@ -1,22 +1,22 @@
 bin_PROGRAMS = Amy
 
-Amy_SOURCES = bitboard.c blunder.c bookup.c commands.c dbase.c eco.c \
+Amy_SOURCES = bitboard.c blunder.c bpd.c bookup.c commands.c dbase.c eco.c \
               evaluation.c evaluation_config.c filter.c hashtable.c heap.c \
               init.c learn.c magic.c main.c mates.c movedata.c mytb.cpp \
               next.c pgn_read.c pgn_write.c probe.c random.c recog.c search.c \
-              search_io.c state_machine.c swap.c test_blunder.c \
+              search_io.c state_machine.c swap.c test_blunder.c test_bpd.c \
               test_dbase.c test_pgn_write.c test_utils.c test_yaml.c time_ctl.c tree.c utils.c yaml.c
 
 if HAVE_LINENOISE
 Amy_SOURCES += linenoise.c
 endif
 
-Amy_DEPENDENCIES = bitboard.o blunder.o bookup.o commands.o dbase.o eco.o \
+Amy_DEPENDENCIES = bitboard.o blunder.o bpd.o bookup.o commands.o dbase.o eco.o \
                    evaluation.o evaluation_config.o filter.c hashtable.o \
                    heap.o init.o learn.o magic.o main.o mates.o movedata.o \
                    mytb.o next.o pgn_read.o pgn_write.o probe.o random.o \
                    recog.o search.o search_io.o state_machine.o swap.o \
-                   test_blunder.o test_dbase.o test_pgn_write.o test_utils.o test_yaml.o time_ctl.o \
+                   test_blunder.o test_bpd.o test_dbase.o test_pgn_write.o test_utils.o test_yaml.o time_ctl.o \
                    tree.o utils.o yaml.o
 
 AM_CFLAGS=-I$(top_srcdir)/include

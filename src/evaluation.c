@@ -33,10 +33,12 @@
  * evaluation.c - positional evaluation routines
  */
 
+#include "bpd.h"
 #include "dbase.h"
 #include "hashtable.h"
 #include "init.h"
 #include "inline.h"
+#include "random.h"
 #include "recog.h"
 #include <stdint.h>
 
@@ -349,6 +351,8 @@ static const BitBoard BRookTrapped2 =
 
 static void create_mirrored_piece_square_table(int16_t *, int16_t *);
 static bool is_edge(unsigned int);
+
+bool fuzz_evaluation = false;
 
 /**
  * Evaluate the pawn structure.
@@ -1748,6 +1752,11 @@ static int eval_position_for_white(const struct Position *p) {
     }
 #endif
 
+    /** Add a bit of fuzz. */
+    if (fuzz_evaluation) {
+        score += random_fuzz();
+    }
+
     /*
      * Adjust MaxPos if necessary. If the current difference is greater than
      * MaxPos, adjust MaxPos. Otherwise slowly tune MaxPos down to MaxPosInit.
@@ -1775,12 +1784,9 @@ static int eval_position_for_white(const struct Position *p) {
  * This is just a convenience routine which handles sign switches
  * if it is not white to move.
  */
-
 int eval_position(const struct Position *p) {
-    if (p->turn == White)
-        return eval_position_for_white(p);
-    else
-        return -eval_position_for_white(p);
+    return (p->turn == White) ? eval_position_for_white(p)
+                              : -eval_position_for_white(p);
 }
 
 /**

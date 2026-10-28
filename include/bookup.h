@@ -33,6 +33,7 @@
 #define BOOKUP_H
 
 #include "dbase.h"
+#include <stdbool.h>
 
 void book_up(char *);
 void book_up_quiet(char *);
@@ -40,5 +41,7 @@ void book_flatten(unsigned int);
 void book_create_learn_db(char *);
 void book_query(struct Position *);
 int book_select(struct Position *);
+
+extern bool wide_book_selection;
 
 #endif

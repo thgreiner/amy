@@ -34,6 +34,7 @@
 
 #include "bitboard.h"
 #include "types.h"
+#include <stdbool.h>
 
 struct PawnFacts {
     BitBoard pf_WhitePassers;
@@ -119,6 +120,8 @@ extern int16_t ScaleHalfOpenFilesYours[];
 extern int16_t ScaleOpenFiles[];
 
 extern int MaxPos;
+
+extern bool fuzz_evaluation;
 
 int eval_position(const struct Position *);
 void eval_init(const struct Position *);

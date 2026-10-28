@@ -45,6 +45,7 @@
 #include "safe_malloc.h"
 #include "tree.h"
 #include "utils.h"
+#include <math.h>
 
 #define BOOK_NAME "Book.db"
 #define LEARN_NAME "Learn.db"
@@ -81,6 +82,12 @@ struct BookQuery {
 
 static tree_node_t *BookDB = NULL;
 static tree_node_t *LearnDB = NULL;
+
+/*
+ * Determines how book moves are selected - if set to true, Amy will play a
+ * wider variety of book moves.
+ */
+bool wide_book_selection = false;
 
 static tree_node_t *book_put_entry(tree_node_t *database, hash_t hk, int result,
                                    int elo) {
@@ -337,21 +344,65 @@ static void book_sort(int cnt, move_t *mvs, struct BookQuery *entries) {
     }
 }
 
-static void book_calculate_probabilities(int cnt, struct BookQuery *entries,
-                                         double *props) {
-    int total = 0;
-    double totalprops;
-    int limit;
-    int i;
+static void book_calculate_probabilities_wide(int cnt,
+                                              struct BookQuery *entries,
+                                              double *props) {
+    double totalprops = 0.0;
 
-    for (i = 0; i < cnt; i++) {
+    for (int i = 0; i < cnt; i++) {
+        struct BookQuery *entry = entries + i;
+
+        props[i] = 0.0;
+        int avelo = 2000;
+
+#if WITH_ELO
+        if (entry->be.nElo != 0) {
+            avelo = entry->be.sumElo / entry->be.nElo;
+        }
+#endif
+
+        props[i] = avelo * sqrt(2 * entry->be.win + entry->be.draw);
+
+        if (entry->le.flags & GoodMove) {
+            props[i] *= 2;
+        }
+
+        if (entry->le.flags & BadMove) {
+            props[i] = 0.0;
+        }
+
+        /*
+         * Never choose a variation that doesn't have a single win.
+         */
+        if (entry->be.win == 0) {
+            props[i] = 0.0;
+        }
+
+        totalprops += props[i];
+    }
+
+    if (totalprops != 0.0) {
+        totalprops = 1.0 / totalprops;
+    }
+
+    for (int i = 0; i < cnt; i++) {
+        props[i] *= totalprops;
+    }
+}
+
+static void book_calculate_probabilities_narrow(int cnt,
+                                                struct BookQuery *entries,
+                                                double *props) {
+    int total = 0;
+    double totalprops = 0.0;
+
+    for (int i = 0; i < cnt; i++) {
         total += entries[i].be.win + entries[i].be.loss + entries[i].be.draw;
     }
 
-    limit = total / 16;
-    totalprops = 0.0;
+    int limit = total / 16;
 
-    for (i = 0; i < cnt; i++) {
+    for (int i = 0; i < cnt; i++) {
         struct BookQuery *entry = entries + i;
         int freq = entry->be.win + entry->be.loss + entry->be.draw;
 
@@ -365,9 +416,7 @@ static void book_calculate_probabilities(int cnt, struct BookQuery *entries,
             }
 #endif
 
-            props[i] = avelo * freq *
-                       (double)(2 * entry->be.win + entry->be.draw) /
-                       (double)(freq);
+            props[i] = avelo * (2 * entry->be.win + entry->be.draw);
 
             if (entry->le.flags & GoodMove) {
                 props[i] *= 2;
@@ -380,7 +429,6 @@ static void book_calculate_probabilities(int cnt, struct BookQuery *entries,
             /*
              * Never choose a variation that doesn't have a single win.
              */
-
             if (entry->be.win == 0) {
                 props[i] = 0.0;
             }
@@ -391,12 +439,19 @@ static void book_calculate_probabilities(int cnt, struct BookQuery *entries,
 
     if (totalprops != 0.0) {
         totalprops = 1.0 / totalprops;
-    } else {
-        totalprops = 0.0;
     }
 
-    for (i = 0; i < cnt; i++) {
+    for (int i = 0; i < cnt; i++) {
         props[i] *= totalprops;
+    }
+}
+
+static void book_calculate_probabilities(int cnt, struct BookQuery *entries,
+                                         double *props) {
+    if (wide_book_selection) {
+        book_calculate_probabilities_wide(cnt, entries, props);
+    } else {
+        book_calculate_probabilities_narrow(cnt, entries, props);
     }
 }
 
@@ -436,7 +491,7 @@ void book_query(struct Position *p) {
     book_sort(cnt, moves, be);
     book_calculate_probabilities(cnt, be, props);
 
-    print(0, "\tmove    count  win loss draw av. elo prop\n");
+    print(0, "\tmove    count  win loss draw av. elo   prop\n");
     for (i = 0; i < cnt; i++) {
         struct BookQuery *entry = be + i;
         int freq = entry->be.win + entry->be.loss + entry->be.draw;
@@ -450,7 +505,7 @@ void book_query(struct Position *p) {
         }
 
         char san_buffer[16];
-        print(0, "\t%5s%c %6d %3d%% %3d%% %3d%% %5d %3.f\n",
+        print(0, "\t%5s%c %6d %3d%% %3d%% %3d%%   %5d %5.1f%%\n",
               dbase_san(p, moves[i], san_buffer), modifier, freq,
               (100 * entry->be.win) / freq, (100 * entry->be.loss) / freq,
               (100 * entry->be.draw) / freq,

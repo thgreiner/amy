@@ -39,6 +39,7 @@
 #include "bitboard.h"
 #include "blunder.h"
 #include "bookup.h"
+#include "bpd.h"
 #include "commands.h"
 #include "dbase.h"
 #include "eco.h"
@@ -58,11 +59,14 @@
 static void cmd_quit(char *);
 static void cmd_show(char *);
 static void cmd_show_eco(char *);
+static void cmd_bpd_test(char *);
 static void cmd_test(char *);
 static void cmd_set_time(char *);
 static void cmd_set_xboard(char *);
 static void cmd_go(char *);
 static void cmd_force(char *);
+static void cmd_fuzz(char *);
+static void cmd_no_fuzz(char *);
 static void cmd_name(char *);
 static void cmd_move_now(char *);
 static void cmd_edit(char *);
@@ -104,6 +108,7 @@ static struct CommandEntry Commands[] = {
     {"book", &cmd_book, false, false, "display book moves", NULL},
     {"bk", &cmd_book, false, false, "display book moves (xboard)", NULL},
     {"bookup", &book_up, false, false, "create a book", NULL},
+    {"bpd-test", &cmd_bpd_test, false, false, "write bpd test data", NULL},
     {"conf", &cmd_conf, false, false, "load scoring config", NULL},
     {"conf-save", &cmd_save_conf, false, false, "save scoring config", NULL},
     {"d", &cmd_show, true, false, "display current position", NULL},
@@ -121,6 +126,7 @@ static struct CommandEntry Commands[] = {
      "filter quiescent positions", NULL},
     {"flatten", &cmd_flatten, true, false, "flatten book", NULL},
     {"force", &cmd_force, true, false, "switch force mode (xboard)", NULL},
+    {"fuzz", &cmd_fuzz, true, false, "play more randomly", NULL},
     {"go", &cmd_go, false, false, "start searching", NULL},
     {"hard", &cmd_hard, true, false, "switch on permanent brain", NULL},
     {"help", &cmd_help, true, false, "show help", NULL},
@@ -129,6 +135,7 @@ static struct CommandEntry Commands[] = {
     {"moves", &cmd_moves, false, false, "show legal moves", NULL},
     {"name", &cmd_name, true, false, "set the opponents name", NULL},
     {"new", &cmd_newgame, true, true, "start new game", NULL},
+    {"nofuzz", &cmd_no_fuzz, true, false, "play less randomly", NULL},
     {"nopost", &cmd_nopost, true, false, "switch off post mode (xboard)", NULL},
     {"perft", &cmd_perft, false, false, "Run the perft benchmark", NULL},
     {"post", &cmd_post, true, false, "switch on post mode (xboard)", NULL},
@@ -765,10 +772,18 @@ static void cmd_save(char *args) {
         print(0, "Usage: save <filename>\n");
         return;
     }
-    pgn_save_game(CurrentPosition, args);
+    pgn_save_game(CurrentPosition, args, false);
 }
 
 static void cmd_prefs(char *args) { book_create_learn_db(args); }
+
+static void cmd_bpd_test(char *args) {
+    if (args == NULL) {
+        print(0, "Usage: bpd-test <filename>\n");
+        return;
+    }
+    bpd_write_test_data(args);
+}
 
 static void cmd_flatten(char *args) {
     int threshold;
@@ -815,7 +830,10 @@ static void cmd_name(char *args) {
 }
 
 static void cmd_selfplay(char *args) {
-    (void)args;
+    if (args) {
+        self_play_games_remaining = atoi(args) - 1;
+    }
+
     SelfPlayMode = true;
     State = STATE_CALCULATING;
 }
@@ -858,4 +876,18 @@ static void cmd_set_search_depth(char *args) {
     }
 
     search_set_max_depth(atoi(args));
+}
+
+static void cmd_fuzz(char *args) {
+    (void)args;
+    wide_book_selection = true;
+    fuzz_evaluation = true;
+    print(0, "Enabled fuzz for book and evaluation.\n");
+}
+
+static void cmd_no_fuzz(char *args) {
+    (void)args;
+    wide_book_selection = false;
+    fuzz_evaluation = false;
+    print(0, "Disabled fuzz for book and evaluation.\n");
 }
