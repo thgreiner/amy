@@ -37,6 +37,7 @@
 #include "hashtable.h"
 #include "inline.h"
 #include "random.h"
+#include "search.h"
 #include "utils.h"
 #include <stdint.h>
 #include <stdio.h>
@@ -45,7 +46,7 @@
 // #define STATISTICS_Q 1
 // #define DEBUG 1
 
-#define N_FEATURES (64 * 64 * 10)
+#define N_FEATURES (64 * 64 * 11)
 
 #define SCALE_INPUT 64
 #define SCALE_INPUT_HALF (SCALE_INPUT / 2 - 1)
@@ -60,8 +61,9 @@ static const uint8_t wh_quantization_int_16 = 2;
 static const uint8_t wh_quantization_int_32 = 3;
 
 typedef struct {
-    uint32_t wh_magic; // should always be wh_magic
+    uint32_t wh_magic;               // should always be wh_magic
     uint16_t wh_accumulator_size;    // Size of the accumulator
+    uint16_t wh_num_features;        // Number of input features (planes)
     uint16_t wh_hidden_layer_1_size; // Size of the hidden layer 1
     uint16_t wh_hidden_layer_2_size; // Size of the hidden layer 2
     uint8_t wh_accumulator_weights_quantization;
@@ -102,16 +104,22 @@ void nn_read_weights_quantized(void) {
     // Verify that the weights file is valid
     assert(header.wh_magic == wh_magic);
     assert(header.wh_accumulator_size == ACCUMULATOR_SIZE);
-    assert(header. wh_hidden_layer_1_size == HIDDEN_1_SIZE);
-    assert(header. wh_hidden_layer_2_size == HIDDEN_2_SIZE);
-    assert(header. wh_accumulator_weights_quantization == wh_quantization_int_8);
-    assert(header. wh_accumulator_bias_quantization == wh_quantization_int_16);
-    assert(header. wh_hidden_layer_1_weights_quantization == wh_quantization_int_8);
-    assert(header. wh_hidden_layer_1_bias_quantization == wh_quantization_int_16);
-    assert(header. wh_hidden_layer_2_weights_quantization == wh_quantization_int_16);
-    assert(header. wh_hidden_layer_2_bias_quantization == wh_quantization_int_32);
-    assert(header. wh_output_layer_weights_quantization == wh_quantization_int_32);
-    assert(header. wh_output_layer_bias_quantization == wh_quantization_int_32);
+    assert(header.wh_num_features == N_FEATURES);
+    assert(header.wh_hidden_layer_1_size == HIDDEN_1_SIZE);
+    assert(header.wh_hidden_layer_2_size == HIDDEN_2_SIZE);
+    assert(header.wh_accumulator_weights_quantization == wh_quantization_int_8);
+    assert(header.wh_accumulator_bias_quantization == wh_quantization_int_16);
+    assert(header.wh_hidden_layer_1_weights_quantization ==
+           wh_quantization_int_8);
+    assert(header.wh_hidden_layer_1_bias_quantization ==
+           wh_quantization_int_16);
+    assert(header.wh_hidden_layer_2_weights_quantization ==
+           wh_quantization_int_16);
+    assert(header.wh_hidden_layer_2_bias_quantization ==
+           wh_quantization_int_32);
+    assert(header.wh_output_layer_weights_quantization ==
+           wh_quantization_int_32);
+    assert(header.wh_output_layer_bias_quantization == wh_quantization_int_32);
 
     items_read = fread(input_layer_weights_q, sizeof(int8_t),
                        ACCUMULATOR_SIZE * N_FEATURES, fin);
@@ -189,6 +197,47 @@ static void nn_update_accumulator_sub(int16_t *accumulator_q, int offset) {
 #endif
 }
 
+/*
+ * Build the accumulator for the given side from scratch: input bias plus the
+ * contributions of all pieces and the opponent king. Features are expressed
+ * in the side's own frame: own king at the origin, squares mirrored for
+ * black.
+ */
+static void nn_build_accumulator(int16_t *accumulator_q, struct Position *p,
+                                 int side) {
+    int flip = (side == Black) ? 0x38 : 0;
+    int king_sq = p->kingSq[side] ^ flip;
+
+    memcpy(accumulator_q, input_layer_bias_q,
+           sizeof(int16_t) * ACCUMULATOR_SIZE);
+
+    for (int tp = Pawn; tp <= Queen; tp++) {
+        BitBoard mask = p->mask[side][tp];
+
+        while (mask) {
+            int sq = bitboard_find_set_bit(mask);
+            mask &= mask - 1;
+
+            int index = 4096 * (tp - 1) + 64 * king_sq + (sq ^ flip);
+            nn_update_accumulator_add(accumulator_q, index);
+        }
+
+        mask = p->mask[OPP(side)][tp];
+
+        while (mask) {
+            int sq = bitboard_find_set_bit(mask);
+            mask &= mask - 1;
+
+            int index = 4096 * (tp + 4) + 64 * king_sq + (sq ^ flip);
+            nn_update_accumulator_add(accumulator_q, index);
+        }
+    }
+
+    /* opponent king relative to own king (plane 10) */
+    int index = 4096 * 10 + 64 * king_sq + (p->kingSq[OPP(side)] ^ flip);
+    nn_update_accumulator_add(accumulator_q, index);
+}
+
 void nn_update_weights_for_piece(struct Position *p, int tp, int sq, bool turn,
                                  bool add) {
 #ifdef DEBUG_UPDATE
@@ -222,42 +271,34 @@ void nn_update_weights_for_piece(struct Position *p, int tp, int sq, bool turn,
     }
 }
 
-void nn_update_weights_for_king(struct Position *p) {
+void nn_update_weights_for_king(struct Position *p, int old_king_sq) {
 #ifdef DEBUG_UPDATE
-    print(1, "nn_update_weights_for_king()\n");
+    print(1, "nn_update_weights_for_king(old_king_sq=%d)\n", old_king_sq);
 #endif
 
-    int flip = (p->turn == White) ? 0 : 0x38;
-    int king_sq = p->kingSq[p->turn];
+    int side = p->turn;
+    int opp = OPP(side);
+    int flip = (opp == Black) ? 0x38 : 0;
 
-    king_sq ^= flip;
+    /*
+     * The side to move's king just moved, so rebuild that accumulator from
+     * scratch (its own pieces, the opponent's pieces and the opponent king
+     * have all changed frame of reference).
+     */
+    nn_build_accumulator(
+        (side == White) ? p->accumulator_w_q : p->accumulator_b_q, p, side);
 
-    int16_t *accumulator_q =
-        (p->turn == White) ? p->accumulator_w_q : p->accumulator_b_q;
-    memcpy(accumulator_q, input_layer_bias_q,
-           sizeof(int16_t) * ACCUMULATOR_SIZE);
-
-    for (int tp = Pawn; tp <= Queen; tp++) {
-        BitBoard mask = p->mask[p->turn][tp];
-
-        while (mask) {
-            int sq = bitboard_find_set_bit(mask);
-            mask &= mask - 1;
-
-            int index = 4096 * (tp - 1) + 64 * king_sq + (sq ^ flip);
-            nn_update_accumulator_add(accumulator_q, index);
-        }
-
-        mask = p->mask[OPP(p->turn)][tp];
-
-        while (mask) {
-            int sq = bitboard_find_set_bit(mask);
-            mask &= mask - 1;
-
-            int index = 4096 * (tp + 4) + 64 * king_sq + (sq ^ flip);
-            nn_update_accumulator_add(accumulator_q, index);
-        }
-    }
+    /*
+     * The opponent's accumulator only changed on plane 10 (opponent king
+     * relative to own king): the side to move's king moved.
+     */
+    int16_t *opponent_accumulator_q =
+        (opp == White) ? p->accumulator_w_q : p->accumulator_b_q;
+    int base = 4096 * 10 + 64 * (p->kingSq[opp] ^ flip);
+    nn_update_accumulator_sub(opponent_accumulator_q,
+                              base + (old_king_sq ^ flip));
+    nn_update_accumulator_add(opponent_accumulator_q,
+                              base + (p->kingSq[side] ^ flip));
 }
 
 /*
@@ -415,8 +456,6 @@ int nn_evaluate_position(struct Position *p) {
     score = ((output_layer_q + SCALE_HALF) / SCALE) * SCALE_OUTPUT;
     score = (score + SCALE_HALF) / SCALE;
 
-    // print(0, "score: %d, score_q: %d\n", score, score_q);
-
     int material_balance =
         (p->turn == 0) ? eval_material_balance(p) : -eval_material_balance(p);
     int pos_score = abs(material_balance - score);
@@ -431,84 +470,26 @@ int nn_evaluate_position(struct Position *p) {
 }
 
 void nn_init_accumulator(struct Position *p) {
-    memcpy(p->accumulator_w_q, input_layer_bias_q,
-           sizeof(int16_t) * ACCUMULATOR_SIZE);
-    memcpy(p->accumulator_b_q, input_layer_bias_q,
-           sizeof(int16_t) * ACCUMULATOR_SIZE);
+    nn_build_accumulator(p->accumulator_w_q, p, White);
+    nn_build_accumulator(p->accumulator_b_q, p, Black);
 
 #ifdef DEBUG
-    print(1, "bias:\n");
+    print(1, "accumulator:\n");
     for (int i = 0; i < 8; i++) {
         print(1, "%d, ", p->accumulator_w_q[i]);
     }
     print(1, "\n");
 #endif
-
-    for (int tp = Pawn; tp <= Queen; tp++) {
-        BitBoard mask = p->mask[White][tp];
-
-        while (mask) {
-            int sq = bitboard_find_set_bit(mask);
-            mask &= mask - 1;
-
-            nn_update_weights_for_piece(p, tp, sq, 0, true);
-        }
-
-        mask = p->mask[Black][tp];
-
-        while (mask) {
-            int sq = bitboard_find_set_bit(mask);
-            mask &= mask - 1;
-
-            nn_update_weights_for_piece(p, tp, sq, 1, true);
-        }
-    }
 }
 
 void nn_validate_weights(struct Position *p) {
     int16_t accumulator_w_q[ACCUMULATOR_SIZE];
     int16_t accumulator_b_q[ACCUMULATOR_SIZE];
 
-    memcpy(accumulator_w_q, input_layer_bias_q,
-           sizeof(int16_t) * ACCUMULATOR_SIZE);
-    memcpy(accumulator_b_q, input_layer_bias_q,
-           sizeof(int16_t) * ACCUMULATOR_SIZE);
-
-    const int flip_b = 0x38;
-    int king_sq_w = p->kingSq[White];
-    int king_sq_b = p->kingSq[Black];
-
-    king_sq_b ^= flip_b;
-
     verbose = false;
 
-    for (int tp = Pawn; tp <= Queen; tp++) {
-        BitBoard mask = p->mask[White][tp];
-
-        while (mask) {
-            int sq = bitboard_find_set_bit(mask);
-            mask &= mask - 1;
-
-            int index = 4096 * (tp - 1) + 64 * king_sq_w + sq;
-            nn_update_accumulator_add(accumulator_w_q, index);
-
-            index = 4096 * (tp + 4) + 64 * king_sq_b + (sq ^ flip_b);
-            nn_update_accumulator_add(accumulator_b_q, index);
-        }
-
-        mask = p->mask[Black][tp];
-
-        while (mask) {
-            int sq = bitboard_find_set_bit(mask);
-            mask &= mask - 1;
-
-            int index = 4096 * (tp + 4) + 64 * king_sq_w + sq;
-            nn_update_accumulator_add(accumulator_w_q, index);
-
-            index = 4096 * (tp - 1) + 64 * king_sq_b + (sq ^ flip_b);
-            nn_update_accumulator_add(accumulator_b_q, index);
-        }
-    }
+    nn_build_accumulator(accumulator_w_q, p, White);
+    nn_build_accumulator(accumulator_b_q, p, Black);
 
     verbose = true;
 

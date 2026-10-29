@@ -121,8 +121,6 @@ int16_t ExtendRecapture[] = {0, 4, 6, 6, 8, 10};
 static const int PVWindow = 250;
 static const int ResearchWindow = 1500;
 
-static const int MateDepth = 3;
-
 /**
  * search tree data
  */
@@ -280,6 +278,15 @@ static bool search_terminate(struct SearchData *sd) {
         }
     }
     return false;
+}
+
+static int search_mate_depth(int score) {
+    if (score > CMLIMIT) {
+        return INF - score + 1;
+    } else if (score < -CMLIMIT) {
+        return score + INF + 1;
+    }
+    return MaxDepth;
 }
 
 /*
@@ -1528,9 +1535,10 @@ static void *search_iterate_int(void *x) {
             }
         }
 
-        if (sd->master && (PrintOK || (sd->depth > MateDepth &&
-                                       (sd->best_score < -CMLIMIT ||
-                                        sd->best_score > CMLIMIT)))) {
+        if (sd->master &&
+            (PrintOK ||
+             (sd->depth > search_mate_depth(sd->best_score) &&
+              (sd->best_score < -CMLIMIT || sd->best_score > CMLIMIT)))) {
             searchio_output(sd->depth, CurTime - StartTime,
                             (p->turn) ? -sd->best_score : sd->best_score,
                             BestLine, sd->nodes_cnt + sd->qnodes_cnt);
@@ -1540,14 +1548,15 @@ static void *search_iterate_int(void *x) {
 
         if (sd->best_score < -CMLIMIT || sd->best_score > CMLIMIT) {
             if (last > CMLIMIT && sd->best_score >= last &&
-                sd->depth > MateDepth) {
+                sd->depth > search_mate_depth(sd->best_score)) {
                 if (SearchMode == Searching)
                     break;
                 else
                     DoneAtRoot = true;
             }
             if (SearchMode == Searching && last < CMLIMIT &&
-                sd->best_score <= last && sd->depth > MateDepth)
+                sd->best_score <= last &&
+                sd->depth > search_mate_depth(sd->best_score))
                 break;
             last = sd->best_score;
         }

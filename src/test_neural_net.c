@@ -79,6 +79,30 @@ static void test_castle(void) {
     nn_validate_weights(p);
 }
 
+static void test_king_move(void) {
+    struct Position *p =
+        dbase_create_position_from_epd("4k3/8/8/8/8/8/8/4K3 w - -");
+
+    nn_init_accumulator(p);
+    nn_validate_weights(p);
+
+    int move1 = dbase_make_move(e1, d2, 0);
+    dbase_do_move(p, move1);
+    nn_validate_weights(p);
+
+    int move2 = dbase_make_move(e8, d8, 0);
+    dbase_do_move(p, move2);
+    nn_validate_weights(p);
+
+    dbase_undo_move(p, move2);
+    nn_validate_weights(p);
+
+    dbase_undo_move(p, move1);
+    nn_validate_weights(p);
+
+    dbase_free_position(p);
+}
+
 static void test_en_passant(void) {
     struct Position *p = dbase_create_position_from_epd(
         "rnbqkbnr/1pp1pppp/p7/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6");
@@ -100,5 +124,6 @@ void test_all_neural_net(void) {
     test_knight_move();
     test_promotion();
     test_castle();
+    test_king_move();
     test_en_passant();
 }
