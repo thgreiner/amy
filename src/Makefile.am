@@ -1,15 +1,20 @@
 bin_PROGRAMS = Amy
+noinst_PROGRAMS = nn_crosscheck
 
-Amy_SOURCES = bitboard.c blunder.c bookup.c commands.c dbase.c eco.c \
-              evaluation.c evaluation_config.c filter.c hashtable.c heap.c \
-              init.c learn.c magic.c main.c mates.c movedata.c mytb.cpp \
-              neural_net.c next.c pgn_read.c pgn_write.c probe.c random.c recog.c \
-              search.c search_io.c state_machine.c swap.c test_blunder.c \
-              test_dbase.c test_neural_net.c test_pgn_write.c test_utils.c \
-              test_yaml.c time_ctl.c tree.c utils.c yaml.c
+amy_core_sources = bitboard.c blunder.c bookup.c commands.c dbase.c eco.c \
+                   evaluation.c evaluation_config.c filter.c hashtable.c heap.c \
+                   init.c learn.c magic.c mates.c movedata.c mytb.cpp \
+                   neural_net.c next.c pgn_read.c pgn_write.c probe.c random.c recog.c \
+                   search.c search_io.c state_machine.c swap.c test_blunder.c \
+                   test_dbase.c test_neural_net.c test_pgn_write.c test_utils.c \
+                   test_yaml.c time_ctl.c tree.c utils.c yaml.c
+
+Amy_SOURCES = $(amy_core_sources) main.c
+nn_crosscheck_SOURCES = $(amy_core_sources) nn_crosscheck.c
 
 if HAVE_LINENOISE
 Amy_SOURCES += linenoise.c
+nn_crosscheck_SOURCES += linenoise.c
 endif
 
 Amy_DEPENDENCIES = bitboard.o blunder.o bookup.o commands.o dbase.o eco.o \
@@ -46,15 +51,16 @@ eco.o: ${srcdir}/eco.c
 
 -include Makefile.deps
 
-Makefile.deps: $(Amy_SOURCES)
-	$(CC) $(CFLAGS) $(AM_CFLAGS) $(DEFAULT_INCLUDES) $(Amy_SOURCES) -MM > \
+Makefile.deps: $(Amy_SOURCES) nn_crosscheck.c
+	$(CC) $(CFLAGS) $(AM_CFLAGS) $(DEFAULT_INCLUDES) $(Amy_SOURCES) \
+        nn_crosscheck.c -MM > \
         Makefile.deps
 
 $(OBJS): Makefile
 
 .PHONY: format
 format:
-	clang-format -i ${Amy_SOURCES} ${EXTRA_Amy_SOURCES} ${noinst_HEADERS}
+	clang-format -i ${Amy_SOURCES} nn_crosscheck.c ${EXTRA_Amy_SOURCES} ${noinst_HEADERS}
 
 .PHONY: clean-local
 	rm -f Makefile.deps
