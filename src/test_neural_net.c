@@ -32,6 +32,7 @@
 #include "dbase.h"
 #include "inline.h"
 #include "neural_net.h"
+#include <stdlib.h>
 
 static void test_knight_move(void) {
     struct Position *p = dbase_initial_position();
@@ -118,6 +119,56 @@ static void test_en_passant(void) {
     nn_validate_weights(p);
 }
 
+/*
+ * Play random legal moves from the given position, validating the
+ * accumulators (incremental vs. from-scratch) after every do and undo.
+ */
+static void stress_position(const char *epd, int iterations) {
+    struct Position *p = dbase_create_position_from_epd((char *)epd);
+    nn_init_accumulator(p);
+    nn_validate_weights(p);
+
+    for (int i = 0; i < iterations; i++) {
+        heap_t heap = heap_allocate();
+        heap_push_section(heap);
+        int count = dbase_legal_moves(p, heap);
+        heap_pop_section(heap);
+
+        if (count == 0) {
+            heap_free(heap);
+            continue;
+        }
+
+        move_t move = heap->data[heap->current_section->start + rand() % count];
+        heap_free(heap);
+
+        dbase_do_move(p, move);
+        nn_validate_weights(p);
+        dbase_undo_move(p, move);
+        nn_validate_weights(p);
+    }
+
+    dbase_free_position(p);
+}
+
+static void test_random_moves(void) {
+    /* Fixed seed so failures are reproducible. The positions cover kings
+     * on both sides of the d/e mirror boundary and both flipped frames,
+     * so random king moves cross the boundary and subsequent piece moves
+     * exercise the incremental updates in the new frame. */
+    srand(1);
+    stress_position("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -",
+                    1000);
+    stress_position(
+        "r1bqkb1r/pppp1ppp/2n2n2/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R w KQkq -",
+        1000);
+    stress_position("3r1k2/p3qppP/8/3p4/3r4/5QP1/P4PB1/4R1K1 w - -", 1000);
+    stress_position("rnbqkbnr/1pp1pppp/p7/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6",
+                    1000);
+    stress_position("4k3/8/8/8/8/8/8/4K3 w - -", 1000);
+    stress_position("3k4/8/8/8/8/8/8/3K4 w - -", 1000);
+}
+
 void test_all_neural_net(void) {
     nn_randomize_weights();
 
@@ -126,4 +177,5 @@ void test_all_neural_net(void) {
     test_castle();
     test_king_move();
     test_en_passant();
+    test_random_moves();
 }

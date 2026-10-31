@@ -110,9 +110,12 @@ int main(void) {
         "r1bqkb1r/pppp1ppp/2n2n2/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R w KQkq -",
         "3r1k2/p3qppP/8/3p4/3r4/5QP1/P4PB1/4R1K1 w - -",
         "rnbqkbnr/1pp1pppp/p7/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6",
+        /* Both kings on the left half (non-mirrored frame): the
+         * horizontal mirror of the previous EPD. */
+        "2k1r3/Pppq3p/8/4p3/4r3/1PQ5/1BP4P/1K1R4 w - -",
     };
 
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 6; i++) {
         struct Position *p = dbase_create_position_from_epd((char *)epds[i]);
         nn_init_accumulator(p);
         nn_validate_weights(p);

@@ -46,7 +46,13 @@
 // #define STATISTICS_Q 1
 // #define DEBUG 1
 
-#define N_FEATURES (64 * 64 * 11)
+/*
+ * Indexing schema for features:
+ *   - King position mirrored to the left half (a1..d1 up to a8..d8)
+ *   - Piece square (flipped and mirrored depending on king position)
+ *   - Piece type (0..4 own pawn..queen, 5..10 opponent pawn..king)
+ */
+#define N_FEATURES (32 * 64 * 11)
 
 #define SCALE_INPUT 64
 #define SCALE_INPUT_HALF (SCALE_INPUT / 2 - 1)
@@ -198,6 +204,12 @@ static void nn_update_accumulator_sub(int16_t *accumulator_q, int offset) {
 }
 
 /*
+ * Maps a square in the a1..d1 up to a8..d8 half of the board to an index
+ * between 0 and 31.
+ */
+static int index_half_mirrored(int sq) { return (sq & 3) | ((sq & 0x38) >> 1); }
+
+/*
  * Build the accumulator for the given side from scratch: input bias plus the
  * contributions of all pieces and the opponent king. Features are expressed
  * in the side's own frame: own king at the origin, squares mirrored for
@@ -207,6 +219,14 @@ static void nn_build_accumulator(int16_t *accumulator_q, struct Position *p,
                                  int side) {
     int flip = (side == Black) ? 0x38 : 0;
     int king_sq = p->kingSq[side] ^ flip;
+
+    // Mirror the king position if it is on file e..h
+    if ((king_sq & 7) > 3) {
+        king_sq ^= 7;
+        flip |= 7;
+    }
+
+    int king_index = index_half_mirrored(king_sq);
 
     memcpy(accumulator_q, input_layer_bias_q,
            sizeof(int16_t) * ACCUMULATOR_SIZE);
@@ -218,7 +238,7 @@ static void nn_build_accumulator(int16_t *accumulator_q, struct Position *p,
             int sq = bitboard_find_set_bit(mask);
             mask &= mask - 1;
 
-            int index = 4096 * (tp - 1) + 64 * king_sq + (sq ^ flip);
+            int index = 2048 * (tp - 1) + 64 * king_index + (sq ^ flip);
             nn_update_accumulator_add(accumulator_q, index);
         }
 
@@ -228,13 +248,13 @@ static void nn_build_accumulator(int16_t *accumulator_q, struct Position *p,
             int sq = bitboard_find_set_bit(mask);
             mask &= mask - 1;
 
-            int index = 4096 * (tp + 4) + 64 * king_sq + (sq ^ flip);
+            int index = 2048 * (tp + 4) + 64 * king_index + (sq ^ flip);
             nn_update_accumulator_add(accumulator_q, index);
         }
     }
 
     /* opponent king relative to own king (plane 10) */
-    int index = 4096 * 10 + 64 * king_sq + (p->kingSq[OPP(side)] ^ flip);
+    int index = 2048 * 10 + 64 * king_index + (p->kingSq[OPP(side)] ^ flip);
     nn_update_accumulator_add(accumulator_q, index);
 }
 
@@ -257,16 +277,56 @@ void nn_update_weights_for_piece(struct Position *p, int tp, int sq, bool turn,
     king_sq_b ^= flip_b;
 
     if (turn == White) {
-        int index = 4096 * (tp - 1) + 64 * king_sq_w + sq;
+        int mirror_w = 0;
+
+        // Mirror the white king position if it is on file e..h
+        if ((king_sq_w & 7) > 3) {
+            king_sq_w ^= 7;
+            mirror_w = 7;
+        }
+
+        int king_index_w = index_half_mirrored(king_sq_w);
+
+        int index = 2048 * (tp - 1) + 64 * king_index_w + (sq ^ mirror_w);
         update_fn(p->accumulator_w_q, index);
 
-        index = 4096 * (tp + 4) + 64 * king_sq_b + (sq ^ flip_b);
+        int mirror_b = 0;
+
+        // Mirror the black king position if it is on file e..h
+        if ((king_sq_b & 7) > 3) {
+            king_sq_b ^= 7;
+            mirror_b = 7;
+        }
+
+        int king_index_b = index_half_mirrored(king_sq_b);
+
+        index = 2048 * (tp + 4) + 64 * king_index_b + (sq ^ flip_b ^ mirror_b);
         update_fn(p->accumulator_b_q, index);
     } else {
-        int index = 4096 * (tp + 4) + 64 * king_sq_w + sq;
+        int mirror_w = 0;
+
+        // Mirror the white king position if it is on file e..h
+        if ((king_sq_w & 7) > 3) {
+            king_sq_w ^= 7;
+            mirror_w = 7;
+        }
+
+        int king_index_w = index_half_mirrored(king_sq_w);
+
+        int index = 2048 * (tp + 4) + 64 * king_index_w + (sq ^ mirror_w);
         update_fn(p->accumulator_w_q, index);
 
-        index = 4096 * (tp - 1) + 64 * king_sq_b + (sq ^ flip_b);
+        int mirror_b = 0;
+
+        // Mirror the black king position if it is on file e..h
+        if ((king_sq_b & 7) > 3) {
+            king_sq_b ^= 7;
+            mirror_b = 7;
+        }
+
+        int king_index_b = index_half_mirrored(king_sq_b);
+
+        index = 2048 * (tp - 1) + 64 * king_index_b + (sq ^ flip_b ^ mirror_b);
         update_fn(p->accumulator_b_q, index);
     }
 }
@@ -294,11 +354,22 @@ void nn_update_weights_for_king(struct Position *p, int old_king_sq) {
      */
     int16_t *opponent_accumulator_q =
         (opp == White) ? p->accumulator_w_q : p->accumulator_b_q;
-    int base = 4096 * 10 + 64 * (p->kingSq[opp] ^ flip);
+
+    int king_sq_opp = p->kingSq[opp] ^ flip;
+    int mirror = 0;
+
+    if ((king_sq_opp & 7) > 3) {
+        king_sq_opp ^= 7;
+        mirror = 7;
+    }
+
+    int king_index_opp = index_half_mirrored(king_sq_opp);
+
+    int base = 2048 * 10 + 64 * king_index_opp;
     nn_update_accumulator_sub(opponent_accumulator_q,
-                              base + (old_king_sq ^ flip));
+                              base + (old_king_sq ^ flip ^ mirror));
     nn_update_accumulator_add(opponent_accumulator_q,
-                              base + (p->kingSq[side] ^ flip));
+                              base + (p->kingSq[side] ^ flip ^ mirror));
 }
 
 /*
@@ -455,6 +526,11 @@ int nn_evaluate_position(struct Position *p) {
 
     score = ((output_layer_q + SCALE_HALF) / SCALE) * SCALE_OUTPUT;
     score = (score + SCALE_HALF) / SCALE;
+
+    /** Add a bit of fuzz. */
+    if (fuzz_evaluation) {
+        score += random_fuzz();
+    }
 
     int material_balance =
         (p->turn == 0) ? eval_material_balance(p) : -eval_material_balance(p);
