@@ -16,8 +16,8 @@
 #include "utils.h"
 
 extern int8_t input_layer_weights_q[];
-extern int8_t hidden_layer_1_weights_q[HIDDEN_1_SIZE][2 * ACCUMULATOR_SIZE];
-extern int16_t hidden_layer_1_bias_q[HIDDEN_1_SIZE];
+extern int16_t hidden_layer_1_weights_q[HIDDEN_1_SIZE][2 * ACCUMULATOR_SIZE];
+extern int32_t hidden_layer_1_bias_q[HIDDEN_1_SIZE];
 extern int16_t hidden_layer_2_weights_q[HIDDEN_2_SIZE][HIDDEN_1_SIZE];
 extern int32_t hidden_layer_2_bias_q[HIDDEN_2_SIZE];
 extern int32_t output_layer_weights_q[HIDDEN_2_SIZE];
@@ -28,6 +28,10 @@ extern int32_t output_layer_bias_q[1];
 #define SCALE_INPUT 64
 #define SCALE_INPUT_HALF (SCALE_INPUT / 2 - 1)
 #define SCALE_OUTPUT 10000
+
+/* Must mirror neural_net.c: hidden-1 fixed-point scale. */
+#define SCALE_H1 (SCALE_INPUT * SCALE)
+#define SCALE_H1_HALF (SCALE_H1 / 2 - 1)
 
 /* A copy of the integer pipeline of nn_evaluate_position() that
  * prints the intermediate values. */
@@ -62,10 +66,10 @@ static int instrumented_eval(struct Position *p) {
     for (int i = 0; i < HIDDEN_1_SIZE; i++) {
         if (h1q[i] <= 0)
             h1[i] = 0;
-        else if (h1q[i] > SCALE_INPUT * SCALE_INPUT)
+        else if (h1q[i] > SCALE_H1)
             h1[i] = SCALE_INPUT;
         else
-            h1[i] = (h1q[i] + SCALE_INPUT_HALF) / SCALE_INPUT;
+            h1[i] = (h1q[i] + SCALE_HALF) / SCALE;
         printf("I H1 %d %d\n", i, (int)h1[i]);
     }
     int32_t h2q[HIDDEN_2_SIZE];
@@ -110,9 +114,12 @@ int main(void) {
         "r1bqkb1r/pppp1ppp/2n2n2/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R w KQkq -",
         "3r1k2/p3qppP/8/3p4/3r4/5QP1/P4PB1/4R1K1 w - -",
         "rnbqkbnr/1pp1pppp/p7/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6",
+        /* Both kings on the left half (non-mirrored frame): the
+         * horizontal mirror of the previous EPD. */
+        "2k1r3/Pppq3p/8/4p3/4r3/1PQ5/1BP4P/1K1R4 w - -",
     };
 
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 6; i++) {
         struct Position *p = dbase_create_position_from_epd((char *)epds[i]);
         nn_init_accumulator(p);
         nn_validate_weights(p);

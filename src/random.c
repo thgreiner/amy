@@ -161,4 +161,12 @@ double random_double(void) {
     return (random64() >> 11) * (1.0 / 9007199254740991.0);
 }
 
+/**
+ * A small random value to fuzz the evaluation function.
+ */
+int random_fuzz(void) {
+    int64_t tmp = (int64_t)random64();
+    return (int)(tmp >> (64 - 6));
+}
+
 void random_init(ran_t seed) { init_genrand64(seed); }

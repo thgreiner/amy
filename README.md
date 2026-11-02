@@ -152,6 +152,10 @@ cpu=2
 #
 # Enable game autosaving to allow booklearning
 autosave=true
+#
+# Log root position evaluations to evaluation_log.bin
+# (also done unconditionally during selfplay)
+evallog=true
 ```
 
 Since people using Windows have reported that they have to resort to DOS mode
@@ -164,4 +168,3 @@ THANKS
 - to Dann Corbit for porting Amy to Win32
 
 - to Allen Lake for tuning Amy's timing algorithm
-

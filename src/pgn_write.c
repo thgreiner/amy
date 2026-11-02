@@ -114,10 +114,14 @@ static void pgn_save_moves(FILE *fout, struct Position *p) {
     free(history);
 }
 
-void pgn_save_game(struct Position *p, char *file_name) {
+/**
+ * Save the current current game to `file_name`. If `append` is `true`,
+ * append to the file rather than overwriting it.
+ */
+void pgn_save_game(struct Position *p, char *file_name, bool append) {
     /* Do not save if no move made yet. */
     if (p->ply > 0) {
-        FILE *fout = fopen(file_name, "w");
+        FILE *fout = fopen(file_name, append ? "a" : "w");
         if (fout) {
             const char *gameend;
             char shortgameend[8] = "1/2-1/2";

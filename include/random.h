@@ -36,6 +36,7 @@
 
 ran_t random64(void);
 double random_double(void);
+int random_fuzz(void);
 void random_init(ran_t seed);
 
 #endif

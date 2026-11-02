@@ -46,13 +46,24 @@
 // #define STATISTICS_Q 1
 // #define DEBUG 1
 
-#define N_FEATURES (64 * 64 * 11)
+/*
+ * Indexing schema for features:
+ *   - King position mirrored to the left half (a1..d1 up to a8..d8)
+ *   - Piece square (flipped and mirrored depending on king position)
+ *   - Piece type (0..4 own pawn..queen, 5..9 opponent pawn..queen)
+ */
+#define N_FEATURES (32 * 64 * 10)
 
 #define SCALE_INPUT 64
 #define SCALE_INPUT_HALF (SCALE_INPUT / 2 - 1)
 #define SCALE 8192
 #define SCALE_HALF (SCALE / 2 - 1)
 #define SCALE_OUTPUT 10000
+
+/* Hidden-1 fixed-point scale: acc @ SCALE_INPUT x int16 weights @ SCALE,
+ * and the int32 hidden-1 bias. */
+#define SCALE_H1 (SCALE_INPUT * SCALE)
+#define SCALE_H1_HALF (SCALE_H1 / 2 - 1)
 
 static const uint32_t wh_magic = 0x57594d41; // "AMYW"
 
@@ -78,8 +89,8 @@ typedef struct {
 
 int8_t input_layer_weights_q[N_FEATURES][ACCUMULATOR_SIZE];
 int16_t input_layer_bias_q[ACCUMULATOR_SIZE];
-int8_t hidden_layer_1_weights_q[HIDDEN_1_SIZE][2 * ACCUMULATOR_SIZE];
-int16_t hidden_layer_1_bias_q[HIDDEN_1_SIZE];
+int16_t hidden_layer_1_weights_q[HIDDEN_1_SIZE][2 * ACCUMULATOR_SIZE];
+int32_t hidden_layer_1_bias_q[HIDDEN_1_SIZE];
 int16_t hidden_layer_2_weights_q[HIDDEN_2_SIZE][HIDDEN_1_SIZE];
 int32_t hidden_layer_2_bias_q[HIDDEN_2_SIZE];
 int32_t output_layer_weights_q[HIDDEN_2_SIZE];
@@ -110,9 +121,9 @@ void nn_read_weights_quantized(void) {
     assert(header.wh_accumulator_weights_quantization == wh_quantization_int_8);
     assert(header.wh_accumulator_bias_quantization == wh_quantization_int_16);
     assert(header.wh_hidden_layer_1_weights_quantization ==
-           wh_quantization_int_8);
-    assert(header.wh_hidden_layer_1_bias_quantization ==
            wh_quantization_int_16);
+    assert(header.wh_hidden_layer_1_bias_quantization ==
+           wh_quantization_int_32);
     assert(header.wh_hidden_layer_2_weights_quantization ==
            wh_quantization_int_16);
     assert(header.wh_hidden_layer_2_bias_quantization ==
@@ -129,12 +140,12 @@ void nn_read_weights_quantized(void) {
         fread(input_layer_bias_q, sizeof(int16_t), ACCUMULATOR_SIZE, fin);
     assert(items_read == ACCUMULATOR_SIZE);
 
-    items_read = fread(hidden_layer_1_weights_q, sizeof(int8_t),
+    items_read = fread(hidden_layer_1_weights_q, sizeof(int16_t),
                        HIDDEN_1_SIZE * 2 * ACCUMULATOR_SIZE, fin);
     assert(items_read == HIDDEN_1_SIZE * 2 * ACCUMULATOR_SIZE);
 
     items_read =
-        fread(hidden_layer_1_bias_q, sizeof(int16_t), HIDDEN_1_SIZE, fin);
+        fread(hidden_layer_1_bias_q, sizeof(int32_t), HIDDEN_1_SIZE, fin);
     assert(items_read == HIDDEN_1_SIZE);
 
     items_read = fread(hidden_layer_2_weights_q, sizeof(int16_t),
@@ -198,6 +209,12 @@ static void nn_update_accumulator_sub(int16_t *accumulator_q, int offset) {
 }
 
 /*
+ * Maps a square in the a1..d1 up to a8..d8 half of the board to an index
+ * between 0 and 31.
+ */
+static int index_half_mirrored(int sq) { return (sq & 3) | ((sq & 0x38) >> 1); }
+
+/*
  * Build the accumulator for the given side from scratch: input bias plus the
  * contributions of all pieces and the opponent king. Features are expressed
  * in the side's own frame: own king at the origin, squares mirrored for
@@ -207,6 +224,14 @@ static void nn_build_accumulator(int16_t *accumulator_q, struct Position *p,
                                  int side) {
     int flip = (side == Black) ? 0x38 : 0;
     int king_sq = p->kingSq[side] ^ flip;
+
+    // Mirror the king position if it is on file e..h
+    if ((king_sq & 7) > 3) {
+        king_sq ^= 7;
+        flip |= 7;
+    }
+
+    int king_index = index_half_mirrored(king_sq);
 
     memcpy(accumulator_q, input_layer_bias_q,
            sizeof(int16_t) * ACCUMULATOR_SIZE);
@@ -218,7 +243,7 @@ static void nn_build_accumulator(int16_t *accumulator_q, struct Position *p,
             int sq = bitboard_find_set_bit(mask);
             mask &= mask - 1;
 
-            int index = 4096 * (tp - 1) + 64 * king_sq + (sq ^ flip);
+            int index = 2048 * (tp - 1) + 64 * king_index + (sq ^ flip);
             nn_update_accumulator_add(accumulator_q, index);
         }
 
@@ -228,14 +253,10 @@ static void nn_build_accumulator(int16_t *accumulator_q, struct Position *p,
             int sq = bitboard_find_set_bit(mask);
             mask &= mask - 1;
 
-            int index = 4096 * (tp + 4) + 64 * king_sq + (sq ^ flip);
+            int index = 2048 * (tp + 4) + 64 * king_index + (sq ^ flip);
             nn_update_accumulator_add(accumulator_q, index);
         }
     }
-
-    /* opponent king relative to own king (plane 10) */
-    int index = 4096 * 10 + 64 * king_sq + (p->kingSq[OPP(side)] ^ flip);
-    nn_update_accumulator_add(accumulator_q, index);
 }
 
 void nn_update_weights_for_piece(struct Position *p, int tp, int sq, bool turn,
@@ -257,16 +278,56 @@ void nn_update_weights_for_piece(struct Position *p, int tp, int sq, bool turn,
     king_sq_b ^= flip_b;
 
     if (turn == White) {
-        int index = 4096 * (tp - 1) + 64 * king_sq_w + sq;
+        int mirror_w = 0;
+
+        // Mirror the white king position if it is on file e..h
+        if ((king_sq_w & 7) > 3) {
+            king_sq_w ^= 7;
+            mirror_w = 7;
+        }
+
+        int king_index_w = index_half_mirrored(king_sq_w);
+
+        int index = 2048 * (tp - 1) + 64 * king_index_w + (sq ^ mirror_w);
         update_fn(p->accumulator_w_q, index);
 
-        index = 4096 * (tp + 4) + 64 * king_sq_b + (sq ^ flip_b);
+        int mirror_b = 0;
+
+        // Mirror the black king position if it is on file e..h
+        if ((king_sq_b & 7) > 3) {
+            king_sq_b ^= 7;
+            mirror_b = 7;
+        }
+
+        int king_index_b = index_half_mirrored(king_sq_b);
+
+        index = 2048 * (tp + 4) + 64 * king_index_b + (sq ^ flip_b ^ mirror_b);
         update_fn(p->accumulator_b_q, index);
     } else {
-        int index = 4096 * (tp + 4) + 64 * king_sq_w + sq;
+        int mirror_w = 0;
+
+        // Mirror the white king position if it is on file e..h
+        if ((king_sq_w & 7) > 3) {
+            king_sq_w ^= 7;
+            mirror_w = 7;
+        }
+
+        int king_index_w = index_half_mirrored(king_sq_w);
+
+        int index = 2048 * (tp + 4) + 64 * king_index_w + (sq ^ mirror_w);
         update_fn(p->accumulator_w_q, index);
 
-        index = 4096 * (tp - 1) + 64 * king_sq_b + (sq ^ flip_b);
+        int mirror_b = 0;
+
+        // Mirror the black king position if it is on file e..h
+        if ((king_sq_b & 7) > 3) {
+            king_sq_b ^= 7;
+            mirror_b = 7;
+        }
+
+        int king_index_b = index_half_mirrored(king_sq_b);
+
+        index = 2048 * (tp - 1) + 64 * king_index_b + (sq ^ flip_b ^ mirror_b);
         update_fn(p->accumulator_b_q, index);
     }
 }
@@ -277,28 +338,9 @@ void nn_update_weights_for_king(struct Position *p, int old_king_sq) {
 #endif
 
     int side = p->turn;
-    int opp = OPP(side);
-    int flip = (opp == Black) ? 0x38 : 0;
 
-    /*
-     * The side to move's king just moved, so rebuild that accumulator from
-     * scratch (its own pieces, the opponent's pieces and the opponent king
-     * have all changed frame of reference).
-     */
     nn_build_accumulator(
         (side == White) ? p->accumulator_w_q : p->accumulator_b_q, p, side);
-
-    /*
-     * The opponent's accumulator only changed on plane 10 (opponent king
-     * relative to own king): the side to move's king moved.
-     */
-    int16_t *opponent_accumulator_q =
-        (opp == White) ? p->accumulator_w_q : p->accumulator_b_q;
-    int base = 4096 * 10 + 64 * (p->kingSq[opp] ^ flip);
-    nn_update_accumulator_sub(opponent_accumulator_q,
-                              base + (old_king_sq ^ flip));
-    nn_update_accumulator_add(opponent_accumulator_q,
-                              base + (p->kingSq[side] ^ flip));
 }
 
 /*
@@ -378,12 +420,11 @@ int nn_evaluate_position(struct Position *p) {
     for (int i = 0; i < HIDDEN_1_SIZE; i++) {
         if (hidden_layer_1_q[i] <= 0) {
             hidden_layer_1_q16[i] = 0;
-        } else if (hidden_layer_1_q[i] > SCALE_INPUT * SCALE_INPUT) {
+        } else if (hidden_layer_1_q[i] > SCALE_H1) {
             hidden_layer_1_q16[i] = SCALE_INPUT;
         } else {
             hidden_layer_1_q16[i] =
-                (int16_t)((hidden_layer_1_q[i] + SCALE_INPUT_HALF) /
-                          SCALE_INPUT);
+                (int16_t)((hidden_layer_1_q[i] + SCALE_HALF) / SCALE);
         }
 
         // assert(hidden_layer_1_q16[i] >= 0);
@@ -448,13 +489,18 @@ int nn_evaluate_position(struct Position *p) {
         fprintf(stats_file, "max_activation_hidden_1: %d (%f)\n",
                 max_activation_hidden_1_q,
                 (double)max_activation_hidden_1_q /
-                    ((double)SCALE_INPUT * SCALE_INPUT));
+                    ((double)SCALE_H1));
         fclose(stats_file);
     }
 #endif
 
     score = ((output_layer_q + SCALE_HALF) / SCALE) * SCALE_OUTPUT;
     score = (score + SCALE_HALF) / SCALE;
+
+    /** Add a bit of fuzz. */
+    if (fuzz_evaluation) {
+        score += random_fuzz();
+    }
 
     int material_balance =
         (p->turn == 0) ? eval_material_balance(p) : -eval_material_balance(p);

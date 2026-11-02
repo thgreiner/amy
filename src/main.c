@@ -35,6 +35,9 @@
 
 #include <string.h>
 
+#include "bookup.h"
+#include "bpd.h"
+#include "evaluation.h"
 #include "evaluation_config.h"
 #include "hashtable.h"
 #include "init.h"
@@ -47,6 +50,7 @@
 #include "search.h"
 #include "state_machine.h"
 #include "test_blunder.h"
+#include "test_bpd.h"
 #include "test_dbase.h"
 #include "test_neural_net.h"
 #include "test_pgn_write.h"
@@ -70,6 +74,7 @@ static void main_run_tests(void) {
     test_all_blunder();
     test_all_yaml();
     test_all_dbase();
+    test_all_bpd();
     test_all_neural_net();
     test_all_pgn_write();
     test_all_utils();
@@ -151,6 +156,15 @@ static void main_process_rc_file(void) {
 #endif /* MP */
         } else if (!strcmp(key, "autosave")) {
             AutoSave = !strcmp(value, "true");
+            if (AutoSave) {
+                print(0, "Autosave is enabled.");
+            }
+        } else if (!strcmp(key, "evallog")) {
+            EvalLog = !strcmp(value, "true");
+        } else if (!strcmp(key, "fuzz")) {
+            bool on = !strcmp(value, "true");
+            wide_book_selection = on;
+            fuzz_evaluation = on;
         }
     }
 
