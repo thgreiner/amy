@@ -54,6 +54,8 @@
  */
 #define N_FEATURES (32 * 64 * 10)
 
+#define N_PAWN_FEATURES 4560
+
 #define SCALE_INPUT 64
 #define SCALE_INPUT_HALF (SCALE_INPUT / 2 - 1)
 #define SCALE 8192
@@ -75,6 +77,7 @@ typedef struct {
     uint32_t wh_magic;               // should always be wh_magic
     uint16_t wh_accumulator_size;    // Size of the accumulator
     uint16_t wh_num_features;        // Number of input features (planes)
+    uint16_t wh_pawn_features_size;  // Number of pawn input features
     uint16_t wh_hidden_layer_1_size; // Size of the hidden layer 1
     uint16_t wh_hidden_layer_2_size; // Size of the hidden layer 2
     uint8_t wh_accumulator_weights_quantization;
@@ -88,6 +91,7 @@ typedef struct {
 } WeightsHeader;
 
 int8_t input_layer_weights_q[N_FEATURES][ACCUMULATOR_SIZE];
+int8_t input_pawn_weights_q[N_PAWN_FEATURES][ACCUMULATOR_SIZE];
 int16_t input_layer_bias_q[ACCUMULATOR_SIZE];
 int16_t hidden_layer_1_weights_q[HIDDEN_1_SIZE][2 * ACCUMULATOR_SIZE];
 int32_t hidden_layer_1_bias_q[HIDDEN_1_SIZE];
@@ -97,6 +101,14 @@ int32_t output_layer_weights_q[HIDDEN_2_SIZE];
 int32_t output_layer_bias_q[1];
 
 static bool verbose = true;
+
+// Forward declarations
+static void nn_update_weights_for_pawn(struct Position *p, int sq1, bool turn,
+                                       bool add);
+static void nn_init_pawns(struct Position *p, int16_t *accumulator_w,
+                          int16_t *accumulator_b);
+static void nn_build_pawn_accumulator(int16_t *accumulator, struct Position *p,
+                                      int side);
 
 void nn_read_weights_quantized(void) {
     FILE *fin = fopen("network.quant", "rb");
@@ -116,6 +128,7 @@ void nn_read_weights_quantized(void) {
     assert(header.wh_magic == wh_magic);
     assert(header.wh_accumulator_size == ACCUMULATOR_SIZE);
     assert(header.wh_num_features == N_FEATURES);
+    assert(header.wh_pawn_features_size == N_PAWN_FEATURES);
     assert(header.wh_hidden_layer_1_size == HIDDEN_1_SIZE);
     assert(header.wh_hidden_layer_2_size == HIDDEN_2_SIZE);
     assert(header.wh_accumulator_weights_quantization == wh_quantization_int_8);
@@ -135,6 +148,10 @@ void nn_read_weights_quantized(void) {
     items_read = fread(input_layer_weights_q, sizeof(int8_t),
                        ACCUMULATOR_SIZE * N_FEATURES, fin);
     assert(items_read == ACCUMULATOR_SIZE * N_FEATURES);
+
+    items_read = fread(input_pawn_weights_q, sizeof(int8_t),
+                       ACCUMULATOR_SIZE * N_PAWN_FEATURES, fin);
+    assert(items_read == ACCUMULATOR_SIZE * N_PAWN_FEATURES);
 
     items_read =
         fread(input_layer_bias_q, sizeof(int16_t), ACCUMULATOR_SIZE, fin);
@@ -303,6 +320,7 @@ void nn_update_weights_for_piece(struct Position *p, int tp, int sq, bool turn,
 
         index = 2048 * (tp + 4) + 64 * king_index_b + (sq ^ flip_b ^ mirror_b);
         update_fn(p->accumulator_b_q, index);
+
     } else {
         int mirror_w = 0;
 
@@ -330,19 +348,183 @@ void nn_update_weights_for_piece(struct Position *p, int tp, int sq, bool turn,
         index = 2048 * (tp - 1) + 64 * king_index_b + (sq ^ flip_b ^ mirror_b);
         update_fn(p->accumulator_b_q, index);
     }
+
+    if (tp == Pawn) {
+        nn_update_weights_for_pawn(p, sq, turn, add);
+    }
 }
 
-void nn_update_weights_for_king(struct Position *p, int old_king_sq) {
+void nn_update_weights_for_king(struct Position *p) {
 #ifdef DEBUG_UPDATE
     print(1, "nn_update_weights_for_king(old_king_sq=%d)\n", old_king_sq);
 #endif
-
     int side = p->turn;
+    int16_t *accumulator =
+        (side == White) ? p->accumulator_w_q : p->accumulator_b_q;
 
-    nn_build_accumulator(
-        (side == White) ? p->accumulator_w_q : p->accumulator_b_q, p, side);
+    nn_build_accumulator(accumulator, p, side);
+    nn_build_pawn_accumulator(accumulator, p, side);
 }
 
+static BitBoard right_of_file_mask[] = {
+    0x0303030303030303ULL, 0x0707070707070707ULL, 0x0e0e0e0e0e0e0e0eULL,
+    0x1c1c1c1c1c1c1c1cULL, 0x3838383838383838ULL, 0x7070707070707070ULL,
+    0xe0e0e0e0e0e0e0e0ULL, 0xc0c0c0c0c0c0c0c0ULL,
+};
+
+/*
+ * Calculate the pawn index for the pawn pair on sq1, sq2 with the colors
+ * c1 and c2.
+ */
+static int nn_pp_index(int sq1, bool c1, int sq2, bool c2) {
+    // print(1, "    nn_pp_index(%d, %d, %d, %d)\n", sq1, c1, sq2, c2);
+
+    int i1 = c1 * 48 + sq1 - 8;
+    int i2 = c2 * 48 + sq2 - 8;
+
+    // print(1, "      i1 = %d  i2 = %d\n", i1, i2);
+
+    int hi = MAX(i1, i2);
+    int lo = MIN(i1, i2);
+
+    // print(1, "      hi = %d  lo = %d\n", h1, lo);
+
+    return hi * (hi - 1) / 2 + lo;
+}
+
+/*
+ * Populates accumulator_w and accumulator_b with the pawn features of p.
+ *
+ * Iterates through all unique pairs of pawns that are within one file of
+ * distance. For example, in the starting position the white pawn at b2 would be
+ * paired up with the white pawns (b2, a2) and (b2, c2) and the black pawns (b2,
+ * a7), (b2, b7) and (b2, c7). For every pair of pawns and their colors the
+ * index into the features array is calculated using nn_pp_index, and the
+ * accumulators are updated.
+ */
+static void nn_init_pawns(struct Position *p, int16_t *accumulator_w,
+                          int16_t *accumulator_b) {
+    BitBoard mask = p->mask[White][Pawn] | p->mask[Black][Pawn];
+    int king_sq_w = p->kingSq[White];
+    int king_sq_b = p->kingSq[Black];
+
+    int mirror_w = (king_sq_w & 7) > 3 ? 7 : 0;
+    int mirror_b = (king_sq_b & 7) > 3 ? 0x3f : 0x38;
+
+    while (mask) {
+        int sq1 = bitboard_find_set_bit(mask);
+        int c1 = bitboard_tst_bit(p->mask[White][Pawn], sq1) == 0;
+
+        mask &= mask - 1;
+
+        BitBoard other_mask = mask & right_of_file_mask[sq1 & 7];
+        while (other_mask) {
+            int sq2 = bitboard_find_set_bit(other_mask);
+            int c2 = bitboard_tst_bit(p->mask[White][Pawn], sq2) == 0;
+            other_mask &= other_mask - 1;
+
+            int index_w = nn_pp_index(sq1 ^ mirror_w, c1, sq2 ^ mirror_w, c2);
+            int index_b = nn_pp_index(sq1 ^ mirror_b, !c1, sq2 ^ mirror_b, !c2);
+
+            for (int i = 0; i < ACCUMULATOR_SIZE; i++) {
+                accumulator_w[i] += input_pawn_weights_q[index_w][i];
+            }
+
+            for (int i = 0; i < ACCUMULATOR_SIZE; i++) {
+                accumulator_b[i] += input_pawn_weights_q[index_b][i];
+            }
+        }
+    }
+}
+
+/*
+ * Populates accumulator_w and accumulator_b with the pawn features of p.
+ *
+ * Iterates through all unique pairs of pawns that are within one file of
+ * distance. For example, in the starting position the white pawn at b2 would be
+ * paired up with the white pawns (b2, a2) and (b2, c2) and the black pawns (b2,
+ * a7), (b2, b7) and (b2, c7). For every pair of pawns and their colors the
+ * index into the features array is calculated using nn_pp_index, and the
+ * accumulators are updated.
+ */
+static void nn_build_pawn_accumulator(int16_t *accumulator, struct Position *p,
+                                      int side) {
+    BitBoard mask = p->mask[White][Pawn] | p->mask[Black][Pawn];
+
+    int king_sq = p->kingSq[side];
+    int mirror = (king_sq & 7) > 3 ? 7 : 0;
+    if (side == Black) {
+        mirror |= 0x38;
+    }
+
+    while (mask) {
+        int sq1 = bitboard_find_set_bit(mask);
+        int c1 = bitboard_tst_bit(p->mask[side][Pawn], sq1) == 0;
+
+        mask &= mask - 1;
+
+        BitBoard other_mask = mask & right_of_file_mask[sq1 & 7];
+        while (other_mask) {
+            int sq2 = bitboard_find_set_bit(other_mask);
+            int c2 = bitboard_tst_bit(p->mask[side][Pawn], sq2) == 0;
+            other_mask &= other_mask - 1;
+
+            int index = nn_pp_index(sq1 ^ mirror, c1, sq2 ^ mirror, c2);
+
+            for (int i = 0; i < ACCUMULATOR_SIZE; i++) {
+                accumulator[i] += input_pawn_weights_q[index][i];
+            }
+        }
+    }
+}
+
+/*
+ * Incrementally update the accumulators in p for a pawn move. The pawn on sq1
+ * with color turn was either added (add == true) or removed (add == false).
+ */
+static void nn_update_weights_for_pawn(struct Position *p, int sq1, bool turn,
+                                       bool add) {
+#ifdef DEBUG
+    print(1, "nn_update_weights_for_pawn(%c%c, %d, %d)\n", SQUARE(sq1), turn,
+          add);
+#endif
+
+    BitBoard mask = (p->mask[White][Pawn] | p->mask[Black][Pawn]) &
+                    right_of_file_mask[sq1 & 7];
+    int king_sq_w = p->kingSq[White];
+    int king_sq_b = p->kingSq[Black];
+
+    int mirror_w = (king_sq_w & 7) > 3 ? 7 : 0;
+    int mirror_b = (king_sq_b & 7) > 3 ? 0x3f : 0x38;
+
+    while (mask) {
+        int sq2 = bitboard_find_set_bit(mask);
+        mask &= mask - 1;
+
+        if (sq1 != sq2) {
+            int c2 = bitboard_tst_bit(p->mask[White][Pawn], sq2) == 0;
+
+            int index_w = nn_pp_index(sq1 ^ mirror_w, turn, sq2 ^ mirror_w, c2);
+            int index_b =
+                nn_pp_index(sq1 ^ mirror_b, !turn, sq2 ^ mirror_b, !c2);
+            if (add) {
+                for (int i = 0; i < ACCUMULATOR_SIZE; i++) {
+                    p->accumulator_w_q[i] += input_pawn_weights_q[index_w][i];
+                }
+                for (int i = 0; i < ACCUMULATOR_SIZE; i++) {
+                    p->accumulator_b_q[i] += input_pawn_weights_q[index_b][i];
+                }
+            } else {
+                for (int i = 0; i < ACCUMULATOR_SIZE; i++) {
+                    p->accumulator_w_q[i] -= input_pawn_weights_q[index_w][i];
+                }
+                for (int i = 0; i < ACCUMULATOR_SIZE; i++) {
+                    p->accumulator_b_q[i] -= input_pawn_weights_q[index_b][i];
+                }
+            }
+        }
+    }
+}
 /*
  * Evaluate the position using neural networks. Returns the evaluation
  * in 1/1000th of a pawn.
@@ -488,8 +670,7 @@ int nn_evaluate_position(struct Position *p) {
         FILE *stats_file = fopen("activation_q.txt", "w");
         fprintf(stats_file, "max_activation_hidden_1: %d (%f)\n",
                 max_activation_hidden_1_q,
-                (double)max_activation_hidden_1_q /
-                    ((double)SCALE_H1));
+                (double)max_activation_hidden_1_q / ((double)SCALE_H1));
         fclose(stats_file);
     }
 #endif
@@ -518,6 +699,7 @@ int nn_evaluate_position(struct Position *p) {
 void nn_init_accumulator(struct Position *p) {
     nn_build_accumulator(p->accumulator_w_q, p, White);
     nn_build_accumulator(p->accumulator_b_q, p, Black);
+    nn_init_pawns(p, p->accumulator_w_q, p->accumulator_b_q);
 
 #ifdef DEBUG
     print(1, "accumulator:\n");
@@ -536,6 +718,7 @@ void nn_validate_weights(struct Position *p) {
 
     nn_build_accumulator(accumulator_w_q, p, White);
     nn_build_accumulator(accumulator_b_q, p, Black);
+    nn_init_pawns(p, accumulator_w_q, accumulator_b_q);
 
     verbose = true;
 
@@ -614,13 +797,17 @@ void nn_read_weights(void) {
 void nn_randomize_weights(void) {
     for (int i = 0; i < N_FEATURES; i++) {
         for (int j = 0; j < ACCUMULATOR_SIZE; j++) {
-            // int8 scale 64 counterpart of (SCALE / 16) at scale 8192
-            input_layer_weights_q[i][j] = (int8_t)(random_double() * 4);
+            input_layer_weights_q[i][j] = (int8_t)(random_double() * 64);
+        }
+    }
+
+    for (int i = 0; i < N_PAWN_FEATURES; i++) {
+        for (int j = 0; j < ACCUMULATOR_SIZE; j++) {
+            input_pawn_weights_q[i][j] = (int8_t)(random_double() * 64);
         }
     }
 
     for (int i = 0; i < ACCUMULATOR_SIZE; i++) {
-        // int8 scale 64 counterpart of (SCALE / 16) at scale 8192
-        input_layer_bias_q[i] = (int16_t)(random_double() * 4);
+        input_layer_bias_q[i] = (int16_t)(random_double() * 64);
     }
 }
