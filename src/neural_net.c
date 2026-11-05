@@ -50,9 +50,10 @@
  * Indexing schema for features:
  *   - King position mirrored to the left half (a1..d1 up to a8..d8)
  *   - Piece square (flipped and mirrored depending on king position)
- *   - Piece type (0..4 own pawn..queen, 5..9 opponent pawn..queen)
+ *   - Piece type (0..4 own pawn..queen, 5..9 opponent pawn..queen,
+ *     10 opponent king)
  */
-#define N_FEATURES (32 * 64 * 10)
+#define N_FEATURES (32 * 64 * 11)
 
 #define N_PAWN_FEATURES 4560
 
@@ -105,8 +106,6 @@ static bool verbose = true;
 // Forward declarations
 static void nn_update_weights_for_pawn(struct Position *p, int sq1, bool turn,
                                        bool add);
-static void nn_init_pawns(struct Position *p, int16_t *accumulator_w,
-                          int16_t *accumulator_b);
 static void nn_build_pawn_accumulator(int16_t *accumulator, struct Position *p,
                                       int side);
 
@@ -274,6 +273,10 @@ static void nn_build_accumulator(int16_t *accumulator_q, struct Position *p,
             nn_update_accumulator_add(accumulator_q, index);
         }
     }
+
+    /* opponent king relative to own king (plane 10) */
+    int index = 2048 * 10 + 64 * king_index + (p->kingSq[OPP(side)] ^ flip);
+    nn_update_accumulator_add(accumulator_q, index);
 }
 
 void nn_update_weights_for_piece(struct Position *p, int tp, int sq, bool turn,
@@ -354,16 +357,42 @@ void nn_update_weights_for_piece(struct Position *p, int tp, int sq, bool turn,
     }
 }
 
-void nn_update_weights_for_king(struct Position *p) {
+void nn_update_weights_for_king(struct Position *p, int old_king_sq) {
 #ifdef DEBUG_UPDATE
     print(1, "nn_update_weights_for_king(old_king_sq=%d)\n", old_king_sq);
 #endif
     int side = p->turn;
+    int opp = OPP(side);
     int16_t *accumulator =
         (side == White) ? p->accumulator_w_q : p->accumulator_b_q;
 
     nn_build_accumulator(accumulator, p, side);
     nn_build_pawn_accumulator(accumulator, p, side);
+
+    /*
+     * The opponent's accumulator only changed on plane 10 (opponent king
+     * relative to own king): the side to move's king moved. The opponent's
+     * own king, and hence its frame, is unchanged.
+     */
+    int16_t *opponent_accumulator_q =
+        (opp == White) ? p->accumulator_w_q : p->accumulator_b_q;
+
+    int flip = (opp == Black) ? 0x38 : 0;
+    int king_sq_opp = p->kingSq[opp] ^ flip;
+    int mirror = 0;
+
+    if ((king_sq_opp & 7) > 3) {
+        king_sq_opp ^= 7;
+        mirror = 7;
+    }
+
+    int king_index_opp = index_half_mirrored(king_sq_opp);
+    int base = 2048 * 10 + 64 * king_index_opp;
+
+    nn_update_accumulator_sub(opponent_accumulator_q,
+                              base + (old_king_sq ^ flip ^ mirror));
+    nn_update_accumulator_add(opponent_accumulator_q,
+                              base + (p->kingSq[side] ^ flip ^ mirror));
 }
 
 static BitBoard right_of_file_mask[] = {
@@ -390,51 +419,6 @@ static int nn_pp_index(int sq1, bool c1, int sq2, bool c2) {
     // print(1, "      hi = %d  lo = %d\n", h1, lo);
 
     return hi * (hi - 1) / 2 + lo;
-}
-
-/*
- * Populates accumulator_w and accumulator_b with the pawn features of p.
- *
- * Iterates through all unique pairs of pawns that are within one file of
- * distance. For example, in the starting position the white pawn at b2 would be
- * paired up with the white pawns (b2, a2) and (b2, c2) and the black pawns (b2,
- * a7), (b2, b7) and (b2, c7). For every pair of pawns and their colors the
- * index into the features array is calculated using nn_pp_index, and the
- * accumulators are updated.
- */
-static void nn_init_pawns(struct Position *p, int16_t *accumulator_w,
-                          int16_t *accumulator_b) {
-    BitBoard mask = p->mask[White][Pawn] | p->mask[Black][Pawn];
-    int king_sq_w = p->kingSq[White];
-    int king_sq_b = p->kingSq[Black];
-
-    int mirror_w = (king_sq_w & 7) > 3 ? 7 : 0;
-    int mirror_b = (king_sq_b & 7) > 3 ? 0x3f : 0x38;
-
-    while (mask) {
-        int sq1 = bitboard_find_set_bit(mask);
-        int c1 = bitboard_tst_bit(p->mask[White][Pawn], sq1) == 0;
-
-        mask &= mask - 1;
-
-        BitBoard other_mask = mask & right_of_file_mask[sq1 & 7];
-        while (other_mask) {
-            int sq2 = bitboard_find_set_bit(other_mask);
-            int c2 = bitboard_tst_bit(p->mask[White][Pawn], sq2) == 0;
-            other_mask &= other_mask - 1;
-
-            int index_w = nn_pp_index(sq1 ^ mirror_w, c1, sq2 ^ mirror_w, c2);
-            int index_b = nn_pp_index(sq1 ^ mirror_b, !c1, sq2 ^ mirror_b, !c2);
-
-            for (int i = 0; i < ACCUMULATOR_SIZE; i++) {
-                accumulator_w[i] += input_pawn_weights_q[index_w][i];
-            }
-
-            for (int i = 0; i < ACCUMULATOR_SIZE; i++) {
-                accumulator_b[i] += input_pawn_weights_q[index_b][i];
-            }
-        }
-    }
 }
 
 /*
@@ -698,8 +682,9 @@ int nn_evaluate_position(struct Position *p) {
 
 void nn_init_accumulator(struct Position *p) {
     nn_build_accumulator(p->accumulator_w_q, p, White);
+    nn_build_pawn_accumulator(p->accumulator_w_q, p, White);
     nn_build_accumulator(p->accumulator_b_q, p, Black);
-    nn_init_pawns(p, p->accumulator_w_q, p->accumulator_b_q);
+    nn_build_pawn_accumulator(p->accumulator_b_q, p, Black);
 
 #ifdef DEBUG
     print(1, "accumulator:\n");
@@ -717,8 +702,9 @@ void nn_validate_weights(struct Position *p) {
     verbose = false;
 
     nn_build_accumulator(accumulator_w_q, p, White);
+    nn_build_pawn_accumulator(accumulator_w_q, p, White);
     nn_build_accumulator(accumulator_b_q, p, Black);
-    nn_init_pawns(p, accumulator_w_q, accumulator_b_q);
+    nn_build_pawn_accumulator(accumulator_b_q, p, Black);
 
     verbose = true;
 

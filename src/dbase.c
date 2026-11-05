@@ -357,7 +357,7 @@ static void dbase_do_castle(struct Position *p, move_t move) {
 
     nn_update_weights_for_piece(p, Rook, or, p->turn, false);
     nn_update_weights_for_piece(p, Rook, nr, p->turn, true);
-    nn_update_weights_for_king(p);
+    nn_update_weights_for_king(p, from);
 
     /* update hashkey */
     /* Das koennte ich vorher berechnen! Ist dann nur eine Anweisung! */
@@ -416,7 +416,7 @@ static void dbase_undo_castle(struct Position *p, move_t move) {
 
     nn_update_weights_for_piece(p, Rook, nr, p->turn, false);
     nn_update_weights_for_piece(p, Rook, or, p->turn, true);
-    nn_update_weights_for_king(p);
+    nn_update_weights_for_king(p, to);
 }
 
 /*
@@ -568,7 +568,7 @@ void dbase_do_move(struct Position *p, move_t move) {
         /* piece gains its attacks */
         dbase_atk_set(p, tp, p->turn, to);
         if (tp == King) {
-            nn_update_weights_for_king(p);
+            nn_update_weights_for_king(p, from);
         } else {
             nn_update_weights_for_piece(p, tp, to, p->turn, true);
         }
@@ -736,7 +736,7 @@ void dbase_undo_move(struct Position *p, move_t move) {
         /* re-calculate attacks through from-square */
         dbase_loose_attacks(p, from);
         if (tp == King) {
-            nn_update_weights_for_king(p);
+            nn_update_weights_for_king(p, to);
         } else {
             nn_update_weights_for_piece(p, tp, from, p->turn, true);
         }
