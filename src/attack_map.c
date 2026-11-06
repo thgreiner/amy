@@ -44,6 +44,19 @@ static int am_index(int attacker, int victim, int from, int to) {
     return 64 * 64 * plane + sq;
 }
 
+/*
+ * The side's canonical frame flip: black squares are rank-flipped
+ * (0x38), and the frame is additionally mirrored horizontally (7) when
+ * the side's king stands on files e..h.  The two masks commute.
+ */
+static int am_side_mirror(const struct Position *p, int side) {
+    int mirror = (p->kingSq[side] & 7) > 3 ? 7 : 0;
+    if (side == Black) {
+        mirror |= 0x38;
+    }
+    return mirror;
+}
+
 static void am_compute_attacks(int from, int attacker, int victim,
                             BitBoard attacks, IntSetSorted *indexes,
                             int mirror) {
@@ -186,12 +199,29 @@ static void am_compute_all_attacks_of_side(struct Position *p, int side,
 
 void am_compute_attack_maps(struct Position *p, IntSetSorted *indexes_w,
                         IntSetSorted *indexes_b) {
-    int king_sq_w = p->kingSq[White];
-    int king_sq_b = p->kingSq[Black];
+    am_compute_all_attacks_of_side(p, White, indexes_w,
+                                   am_side_mirror(p, White));
+    am_compute_all_attacks_of_side(p, Black, indexes_b,
+                                   am_side_mirror(p, Black));
+}
 
-    int mirror_w = (king_sq_w & 7) > 3 ? 7 : 0;
-    int mirror_b = (king_sq_b & 7) > 3 ? 0x3f : 0x38;
+/*
+ * Compute the attack feature indices of the given side (own pieces
+ * attacking opponent pieces/pawns) into out.  Returns the count, or -1
+ * if it would exceed cap.  Shared with nn_extract.c.
+ */
+int am_compute_attack_indices(const struct Position *p, int side, int *out,
+                              int cap) {
+    IntSetSorted indexes;
 
-    am_compute_all_attacks_of_side(p, White, indexes_w, mirror_w);
-    am_compute_all_attacks_of_side(p, Black, indexes_b, mirror_b);
+    intset_sorted_init(&indexes);
+    am_compute_all_attacks_of_side(p, side, &indexes,
+                                   am_side_mirror(p, side));
+    if ((int)indexes.count > cap) {
+        return -1;
+    }
+    for (size_t i = 0; i < indexes.count; i++) {
+        out[i] = indexes.data[i];
+    }
+    return (int)indexes.count;
 }

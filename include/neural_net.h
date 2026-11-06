@@ -33,10 +33,41 @@
 #define NEURAL_NET_H
 
 #include "dbase.h"
+#include "intset_sorted.h"
 
 /* Architecture of the quantized network (network.quant layout). */
 #define HIDDEN_1_SIZE 32
 #define HIDDEN_2_SIZE 32
+
+/* Piece feature index range: 11 planes (0..4 own P..Q, 5..9 opponent
+ * P..Q, 10 opponent king) x 32 king positions x 64 squares. */
+#define N_FEATURES (32 * 64 * 11)
+
+/* Shared pawn pair feature index range (96 color-square ids, unordered
+ * pairs). */
+#define N_PAWN_FEATURES 4560
+
+/* Maximum number of active input features per accumulator per side:
+ * 15 own + 15 opponent non-king pieces plus the opponent king (31 in
+ * any legal position); at most 96 pawn pairs; attack maps hold
+ * INTSET_SORTED_MAX entries.  These caps are part of the nn_extract
+ * ABI (see nn_extract.h).  The piece cap has headroom beyond 31 for
+ * arbitrary (non-selfplay) test positions. */
+#define NN_MAX_PIECE_FEATURES 36
+#define NN_MAX_PAWN_FEATURES 128
+#define NN_MAX_ATTACK_FEATURES INTSET_SORTED_MAX
+
+/*
+ * Feature index generation, shared by the engine (accumulator
+ * rebuild/update) and the feature extraction library (nn_extract.c):
+ * single definition of the index computation.  Each function writes at
+ * most cap indices into out and returns the count, or -1 if the count
+ * would exceed cap.
+ */
+int nn_compute_piece_indices(const struct Position *p, int side, int *out,
+                             int cap);
+int nn_compute_pawn_indices(const struct Position *p, int side, int *out,
+                            int cap);
 
 void nn_read_weights(void);
 int nn_evaluate_position(struct Position *);

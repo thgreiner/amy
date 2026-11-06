@@ -55,9 +55,6 @@
  *   - Piece type (0..4 own pawn..queen, 5..9 opponent pawn..queen,
  *     10 opponent king)
  */
-#define N_FEATURES (32 * 64 * 11)
-
-#define N_PAWN_FEATURES 4560
 
 #define SCALE_INPUT 64
 #define SCALE_INPUT_HALF (SCALE_INPUT / 2 - 1)
@@ -234,13 +231,15 @@ static void nn_update_accumulator_sub(int16_t *accumulator_q, int offset) {
 static int index_half_mirrored(int sq) { return (sq & 3) | ((sq & 0x38) >> 1); }
 
 /*
- * Build the accumulator for the given side from scratch: input bias plus the
- * contributions of all pieces and the opponent king. Features are expressed
- * in the side's own frame: own king at the origin, squares mirrored for
- * black.
+ * Compute the piece feature indices of the given side: own and opponent
+ * pieces (planes 0..9) plus the opponent king (plane 10), in the side's
+ * own frame (own king at the origin, squares mirrored for black; the
+ * king's frame is additionally mirrored horizontally when the king
+ * stands on files e..h).  This is the single definition of the piece
+ * feature index computation, shared with nn_extract.c.
  */
-static void nn_build_accumulator(int16_t *accumulator_q, struct Position *p,
-                                 int side) {
+int nn_compute_piece_indices(const struct Position *p, int side, int *out,
+                             int cap) {
     int flip = (side == Black) ? 0x38 : 0;
     int king_sq = p->kingSq[side] ^ flip;
 
@@ -251,9 +250,7 @@ static void nn_build_accumulator(int16_t *accumulator_q, struct Position *p,
     }
 
     int king_index = index_half_mirrored(king_sq);
-
-    memcpy(accumulator_q, input_layer_bias_q,
-           sizeof(int16_t) * ACCUMULATOR_SIZE);
+    int n = 0;
 
     for (int tp = Pawn; tp <= Queen; tp++) {
         BitBoard mask = p->mask[side][tp];
@@ -262,8 +259,10 @@ static void nn_build_accumulator(int16_t *accumulator_q, struct Position *p,
             int sq = bitboard_find_set_bit(mask);
             mask &= mask - 1;
 
-            int index = 2048 * (tp - 1) + 64 * king_index + (sq ^ flip);
-            nn_update_accumulator_add(accumulator_q, index);
+            if (n == cap) {
+                return -1;
+            }
+            out[n++] = 2048 * (tp - 1) + 64 * king_index + (sq ^ flip);
         }
 
         mask = p->mask[OPP(side)][tp];
@@ -272,14 +271,37 @@ static void nn_build_accumulator(int16_t *accumulator_q, struct Position *p,
             int sq = bitboard_find_set_bit(mask);
             mask &= mask - 1;
 
-            int index = 2048 * (tp + 4) + 64 * king_index + (sq ^ flip);
-            nn_update_accumulator_add(accumulator_q, index);
+            if (n == cap) {
+                return -1;
+            }
+            out[n++] = 2048 * (tp + 4) + 64 * king_index + (sq ^ flip);
         }
     }
 
     /* opponent king relative to own king (plane 10) */
-    int index = 2048 * 10 + 64 * king_index + (p->kingSq[OPP(side)] ^ flip);
-    nn_update_accumulator_add(accumulator_q, index);
+    if (n == cap) {
+        return -1;
+    }
+    out[n++] = 2048 * 10 + 64 * king_index + (p->kingSq[OPP(side)] ^ flip);
+    return n;
+}
+
+/*
+ * Build the accumulator for the given side from scratch: input bias plus the
+ * contributions of all pieces and the opponent king.
+ */
+static void nn_build_accumulator(int16_t *accumulator_q, struct Position *p,
+                                 int side) {
+    int indices[NN_MAX_PIECE_FEATURES];
+    int n = nn_compute_piece_indices(p, side, indices, NN_MAX_PIECE_FEATURES);
+
+    assert(n >= 0);
+
+    memcpy(accumulator_q, input_layer_bias_q,
+           sizeof(int16_t) * ACCUMULATOR_SIZE);
+    for (int i = 0; i < n; i++) {
+        nn_update_accumulator_add(accumulator_q, indices[i]);
+    }
 }
 
 void nn_update_weights_for_piece(struct Position *p, int tp, int sq, bool turn,
@@ -444,8 +466,16 @@ static int nn_pp_index(int sq1, bool c1, int sq2, bool c2) {
  * index into the features array is calculated using nn_pp_index, and the
  * accumulators are updated.
  */
-static void nn_build_pawn_accumulator(int16_t *accumulator, struct Position *p,
-                                      int side) {
+
+/*
+ * Compute the shared pawn pair feature indices of the given side: every
+ * unordered pair of pawns (of either color) within one file of distance,
+ * indexed in the side's own canonical frame.  This is the single
+ * definition of the pawn pair index computation, shared with
+ * nn_extract.c.
+ */
+int nn_compute_pawn_indices(const struct Position *p, int side, int *out,
+                            int cap) {
     BitBoard mask = p->mask[White][Pawn] | p->mask[Black][Pawn];
 
     int king_sq = p->kingSq[side];
@@ -453,6 +483,8 @@ static void nn_build_pawn_accumulator(int16_t *accumulator, struct Position *p,
     if (side == Black) {
         mirror |= 0x38;
     }
+
+    int n = 0;
 
     while (mask) {
         int sq1 = bitboard_find_set_bit(mask);
@@ -466,11 +498,28 @@ static void nn_build_pawn_accumulator(int16_t *accumulator, struct Position *p,
             int c2 = bitboard_tst_bit(p->mask[side][Pawn], sq2) == 0;
             other_mask &= other_mask - 1;
 
-            int index = nn_pp_index(sq1 ^ mirror, c1, sq2 ^ mirror, c2);
-
-            for (int i = 0; i < ACCUMULATOR_SIZE; i++) {
-                accumulator[i] += input_pawn_weights_q[index][i];
+            if (n == cap) {
+                return -1;
             }
+            out[n++] = nn_pp_index(sq1 ^ mirror, c1, sq2 ^ mirror, c2);
+        }
+    }
+    return n;
+}
+
+/*
+ * Populates accumulator_w and accumulator_b with the pawn features of p.
+ */
+static void nn_build_pawn_accumulator(int16_t *accumulator, struct Position *p,
+                                      int side) {
+    int indices[NN_MAX_PAWN_FEATURES];
+    int n = nn_compute_pawn_indices(p, side, indices, NN_MAX_PAWN_FEATURES);
+
+    assert(n >= 0);
+
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < ACCUMULATOR_SIZE; j++) {
+            accumulator[j] += input_pawn_weights_q[indices[i]][j];
         }
     }
 }
@@ -534,7 +583,7 @@ static void print_attack_map(const char *prefix, IntSetSorted *p) {
         }
         print(0, "%d", p->data[i]);
     }
-    print(0, "\n");
+    fprintf(stderr, "\n"); fflush(stderr);
 }
 #endif
 
