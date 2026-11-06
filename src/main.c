@@ -55,6 +55,7 @@
 #include "test_dbase.h"
 #include "test_intset_sorted.h"
 #include "test_neural_net.h"
+#include "test_nn_extract.h"
 #include "test_pgn_write.h"
 #include "test_utils.h"
 #include "test_yaml.h"
@@ -80,6 +81,7 @@ static void main_run_tests(void) {
     test_all_intset_sorted();
     test_all_bpd();
     test_all_neural_net();
+    test_all_nn_extract();
     test_all_pgn_write();
     test_all_utils();
     print(0, "All tests passed.\n");
