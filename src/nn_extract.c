@@ -46,9 +46,27 @@
 
 #include "bpd.h"
 #include "dbase.h"
+#include "init.h"
 #include "nn_extract.h"
 
 #include <string.h>
+
+/*
+ * The extraction entry points need the engine's precomputed tables
+ * (most importantly the magic bitboard tables behind the bishop,
+ * rook and queen attack masks); the Amy binary calls init_all() in
+ * main(), but the standalone library does not, so run it here exactly
+ * once.  Inside the Amy binary this re-runs harmlessly: the tables
+ * are rebuilt idempotently.
+ */
+static int nn_extract_initialized = 0;
+
+static void nn_extract_ensure_init(void) {
+    if (!nn_extract_initialized) {
+        init_all();
+        nn_extract_initialized = 1;
+    }
+}
 
 /*
  * Validate one BPD record.
@@ -124,6 +142,8 @@ int nn_extract_features(const uint8_t *data, size_t n_records,
                         uint8_t *turn, int32_t *score, int32_t *valid) {
     size_t i;
     int n_valid = 0;
+
+    nn_extract_ensure_init();
 
     for (i = 0; i < n_records; i++) {
         int32_t *fw = feat_w + i * NN_MAX_PIECE_FEATURES;
