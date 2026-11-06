@@ -33,6 +33,9 @@
 #include "dbase.h"
 #include "init.h"
 #include "intset_sorted.h"
+#include "utils.h"
+
+#include <stdlib.h>
 
 static int am_index(int attacker, int victim, int from, int to) {
     int plane = (attacker - 1) * 5 + victim - 2;
@@ -41,7 +44,7 @@ static int am_index(int attacker, int victim, int from, int to) {
     return 64 * 64 * plane + sq;
 }
 
-static void am_show_attacks(int from, int attacker, int victim,
+static void am_compute_attacks(int from, int attacker, int victim,
                             BitBoard attacks, IntSetSorted *indexes,
                             int mirror) {
     while (attacks) {
@@ -49,11 +52,21 @@ static void am_show_attacks(int from, int attacker, int victim,
         attacks &= attacks - 1;
 
         int index = am_index(attacker, victim, from ^ mirror, to);
-        intset_sorted_add(indexes, index);
+        /* The set capacity is a hard bound on the number of attack
+         * features per side; reaching it means a real position has
+         * more attacks than the network can represent.  Fail loudly
+         * instead of silently truncating the map (and with it the
+         * accumulator contribution).
+         */
+        if (intset_sorted_add(indexes, index) == INTSET_SORTED_FULL) {
+            print(0, "Attack map overflow: more than %d attack "
+                     "features in one position.\n", INTSET_SORTED_MAX);
+            exit(1);
+        }
     }
 }
 
-static void am_show_all_attacks_of_side(struct Position *p, int side,
+static void am_compute_all_attacks_of_side(struct Position *p, int side,
                                         IntSetSorted *indexes, int mirror) {
 
     // Pawn attacks - include all pawn attacks to pieces
@@ -62,15 +75,15 @@ static void am_show_all_attacks_of_side(struct Position *p, int side,
         int from = bitboard_find_set_bit(attackers);
         attackers &= attackers - 1;
 
-        am_show_attacks(from, Pawn, Knight,
+        am_compute_attacks(from, Pawn, Knight,
                         p->atkTo[from] & p->mask[!side][Knight], indexes,
                         mirror);
-        am_show_attacks(from, Pawn, Bishop,
+        am_compute_attacks(from, Pawn, Bishop,
                         p->atkTo[from] & p->mask[!side][Bishop], indexes,
                         mirror);
-        am_show_attacks(from, Pawn, Rook, p->atkTo[from] & p->mask[!side][Rook],
+        am_compute_attacks(from, Pawn, Rook, p->atkTo[from] & p->mask[!side][Rook],
                         indexes, mirror);
-        am_show_attacks(from, Pawn, Queen,
+        am_compute_attacks(from, Pawn, Queen,
                         p->atkTo[from] & p->mask[!side][Queen], indexes,
                         mirror);
     }
@@ -81,17 +94,17 @@ static void am_show_all_attacks_of_side(struct Position *p, int side,
         int from = bitboard_find_set_bit(attackers);
         attackers &= attackers - 1;
 
-        am_show_attacks(from, Knight, Pawn,
+        am_compute_attacks(from, Knight, Pawn,
                         p->atkTo[from] & p->mask[!side][Pawn], indexes, mirror);
-        am_show_attacks(from, Knight, Knight,
+        am_compute_attacks(from, Knight, Knight,
                         p->atkTo[from] & p->mask[!side][Knight], indexes,
                         mirror);
-        am_show_attacks(from, Knight, Bishop,
+        am_compute_attacks(from, Knight, Bishop,
                         p->atkTo[from] & p->mask[!side][Bishop], indexes,
                         mirror);
-        am_show_attacks(from, Knight, Rook,
+        am_compute_attacks(from, Knight, Rook,
                         p->atkTo[from] & p->mask[!side][Rook], indexes, mirror);
-        am_show_attacks(from, Knight, Queen,
+        am_compute_attacks(from, Knight, Queen,
                         p->atkTo[from] & p->mask[!side][Queen], indexes,
                         mirror);
     }
@@ -105,18 +118,18 @@ static void am_show_all_attacks_of_side(struct Position *p, int side,
 
         // exclude attacks on pawns that already attack the bishop
         BitBoard excl = ~PawnEPM[side][from];
-        am_show_attacks(from, Bishop, Pawn,
+        am_compute_attacks(from, Bishop, Pawn,
                         p->atkTo[from] & excl & p->mask[!side][Pawn], indexes,
                         mirror);
-        am_show_attacks(from, Bishop, Knight,
+        am_compute_attacks(from, Bishop, Knight,
                         p->atkTo[from] & p->mask[!side][Knight], indexes,
                         mirror);
-        am_show_attacks(from, Bishop, Bishop,
+        am_compute_attacks(from, Bishop, Bishop,
                         p->atkTo[from] & p->mask[!side][Bishop], indexes,
                         mirror);
-        am_show_attacks(from, Bishop, Rook,
+        am_compute_attacks(from, Bishop, Rook,
                         p->atkTo[from] & p->mask[!side][Rook], indexes, mirror);
-        am_show_attacks(from, Bishop, Queen,
+        am_compute_attacks(from, Bishop, Queen,
                         p->atkTo[from] & p->mask[!side][Queen], indexes,
                         mirror);
     }
@@ -127,17 +140,17 @@ static void am_show_all_attacks_of_side(struct Position *p, int side,
         int from = bitboard_find_set_bit(attackers);
         attackers &= attackers - 1;
 
-        am_show_attacks(from, Rook, Pawn, p->atkTo[from] & p->mask[!side][Pawn],
+        am_compute_attacks(from, Rook, Pawn, p->atkTo[from] & p->mask[!side][Pawn],
                         indexes, mirror);
-        am_show_attacks(from, Rook, Knight,
+        am_compute_attacks(from, Rook, Knight,
                         p->atkTo[from] & p->mask[!side][Knight], indexes,
                         mirror);
-        am_show_attacks(from, Rook, Bishop,
+        am_compute_attacks(from, Rook, Bishop,
                         p->atkTo[from] & p->mask[!side][Bishop], indexes,
                         mirror);
-        am_show_attacks(from, Rook, Rook, p->atkTo[from] & p->mask[!side][Rook],
+        am_compute_attacks(from, Rook, Rook, p->atkTo[from] & p->mask[!side][Rook],
                         indexes, mirror);
-        am_show_attacks(from, Rook, Queen,
+        am_compute_attacks(from, Rook, Queen,
                         p->atkTo[from] & p->mask[!side][Queen], indexes,
                         mirror);
     }
@@ -151,27 +164,27 @@ static void am_show_all_attacks_of_side(struct Position *p, int side,
 
         // exclude attacks on pawns that already attack the queen
         BitBoard excl = ~PawnEPM[side][from];
-        am_show_attacks(from, Queen, Pawn,
+        am_compute_attacks(from, Queen, Pawn,
                         p->atkTo[from] & excl & p->mask[!side][Pawn], indexes,
                         mirror);
-        am_show_attacks(from, Queen, Knight,
+        am_compute_attacks(from, Queen, Knight,
                         p->atkTo[from] & p->mask[!side][Knight], indexes,
                         mirror);
         // Only include queen attacks on bishops via rook moves
-        am_show_attacks(from, Queen, Bishop,
+        am_compute_attacks(from, Queen, Bishop,
                         p->atkTo[from] & RookEPM[from] & p->mask[!side][Bishop],
                         indexes, mirror);
         // Only include queen attacks on rooks via bishop moves
-        am_show_attacks(from, Queen, Rook,
+        am_compute_attacks(from, Queen, Rook,
                         p->atkTo[from] & BishopEPM[from] & p->mask[!side][Rook],
                         indexes, mirror);
-        am_show_attacks(from, Queen, Queen,
+        am_compute_attacks(from, Queen, Queen,
                         p->atkTo[from] & p->mask[!side][Queen], indexes,
                         mirror);
     }
 }
 
-void am_show_attack_map(struct Position *p, IntSetSorted *indexes_w,
+void am_compute_attack_maps(struct Position *p, IntSetSorted *indexes_w,
                         IntSetSorted *indexes_b) {
     int king_sq_w = p->kingSq[White];
     int king_sq_b = p->kingSq[Black];
@@ -179,6 +192,6 @@ void am_show_attack_map(struct Position *p, IntSetSorted *indexes_w,
     int mirror_w = (king_sq_w & 7) > 3 ? 7 : 0;
     int mirror_b = (king_sq_b & 7) > 3 ? 0x3f : 0x38;
 
-    am_show_all_attacks_of_side(p, White, indexes_w, mirror_w);
-    am_show_all_attacks_of_side(p, Black, indexes_b, mirror_b);
+    am_compute_all_attacks_of_side(p, White, indexes_w, mirror_w);
+    am_compute_all_attacks_of_side(p, Black, indexes_b, mirror_b);
 }

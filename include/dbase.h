@@ -36,6 +36,7 @@
 #include "bitboard.h"
 #include "config.h"
 #include "heap.h"
+#include "intset_sorted.h"
 #include "types.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -128,6 +129,8 @@ struct Position {
     int material[2], nonPawn[2];
     int16_t accumulator_w_q[ACCUMULATOR_SIZE];
     int16_t accumulator_b_q[ACCUMULATOR_SIZE];
+    IntSetSorted attack_map_w;
+    IntSetSorted attack_map_b;
     uint16_t outOfBookCnt[2];
     uint16_t ply;
     int8_t piece[64];

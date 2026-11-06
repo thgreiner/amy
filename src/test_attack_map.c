@@ -67,7 +67,7 @@ static void test_attack_map_initial_position(void) {
     intset_sorted_init(&w);
     intset_sorted_init(&b);
 
-    am_show_attack_map(p, &w, &b);
+    am_compute_attack_maps(p, &w, &b);
 
     assert_intset_empty(&w);
     assert_intset_empty(&b);
@@ -93,7 +93,7 @@ static void test_attack_map_rook_both_sides(void) {
     intset_sorted_init(&w);
     intset_sorted_init(&b);
 
-    am_show_attack_map(p, &w, &b);
+    am_compute_attack_maps(p, &w, &b);
 
     assert_intset_eq(&w, expected_w, 1);
     assert_intset_eq(&b, expected_b, 1);
@@ -122,7 +122,7 @@ static void test_attack_map_pawn_and_knight(void) {
     intset_sorted_init(&w);
     intset_sorted_init(&b);
 
-    am_show_attack_map(p, &w, &b);
+    am_compute_attack_maps(p, &w, &b);
 
     assert_intset_eq(&w, expected_w, 3);
     assert_intset_empty(&b);
@@ -150,7 +150,7 @@ static void test_attack_map_queen_attacks(void) {
     intset_sorted_init(&w);
     intset_sorted_init(&b);
 
-    am_show_attack_map(p, &w, &b);
+    am_compute_attack_maps(p, &w, &b);
 
     assert_intset_eq(&w, expected_w, 3);
     assert_intset_empty(&b);
@@ -179,7 +179,7 @@ static void test_attack_map_queen_line_filter(void) {
     intset_sorted_init(&w);
     intset_sorted_init(&b);
 
-    am_show_attack_map(p, &w, &b);
+    am_compute_attack_maps(p, &w, &b);
 
     assert_intset_empty(&w);
     assert_intset_eq(&b, expected_b, 2);

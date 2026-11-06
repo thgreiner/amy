@@ -95,6 +95,7 @@ typedef struct {
 
 int8_t input_layer_weights_q[N_FEATURES][ACCUMULATOR_SIZE];
 int8_t input_pawn_weights_q[N_PAWN_FEATURES][ACCUMULATOR_SIZE];
+int8_t input_attack_weights_q[N_ATTACK_FEATURES][ACCUMULATOR_SIZE];
 int16_t input_layer_bias_q[ACCUMULATOR_SIZE];
 int16_t hidden_layer_1_weights_q[HIDDEN_1_SIZE][2 * ACCUMULATOR_SIZE];
 int32_t hidden_layer_1_bias_q[HIDDEN_1_SIZE];
@@ -372,6 +373,16 @@ void nn_update_weights_for_king(struct Position *p, int old_king_sq) {
     nn_build_pawn_accumulator(accumulator, p, side);
 
     /*
+     * The rebuild above does not include the attack contribution, so
+     * the stored attack map of the side whose king moved must be
+     * reset. The next nn_update_attack_maps() call re-adds the full
+     * current attack contribution of that side from scratch. The
+     * opponent's accumulator is only adjusted incrementally and keeps
+     * its attack contribution, so its stored map stays valid.
+     */
+    intset_sorted_init((side == White) ? &p->attack_map_w : &p->attack_map_b);
+
+    /*
      * The opponent's accumulator only changed on plane 10 (opponent king
      * relative to own king): the side to move's king moved. The opponent's
      * own king, and hence its frame, is unchanged.
@@ -512,7 +523,80 @@ static void nn_update_weights_for_pawn(struct Position *p, int sq1, bool turn,
     }
 }
 
-static int MaxAttacks = 0;
+#ifdef DEBUG
+static void print_attack_map(const char *prefix, IntSetSorted *p) {
+    if (p->count == 0) return;
+
+    print(0, "%s: ", prefix);
+    for (size_t i=0; i<p->count; i++) {
+        if (i!=0) {
+            print(0,", ");
+        }
+        print(0, "%d", p->data[i]);
+    }
+    print(0, "\n");
+}
+#endif
+
+static void update_attack_map_add(int16_t *accumulator, IntSetSorted *indexes) {
+    for (size_t j=0; j<indexes->count; j++) {
+        int index = indexes->data[j];
+        for (int i=0; i<ACCUMULATOR_SIZE; i++) {
+            accumulator[i] += input_attack_weights_q[index][i];
+        }
+    }
+}
+
+static void update_attack_map_sub(int16_t *accumulator, IntSetSorted *indexes) {
+    for (size_t j=0; j<indexes->count; j++) {
+        int index = indexes->data[j];
+        for (int i=0; i<ACCUMULATOR_SIZE; i++) {
+            accumulator[i] -= input_attack_weights_q[index][i];
+        }
+    }
+}
+
+void nn_update_attack_maps(struct Position *p) {
+    IntSetSorted current_attack_map_w, current_attack_map_b;
+    intset_sorted_init(&current_attack_map_w);
+    intset_sorted_init(&current_attack_map_b);
+
+    am_compute_attack_maps(p, &current_attack_map_w, &current_attack_map_b);
+
+    IntSetSorted diff_attack_map_w, diff_attack_map_b;
+    intset_sorted_init(&diff_attack_map_w);
+    intset_sorted_init(&diff_attack_map_b);
+
+    intset_sorted_diff(&p->attack_map_w, &current_attack_map_w, &diff_attack_map_w);
+    intset_sorted_diff(&p->attack_map_b, &current_attack_map_b, &diff_attack_map_b);
+
+    update_attack_map_sub(p->accumulator_w_q, &diff_attack_map_w);
+    update_attack_map_sub(p->accumulator_b_q, &diff_attack_map_b);
+
+#ifdef DEBUG
+    print_attack_map("diff_attack_map_w", &diff_attack_map_w);
+    print_attack_map("diff_attack_map_b", &diff_attack_map_b);
+#endif
+
+    IntSetSorted add_attack_map_w, add_attack_map_b;
+    intset_sorted_init(&add_attack_map_w);
+    intset_sorted_init(&add_attack_map_b);
+
+    intset_sorted_diff(&current_attack_map_w, &p->attack_map_w, &add_attack_map_w);
+    intset_sorted_diff(&current_attack_map_b, &p->attack_map_b, &add_attack_map_b);
+
+#ifdef DEBUG
+    print_attack_map("add_attack_map_w", &add_attack_map_w);
+    print_attack_map("add_attack_map_b", &add_attack_map_b);
+#endif
+
+    update_attack_map_add(p->accumulator_w_q, &add_attack_map_w);
+    update_attack_map_add(p->accumulator_b_q, &add_attack_map_b);
+
+    p->attack_map_w = current_attack_map_w;
+    p->attack_map_b = current_attack_map_b;
+}
+
 /*
  * Evaluate the position using neural networks. Returns the evaluation
  * in 1/1000th of a pawn.
@@ -523,20 +607,6 @@ int nn_evaluate_position(struct Position *p) {
     bool print_stats_q = false;
 #endif
 
-    IntSetSorted attacks_w, attacks_b;
-
-    intset_sorted_init(&attacks_w);
-    intset_sorted_init(&attacks_b);
-
-    am_show_attack_map(p, &attacks_w, &attacks_b);
-
-    int ma = MAX(attacks_w.count, attacks_b.count);
-
-    if (ma > MaxAttacks) {
-        MaxAttacks = ma;
-        print(1, "MaxAttacks = %d\n", MaxAttacks);
-    }
-
 #ifndef DEBUG
     STry++;
     if (ht_probe_score(p->hkey, &score) == Useful) {
@@ -544,6 +614,8 @@ int nn_evaluate_position(struct Position *p) {
         return score;
     }
 #endif
+
+    nn_update_attack_maps(p);
 
 #ifdef DEBUG
     for (int i = 0; i < 16; i++) {
@@ -704,6 +776,15 @@ void nn_init_accumulator(struct Position *p) {
     nn_build_accumulator(p->accumulator_b_q, p, Black);
     nn_build_pawn_accumulator(p->accumulator_b_q, p, Black);
 
+    /*
+     * Both accumulators are rebuilt without attack contributions, so
+     * the stored attack maps must be empty again. The next
+     * nn_update_attack_maps() call re-adds the full current attack
+     * contribution from scratch.
+     */
+    intset_sorted_init(&p->attack_map_w);
+    intset_sorted_init(&p->attack_map_b);
+
 #ifdef DEBUG
     print(1, "accumulator:\n");
     for (int i = 0; i < 8; i++) {
@@ -723,6 +804,24 @@ void nn_validate_weights(struct Position *p) {
     nn_build_pawn_accumulator(accumulator_w_q, p, White);
     nn_build_accumulator(accumulator_b_q, p, Black);
     nn_build_pawn_accumulator(accumulator_b_q, p, Black);
+
+    /* The accumulators carry the attack features of the stored attack
+     * maps, which may lag behind the current position until the next
+     * nn_update_attack_maps() call, so the reference must include
+     * exactly those. */
+    for (size_t i = 0; i < p->attack_map_w.count; i++) {
+        int index = p->attack_map_w.data[i];
+        for (int j = 0; j < ACCUMULATOR_SIZE; j++) {
+            accumulator_w_q[j] += input_attack_weights_q[index][j];
+        }
+    }
+
+    for (size_t i = 0; i < p->attack_map_b.count; i++) {
+        int index = p->attack_map_b.data[i];
+        for (int j = 0; j < ACCUMULATOR_SIZE; j++) {
+            accumulator_b_q[j] += input_attack_weights_q[index][j];
+        }
+    }
 
     verbose = true;
 
@@ -808,6 +907,12 @@ void nn_randomize_weights(void) {
     for (int i = 0; i < N_PAWN_FEATURES; i++) {
         for (int j = 0; j < ACCUMULATOR_SIZE; j++) {
             input_pawn_weights_q[i][j] = (int8_t)(random_double() * 64);
+        }
+    }
+
+    for (int i = 0; i < N_ATTACK_FEATURES; i++) {
+        for (int j = 0; j < ACCUMULATOR_SIZE; j++) {
+            input_attack_weights_q[i][j] = (int8_t)(random_double() * 64);
         }
     }
 

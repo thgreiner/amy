@@ -32,7 +32,7 @@ typedef enum {
     INTSET_SORTED_FULL
 } intset_sorted_result_t;
 
-void intset_sorted_init(IntSetSorted *s);
+static inline void intset_sorted_init(IntSetSorted *s) { s->count = 0; }
 
 intset_sorted_result_t intset_sorted_add(IntSetSorted *s, int32_t value);
 

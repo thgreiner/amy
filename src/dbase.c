@@ -2103,7 +2103,26 @@ void dbase_show_position(struct Position *p) {
                     print(0, " ");
             }
         }
-        if (rk == 4) {
+        switch (rk) {
+        case 7:
+            print(0, "|   Attack Map: [");
+            for (size_t i = 0; i < p->attack_map_w.count; i++) {
+                if (i != 0)
+                    print(0, ", ");
+                print(0, "%d", p->attack_map_w.data[i]);
+            }
+            print(0, "] [");
+            for (size_t i = 0; i < p->attack_map_b.count; i++) {
+                if (i != 0)
+                    print(0, ", ");
+                print(0, "%d", p->attack_map_b.data[i]);
+            }
+            print(0, "]\n");
+            break;
+        case 6:
+            print(0, "|   Hashkey: %llx\n", p->hkey);
+            break;
+        case 4: {
             int bit;
             print(0, "|   Black (%5d, %5d)  ", p->material[Black],
                   p->nonPawn[Black]);
@@ -2114,7 +2133,9 @@ void dbase_show_position(struct Position *p) {
                           : '.');
             }
             print(0, "\n");
-        } else if (rk == 3) {
+            break;
+        }
+        case 3: {
             int bit;
             print(0, "|   White (%5d, %5d)  ", p->material[White],
                   p->nonPawn[White]);
@@ -2125,15 +2146,18 @@ void dbase_show_position(struct Position *p) {
                           : '.');
             }
             print(0, "\n");
-        } else if (rk == 6) {
-            print(0, "|   Hashkey: %llx\n", p->hkey);
-        } else if (rk == 1) {
+            break;
+        }
+        case 1:
             print(0, "|   Index: %d\n", RECOGNIZER_INDEX(p));
-        } else if (rk == 0) {
+            break;
+        case 0:
             print(0, "|   mates_threat: %d %d\n", mates_threat(p, White),
                   mates_threat(p, Black));
-        } else {
+            break;
+        default:
             print(0, "|\n");
+            break;
         }
         print(0, "        +---+---+---+---+---+---+---+---+\n");
     }

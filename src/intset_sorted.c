@@ -2,8 +2,6 @@
 
 #include <string.h>
 
-void intset_sorted_init(IntSetSorted *s) { s->count = 0; }
-
 /* Index of the first slot whose value is >= v (lower bound). */
 static size_t lower_bound(const IntSetSorted *s, int32_t v) {
     size_t lo = 0, hi = s->count;

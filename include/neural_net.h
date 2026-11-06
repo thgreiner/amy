@@ -44,6 +44,7 @@ void nn_init_accumulator(struct Position *);
 void nn_update_weights_for_piece(struct Position *p, int tp, int sq, bool turn,
                                  bool add);
 void nn_update_weights_for_king(struct Position *p, int old_king_sq);
+void nn_update_attack_maps(struct Position *);
 void nn_validate_weights(struct Position *);
 void nn_randomize_weights(void);
 
