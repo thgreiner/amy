@@ -49,9 +49,11 @@
 #include "recog.h"
 #include "search.h"
 #include "state_machine.h"
+#include "test_attack_map.h"
 #include "test_blunder.h"
 #include "test_bpd.h"
 #include "test_dbase.h"
+#include "test_intset_sorted.h"
 #include "test_neural_net.h"
 #include "test_pgn_write.h"
 #include "test_utils.h"
@@ -71,9 +73,11 @@ static char EGTBPath[1024] = "TB";
 static char *ConfigFileName = NULL;
 
 static void main_run_tests(void) {
+    test_all_attack_map();
     test_all_blunder();
     test_all_yaml();
     test_all_dbase();
+    test_all_intset_sorted();
     test_all_bpd();
     test_all_neural_net();
     test_all_pgn_write();

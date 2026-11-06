@@ -31,11 +31,13 @@
 
 #include "neural_net.h"
 #include "amy.h"
+#include "attack_map.h"
 #include "bitboard.h"
 #include "dbase.h"
 #include "evaluation.h"
 #include "hashtable.h"
 #include "inline.h"
+#include "intset_sorted.h"
 #include "random.h"
 #include "search.h"
 #include "utils.h"
@@ -509,6 +511,8 @@ static void nn_update_weights_for_pawn(struct Position *p, int sq1, bool turn,
         }
     }
 }
+
+static int MaxAttacks = 0;
 /*
  * Evaluate the position using neural networks. Returns the evaluation
  * in 1/1000th of a pawn.
@@ -518,6 +522,20 @@ int nn_evaluate_position(struct Position *p) {
 #ifdef STATISTICS_Q
     bool print_stats_q = false;
 #endif
+
+    IntSetSorted attacks_w, attacks_b;
+
+    intset_sorted_init(&attacks_w);
+    intset_sorted_init(&attacks_b);
+
+    am_show_attack_map(p, &attacks_w, &attacks_b);
+
+    int ma = MAX(attacks_w.count, attacks_b.count);
+
+    if (ma > MaxAttacks) {
+        MaxAttacks = ma;
+        print(1, "MaxAttacks = %d\n", MaxAttacks);
+    }
 
 #ifndef DEBUG
     STry++;
