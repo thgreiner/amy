@@ -8,10 +8,11 @@
 #include <stdlib.h>
 
 /*
- * input_attack_weights_q is owned by neural_net.c; it is not loaded
- * from the training data yet, so nn_randomize_weights() fills it. The
- * guard test below checks that it is non-zero, so that the attack
- * tests in this file are not vacuous.
+ * The tests run on randomized in-memory weights (nn_randomize_weights
+ * fills input_attack_weights_q); the file-loaded weights are exercised
+ * by the engine itself on startup. The guard test below checks that
+ * the randomization is non-zero, so that the attack-related tests in
+ * this file are not vacuous.
  */
 extern int8_t input_attack_weights_q[N_ATTACK_FEATURES][ACCUMULATOR_SIZE];
 

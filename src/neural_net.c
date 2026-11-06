@@ -78,6 +78,11 @@ typedef struct {
     uint16_t wh_accumulator_size;    // Size of the accumulator
     uint16_t wh_num_features;        // Number of input features (planes)
     uint16_t wh_pawn_features_size;  // Number of pawn input features
+    uint32_t wh_attack_features_size; // Number of attack input features
+                                     // (u32: N_ATTACK_FEATURES doesn't fit
+                                     // in a uint16_t; the compiler inserts
+                                     // 2 bytes of alignment padding before
+                                     // it)
     uint16_t wh_hidden_layer_1_size; // Size of the hidden layer 1
     uint16_t wh_hidden_layer_2_size; // Size of the hidden layer 2
     uint8_t wh_accumulator_weights_quantization;
@@ -128,6 +133,7 @@ void nn_read_weights_quantized(void) {
     assert(header.wh_accumulator_size == ACCUMULATOR_SIZE);
     assert(header.wh_num_features == N_FEATURES);
     assert(header.wh_pawn_features_size == N_PAWN_FEATURES);
+    assert(header.wh_attack_features_size == N_ATTACK_FEATURES);
     assert(header.wh_hidden_layer_1_size == HIDDEN_1_SIZE);
     assert(header.wh_hidden_layer_2_size == HIDDEN_2_SIZE);
     assert(header.wh_accumulator_weights_quantization == wh_quantization_int_8);
@@ -151,6 +157,10 @@ void nn_read_weights_quantized(void) {
     items_read = fread(input_pawn_weights_q, sizeof(int8_t),
                        ACCUMULATOR_SIZE * N_PAWN_FEATURES, fin);
     assert(items_read == ACCUMULATOR_SIZE * N_PAWN_FEATURES);
+
+    items_read = fread(input_attack_weights_q, sizeof(int8_t),
+                       ACCUMULATOR_SIZE * N_ATTACK_FEATURES, fin);
+    assert(items_read == ACCUMULATOR_SIZE * N_ATTACK_FEATURES);
 
     items_read =
         fread(input_layer_bias_q, sizeof(int16_t), ACCUMULATOR_SIZE, fin);
