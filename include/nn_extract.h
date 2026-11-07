@@ -36,7 +36,7 @@
 #include <stdint.h>
 
 #include "attack_map.h" /* N_ATTACK_FEATURES */
-#include "neural_net.h"  /* N_FEATURES, N_PAWN_FEATURES, NN_MAX_* */
+#include "neural_net.h" /* N_FEATURES, N_PAWN_FEATURES, NN_MAX_* */
 
 /*
  * Network architecture constants and per-record output capacities,
@@ -76,10 +76,9 @@ void nn_export_constants(NnExtractConstants *out);
  *
  * Returns the number of valid records (>= 0).
  */
-int nn_extract_features(const uint8_t *data, size_t n_records,
-                        int32_t *feat_w, int32_t *feat_b,
-                        int32_t *pfeat_w, int32_t *pfeat_b,
-                        int32_t *afeat_w, int32_t *afeat_b,
-                        uint8_t *turn, int32_t *score, int32_t *valid);
+int nn_extract_features(const uint8_t *data, size_t n_records, int32_t *feat_w,
+                        int32_t *feat_b, int32_t *pfeat_w, int32_t *pfeat_b,
+                        int32_t *afeat_w, int32_t *afeat_b, uint8_t *turn,
+                        int32_t *score, int32_t *valid);
 
 #endif

@@ -61,9 +61,7 @@ int MaxPos = MaxPosInit;
 /**
  * Do the pre-search initialization of evaluation.
  */
-void nn_eval_init(void) {
-    MaxPos = MaxPosInit;
-}
+void nn_eval_init(void) { MaxPos = MaxPosInit; }
 
 /**
  * Evaluate the material balance (from white's perspective).
@@ -117,20 +115,22 @@ typedef struct {
     uint8_t wh_hidden_layer_2_bias_quantization;
     uint8_t wh_output_layer_weights_quantization;
     uint8_t wh_output_layer_bias_quantization;
-    char wh_name[32]; // Name for the weights
-    char wh_date[32]; // Date of training, ISO8601 formatted
+    uint16_t wh_phase_count; // Number of game phase branches
+    char wh_name[32];        // Name for the weights
+    char wh_date[32];        // Date of training, ISO8601 formatted
 } WeightsHeader;
 
 int8_t input_layer_weights_q[N_FEATURES][ACCUMULATOR_SIZE];
 int8_t input_pawn_weights_q[N_PAWN_FEATURES][ACCUMULATOR_SIZE];
 int8_t input_attack_weights_q[N_ATTACK_FEATURES][ACCUMULATOR_SIZE];
 int16_t input_layer_bias_q[ACCUMULATOR_SIZE];
-int16_t hidden_layer_1_weights_q[HIDDEN_1_SIZE][2 * ACCUMULATOR_SIZE];
-int32_t hidden_layer_1_bias_q[HIDDEN_1_SIZE];
-int16_t hidden_layer_2_weights_q[HIDDEN_2_SIZE][HIDDEN_1_SIZE];
-int32_t hidden_layer_2_bias_q[HIDDEN_2_SIZE];
-int32_t output_layer_weights_q[HIDDEN_2_SIZE];
-int32_t output_layer_bias_q[1];
+int16_t hidden_layer_1_weights_q[NN_PHASE_COUNT][HIDDEN_1_SIZE]
+                                [2 * ACCUMULATOR_SIZE];
+int32_t hidden_layer_1_bias_q[NN_PHASE_COUNT][HIDDEN_1_SIZE];
+int16_t hidden_layer_2_weights_q[NN_PHASE_COUNT][HIDDEN_2_SIZE][HIDDEN_1_SIZE];
+int32_t hidden_layer_2_bias_q[NN_PHASE_COUNT][HIDDEN_2_SIZE];
+int32_t output_layer_weights_q[NN_PHASE_COUNT][HIDDEN_2_SIZE];
+int32_t output_layer_bias_q[NN_PHASE_COUNT][1];
 
 static bool verbose = true;
 
@@ -175,6 +175,7 @@ void nn_read_weights_quantized(void) {
     assert(header.wh_output_layer_weights_quantization ==
            wh_quantization_int_32);
     assert(header.wh_output_layer_bias_quantization == wh_quantization_int_32);
+    assert(header.wh_phase_count == NN_PHASE_COUNT);
 
     items_read = fread(input_layer_weights_q, sizeof(int8_t),
                        ACCUMULATOR_SIZE * N_FEATURES, fin);
@@ -192,28 +193,30 @@ void nn_read_weights_quantized(void) {
         fread(input_layer_bias_q, sizeof(int16_t), ACCUMULATOR_SIZE, fin);
     assert(items_read == ACCUMULATOR_SIZE);
 
-    items_read = fread(hidden_layer_1_weights_q, sizeof(int16_t),
-                       HIDDEN_1_SIZE * 2 * ACCUMULATOR_SIZE, fin);
-    assert(items_read == HIDDEN_1_SIZE * 2 * ACCUMULATOR_SIZE);
+    for (int phase = 0; phase < NN_PHASE_COUNT; phase++) {
+        items_read = fread(hidden_layer_1_weights_q[phase], sizeof(int16_t),
+                           HIDDEN_1_SIZE * 2 * ACCUMULATOR_SIZE, fin);
+        assert(items_read == HIDDEN_1_SIZE * 2 * ACCUMULATOR_SIZE);
 
-    items_read =
-        fread(hidden_layer_1_bias_q, sizeof(int32_t), HIDDEN_1_SIZE, fin);
-    assert(items_read == HIDDEN_1_SIZE);
+        items_read = fread(hidden_layer_1_bias_q[phase], sizeof(int32_t),
+                           HIDDEN_1_SIZE, fin);
+        assert(items_read == HIDDEN_1_SIZE);
 
-    items_read = fread(hidden_layer_2_weights_q, sizeof(int16_t),
-                       HIDDEN_1_SIZE * HIDDEN_2_SIZE, fin);
-    assert(items_read == HIDDEN_1_SIZE * HIDDEN_2_SIZE);
+        items_read = fread(hidden_layer_2_weights_q[phase], sizeof(int16_t),
+                           HIDDEN_1_SIZE * HIDDEN_2_SIZE, fin);
+        assert(items_read == HIDDEN_1_SIZE * HIDDEN_2_SIZE);
 
-    items_read =
-        fread(hidden_layer_2_bias_q, sizeof(int32_t), HIDDEN_2_SIZE, fin);
-    assert(items_read == HIDDEN_2_SIZE);
+        items_read = fread(hidden_layer_2_bias_q[phase], sizeof(int32_t),
+                           HIDDEN_2_SIZE, fin);
+        assert(items_read == HIDDEN_2_SIZE);
 
-    items_read =
-        fread(output_layer_weights_q, sizeof(int32_t), HIDDEN_2_SIZE, fin);
-    assert(items_read == HIDDEN_2_SIZE);
+        items_read = fread(output_layer_weights_q[phase], sizeof(int32_t),
+                           HIDDEN_2_SIZE, fin);
+        assert(items_read == HIDDEN_2_SIZE);
 
-    items_read = fread(output_layer_bias_q, sizeof(int32_t), 1, fin);
-    assert(items_read == 1);
+        items_read = fread(output_layer_bias_q[phase], sizeof(int32_t), 1, fin);
+        assert(items_read == 1);
+    }
 
     fclose(fin);
 
@@ -689,21 +692,18 @@ void nn_update_attack_maps(struct Position *p) {
 }
 
 /*
- * Evaluate the position using neural networks. Returns the evaluation
- * in 1/1000th of a pawn.
+ * Compute the raw network score for the position: refresh the stored
+ * attack maps, select the phase branch, and run the quantized
+ * pipeline. Pure function of the position and the weights: no score
+ * hash table, no fuzz, no MaxPos adjustment.
  */
-int nn_evaluate_position(struct Position *p) {
+int nn_compute_score(struct Position *p) {
     int score;
+    /* Phase branches share the input side; only the selection of the
+     * hidden/output block depends on the position. */
+    int phase = nn_phase_index(p);
 #ifdef STATISTICS_Q
     bool print_stats_q = false;
-#endif
-
-#ifndef DEBUG
-    STry++;
-    if (ht_probe_score(p->hkey, &score) == Useful) {
-        SHit++;
-        return score;
-    }
 #endif
 
     nn_update_attack_maps(p);
@@ -745,13 +745,13 @@ int nn_evaluate_position(struct Position *p) {
 
     int32_t hidden_layer_1_q[HIDDEN_1_SIZE];
     for (int i = 0; i < HIDDEN_1_SIZE; i++) {
-        hidden_layer_1_q[i] = hidden_layer_1_bias_q[i];
+        hidden_layer_1_q[i] = hidden_layer_1_bias_q[phase][i];
     }
 
     for (int i = 0; i < HIDDEN_1_SIZE; i++) {
         for (int j = 0; j < 2 * ACCUMULATOR_SIZE; j++) {
             hidden_layer_1_q[i] +=
-                accumulator[j] * hidden_layer_1_weights_q[i][j];
+                accumulator[j] * hidden_layer_1_weights_q[phase][i][j];
         }
 
 #ifdef STATISTICS_Q
@@ -786,13 +786,13 @@ int nn_evaluate_position(struct Position *p) {
 #endif
 
     int32_t hidden_layer_2_q[HIDDEN_2_SIZE];
-    memcpy(hidden_layer_2_q, hidden_layer_2_bias_q,
+    memcpy(hidden_layer_2_q, hidden_layer_2_bias_q[phase],
            HIDDEN_2_SIZE * sizeof(int32_t));
 
     for (int i = 0; i < HIDDEN_2_SIZE; i++) {
         for (int j = 0; j < HIDDEN_1_SIZE; j++) {
             hidden_layer_2_q[i] +=
-                hidden_layer_1_q16[j] * hidden_layer_2_weights_q[i][j];
+                hidden_layer_1_q16[j] * hidden_layer_2_weights_q[phase][i][j];
         }
     }
 
@@ -820,10 +820,11 @@ int nn_evaluate_position(struct Position *p) {
     print(1, "\n");
 #endif
 
-    int32_t output_layer_q = output_layer_bias_q[0];
+    int32_t output_layer_q = output_layer_bias_q[phase][0];
 
     for (int j = 0; j < HIDDEN_2_SIZE; j++) {
-        output_layer_q += hidden_layer_2_q16[j] * output_layer_weights_q[j];
+        output_layer_q +=
+            hidden_layer_2_q16[j] * output_layer_weights_q[phase][j];
     }
 
 #ifdef DEBUG
@@ -842,6 +843,27 @@ int nn_evaluate_position(struct Position *p) {
 
     score = ((output_layer_q + SCALE_HALF) / SCALE) * SCALE_OUTPUT;
     score = (score + SCALE_HALF) / SCALE;
+
+    return score;
+}
+
+/*
+ * Evaluate the position using neural networks, with score caching,
+ * fuzz and MaxPos adjustment. Returns the evaluation in 1/1000th of
+ * a pawn.
+ */
+int nn_evaluate_position(struct Position *p) {
+    int score;
+
+#ifndef DEBUG
+    STry++;
+    if (ht_probe_score(p->hkey, &score) == Useful) {
+        SHit++;
+        return score;
+    }
+#endif
+
+    score = nn_compute_score(p);
 
     /** Add a bit of fuzz. */
     if (fuzz_evaluation) {
@@ -954,37 +976,37 @@ static void nn_show_weights(void) {
     }
     print(1, "\n");
 
-    print(1, "hidden_1 weights:\n");
+    print(1, "hidden_1 weights (phase 0):\n");
     for (int i = 0; i < 8; i++) {
-        print(1, "%d, ", hidden_layer_1_weights_q[0][i]);
+        print(1, "%d, ", hidden_layer_1_weights_q[0][0][i]);
     }
     print(1, "\n");
 
-    print(1, "hidden_1 bias:\n");
+    print(1, "hidden_1 bias (phase 0):\n");
     for (int i = 0; i < 8; i++) {
-        print(1, "%d, ", hidden_layer_1_bias_q[i]);
+        print(1, "%d, ", hidden_layer_1_bias_q[0][i]);
     }
     print(1, "\n");
 
-    print(1, "hidden_2 weights:\n");
+    print(1, "hidden_2 weights (phase 0):\n");
     for (int i = 0; i < 8; i++) {
-        print(1, "%d, ", hidden_layer_2_weights_q[0][i]);
+        print(1, "%d, ", hidden_layer_2_weights_q[0][0][i]);
     }
     print(1, "\n");
 
-    print(1, "hidden_2 bias:\n");
+    print(1, "hidden_2 bias (phase 0):\n");
     for (int i = 0; i < 8; i++) {
-        print(1, "%d, ", hidden_layer_2_bias_q[i]);
+        print(1, "%d, ", hidden_layer_2_bias_q[0][i]);
     }
     print(1, "\n");
 
-    print(1, "output weights:\n");
+    print(1, "output weights (phase 0):\n");
     for (int i = 0; i < 8; i++) {
-        print(1, "%d, ", output_layer_weights_q[i]);
+        print(1, "%d, ", output_layer_weights_q[0][i]);
     }
     print(1, "\n");
 
-    print(1, "output bias: %d\n", output_layer_bias_q[0]);
+    print(1, "output bias (phase 0): %d\n", output_layer_bias_q[0][0]);
 }
 #endif
 
@@ -993,6 +1015,28 @@ void nn_read_weights(void) {
 #ifdef DEBUG
     nn_show_weights();
 #endif
+}
+
+/*
+ /*
+ * Game phase of the position, determined by the total number of
+ * non-pawn pieces on both sides (0..12 for legal positions), grouped
+ * into buckets of three (MIN(count / 3, 3)):
+ *   phase 0:  0..2   pieces (deep endgame)
+ *   phase 1:  3..5   pieces (simplified midgame)
+ *   phase 2:  6..8   pieces (typical midgame)
+ *   phase 3:  9..12  pieces (start of the game)
+ *
+ * This is a shared contract with the training pipeline:
+ * amy-training-nnue must label samples with the same function.
+ */
+int nn_phase_index(const struct Position *p) {
+    int count = bitboard_count_bits(
+        p->mask[White][Knight] | p->mask[Black][Knight] |
+        p->mask[White][Bishop] | p->mask[Black][Bishop] | p->mask[White][Rook] |
+        p->mask[Black][Rook] | p->mask[White][Queen] | p->mask[Black][Queen]);
+
+    return MIN(count / 3, 3);
 }
 
 void nn_randomize_weights(void) {
@@ -1017,5 +1061,50 @@ void nn_randomize_weights(void) {
 
     for (int i = 0; i < ACCUMULATOR_SIZE; i++) {
         input_layer_bias_q[i] = (int16_t)(random_double() * 64);
+    }
+
+    /* Randomize all phase branches independently, then replicate
+     * phase 0 onto the other phases: the existing test suite expects
+     * a phase-independent evaluation, and the phase-selection tests
+     * introduce the per-phase divergence themselves. */
+    for (int phase = 0; phase < NN_PHASE_COUNT; phase++) {
+        for (int i = 0; i < HIDDEN_1_SIZE; i++) {
+            for (int j = 0; j < 2 * ACCUMULATOR_SIZE; j++) {
+                hidden_layer_1_weights_q[phase][i][j] =
+                    (int16_t)(random_double() * 64);
+            }
+
+            hidden_layer_1_bias_q[phase][i] = (int32_t)(random_double() * 64);
+        }
+
+        for (int i = 0; i < HIDDEN_2_SIZE; i++) {
+            for (int j = 0; j < HIDDEN_1_SIZE; j++) {
+                hidden_layer_2_weights_q[phase][i][j] =
+                    (int16_t)(random_double() * 64);
+            }
+
+            hidden_layer_2_bias_q[phase][i] = (int32_t)(random_double() * 64);
+        }
+
+        for (int i = 0; i < HIDDEN_2_SIZE; i++) {
+            output_layer_weights_q[phase][i] = (int32_t)(random_double() * 64);
+        }
+
+        output_layer_bias_q[phase][0] = (int32_t)(random_double() * 64);
+    }
+
+    for (int phase = 1; phase < NN_PHASE_COUNT; phase++) {
+        memcpy(hidden_layer_1_weights_q[phase], hidden_layer_1_weights_q[0],
+               sizeof(hidden_layer_1_weights_q[0]));
+        memcpy(hidden_layer_1_bias_q[phase], hidden_layer_1_bias_q[0],
+               sizeof(hidden_layer_1_bias_q[0]));
+        memcpy(hidden_layer_2_weights_q[phase], hidden_layer_2_weights_q[0],
+               sizeof(hidden_layer_2_weights_q[0]));
+        memcpy(hidden_layer_2_bias_q[phase], hidden_layer_2_bias_q[0],
+               sizeof(hidden_layer_2_bias_q[0]));
+        memcpy(output_layer_weights_q[phase], output_layer_weights_q[0],
+               sizeof(output_layer_weights_q[0]));
+        memcpy(output_layer_bias_q[phase], output_layer_bias_q[0],
+               sizeof(output_layer_bias_q[0]));
     }
 }

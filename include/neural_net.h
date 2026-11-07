@@ -51,6 +51,12 @@ void nn_eval_init(void);
 #define HIDDEN_1_SIZE 32
 #define HIDDEN_2_SIZE 32
 
+/* Number of game phase branches: each phase has its own hidden-1,
+ * hidden-2 and output layers; the input side is shared. The phase is
+ * selected by the total non-pawn piece count (both sides) via
+ * nn_phase_index(). */
+#define NN_PHASE_COUNT 4
+
 /* Piece feature index range: 11 planes (0..4 own P..Q, 5..9 opponent
  * P..Q, 10 opponent king) x 32 king positions x 64 squares. */
 #define N_FEATURES (32 * 64 * 11)
@@ -82,6 +88,25 @@ int nn_compute_pawn_indices(const struct Position *p, int side, int *out,
                             int cap);
 
 void nn_read_weights(void);
+
+/* Game phase of the position (0..NN_PHASE_COUNT-1), determined by the
+ * total number of non-pawn pieces on both sides. This is a shared
+ * contract with the training pipeline (amy-training-nnue): samples must
+ * be labeled with the same value. */
+int nn_phase_index(const struct Position *p);
+
+/*
+ * Raw network score: attack-map refresh, phase-branch selection and
+ * the quantized pipeline. Pure function of the position and the
+ * weights (no score hash table, no fuzz, no MaxPos). Exposed so
+ * tests exercise the pipeline without the caching wrapper.
+ */
+int nn_compute_score(struct Position *p);
+
+/*
+ * Evaluate the position with score caching, fuzz and MaxPos
+ * adjustment. Returns the evaluation in 1/1000th of a pawn.
+ */
 int nn_evaluate_position(struct Position *);
 void nn_init_accumulator(struct Position *);
 void nn_update_weights_for_piece(struct Position *p, int tp, int sq, bool turn,

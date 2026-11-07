@@ -20,12 +20,14 @@
 #include "utils.h"
 
 extern int8_t input_layer_weights_q[];
-extern int16_t hidden_layer_1_weights_q[HIDDEN_1_SIZE][2 * ACCUMULATOR_SIZE];
-extern int32_t hidden_layer_1_bias_q[HIDDEN_1_SIZE];
-extern int16_t hidden_layer_2_weights_q[HIDDEN_2_SIZE][HIDDEN_1_SIZE];
-extern int32_t hidden_layer_2_bias_q[HIDDEN_2_SIZE];
-extern int32_t output_layer_weights_q[HIDDEN_2_SIZE];
-extern int32_t output_layer_bias_q[1];
+extern int16_t hidden_layer_1_weights_q[NN_PHASE_COUNT][HIDDEN_1_SIZE]
+                                       [2 * ACCUMULATOR_SIZE];
+extern int32_t hidden_layer_1_bias_q[NN_PHASE_COUNT][HIDDEN_1_SIZE];
+extern int16_t hidden_layer_2_weights_q[NN_PHASE_COUNT][HIDDEN_2_SIZE]
+                                       [HIDDEN_1_SIZE];
+extern int32_t hidden_layer_2_bias_q[NN_PHASE_COUNT][HIDDEN_2_SIZE];
+extern int32_t output_layer_weights_q[NN_PHASE_COUNT][HIDDEN_2_SIZE];
+extern int32_t output_layer_bias_q[NN_PHASE_COUNT][1];
 
 #define SCALE 8192
 #define SCALE_HALF 4095
@@ -40,9 +42,10 @@ extern int32_t output_layer_bias_q[1];
 /* A copy of the integer pipeline of nn_evaluate_position() that
  * prints the intermediate values. */
 static int instrumented_eval(struct Position *p) {
+    int phase = nn_phase_index(p);
     int32_t h1q[HIDDEN_1_SIZE];
     for (int i = 0; i < HIDDEN_1_SIZE; i++) {
-        h1q[i] = hidden_layer_1_bias_q[i];
+        h1q[i] = hidden_layer_1_bias_q[phase][i];
     }
     int16_t acc[2 * ACCUMULATOR_SIZE];
     if (p->turn == White) {
@@ -62,7 +65,7 @@ static int instrumented_eval(struct Position *p) {
     }
     for (int i = 0; i < HIDDEN_1_SIZE; i++) {
         for (int j = 0; j < 2 * ACCUMULATOR_SIZE; j++) {
-            h1q[i] += acc[j] * hidden_layer_1_weights_q[i][j];
+            h1q[i] += acc[j] * hidden_layer_1_weights_q[phase][i][j];
         }
         printf("I H1Q %d %d\n", i, (int)h1q[i]);
     }
@@ -77,10 +80,10 @@ static int instrumented_eval(struct Position *p) {
         printf("I H1 %d %d\n", i, (int)h1[i]);
     }
     int32_t h2q[HIDDEN_2_SIZE];
-    memcpy(h2q, hidden_layer_2_bias_q, HIDDEN_2_SIZE * sizeof(int32_t));
+    memcpy(h2q, hidden_layer_2_bias_q[phase], HIDDEN_2_SIZE * sizeof(int32_t));
     for (int i = 0; i < HIDDEN_2_SIZE; i++) {
         for (int j = 0; j < HIDDEN_1_SIZE; j++) {
-            h2q[i] += h1[j] * hidden_layer_2_weights_q[i][j];
+            h2q[i] += h1[j] * hidden_layer_2_weights_q[phase][i][j];
         }
         printf("I H2Q %d %d\n", i, (int)h2q[i]);
     }
@@ -94,9 +97,9 @@ static int instrumented_eval(struct Position *p) {
             h2[i] = (h2q[i] + SCALE_INPUT_HALF) / SCALE_INPUT;
         printf("I H2 %d %d\n", i, (int)h2[i]);
     }
-    int32_t out_q = output_layer_bias_q[0];
+    int32_t out_q = output_layer_bias_q[phase][0];
     for (int j = 0; j < HIDDEN_2_SIZE; j++) {
-        out_q += h2[j] * output_layer_weights_q[j];
+        out_q += h2[j] * output_layer_weights_q[phase][j];
     }
     printf("I OUTQ %d\n", (int)out_q);
     int score = ((out_q + SCALE_HALF) / SCALE) * SCALE_OUTPUT;
@@ -136,6 +139,7 @@ int main(void) {
         nn_init_accumulator(p);
         nn_validate_weights(p);
         printf("POS %d turn %d\n", i, p->turn);
+        printf("PHASE %d\n", nn_phase_index(p));
         for (int k = 0; k < ACCUMULATOR_SIZE; k++) {
             printf("%d", p->accumulator_w_q[k]);
             if (k < ACCUMULATOR_SIZE - 1)

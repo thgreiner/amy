@@ -4,6 +4,7 @@
 #include "inline.h"
 #include "neural_net.h"
 #include <assert.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -15,6 +16,10 @@
  * this file are not vacuous.
  */
 extern int8_t input_attack_weights_q[N_ATTACK_FEATURES][ACCUMULATOR_SIZE];
+extern int32_t output_layer_bias_q[NN_PHASE_COUNT][1];
+
+/* Must mirror neural_net.c: fixed-point scale of the output layer. */
+#define NN_TEST_SCALE 8192
 
 /*
  * Guard against a vacuous test suite: nn_randomize_weights() must have
@@ -596,6 +601,109 @@ static void test_random_moves(void) {
     stress_position("3r1k2/p3qppP/8/3p4/3r4/5QP1/P4PB1/4R1K1 w - -", 1000);
 }
 
+/*
+ * Game phases: total number of non-pawn pieces (both sides), grouped
+ * into buckets of three, mirroring nn_phase_index():
+ *   0..2   -> phase 0
+ *   3..5   -> phase 1
+ *   6..8   -> phase 2
+ *   9..12  -> phase 3
+ */
+static const char *epd_with_n_nonpawn(int n) {
+    int w = (n > 8) ? 8 : n;
+    int b = n - w;
+    static char epd[128];
+    char rank7[10] = {0};
+    char rank2[10] = {0};
+
+    for (int i = 0; i < b; i++) {
+        rank7[i] = 'r';
+    }
+
+    for (int i = 0; i < w; i++) {
+        rank2[i] = 'R';
+    }
+
+    /* Kings on a1/h8, rooks a7.. and a2.. (no checks, legal positions). */
+    snprintf(epd, sizeof(epd), "4k3/%s%d/8/8/8/8/%s%d/K7 b - -", rank7, 8 - b,
+             rank2, 8 - w);
+    return epd;
+}
+
+static void test_phase_index(void) {
+    static const int counts[] = {0, 3, 4, 6, 7, 9, 10, 12};
+    static const int expected[] = {0, 1, 1, 2, 2, 3, 3, 3};
+
+    for (int i = 0; i < 8; i++) {
+        struct Position *p = dbase_create_position_from_epd(
+            (char *)epd_with_n_nonpawn(counts[i]));
+
+        assert(nn_phase_index(p) == expected[i]);
+        dbase_free_position(p);
+    }
+}
+
+/*
+ * The hard switch must select exactly one phase's hidden/output block:
+ * perturbing one phase's output bias changes the score of positions
+ * in that phase only, while positions in other phases must score
+ * identically. A delta of 100 * SCALE on the output bias adds 100
+ * output units (120+ final cp), which is far beyond the rounding
+ * tolerance of the final two divisions.
+ * The randomized weights replicate phase 0 onto the other phases,
+ * but the phase index is still the discriminating selection step: p0
+ * evaluates via phase 0, p3 via phase 3, and an untouched phase (1)
+ * must have no effect at all.
+ */
+static void test_phase_selection(void) {
+    int delta = 100 * NN_TEST_SCALE;
+
+    /* Phase 0: kings only. */
+    struct Position *p0 =
+        dbase_create_position_from_epd("4k3/8/8/8/8/8/8/K7 b - -");
+    assert(nn_phase_index(p0) == 0);
+
+    /* Phase 3: 12 non-pawn pieces. */
+    struct Position *p3 = dbase_initial_position();
+    assert(nn_phase_index(p3) == 3);
+
+    nn_init_accumulator(p0);
+    nn_update_attack_maps(p0);
+    nn_validate_weights(p0);
+
+    nn_init_accumulator(p3);
+    nn_update_attack_maps(p3);
+    nn_validate_weights(p3);
+
+    /*
+     * The pure pipeline (no score hash table) is exercised directly,
+     * so stale cached scores cannot mask a wrong phase selection.
+     */
+    int base0 = nn_compute_score(p0);
+    int base3 = nn_compute_score(p3);
+
+    /* Phase 3 is perturbed: p3 (phase 3) changes, p0 (phase 0) does not. */
+    output_layer_bias_q[3][0] += delta;
+    assert(nn_compute_score(p3) > base3);
+    assert(nn_compute_score(p0) == base0);
+    output_layer_bias_q[3][0] -= delta;
+
+    /* Phase 0 is perturbed: p0 changes, p3 does not. */
+    output_layer_bias_q[0][0] += delta;
+    assert(nn_compute_score(p0) > base0);
+    assert(nn_compute_score(p3) == base3);
+    output_layer_bias_q[0][0] -= delta;
+
+    /* An untouched phase (1) must have no effect on either side. */
+    output_layer_bias_q[1][0] += delta;
+    assert(nn_compute_score(p0) == base0);
+    assert(nn_compute_score(p3) == base3);
+    output_layer_bias_q[1][0] -= delta;
+
+    dbase_free_position(p0);
+    dbase_free_position(p3);
+}
+
 void test_all_neural_net(void) {
     nn_randomize_weights();
 
@@ -612,6 +720,9 @@ void test_all_neural_net(void) {
     test_attack_update_king_mirror();
     test_attack_update_idempotent();
     test_evaluate_updates_attack_maps();
+
+    test_phase_index();
+    test_phase_selection();
 
     test_random_moves();
 }

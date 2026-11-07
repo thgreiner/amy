@@ -4,6 +4,9 @@
 
 * Use R/W-locks instead of mutexes for hashtables
 * All configuration parameters can be read from/written to file
+* Neural network now uses 4 per-phase hidden/output branches (selected by
+  total piece count of knights, bishops, rooks, and queens of both sides);
+  new `network.quant` format, retrained network required
 
 
 ## [0.9.7] 2025-01-08
