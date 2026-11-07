@@ -10,8 +10,6 @@ AM_INIT_AUTOMAKE([foreign])
 
 m4_include([m4/ax_gcc_builtin.m4])
 
-AC_ARG_WITH(dbpath,
-  [  --with-dbpath           specify path to rocksdb libraries])
 AC_ARG_ENABLE(mt,
   [  --enable-mt             enable multithreaded search])
 AC_CONFIG_HEADERS([config.h])
