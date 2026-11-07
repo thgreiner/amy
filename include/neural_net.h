@@ -34,6 +34,18 @@
 
 #include "dbase.h"
 #include "intset_sorted.h"
+#include <stdbool.h>
+
+/* If true, random noise is added to the evaluation score. */
+extern bool fuzz_evaluation;
+
+/* Maximum offset between material balance (eval_material_balance) and
+ * the evaluation. Forms a cheap, optimistic score estimate
+ * (material + MaxPos) to skip the expensive full evaluation.
+ * Reset to nn_eval_init's initial value before every search. */
+extern int MaxPos;
+int eval_material_balance(const struct Position *);
+void nn_eval_init(void);
 
 /* Architecture of the quantized network (network.quant layout). */
 #define HIDDEN_1_SIZE 32

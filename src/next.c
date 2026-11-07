@@ -35,10 +35,10 @@
 
 #include "next.h"
 #include "dbase.h"
-#include "evaluation.h"
 #include "heap.h"
 #include "init.h"
 #include "inline.h"
+#include "neural_net.h"
 #include "safe_malloc.h"
 #include "search.h"
 #include "swap.h"

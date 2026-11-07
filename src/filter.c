@@ -30,8 +30,8 @@
 */
 
 #include "dbase.h"
-#include "evaluation.h"
 #include "inline.h"
+#include "neural_net.h"
 #include "pgn_read.h"
 #include "pgn_write.h"
 #include "search.h"
@@ -119,7 +119,7 @@ void filter_quiescent_positions(char *file_name) {
             last_position_was_quiet = true;
 
             if (!dbase_game_end(p)) {
-                const int static_evaluation = eval_position(p);
+                const int static_evaluation = nn_evaluate_position(p);
                 const int dynamic_evaluation = search_quiescence(p);
 
                 const int diff = ABS(static_evaluation - dynamic_evaluation);

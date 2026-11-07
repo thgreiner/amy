@@ -55,17 +55,6 @@ A typical resource file might look like this:
 | ht | Determines the size of the hashtable. Use the suffixes `k` to specify the size in kilobytes or `m` to specify the size in megabytes. |
 | tbpath | Specifies the path were the endgame tablebases are located. |
 
-## Evaluation and search configuration
-
-The parameters used for positional evaluation and for the search can be
-saved to and loaded from a configuration file in YAML format. There are three
-functionalities that support working with evaluation configuration files:
-
-1. the configuration file can be specified by supplying the `-conf _file_` option when invoking Amy
-2. the configuration file can be loaded from the command line using `conf _file_`
-3. the current configuration can be saved to file from the command line using `conf-save _file_`
-
-
 # Using the command line interface
 
 ## Introduction

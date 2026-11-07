@@ -37,8 +37,6 @@
 
 #include "bookup.h"
 #include "bpd.h"
-#include "evaluation.h"
-#include "evaluation_config.h"
 #include "hashtable.h"
 #include "init.h"
 #include "learn.h"
@@ -58,7 +56,6 @@
 #include "test_nn_extract.h"
 #include "test_pgn_write.h"
 #include "test_utils.h"
-#include "test_yaml.h"
 #include "utils.h"
 
 static char CopyrightNotice[] =
@@ -71,12 +68,9 @@ static char CopyrightNotice[] =
 
 static char EGTBPath[1024] = "TB";
 
-static char *ConfigFileName = NULL;
-
 static void main_run_tests(void) {
     test_all_attack_map();
     test_all_blunder();
-    test_all_yaml();
     test_all_dbase();
     test_all_intset_sorted();
     test_all_bpd();
@@ -95,13 +89,6 @@ static void main_process_options(int argc, char *argv[]) {
             i++;
             if (i < argc) {
                 ht_guess_sizes(argv[i]);
-            }
-        }
-
-        if (!strcmp(argv[i], "-conf")) {
-            i++;
-            if (i < argc) {
-                ConfigFileName = argv[i];
             }
         }
 
@@ -213,10 +200,6 @@ int main(int argc, char *argv[]) {
     nn_read_weights();
 
     main_show_version();
-
-    if (ConfigFileName) {
-        eval_config_load(ConfigFileName);
-    }
 
     ht_allocate();
     probe_init(EGTBPath);

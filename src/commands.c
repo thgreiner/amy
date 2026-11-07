@@ -43,8 +43,6 @@
 #include "commands.h"
 #include "dbase.h"
 #include "eco.h"
-#include "evaluation.h"
-#include "evaluation_config.h"
 #include "filter.h"
 #include "heap.h"
 #include "inline.h"
@@ -94,8 +92,6 @@ static void cmd_analyze(char *);
 static void cmd_stop_analyze(char *);
 static void cmd_selfplay(char *);
 static void cmd_test_next(char *);
-static void cmd_conf(char *);
-static void cmd_save_conf(char *);
 static void cmd_show_score(char *);
 static void cmd_test_score(char *);
 static void cmd_set_search_depth(char *);
@@ -110,8 +106,6 @@ static struct CommandEntry Commands[] = {
     {"bk", &cmd_book, false, false, "display book moves (xboard)", NULL},
     {"bookup", &book_up, false, false, "create a book", NULL},
     {"bpd-test", &cmd_bpd_test, false, false, "write bpd test data", NULL},
-    {"conf", &cmd_conf, false, false, "load scoring config", NULL},
-    {"conf-save", &cmd_save_conf, false, false, "save scoring config", NULL},
     {"d", &cmd_show, true, false, "display current position", NULL},
     {"depth", &cmd_set_search_depth, false, false, "set maximum search depth",
      NULL},
@@ -351,8 +345,7 @@ static void cmd_test_score(char *fname) {
         if (fgets(line, 256, fin) == NULL)
             break;
         p = dbase_create_position_from_epd(line);
-        eval_init(p);
-        int score = eval_position(p);
+        int score = nn_evaluate_position(p);
 
         if (fout) {
             size_t l = strlen(line);
@@ -844,28 +837,8 @@ static void cmd_test_next(char *args) {
     next_test_generators(CurrentPosition);
 }
 
-static void cmd_conf(char *args) {
-    if (args == NULL) {
-        print(0, "Usage: conf <filename>\n");
-        return;
-    }
-
-    eval_config_load(args);
-    dbase_recalc_attacks(CurrentPosition);
-}
-
-static void cmd_save_conf(char *args) {
-    if (args == NULL) {
-        print(0, "Usage: save-conf <filename>\n");
-        return;
-    }
-
-    eval_config_save(args);
-}
-
 static void cmd_show_score(char *args) {
     (void)args;
-    eval_init(CurrentPosition);
     int score = nn_evaluate_position(CurrentPosition);
     print(0, "Static evaluation: %d\n", score);
 }

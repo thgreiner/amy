@@ -3,15 +3,15 @@ noinst_PROGRAMS = nn_crosscheck
 
 amy_core_sources = attack_map.c \
                    bitboard.c blunder.c bpd.c bookup.c commands.c dbase.c eco.c \
-                   evaluation.c evaluation_config.c filter.c hashtable.c heap.c \
+                   filter.c hashtable.c heap.c \
                    intset_sorted.c init.c learn.c magic.c mates.c movedata.c mytb.cpp \
                    neural_net.c next.c nn_extract.c pgn_read.c pgn_write.c probe.c \
                    random.c recog.c search.c search_io.c state_machine.c swap.c \
-                   time_ctl.c tree.c utils.c yaml.c
+                   time_ctl.c tree.c utils.c
 
 amy_test_sources = test_attack_map.c test_blunder.c test_bpd.c \
                    test_dbase.c test_intset_sorted.c test_neural_net.c \
-                   test_nn_extract.c test_pgn_write.c test_utils.c test_yaml.c
+                   test_nn_extract.c test_pgn_write.c test_utils.c
 
 Amy_SOURCES = $(amy_core_sources) $(amy_test_sources) main.c
 nn_crosscheck_SOURCES = $(amy_core_sources) $(amy_test_sources) nn_crosscheck.c
@@ -23,14 +23,14 @@ endif
 
 Amy_DEPENDENCIES = attack_map.o \
                    bitboard.o blunder.o bpd.o bookup.o commands.o dbase.o eco.o \
-                   evaluation.o evaluation_config.o filter.c hashtable.o \
+                   filter.o hashtable.o \
                    heap.o init.o learn.o magic.o main.o mates.o movedata.o \
                    mytb.o neural_net.o next.o nn_extract.o pgn_read.o pgn_write.o probe.o \
                    random.o recog.o search.o search_io.o state_machine.o swap.o \
                    test_attack_map.o test_blunder.o test_bpd.o test_dbase.o \
                    test_intset_sorted.o test_neural_net.o test_nn_extract.o \
-                   test_pgn_write.o test_utils.o test_yaml.o time_ctl.o \
-                   tree.o utils.o yaml.o
+                   test_pgn_write.o test_utils.o time_ctl.o \
+                   tree.o utils.o
 
 # ctypes feature-extraction library for the Python training pipeline
 # (see nn_extract.c; PLAN-attack-map-features.md, T2).  Links the

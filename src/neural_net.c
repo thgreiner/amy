@@ -34,7 +34,6 @@
 #include "attack_map.h"
 #include "bitboard.h"
 #include "dbase.h"
-#include "evaluation.h"
 #include "hashtable.h"
 #include "inline.h"
 #include "intset_sorted.h"
@@ -48,6 +47,30 @@
 
 // #define STATISTICS_Q 1
 // #define DEBUG 1
+
+bool fuzz_evaluation = false;
+
+/* MaxPos is the maximum difference between the material balance and
+ * the evaluation. It is used to form a cheap optimistic score estimate
+ * (material + MaxPos) which can replace the expensive full evaluation.
+ * The initial value (two pawns in millipawns) is re-set before every
+ * search by nn_eval_init(). */
+static const int MaxPosInit = 2000;
+int MaxPos = MaxPosInit;
+
+/**
+ * Do the pre-search initialization of evaluation.
+ */
+void nn_eval_init(void) {
+    MaxPos = MaxPosInit;
+}
+
+/**
+ * Evaluate the material balance (from white's perspective).
+ */
+int eval_material_balance(const struct Position *p) {
+    return p->material[White] - p->material[Black];
+}
 
 /*
  * Indexing schema for features:
@@ -825,6 +848,11 @@ int nn_evaluate_position(struct Position *p) {
         score += random_fuzz();
     }
 
+    /*
+     * Adjust MaxPos if necessary. If the current difference between the
+     * material balance and the evaluation is greater than MaxPos, adopt
+     * it as the new maximum.
+     */
     int material_balance =
         (p->turn == 0) ? eval_material_balance(p) : -eval_material_balance(p);
     int pos_score = abs(material_balance - score);
@@ -968,6 +996,7 @@ void nn_read_weights(void) {
 }
 
 void nn_randomize_weights(void) {
+
     for (int i = 0; i < N_FEATURES; i++) {
         for (int j = 0; j < ACCUMULATOR_SIZE; j++) {
             input_layer_weights_q[i][j] = (int8_t)(random_double() * 64);

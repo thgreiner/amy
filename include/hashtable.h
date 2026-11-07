@@ -34,7 +34,6 @@
 
 #include "config.h"
 #include "dbase.h"
-#include "evaluation.h"
 #include "types.h"
 #include <stdbool.h>
 #include <stdint.h>

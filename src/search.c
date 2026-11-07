@@ -39,7 +39,6 @@
 #include "commands.h"
 #include "config.h"
 #include "dbase.h"
-#include "evaluation.h"
 #include "hashtable.h"
 #include "heap.h"
 #include "init.h"
@@ -527,7 +526,7 @@ static int search_quies(struct SearchData *sd, int alpha, int beta, int depth) {
      * Probe recognizers. If the probe is successful, use the
      * recognizer score as evaluation score.
      *
-     * Otherwise, use eval_position()
+     * Otherwise, use nn_evaluate_position()
      */
 
     switch (recog_probe(p, &tmp)) {
@@ -547,7 +546,6 @@ static int search_quies(struct SearchData *sd, int alpha, int beta, int depth) {
         }
         break;
     default:
-        // best = eval_position(p);
         best = nn_evaluate_position(p);
         break;
     }
@@ -1668,7 +1666,7 @@ final:
         ht_show_statistics();
 
         if (EvalLog || SelfPlayMode) {
-            int static_evaluation = eval_position(p);
+            int static_evaluation = nn_evaluate_position(p);
             int eval_diff = ABS(sd->best_score - static_evaluation);
 
             if (eval_diff < bpd_log_eval_diff_threshold) {
@@ -1804,7 +1802,7 @@ int search_iterate(struct Position *p, int *score_ptr, move_t alternate_move,
     SoftLimit2 = StartTime + (int)(85 * soft);
     HardLimit = StartTime + (int)(hard * ONE_SECOND);
 
-    eval_init(p);
+    nn_eval_init();
     ht_age();
     searchio_header();
 
@@ -1888,7 +1886,7 @@ void search_root(struct Position *p) {
 int search_quiescence(struct Position *p) {
     struct SearchData *sd;
 
-    eval_init(p);
+    nn_eval_init();
     MaxDepth = MAX_TREE_SIZE - 1;
 
     sd = next_create_data(p);
