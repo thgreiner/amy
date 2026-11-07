@@ -63,12 +63,6 @@ struct HTEntry {
     short ht_Depth;
 };
 
-struct PTEntry {
-    hash_t pt_Key;
-    int pt_Score;
-    struct PawnFacts pt_PawnFacts;
-};
-
 struct STEntry {
     hash_t st_Key;
     int st_Score;
@@ -79,12 +73,11 @@ extern hash_t HashKeysEP[64];
 extern hash_t HashKeysCastle[16];
 extern hash_t STMKey;
 
-extern OPTIONAL_ATOMIC unsigned long PHit, PTry, SHit, STry, HHit, HTry;
+extern OPTIONAL_ATOMIC unsigned long SHit, STry, HHit, HTry;
 extern int L_HT_Bits, L_HT_Size, L_HT_Mask;
 
 void ht_clear(void);
 void ht_age(void);
-void ht_clear_pawn(void);
 void ht_allocate(void);
 #if MP
 LookupResult ht_probe(hash_t, int *, int, move_t *, bool *, int, int,
@@ -94,8 +87,6 @@ void ht_store(hash_t, int, int, int, int, int, int, int, struct HTEntry *);
 LookupResult ht_probe(hash_t, int *, int, move_t *, bool *, int);
 void ht_store(hash_t, int, int, int, int, int, int, int);
 #endif
-LookupResult ht_probe_pawn(hash_t, int *, struct PawnFacts *);
-void ht_store_pawn(hash_t, int, struct PawnFacts *);
 LookupResult ht_probe_score(hash_t, int *);
 void ht_store_score(hash_t, int);
 void ht_show_statistics(void);

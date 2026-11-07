@@ -33,6 +33,7 @@
 #define EVALUATION_H
 
 #include "bitboard.h"
+#include "dbase.h"
 #include "types.h"
 #include <stdbool.h>
 
@@ -124,7 +125,7 @@ extern int MaxPos;
 extern bool fuzz_evaluation;
 
 int eval_position(const struct Position *);
-void eval_init(const struct Position *);
+void eval_init(struct Position *);
 int eval_material_balance(const struct Position *);
 
 #endif /* EVALUATION_H */

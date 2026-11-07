@@ -38,6 +38,7 @@
 #include "hashtable.h"
 #include "init.h"
 #include "inline.h"
+#include "neural_net.h"
 #include "random.h"
 #include "recog.h"
 #include <stdint.h>
@@ -312,19 +313,6 @@ static const int MaxPosInit = 2000;
 static int RootGamePhase;
 
 /**
- * Masks used in eval_pawns.
- */
-
-static const BitBoard FianchettoMaskWhiteKingSide =
-    bitboard_set_mask(f2) | bitboard_set_mask(g3) | bitboard_set_mask(h2);
-static const BitBoard FianchettoMaskBlackKingSide =
-    bitboard_set_mask(f7) | bitboard_set_mask(g6) | bitboard_set_mask(h7);
-static const BitBoard FianchettoMaskWhiteQueenSide =
-    bitboard_set_mask(c2) | bitboard_set_mask(b3) | bitboard_set_mask(a2);
-static const BitBoard FianchettoMaskBlackQueenSide =
-    bitboard_set_mask(c7) | bitboard_set_mask(b6) | bitboard_set_mask(a7);
-
-/**
  * Masks used in eval_development.
  */
 static const BitBoard WKingOpeningMask =
@@ -353,365 +341,6 @@ static void create_mirrored_piece_square_table(int16_t *, int16_t *);
 static bool is_edge(unsigned int);
 
 bool fuzz_evaluation = false;
-
-/**
- * Evaluate the pawn structure.
- *
- * This includes all scoring terms which are independent of piece placement
- * (i.e. only depend on pawn placement).
- *
- * Findings about pawnstructure (e.g. fianchetto pattern or king protection)
- * are stored in pawnFacts.
- *
- */
-
-static int eval_pawns(const struct Position *p, struct PawnFacts *pawnFacts) {
-    BitBoard pcs = 0;
-    int score = 0;
-    int file = 0;
-    int tmp_w, tmp_b;
-
-    int kside_open_files = 0;
-    int qside_open_files = 0;
-    int kside_hopen_files_w = 0;
-    int kside_hopen_files_b = 0;
-    int qside_hopen_files_w = 0;
-    int qside_hopen_files_b = 0;
-
-    int kside_pawns_w = 0;
-    int qside_pawns_w = 0;
-    int kside_pawns_b = 0;
-    int qside_pawns_b = 0;
-
-    pawnFacts->pf_WhitePassers = 0;
-
-    pcs = p->mask[White][Pawn];
-    while (pcs) {
-        int sq = bitboard_find_set_bit(pcs);
-        pcs &= pcs - 1;
-
-        score += WPawnPos[sq];
-
-        /*
-         * check if passed
-         */
-
-        if (!(p->mask[Black][Pawn] & PassedMaskW[sq])) {
-            bitboard_set_bit(pawnFacts->pf_WhitePassers, sq);
-        }
-
-        /*
-         * check if doubled
-         */
-
-        if (p->mask[White][Pawn] & ForwardRayW[sq])
-            score += DoubledPawn;
-
-        /*
-         * check if isolated or backward
-         */
-
-        if (!(p->mask[White][Pawn] & IsoMask[sq & 7])) {
-            score += IsolatedPawn[sq & 7];
-#ifdef DEBUG
-            if (DebugWhat & DebugPawnStructure)
-                print(2, "isolated pawn on %c%c\n", SQUARE(sq));
-#endif
-        } else if (!(p->mask[White][Pawn] & WPawnBackwardMask[sq]) &&
-                   (p->atkFr[sq + 8] & p->mask[Black][Pawn])) {
-            if (p->mask[Black][Pawn] & ForwardRayW[sq]) {
-                score += HiddenBackwardPawn;
-#ifdef DEBUG
-                if (DebugWhat & DebugPawnStructure)
-                    print(2, "hidden backward pawn on %c%c\n", SQUARE(sq));
-#endif
-            } else {
-#ifdef DEBUG
-                if (DebugWhat & DebugPawnStructure)
-                    print(2, "backward pawn on %c%c\n", SQUARE(sq));
-#endif
-                score += BackwardPawn;
-            }
-        }
-
-        if ((sq & 7) < 7 && bitboard_tst_bit(p->mask[White][Pawn], sq + 1)) {
-            score += PawnDuo;
-        }
-    }
-
-    pawnFacts->pf_BlackPassers = 0;
-    pcs = p->mask[Black][Pawn];
-
-    while (pcs) {
-        int sq = bitboard_find_set_bit(pcs);
-
-        pcs &= pcs - 1;
-        score -= BPawnPos[sq];
-
-        /*
-         * check if passed
-         */
-
-        if (!(p->mask[White][Pawn] & PassedMaskB[sq])) {
-            bitboard_set_bit(pawnFacts->pf_BlackPassers, sq);
-        }
-
-        /*
-         * check if doubled
-         */
-
-        if (p->mask[Black][Pawn] & ForwardRayB[sq])
-            score -= DoubledPawn;
-
-        /*
-         * check if isolated or backward
-         */
-
-        if (!(p->mask[Black][Pawn] & IsoMask[sq & 7])) {
-            score -= IsolatedPawn[sq & 7];
-#ifdef DEBUG
-            if (DebugWhat & DebugPawnStructure)
-                print(2, "isolated pawn on %c%c\n", SQUARE(sq));
-#endif
-        } else if (!(p->mask[Black][Pawn] & BPawnBackwardMask[sq]) &&
-                   (p->atkFr[sq - 8] & p->mask[White][Pawn])) {
-            if (p->mask[White][Pawn] & ForwardRayB[sq]) {
-                score -= HiddenBackwardPawn;
-#ifdef DEBUG
-                if (DebugWhat & DebugPawnStructure)
-                    print(2, "hidden backward pawn on %c%c\n", SQUARE(sq));
-#endif
-            } else {
-                score -= BackwardPawn;
-#ifdef DEBUG
-                if (DebugWhat & DebugPawnStructure)
-                    print(2, "backward pawn on %c%c\n", SQUARE(sq));
-#endif
-            }
-        }
-
-        if ((sq & 7) < 7 && bitboard_tst_bit(p->mask[Black][Pawn], sq + 1)) {
-            score -= PawnDuo;
-        }
-    }
-
-    /*
-     * Check for pawn majorities. We only count 'real' majorities, i.e.
-     * without doubled pawns.
-     */
-
-    tmp_w = bitboard_count_bits(p->mask[White][Pawn] & KingSideMask);
-    tmp_b = bitboard_count_bits(p->mask[Black][Pawn] & KingSideMask);
-
-    if (tmp_w != tmp_b) {
-        tmp_w = tmp_b = 0;
-        for (file = 0; file < 4; file++) {
-            if (p->mask[White][Pawn] & FileMask[file])
-                tmp_w++;
-            if (p->mask[Black][Pawn] & FileMask[file])
-                tmp_b++;
-        }
-
-        if (tmp_w > tmp_b) {
-            score += PawnMajority;
-        } else if (tmp_b > tmp_w) {
-            score -= PawnMajority;
-        }
-    }
-
-    tmp_w = bitboard_count_bits(p->mask[White][Pawn] & QueenSideMask);
-    tmp_b = bitboard_count_bits(p->mask[Black][Pawn] & QueenSideMask);
-
-    if (tmp_w != tmp_b) {
-        tmp_w = tmp_b = 0;
-        for (file = 4; file < 8; file++) {
-            if (p->mask[White][Pawn] & FileMask[file])
-                tmp_w++;
-            if (p->mask[Black][Pawn] & FileMask[file])
-                tmp_b++;
-        }
-
-        if (tmp_w > tmp_b) {
-            score += PawnMajority;
-        } else if (tmp_b > tmp_w) {
-            score -= PawnMajority;
-        }
-    }
-
-    for (file = 0; file < 3; file++) {
-        int open_w = !(p->mask[White][Pawn] & FileMask[file]);
-        int open_b = !(p->mask[Black][Pawn] & FileMask[file]);
-
-        /*
-         * Check the queen side
-         */
-
-        if (open_w && open_b) {
-            qside_open_files++;
-        } else {
-            if (open_w) {
-                qside_hopen_files_w++;
-            } else {
-                if (!bitboard_tst_bit(p->mask[White][Pawn], a2 + file)) {
-                    qside_pawns_w++;
-                    if (!bitboard_tst_bit(p->mask[White][Pawn], a3 + file)) {
-                        qside_pawns_w++;
-                    }
-                }
-            }
-            if (open_b) {
-                qside_hopen_files_b++;
-            } else {
-                if (!bitboard_tst_bit(p->mask[Black][Pawn], a7 + file)) {
-                    qside_pawns_b++;
-                    if (!bitboard_tst_bit(p->mask[Black][Pawn], a6 + file)) {
-                        qside_pawns_b++;
-                    }
-                }
-            }
-        }
-
-        /*
-         * Check the king side
-         */
-
-        open_w = !(p->mask[White][Pawn] & FileMask[7 - file]);
-        open_b = !(p->mask[Black][Pawn] & FileMask[7 - file]);
-
-        if (open_w && open_b) {
-            kside_open_files++;
-        } else {
-            if (open_w) {
-                kside_hopen_files_w++;
-            } else {
-                if (!bitboard_tst_bit(p->mask[White][Pawn], h2 - file)) {
-                    kside_pawns_w++;
-                    if (!bitboard_tst_bit(p->mask[White][Pawn], h3 - file)) {
-                        kside_pawns_w++;
-                    }
-                }
-            }
-
-            if (open_b) {
-                kside_hopen_files_b++;
-            } else {
-                if (!bitboard_tst_bit(p->mask[Black][Pawn], h7 - file)) {
-                    kside_pawns_b++;
-                    if (!bitboard_tst_bit(p->mask[Black][Pawn], h6 - file)) {
-                        kside_pawns_b++;
-                    }
-                }
-            }
-        }
-    }
-
-#ifdef DEBUG
-    if (DebugWhat & DebugPawnStructure) {
-        print(0, "open : %d %d hopen k: %d %d hopen q: %d %d\n",
-              kside_open_files, qside_open_files, kside_hopen_files_w,
-              kside_hopen_files_b, qside_hopen_files_w, qside_hopen_files_b);
-        print(0, "pawns w: %d %d pawns b: %d %d\n", kside_pawns_w,
-              qside_pawns_w, kside_pawns_b, qside_pawns_b);
-    }
-#endif /* DEBUG */
-
-    pawnFacts->pf_WhiteKingSide =
-        (char)(kside_pawns_w + ScaleHalfOpenFilesMine[kside_hopen_files_w] +
-               ScaleHalfOpenFilesYours[kside_hopen_files_b] +
-               ScaleOpenFiles[kside_open_files]);
-
-    pawnFacts->pf_BlackKingSide =
-        (char)(kside_pawns_b + ScaleHalfOpenFilesMine[kside_hopen_files_b] +
-               ScaleHalfOpenFilesYours[kside_hopen_files_w] +
-               ScaleOpenFiles[kside_open_files]);
-
-    pawnFacts->pf_WhiteQueenSide =
-        (char)(qside_pawns_w + ScaleHalfOpenFilesMine[qside_hopen_files_w] +
-               ScaleHalfOpenFilesYours[qside_hopen_files_b] +
-               ScaleOpenFiles[qside_open_files]);
-
-    pawnFacts->pf_BlackQueenSide =
-        (char)(qside_pawns_b + ScaleHalfOpenFilesMine[qside_hopen_files_b] +
-               ScaleHalfOpenFilesYours[qside_hopen_files_w] +
-               ScaleOpenFiles[qside_open_files]);
-
-#ifdef DEBUG
-    if (DebugWhat & DebugPawnStructure) {
-        print(0, "king safety white: %d %d\n", pawnFacts->pf_WhiteKingSide,
-              pawnFacts->pf_WhiteQueenSide);
-
-        print(0, "king safety black: %d %d\n", pawnFacts->pf_BlackKingSide,
-              pawnFacts->pf_BlackQueenSide);
-    }
-#endif /* DEBUG */
-
-    pawnFacts->pf_Flags = 0;
-
-    pcs = p->mask[White][Pawn] | p->mask[Black][Pawn];
-
-    if (pcs & KingSideMask) {
-        pawnFacts->pf_Flags |= PawnsOnKingSide;
-    }
-
-    if (pcs & QueenSideMask) {
-        pawnFacts->pf_Flags |= PawnsOnQueenSide;
-    }
-
-    if ((p->mask[White][Pawn] & FianchettoMaskWhiteKingSide) ==
-        FianchettoMaskWhiteKingSide) {
-        pawnFacts->pf_Flags |= FianchettoWhiteKingSide;
-    }
-
-    if ((p->mask[Black][Pawn] & FianchettoMaskBlackKingSide) ==
-        FianchettoMaskBlackKingSide) {
-        pawnFacts->pf_Flags |= FianchettoBlackKingSide;
-    }
-
-    if ((p->mask[White][Pawn] & FianchettoMaskWhiteQueenSide) ==
-        FianchettoMaskWhiteQueenSide) {
-        pawnFacts->pf_Flags |= FianchettoWhiteQueenSide;
-    }
-
-    if ((p->mask[Black][Pawn] & FianchettoMaskBlackQueenSide) ==
-        FianchettoMaskBlackQueenSide) {
-        pawnFacts->pf_Flags |= FianchettoBlackQueenSide;
-    }
-
-    if (bitboard_tst_bit(p->mask[White][Pawn], d4) &&
-        bitboard_tst_bit(p->mask[Black][Pawn], d5)) {
-        pawnFacts->pf_Flags |= QueensPawnOpening;
-    }
-
-#ifdef DEBUG
-    if (DebugWhat & DebugPawnStructure) {
-        print(2, "eval_pawns returns %d\n", score);
-    }
-#endif
-
-    return score;
-}
-
-/**
- * Look up current pawn structure in pawn hashtable. If not present,
- * use eval_pawns() to score the pawn structure. Store result in the
- * pawn hashtable.
- *
- */
-
-static int eval_pawns_hashed(const struct Position *p,
-                             struct PawnFacts *pawnFacts) {
-    int score;
-
-    PTry++;
-    if (ht_probe_pawn(p->pkey, &score, pawnFacts) != Useful) {
-        score = eval_pawns(p, pawnFacts);
-        ht_store_pawn(p->pkey, score, pawnFacts);
-    } else {
-        PHit++;
-    }
-
-    return score;
-}
 
 /**
  * Evaluate passed pawns
@@ -1304,7 +933,7 @@ static int eval_position_for_white(const struct Position *p) {
     }
 #endif
 
-    score += eval_pawns_hashed(p, &pawnFacts);
+    // score += eval_pawns_hashed(p, &pawnFacts);
 
 #ifdef DEBUG
     if (DebugWhat & DebugPieces) {
@@ -1793,7 +1422,7 @@ int eval_position(const struct Position *p) {
  * Do the pre-search initialization of evaluation.
  */
 
-void eval_init(const struct Position *p) {
+void eval_init(struct Position *p) {
     int sq;
 
     int eg_threshold = Value[Queen] + Value[Bishop];
@@ -1857,8 +1486,6 @@ void eval_init(const struct Position *p) {
     BPawnPos[d7] += CrampingPawn;
     BPawnPos[e7] += CrampingPawn;
 
-    ht_clear_pawn();
-
     /*
      * Set up King piece square table.
      */
@@ -1891,7 +1518,7 @@ void eval_init(const struct Position *p) {
             RootGamePhase = Opening;
     }
 
-    // print(2, "GamePhase: %s\n", GamePhaseName[RootGamePhase]);
+    nn_init_accumulator(p);
 
     MaxPos = MaxPosInit;
 }

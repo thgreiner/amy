@@ -17,3 +17,5 @@ Makefile.in
 Makefile.deps
 .DS_Store
 *.dSYM
+src/nn_crosscheck
+network.quant
