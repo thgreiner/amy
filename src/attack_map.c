@@ -35,6 +35,7 @@
 #include "intset_sorted.h"
 #include "utils.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 
 static int am_index(int attacker, int victim, int from, int to) {
@@ -81,7 +82,7 @@ static void am_compute_attacks(int from, int attacker, int victim,
     }
 }
 
-static void am_compute_all_attacks_of_side(struct Position *p, int side,
+static void am_compute_all_attacks_of_side(const struct Position *p, int side,
                                            IntSetSorted *indexes, int mirror) {
 
     // Pawn attacks - include all pawn attacks to pieces
@@ -233,4 +234,22 @@ int am_compute_attack_indices(const struct Position *p, int side, int *out,
         out[i] = indexes.data[i];
     }
     return (int)indexes.count;
+}
+
+#define RIGHT_ARROW_UTF8 "\xe2\x86\x92"
+
+/*
+ * For the given index, return a textual representation in the given position,
+ * e.g. "Ne5->f7".
+ */
+void am_attack_index_to_string(const struct Position *p, int side, int index,
+                               char *buffer) {
+    int mirror = am_side_mirror(p, side);
+    int to = (index & 63) ^ mirror;
+    int from = ((index >> 6) & 63) ^ mirror;
+    int plane = index / 4096;
+    int attacker = (plane + 2) / 5 + 1;
+
+    snprintf(buffer, 9, "%c%c%c" RIGHT_ARROW_UTF8 "2%c%c", PieceName[attacker],
+             SQUARE(from), SQUARE(to));
 }

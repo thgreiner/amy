@@ -36,6 +36,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "attack_map.h"
 #include "bitboard.h"
 #include "dbase.h"
 #include "hashtable.h"
@@ -2080,6 +2081,8 @@ int dbase_legal_moves(struct Position *p, heap_t heap) {
 void dbase_show_position(struct Position *p) {
     int rk, fl;
 
+    nn_compute_score(p);
+
     print(0, "        +---+---+---+---+---+---+---+---+\n");
     for (rk = 7; rk >= 0; rk--) {
         char indicator =
@@ -2107,15 +2110,27 @@ void dbase_show_position(struct Position *p) {
         case 7:
             print(0, "|   Attack Map: [");
             for (size_t i = 0; i < p->attack_map_w.count; i++) {
+                char buffer[16];
+
                 if (i != 0)
                     print(0, ", ");
-                print(0, "%d", p->attack_map_w.data[i]);
+
+                am_attack_index_to_string(p, White, p->attack_map_w.data[i],
+                                          buffer);
+
+                print(0, buffer);
             }
             print(0, "] [");
             for (size_t i = 0; i < p->attack_map_b.count; i++) {
+                char buffer[16];
+
                 if (i != 0)
                     print(0, ", ");
-                print(0, "%d", p->attack_map_b.data[i]);
+
+                am_attack_index_to_string(p, Black, p->attack_map_b.data[i],
+                                          buffer);
+
+                print(0, buffer);
             }
             print(0, "]\n");
             break;

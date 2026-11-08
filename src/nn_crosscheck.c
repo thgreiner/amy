@@ -76,7 +76,7 @@ static int instrumented_eval(struct Position *p) {
         else if (h1q[i] > SCALE_H1)
             h1[i] = SCALE_INPUT;
         else
-            h1[i] = (h1q[i] + SCALE_HALF) / SCALE;
+            h1[i] = (int16_t) ((h1q[i] + SCALE_HALF) / SCALE);
         printf("I H1 %d %d\n", i, (int)h1[i]);
     }
     int32_t h2q[HIDDEN_2_SIZE];
@@ -94,7 +94,7 @@ static int instrumented_eval(struct Position *p) {
         else if (h2q[i] >= SCALE_INPUT * SCALE)
             h2[i] = SCALE;
         else
-            h2[i] = (h2q[i] + SCALE_INPUT_HALF) / SCALE_INPUT;
+            h2[i] = (int16_t) ((h2q[i] + SCALE_INPUT_HALF) / SCALE_INPUT);
         printf("I H2 %d %d\n", i, (int)h2[i]);
     }
     int32_t out_q = output_layer_bias_q[phase][0];

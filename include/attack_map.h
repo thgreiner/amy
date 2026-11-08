@@ -15,4 +15,7 @@ void am_compute_attack_maps(struct Position *, IntSetSorted *, IntSetSorted *);
 int am_compute_attack_indices(const struct Position *p, int side, int *out,
                               int cap);
 
+void am_attack_index_to_string(const struct Position *p, int side, int index,
+                               char *buffer);
+
 #endif

@@ -1,5 +1,9 @@
+.zed
 *.db
+*.emd
 *~
+.amyrc
+.cache
 Makefile
 config.h
 config.h.in
@@ -18,4 +22,6 @@ Makefile.deps
 .DS_Store
 *.dSYM
 src/nn_crosscheck
+src/libamy_nn_extract.dylib
 network.quant
+compile_commands.json
