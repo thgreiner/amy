@@ -643,6 +643,38 @@ static void test_phase_index(void) {
     }
 }
 
+static void test_phase_masks(void) {
+    /* Non-edge buckets: exactly nn_phase_index() active. */
+    static const int counts[] = {0, 1, 3, 4, 6, 7, 9, 10, 11, 12};
+    for (size_t i = 0; i < 10; i++) {
+        struct Position *p = dbase_create_position_from_epd(
+            (char *)epd_with_n_nonpawn(counts[i]));
+        int masks[NN_PHASE_COUNT];
+        nn_phase_masks(p, masks);
+        int phase = nn_phase_index(p);
+        for (int k = 0; k < NN_PHASE_COUNT; k++) {
+            assert(masks[k] == (k == phase));
+        }
+        dbase_free_position(p);
+    }
+
+    /* Bucket tops (counts 2, 5, 8): the phase itself and the higher
+     * one are both active (training co-trains both heads). */
+    for (int phase = 0; phase < NN_PHASE_COUNT - 1; phase++) {
+        struct Position *p = dbase_create_position_from_epd(
+            (char *)epd_with_n_nonpawn(phase * 3 + 2));
+        int masks[NN_PHASE_COUNT];
+        nn_phase_masks(p, masks);
+        int n_active = 0;
+        for (int k = 0; k < NN_PHASE_COUNT; k++) {
+            assert(masks[k] == (k == phase || k == phase + 1));
+            n_active += masks[k];
+        }
+        assert(n_active == 2);
+        dbase_free_position(p);
+    }
+}
+
 /*
  * The hard switch must select exactly one phase's hidden/output block:
  * perturbing one phase's output bias changes the score of positions
@@ -722,6 +754,7 @@ void test_all_neural_net(void) {
     test_evaluate_updates_attack_maps();
 
     test_phase_index();
+    test_phase_masks();
     test_phase_selection();
 
     test_random_moves();

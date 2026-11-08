@@ -1018,7 +1018,6 @@ void nn_read_weights(void) {
 }
 
 /*
- /*
  * Game phase of the position, determined by the total number of
  * non-pawn pieces on both sides (0..12 for legal positions), grouped
  * into buckets of three (MIN(count / 3, 3)):
@@ -1030,13 +1029,35 @@ void nn_read_weights(void) {
  * This is a shared contract with the training pipeline:
  * amy-training-nnue must label samples with the same function.
  */
-int nn_phase_index(const struct Position *p) {
-    int count = bitboard_count_bits(
-        p->mask[White][Knight] | p->mask[Black][Knight] |
-        p->mask[White][Bishop] | p->mask[Black][Bishop] | p->mask[White][Rook] |
-        p->mask[Black][Rook] | p->mask[White][Queen] | p->mask[Black][Queen]);
+static int nn_non_pawn_piece_count(const struct Position *p) {
+    return bitboard_count_bits(p->mask[White][Knight] | p->mask[Black][Knight] |
+                               p->mask[White][Bishop] | p->mask[Black][Bishop] |
+                               p->mask[White][Rook] | p->mask[Black][Rook] |
+                               p->mask[White][Queen] | p->mask[Black][Queen]);
+}
 
-    return MIN(count / 3, 3);
+int nn_phase_index(const struct Position *p) {
+    return MIN(nn_non_pawn_piece_count(p) / 3, NN_PHASE_COUNT - 1);
+}
+
+void nn_phase_masks(const struct Position *p, int32_t masks[NN_PHASE_COUNT]) {
+    int count = nn_non_pawn_piece_count(p);
+    int phase = MIN(count / 3, NN_PHASE_COUNT - 1);
+
+    for (int i = 0; i < NN_PHASE_COUNT; i++) {
+        masks[i] = 0;
+    }
+
+    masks[phase] = 1;
+    /*
+     * Positions at the top of a bucket (counts 2, 5, 8): one capture
+     * away from the next phase.  Training (amy-training-nnue) co-trains
+     * the adjacent head so the hard switch at evaluation time is as
+     * smooth as possible; this rule is the shared contract.
+     */
+    if (phase < NN_PHASE_COUNT - 1 && count % 3 == 2) {
+        masks[phase + 1] = 1;
+    }
 }
 
 void nn_randomize_weights(void) {

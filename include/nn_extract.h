@@ -51,6 +51,7 @@ typedef struct {
     int32_t max_piece_features;  /* NN_MAX_PIECE_FEATURES */
     int32_t max_pawn_features;   /* NN_MAX_PAWN_FEATURES */
     int32_t max_attack_features; /* NN_MAX_ATTACK_FEATURES */
+    int32_t phase_count;         /* NN_PHASE_COUNT */
 } NnExtractConstants;
 
 void nn_export_constants(NnExtractConstants *out);
@@ -74,11 +75,18 @@ void nn_export_constants(NnExtractConstants *out);
  * am_compute_attack_indices), so the training data can never drift
  * from what the engine feeds its network.
  *
+ * phase (n_records x NN_PHASE_COUNT, int32) carries the per-record
+ * active phase-head masks from nn_phase_masks(): always at least the
+ * phase of nn_phase_index(); positions at the top of a bucket
+ * (counts 2, 5, 8) additionally activate the higher phase.  Invalid
+ * records carry an all-zero phase row (like their all -1 feature
+ * rows).
+ *
  * Returns the number of valid records (>= 0).
  */
 int nn_extract_features(const uint8_t *data, size_t n_records, int32_t *feat_w,
                         int32_t *feat_b, int32_t *pfeat_w, int32_t *pfeat_b,
                         int32_t *afeat_w, int32_t *afeat_b, uint8_t *turn,
-                        int32_t *score, int32_t *valid);
+                        int32_t *score, int32_t *valid, int32_t *phase);
 
 #endif

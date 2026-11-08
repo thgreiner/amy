@@ -96,6 +96,15 @@ void nn_read_weights(void);
 int nn_phase_index(const struct Position *p);
 
 /*
+ * Training-side of the phase contract (amy-training-nnue): the active
+ * phase heads of the position as a NN_PHASE_COUNT-element 0/1 mask.
+ * nn_phase_index(p) is always active; positions holding the top count
+ * of a bucket (total non-pawn pieces 2, 5, 8) additionally activate
+ * the higher phase, so training can co-train the two adjacent heads.
+ */
+void nn_phase_masks(const struct Position *p, int32_t masks[NN_PHASE_COUNT]);
+
+/*
  * Raw network score: attack-map refresh, phase-branch selection and
  * the quantized pipeline. Pure function of the position and the
  * weights (no score hash table, no fuzz, no MaxPos). Exposed so

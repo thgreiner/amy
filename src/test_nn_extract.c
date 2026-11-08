@@ -91,11 +91,11 @@ static int row_contains(const int32_t *row, int cap, int value) {
  */
 static int extract_one(const uint8_t *data, int *fw, int *fb, int *pfw,
                        int *pfb, int *afw, int *afb, uint8_t *turn,
-                       int32_t *score, int32_t *valid) {
+                       int32_t *score, int32_t *valid, int32_t *phase) {
     int n;
 
     n = nn_extract_features(data, 1, fw, fb, pfw, pfb, afw, afb, turn, score,
-                            valid);
+                            valid, phase);
     assert(n == (int)valid[0]);
     return valid[0];
 }
@@ -111,6 +111,7 @@ static void test_constants(void) {
     assert(c.max_piece_features == NN_MAX_PIECE_FEATURES);
     assert(c.max_pawn_features == NN_MAX_PAWN_FEATURES);
     assert(c.max_attack_features == NN_MAX_ATTACK_FEATURES);
+    assert(c.phase_count == NN_PHASE_COUNT);
 }
 
 static void test_initial_position(void) {
@@ -123,14 +124,15 @@ static void test_initial_position(void) {
     uint8_t turn;
     int32_t score;
     int32_t valid;
+    static int32_t ph[NN_PHASE_COUNT];
     uint8_t *data;
     int i;
     int anchors[4] = {27, 4004, 4464, 4559};
 
     data = make_record("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -",
                        12345);
-    assert(extract_one(data, fw, fb, pfw, pfb, afw, afb, &turn, &score,
-                       &valid) == 1);
+    assert(extract_one(data, fw, fb, pfw, pfb, afw, afb, &turn, &score, &valid,
+                       ph) == 1);
     assert(turn == 0);
     assert(score == 12345);
 
@@ -170,6 +172,9 @@ static void test_initial_position(void) {
     assert(row_contains(fw, NN_MAX_PIECE_FEATURES, 20480 + 192 + 59));
     assert(row_contains(fb, NN_MAX_PIECE_FEATURES, 20480 + 192 + 59));
 
+    /* 16 non-pawn pieces: phase 3, only the phase-3 head active. */
+    assert(ph[0] == 0 && ph[1] == 0 && ph[2] == 0 && ph[3] == 1);
+
     free(data);
 }
 
@@ -183,12 +188,13 @@ static void test_pawn_attacks_bishop(void) {
     uint8_t turn;
     int32_t score;
     int32_t valid;
+    static int32_t ph[NN_PHASE_COUNT];
     uint8_t *data;
 
     /* White P b4 attacks B c5; B c5 attacks P b4. */
     data = make_record("4k3/8/8/2b5/1P6/8/8/4K3 w - -", 7);
-    assert(extract_one(data, fw, fb, pfw, pfb, afw, afb, &turn, &score,
-                       &valid) == 1);
+    assert(extract_one(data, fw, fb, pfw, pfb, afw, afb, &turn, &score, &valid,
+                       ph) == 1);
 
     assert(row_count(fw, NN_MAX_PIECE_FEATURES) == 3);
     assert(row_count(fb, NN_MAX_PIECE_FEATURES) == 3);
@@ -221,12 +227,13 @@ static void test_knight_attacks_pawn(void) {
     uint8_t turn;
     int32_t score;
     int32_t valid;
+    static int32_t ph[NN_PHASE_COUNT];
     uint8_t *data;
 
     /* White N f3 attacks P g5; black pawn g5 attacks nothing. */
     data = make_record("4k3/8/8/6p3/8/5N2/8/4K3 w - -", -12);
-    assert(extract_one(data, fw, fb, pfw, pfb, afw, afb, &turn, &score,
-                       &valid) == 1);
+    assert(extract_one(data, fw, fb, pfw, pfb, afw, afb, &turn, &score, &valid,
+                       ph) == 1);
 
     assert(row_count(fw, NN_MAX_PIECE_FEATURES) == 3);
     assert(row_count(fb, NN_MAX_PIECE_FEATURES) == 3);
@@ -254,51 +261,54 @@ static void test_invalid_records(void) {
     uint8_t turn;
     int32_t score;
     int32_t valid;
+    static int32_t ph[NN_PHASE_COUNT];
     uint8_t *data;
 
     /* turn must be 0 or 1. */
     data =
         make_record("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -", 0);
     data[36] = 2;
-    assert(extract_one(data, fw, fb, pfw, pfb, afw, afb, &turn, &score,
-                       &valid) == 0);
+    assert(extract_one(data, fw, fb, pfw, pfb, afw, afb, &turn, &score, &valid,
+                       ph) == 0);
     assert(row_count(fw, NN_MAX_PIECE_FEATURES) == 0);
+    /* Invalid records carry an all-zero phase row. */
+    assert(ph[0] == 0 && ph[1] == 0 && ph[2] == 0 && ph[3] == 0);
     free(data);
 
     /* Pawn on rank 8. */
     data = make_record("P3k3/8/8/8/8/8/8/4K3 w - -", 0);
-    assert(extract_one(data, fw, fb, pfw, pfb, afw, afb, &turn, &score,
-                       &valid) == 0);
+    assert(extract_one(data, fw, fb, pfw, pfb, afw, afb, &turn, &score, &valid,
+                       ph) == 0);
     free(data);
 
     /* Pawn on rank 1. */
     data = make_record("R3K2P/8/8/8/8/8/8/4k3 w - -", 0);
-    assert(extract_one(data, fw, fb, pfw, pfb, afw, afb, &turn, &score,
-                       &valid) == 0);
+    assert(extract_one(data, fw, fb, pfw, pfb, afw, afb, &turn, &score, &valid,
+                       ph) == 0);
     free(data);
 
     /* Missing black king. */
     data = make_record("4K3/8/8/8/8/8/8/8 w - -", 0);
-    assert(extract_one(data, fw, fb, pfw, pfb, afw, afb, &turn, &score,
-                       &valid) == 0);
+    assert(extract_one(data, fw, fb, pfw, pfb, afw, afb, &turn, &score, &valid,
+                       ph) == 0);
     free(data);
 
     /* Two white kings. */
     data = make_record("3Kk3/8/8/8/8/8/8/4K3 w - -", 0);
-    assert(extract_one(data, fw, fb, pfw, pfb, afw, afb, &turn, &score,
-                       &valid) == 0);
+    assert(extract_one(data, fw, fb, pfw, pfb, afw, afb, &turn, &score, &valid,
+                       ph) == 0);
     free(data);
 
     /* En passant square on the wrong rank. */
     data = make_record("4k3/8/8/8/8/4P3/8/4K3 b - e4", 0);
-    assert(extract_one(data, fw, fb, pfw, pfb, afw, afb, &turn, &score,
-                       &valid) == 0);
+    assert(extract_one(data, fw, fb, pfw, pfb, afw, afb, &turn, &score, &valid,
+                       ph) == 0);
     free(data);
 
     /* En passant square on rank 3 is fine. */
     data = make_record("4k3/8/8/8/4P3/8/4P3/4K3 b - e3", 0);
-    assert(extract_one(data, fw, fb, pfw, pfb, afw, afb, &turn, &score,
-                       &valid) == 1);
+    assert(extract_one(data, fw, fb, pfw, pfb, afw, afb, &turn, &score, &valid,
+                       ph) == 1);
     assert(row_count(fw, NN_MAX_PIECE_FEATURES) == 3);
     free(data);
 }
@@ -313,6 +323,7 @@ static void test_mixed_batch(void) {
     static uint8_t turn[3];
     static int32_t score[3];
     static int32_t valid[3];
+    static int32_t phase[3 * NN_PHASE_COUNT];
     uint8_t *r0, *r1, *r2;
     uint8_t batch[3 * sizeof(BinaryPosition)];
     int n;
@@ -327,7 +338,7 @@ static void test_mixed_batch(void) {
     memcpy(batch + 2 * sizeof(BinaryPosition), r2, sizeof(BinaryPosition));
 
     n = nn_extract_features(batch, 3, fw, fb, pfw, pfb, afw, afb, turn, score,
-                            valid);
+                            valid, phase);
     assert(n == 2);
     assert(valid[0] == 1 && valid[1] == 0 && valid[2] == 1);
     assert(turn[0] == 0 && score[0] == 100);
@@ -337,9 +348,52 @@ static void test_mixed_batch(void) {
     assert(row_count(fw + 2 * NN_MAX_PIECE_FEATURES, NN_MAX_PIECE_FEATURES) ==
            1);
 
+    /* Phase masks: 16 non-pawn pieces -> phase 3 only; invalid record
+     * -> all zero; kings only -> phase 0 only. */
+    assert(phase[0 * NN_PHASE_COUNT + 3] == 1 &&
+           phase[0 * NN_PHASE_COUNT + 0] == 0 &&
+           phase[0 * NN_PHASE_COUNT + 1] == 0 &&
+           phase[0 * NN_PHASE_COUNT + 2] == 0);
+    assert(phase[1 * NN_PHASE_COUNT + 0] == 0 &&
+           phase[1 * NN_PHASE_COUNT + 1] == 0 &&
+           phase[1 * NN_PHASE_COUNT + 2] == 0 &&
+           phase[1 * NN_PHASE_COUNT + 3] == 0);
+    assert(phase[2 * NN_PHASE_COUNT + 0] == 1 &&
+           phase[2 * NN_PHASE_COUNT + 1] == 0 &&
+           phase[2 * NN_PHASE_COUNT + 2] == 0 &&
+           phase[2 * NN_PHASE_COUNT + 3] == 0);
+
     free(r0);
     free(r1);
     free(r2);
+}
+
+static void test_phase_masks_extraction(void) {
+    static int32_t fw[NN_MAX_PIECE_FEATURES];
+    static int32_t fb[NN_MAX_PIECE_FEATURES];
+    static int32_t pfw[NN_MAX_PAWN_FEATURES];
+    static int32_t pfb[NN_MAX_PAWN_FEATURES];
+    static int32_t afw[NN_MAX_ATTACK_FEATURES];
+    static int32_t afb[NN_MAX_ATTACK_FEATURES];
+    static int32_t ph[NN_PHASE_COUNT];
+    uint8_t turn;
+    int32_t score;
+    int32_t valid;
+    uint8_t *data;
+
+    /* 2 non-pawn pieces: top of phase 0 -> phases 0 and 1 active. */
+    data = make_record("3r1r2/8/8/8/8/8/4K2k/8 w - -", 0);
+    assert(extract_one(data, fw, fb, pfw, pfb, afw, afb, &turn, &score, &valid,
+                       ph) == 1);
+    assert(ph[0] == 1 && ph[1] == 1 && ph[2] == 0 && ph[3] == 0);
+    free(data);
+
+    /* 5 non-pawn pieces: top of phase 1 -> phases 1 and 2 active. */
+    data = make_record("3rr3/8/8/8/8/8/2RRR3/K6k w - -", 0);
+    assert(extract_one(data, fw, fb, pfw, pfb, afw, afb, &turn, &score, &valid,
+                       ph) == 1);
+    assert(ph[0] == 0 && ph[1] == 1 && ph[2] == 1 && ph[3] == 0);
+    free(data);
 }
 
 void test_all_nn_extract(void) {
@@ -348,5 +402,6 @@ void test_all_nn_extract(void) {
     test_pawn_attacks_bishop();
     test_knight_attacks_pawn();
     test_invalid_records();
+    test_phase_masks_extraction();
     test_mixed_batch();
 }

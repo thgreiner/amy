@@ -133,12 +133,13 @@ void nn_export_constants(NnExtractConstants *out) {
     out->max_piece_features = NN_MAX_PIECE_FEATURES;
     out->max_pawn_features = NN_MAX_PAWN_FEATURES;
     out->max_attack_features = NN_MAX_ATTACK_FEATURES;
+    out->phase_count = NN_PHASE_COUNT;
 }
 
 int nn_extract_features(const uint8_t *data, size_t n_records, int32_t *feat_w,
                         int32_t *feat_b, int32_t *pfeat_w, int32_t *pfeat_b,
                         int32_t *afeat_w, int32_t *afeat_b, uint8_t *turn,
-                        int32_t *score, int32_t *valid) {
+                        int32_t *score, int32_t *valid, int32_t *phase) {
     size_t i;
     int n_valid = 0;
 
@@ -151,6 +152,7 @@ int nn_extract_features(const uint8_t *data, size_t n_records, int32_t *feat_w,
         int32_t *pfb = pfeat_b + i * NN_MAX_PAWN_FEATURES;
         int32_t *afw = afeat_w + i * NN_MAX_ATTACK_FEATURES;
         int32_t *afb = afeat_b + i * NN_MAX_ATTACK_FEATURES;
+        int32_t *pm = phase + i * NN_PHASE_COUNT;
         BinaryPosition bp;
         struct Position *p;
 
@@ -160,6 +162,7 @@ int nn_extract_features(const uint8_t *data, size_t n_records, int32_t *feat_w,
         memset(pfb, -1, NN_MAX_PAWN_FEATURES * sizeof(int32_t));
         memset(afw, -1, NN_MAX_ATTACK_FEATURES * sizeof(int32_t));
         memset(afb, -1, NN_MAX_ATTACK_FEATURES * sizeof(int32_t));
+        memset(pm, 0, NN_PHASE_COUNT * sizeof(int32_t));
         valid[i] = 0;
 
         memcpy(&bp, data + i * sizeof(BinaryPosition), sizeof(BinaryPosition));
@@ -193,6 +196,7 @@ int nn_extract_features(const uint8_t *data, size_t n_records, int32_t *feat_w,
 
         turn[i] = bp.turn;
         score[i] = bp.score;
+        nn_phase_masks(p, pm);
         valid[i] = 1;
         n_valid++;
 

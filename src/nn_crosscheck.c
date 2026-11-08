@@ -132,14 +132,30 @@ int main(void) {
         /* Both kings on the left half (non-mirrored frame): the
          * horizontal mirror of the previous EPD. */
         "2k1r3/Pppq3p/8/4p3/4r3/1PQ5/1BP4P/1K1R4 w - -",
+        /* Phase 0 (1 non-pawn piece). */
+        "r7/8/8/8/8/8/4K2k/8 w - -",
+        /* Boundary: 2 non-pawn pieces, top of phase 0 (nn_phase_masks
+         * activates phases 0 and 1). */
+        "3r1r2/8/8/8/8/8/4K2k/8 w - -",
+        /* Phase 1 (3 non-pawn pieces). */
+        "2R1r1r1/8/8/8/8/8/4K2k/8 w - -",
     };
 
-    for (int i = 0; i < 6; i++) {
+    const size_t n_epds = sizeof(epds) / sizeof(epds[0]);
+
+    for (int i = 0; i < (int)n_epds; i++) {
         struct Position *p = dbase_create_position_from_epd((char *)epds[i]);
         nn_init_accumulator(p);
         nn_validate_weights(p);
         printf("POS %d turn %d\n", i, p->turn);
         printf("PHASE %d\n", nn_phase_index(p));
+        int masks[NN_PHASE_COUNT];
+        nn_phase_masks(p, masks);
+        printf("PMASKS");
+        for (int m = 0; m < NN_PHASE_COUNT; m++) {
+            printf(" %d", masks[m]);
+        }
+        printf("\n");
         for (int k = 0; k < ACCUMULATOR_SIZE; k++) {
             printf("%d", p->accumulator_w_q[k]);
             if (k < ACCUMULATOR_SIZE - 1)
