@@ -61,7 +61,7 @@ char OpponentName[OPP_NAME_LENGTH] = "Opponent";
 
 static void pgn_get_date_time(char *date_buf, char *time_buf) {
     time_t tnow;
-    struct tm *now;
+    const struct tm *now;
 
     time(&tnow);
     now = localtime(&tnow);
@@ -85,7 +85,7 @@ static char *pgn_get_black_name(void) {
     return (ComputerSide == Black) ? (AMY_NAME) : (OpponentName);
 }
 
-static void pgn_save_moves(FILE *fout, struct Position *p) {
+static void pgn_save_moves(FILE *fout, Position *p) {
     int ply = p->ply;
     move_t *history = safe_calloc(ply, sizeof(int));
 
@@ -118,7 +118,7 @@ static void pgn_save_moves(FILE *fout, struct Position *p) {
  * Save the current current game to `file_name`. If `append` is `true`,
  * append to the file rather than overwriting it.
  */
-void pgn_save_game(struct Position *p, char *file_name, bool append) {
+void pgn_save_game(Position *p, const char *file_name, bool append) {
     /* Do not save if no move made yet. */
     if (p->ply > 0) {
         FILE *fout = fopen(file_name, append ? "a" : "w");
@@ -144,7 +144,7 @@ void pgn_save_game(struct Position *p, char *file_name, bool append) {
                 }
             }
 
-            struct PGNHeader header = {
+            PGNHeader header = {
                 .event = "Amy game",
                 .round = "?",
                 .is_setup = false,
@@ -207,7 +207,7 @@ void pgn_emit_line(FILE *fout, int *width, const char *fmt, ...) {
 
 static inline char *pgn_str_or_empty(char *str) { return str ? str : ""; }
 
-void pgn_print_header(FILE *fout, struct PGNHeader *header) {
+void pgn_print_header(FILE *fout, PGNHeader *header) {
     fprintf(fout, "[Event \"%s\"]\n", pgn_str_or_empty(header->event));
     fprintf(fout, "[Site \"%s\"]\n", pgn_str_or_empty(header->site));
     fprintf(fout, "[Date \"%s\"]\n", pgn_str_or_empty(header->date));

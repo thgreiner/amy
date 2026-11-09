@@ -112,8 +112,6 @@ void init_genrand64(unsigned long long seed) {
 
 ran_t random64(void) {
     /* This is the altered Cocoa with Love implementation. */
-    size_t i;
-    size_t j;
     unsigned long long result;
 
     if (context.mti >= NN) { /* generate NN words at one time */
@@ -128,7 +126,7 @@ ran_t random64(void) {
          * These modifications are offered for use under the original icense at
          * the top of this file.
          */
-        for (i = 0, j = mid; i != mid - 1; i++, j++) {
+        for (size_t i = 0, j = mid; i != mid - 1; i++, j++) {
             x = (context.mt[i] & UM) | (context.mt[i + 1] & LM);
             context.mt[i] = context.mt[i + mid] ^ (x >> 1) ^
                             ((context.mt[i + 1] & 1) * MATRIX_A);

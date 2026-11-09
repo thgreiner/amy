@@ -50,7 +50,7 @@ static int am_index(int attacker, int victim, int from, int to) {
  * (0x38), and the frame is additionally mirrored horizontally (7) when
  * the side's king stands on files e..h.  The two masks commute.
  */
-static int am_side_mirror(const struct Position *p, int side) {
+static int am_side_mirror(const Position *p, int side) {
     int mirror = (p->kingSq[side] & 7) > 3 ? 7 : 0;
     if (side == Black) {
         mirror |= 0x38;
@@ -82,7 +82,7 @@ static void am_compute_attacks(int from, int attacker, int victim,
     }
 }
 
-static void am_compute_all_attacks_of_side(const struct Position *p, int side,
+static void am_compute_all_attacks_of_side(const Position *p, int side,
                                            IntSetSorted *indexes, int mirror) {
 
     // Pawn attacks - include all pawn attacks to pieces
@@ -208,7 +208,7 @@ static void am_compute_all_attacks_of_side(const struct Position *p, int side,
     }
 }
 
-void am_compute_attack_maps(struct Position *p, IntSetSorted *indexes_w,
+void am_compute_attack_maps(const Position *p, IntSetSorted *indexes_w,
                             IntSetSorted *indexes_b) {
     am_compute_all_attacks_of_side(p, White, indexes_w,
                                    am_side_mirror(p, White));
@@ -221,8 +221,7 @@ void am_compute_attack_maps(struct Position *p, IntSetSorted *indexes_w,
  * attacking opponent pieces/pawns) into out.  Returns the count, or -1
  * if it would exceed cap.  Shared with nn_extract.c.
  */
-int am_compute_attack_indices(const struct Position *p, int side, int *out,
-                              int cap) {
+int am_compute_attack_indices(const Position *p, int side, int *out, int cap) {
     IntSetSorted indexes;
 
     intset_sorted_init(&indexes);
@@ -242,7 +241,7 @@ int am_compute_attack_indices(const struct Position *p, int side, int *out,
  * For the given index, return a textual representation in the given position,
  * e.g. "Ne5->f7".
  */
-void am_attack_index_to_string(const struct Position *p, int side, int index,
+void am_attack_index_to_string(const Position *p, int side, int index,
                                char *buffer) {
     int mirror = am_side_mirror(p, side);
     int to = (index & 63) ^ mirror;

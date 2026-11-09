@@ -38,7 +38,7 @@
 
 #define OPP_NAME_LENGTH 1024
 
-struct PGNHeader {
+typedef struct {
     char *event;
     char *site;
     char *date;
@@ -52,12 +52,12 @@ struct PGNHeader {
     int white_elo;
     int black_elo;
     bool is_setup;
-};
+} PGNHeader;
 
 extern char OpponentName[OPP_NAME_LENGTH];
 
-void pgn_save_game(struct Position *, char *, bool);
-void pgn_print_header(FILE *, struct PGNHeader *);
+void pgn_save_game(Position *, const char *, bool);
+void pgn_print_header(FILE *, PGNHeader *);
 void pgn_emit_line(FILE *fout, int *width, const char *fmt, ...);
 
 #endif

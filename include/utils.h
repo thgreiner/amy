@@ -38,7 +38,7 @@
 
 extern int Verbosity;
 
-void utils_open_log_file(char *name);
+void utils_open_log_file(const char *name);
 void print(int, char *, ...);
 void print_no_log(int, char *, ...);
 int utils_input_ready(void);

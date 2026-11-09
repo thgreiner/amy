@@ -40,7 +40,7 @@
 
 #define PV_BUFFER_SIZE 512
 
-static void searchio_print_pv(char *pv) {
+static void searchio_print_pv(const char *pv) {
     char PVBuffer[512];
     char *x;
     size_t len = 21;
@@ -73,7 +73,7 @@ void searchio_header(void) {
     print(1, "It    Time   Score  principal Variation\n");
 }
 
-void searchio_output(int depth, unsigned long time, int score, char *line,
+void searchio_output(int depth, unsigned long time, int score, const char *line,
                      unsigned long nodes) {
     char time_as_text[16];
     char score_as_text[16];

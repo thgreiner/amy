@@ -49,53 +49,9 @@
 // #define STATISTICS_Q 1
 // #define DEBUG 1
 
-bool fuzz_evaluation = false;
-
-/* MaxPos is the maximum difference between the material balance and
- * the evaluation. It is used to form a cheap optimistic score estimate
- * (material + MaxPos) which can replace the expensive full evaluation.
- * The initial value (two pawns in millipawns) is re-set before every
- * search by nn_eval_init(). */
-static const int MaxPosInit = 2000;
-int MaxPos = MaxPosInit;
-
-/**
- * Do the pre-search initialization of evaluation.
- */
-void nn_eval_init(void) { MaxPos = MaxPosInit; }
-
-/**
- * Evaluate the material balance (from white's perspective).
- */
-int eval_material_balance(const struct Position *p) {
-    return p->material[White] - p->material[Black];
-}
-
 /*
- * Indexing schema for features:
- *   - King position mirrored to the left half (a1..d1 up to a8..d8)
- *   - Piece square (flipped and mirrored depending on king position)
- *   - Piece type (0..4 own pawn..queen, 5..9 opponent pawn..queen,
- *     10 opponent king)
+ * Type definitions
  */
-
-#define SCALE_INPUT 64
-#define SCALE_INPUT_HALF (SCALE_INPUT / 2 - 1)
-#define SCALE 8192
-#define SCALE_HALF (SCALE / 2 - 1)
-#define SCALE_OUTPUT 10000
-
-/* Hidden-1 fixed-point scale: acc @ SCALE_INPUT x int16 weights @ SCALE,
- * and the int32 hidden-1 bias. */
-#define SCALE_H1 (SCALE_INPUT * SCALE)
-#define SCALE_H1_HALF (SCALE_H1 / 2 - 1)
-
-static const uint32_t wh_magic = 0x57594d41;            // "AMYW"
-static const uint32_t wh_magic_compressed = 0x5A594d41; // "AMYZ"
-
-static const uint8_t wh_quantization_int_8 = 1;
-static const uint8_t wh_quantization_int_16 = 2;
-static const uint8_t wh_quantization_int_32 = 3;
 
 typedef struct {
     uint32_t wh_magic;                // should always be wh_magic
@@ -122,6 +78,56 @@ typedef struct {
     char wh_date[32];        // Date of training, ISO8601 formatted
 } WeightsHeader;
 
+typedef struct {
+    WeightsHeader cwh_header;
+    int32_t cwh_compressed_size;
+} CompressedWeightsHeader;
+
+/*
+ * Global and static variables
+ */
+
+#define NET_NAME "nets/amy.net"
+#define NET_NAME_COMPRESSED "nets/amy.net.z"
+
+/*
+ * Indexing schema for features:
+ *   - King position mirrored to the left half (a1..d1 up to a8..d8)
+ *   - Piece square (flipped and mirrored depending on king position)
+ *   - Piece type (0..4 own pawn..queen, 5..9 opponent pawn..queen,
+ *     10 opponent king)
+ */
+
+#define SCALE_INPUT 64
+#define SCALE_INPUT_HALF (SCALE_INPUT / 2 - 1)
+#define SCALE 8192
+#define SCALE_HALF (SCALE / 2 - 1)
+#define SCALE_OUTPUT 10000
+
+/* Hidden-1 fixed-point scale: acc @ SCALE_INPUT x int16 weights @ SCALE,
+ * and the int32 hidden-1 bias. */
+#define SCALE_H1 (SCALE_INPUT * SCALE)
+#define SCALE_H1_HALF (SCALE_H1 / 2 - 1)
+
+bool fuzz_evaluation = false;
+
+/* MaxPos is the maximum difference between the material balance and
+ * the evaluation. It is used to form a cheap optimistic score estimate
+ * (material + MaxPos) which can replace the expensive full evaluation.
+ * The initial value (two pawns in millipawns) is re-set before every
+ * search by nn_eval_init(). */
+static const int MaxPosInit = 2000;
+int MaxPos = MaxPosInit;
+
+static bool verbose = true;
+
+static const uint32_t wh_magic = 0x57594d41;            // "AMYW"
+static const uint32_t wh_magic_compressed = 0x5A594d41; // "AMYZ"
+
+static const uint8_t wh_quantization_int_8 = 1;
+static const uint8_t wh_quantization_int_16 = 2;
+static const uint8_t wh_quantization_int_32 = 3;
+
 static WeightsHeader nn_header;
 
 int8_t input_layer_weights_q[N_FEATURES][ACCUMULATOR_SIZE];
@@ -136,32 +142,66 @@ int32_t hidden_layer_2_bias_q[NN_PHASE_COUNT][HIDDEN_2_SIZE];
 int32_t output_layer_weights_q[NN_PHASE_COUNT][HIDDEN_2_SIZE];
 int32_t output_layer_bias_q[NN_PHASE_COUNT][1];
 
-static bool verbose = true;
+static BitBoard right_of_file_mask[] = {
+    0x0303030303030303ULL, 0x0707070707070707ULL, 0x0e0e0e0e0e0e0e0eULL,
+    0x1c1c1c1c1c1c1c1cULL, 0x3838383838383838ULL, 0x7070707070707070ULL,
+    0xe0e0e0e0e0e0e0e0ULL, 0xc0c0c0c0c0c0c0c0ULL,
+};
 
-// Forward declarations
-static void nn_update_weights_for_pawn(struct Position *p, int sq1, bool turn,
+#ifdef STATISTICS_Q
+static int32_t max_activation_hidden_1_q = 0;
+#endif
+
+static int nn_uncompressed_length =
+    (int)(sizeof(input_layer_weights_q) + sizeof(input_pawn_weights_q) +
+          sizeof(input_attack_weights_q) + sizeof(input_layer_bias_q) +
+          sizeof(hidden_layer_1_weights_q) + sizeof(hidden_layer_1_bias_q) +
+          sizeof(hidden_layer_2_weights_q) + sizeof(hidden_layer_2_bias_q) +
+          sizeof(output_layer_weights_q) + sizeof(output_layer_bias_q));
+
+/*
+ * Forward declarations
+ */
+
+static void nn_update_weights_for_pawn(Position *p, int sq1, bool turn,
                                        bool add);
-static void nn_build_pawn_accumulator(int16_t *accumulator, struct Position *p,
+static void nn_build_pawn_accumulator(int16_t *accumulator, const Position *p,
                                       int side);
 static void nn_save_weights_compressed(const char *);
-static void nn_check_header(WeightsHeader *header);
-static bool nn_load_weights_compressed(void);
-static bool nn_load_weights_uncompressed(void);
+static void nn_check_header(const WeightsHeader *header);
+static bool nn_load_weights_compressed(const char *);
+static bool nn_load_weights_uncompressed(const char *);
+
+/*
+ * Functions
+ */
+
+/**
+ * Do the pre-search initialization of evaluation.
+ */
+void nn_eval_init(void) { MaxPos = MaxPosInit; }
+
+/**
+ * Evaluate the material balance (from white's perspective).
+ */
+int eval_material_balance(const Position *p) {
+    return p->material[White] - p->material[Black];
+}
 
 void nn_read_weights_quantized(void) {
     bool weights_loaded =
-        nn_load_weights_compressed() || nn_load_weights_uncompressed();
+        nn_load_weights_compressed(NET_NAME_COMPRESSED) || nn_load_weights_uncompressed(NET_NAME);
 
     if (weights_loaded) {
-        print(0, "Loaded weights \"%s\" (%s).\n", nn_header.wh_name,
+        print(0, "Net is \"%s (%s)\".\n\n", nn_header.wh_name,
               nn_header.wh_date);
     } else {
-        print(0, "No weights found.\n");
+        print(0, "No net found.\n\n");
     }
 }
 
-static bool nn_load_weights_uncompressed(void) {
-    FILE *fin = fopen("network.quant", "rb");
+static bool nn_load_weights_uncompressed(const char *file_name) {
+    FILE *fin = fopen(file_name, "rb");
     size_t items_read;
 
     if (fin == NULL) {
@@ -219,14 +259,10 @@ static bool nn_load_weights_uncompressed(void) {
 
     fclose(fin);
 
-    nn_save_weights_compressed("network.quant.z");
+    nn_save_weights_compressed(NET_NAME_COMPRESSED);
 
     return true;
 }
-
-#ifdef STATISTICS_Q
-static int32_t max_activation_hidden_1_q = 0;
-#endif
 
 static void nn_update_accumulator_add(int16_t *accumulator_q, int offset) {
 #ifdef DEBUG_UPDATE
@@ -278,8 +314,7 @@ static int index_half_mirrored(int sq) { return (sq & 3) | ((sq & 0x38) >> 1); }
  * stands on files e..h).  This is the single definition of the piece
  * feature index computation, shared with nn_extract.c.
  */
-int nn_compute_piece_indices(const struct Position *p, int side, int *out,
-                             int cap) {
+int nn_compute_piece_indices(const Position *p, int side, int *out, int cap) {
     int flip = (side == Black) ? 0x38 : 0;
     int king_sq = p->kingSq[side] ^ flip;
 
@@ -330,7 +365,7 @@ int nn_compute_piece_indices(const struct Position *p, int side, int *out,
  * Build the accumulator for the given side from scratch: input bias plus the
  * contributions of all pieces and the opponent king.
  */
-static void nn_build_accumulator(int16_t *accumulator_q, struct Position *p,
+static void nn_build_accumulator(int16_t *accumulator_q, const Position *p,
                                  int side) {
     int indices[NN_MAX_PIECE_FEATURES];
     int n = nn_compute_piece_indices(p, side, indices, NN_MAX_PIECE_FEATURES);
@@ -344,7 +379,7 @@ static void nn_build_accumulator(int16_t *accumulator_q, struct Position *p,
     }
 }
 
-void nn_update_weights_for_piece(struct Position *p, int tp, int sq, bool turn,
+void nn_update_weights_for_piece(Position *p, int tp, int sq, bool turn,
                                  bool add) {
 #ifdef DEBUG_UPDATE
     print(1, "nn_update_weights_for_piece(tp=%d, sq=%d, turn=%d, add=%d)\n", tp,
@@ -422,7 +457,7 @@ void nn_update_weights_for_piece(struct Position *p, int tp, int sq, bool turn,
     }
 }
 
-void nn_update_weights_for_king(struct Position *p, int old_king_sq) {
+void nn_update_weights_for_king(Position *p, int old_king_sq) {
 #ifdef DEBUG_UPDATE
     print(1, "nn_update_weights_for_king(old_king_sq=%d)\n", old_king_sq);
 #endif
@@ -470,12 +505,6 @@ void nn_update_weights_for_king(struct Position *p, int old_king_sq) {
                               base + (p->kingSq[side] ^ flip ^ mirror));
 }
 
-static BitBoard right_of_file_mask[] = {
-    0x0303030303030303ULL, 0x0707070707070707ULL, 0x0e0e0e0e0e0e0e0eULL,
-    0x1c1c1c1c1c1c1c1cULL, 0x3838383838383838ULL, 0x7070707070707070ULL,
-    0xe0e0e0e0e0e0e0e0ULL, 0xc0c0c0c0c0c0c0c0ULL,
-};
-
 /*
  * Calculate the pawn index for the pawn pair on sq1, sq2 with the colors
  * c1 and c2.
@@ -514,8 +543,7 @@ static int nn_pp_index(int sq1, bool c1, int sq2, bool c2) {
  * definition of the pawn pair index computation, shared with
  * nn_extract.c.
  */
-int nn_compute_pawn_indices(const struct Position *p, int side, int *out,
-                            int cap) {
+int nn_compute_pawn_indices(const Position *p, int side, int *out, int cap) {
     BitBoard mask = p->mask[White][Pawn] | p->mask[Black][Pawn];
 
     int king_sq = p->kingSq[side];
@@ -550,7 +578,7 @@ int nn_compute_pawn_indices(const struct Position *p, int side, int *out,
 /*
  * Populates accumulator_w and accumulator_b with the pawn features of p.
  */
-static void nn_build_pawn_accumulator(int16_t *accumulator, struct Position *p,
+static void nn_build_pawn_accumulator(int16_t *accumulator, const Position *p,
                                       int side) {
     int indices[NN_MAX_PAWN_FEATURES];
     int n = nn_compute_pawn_indices(p, side, indices, NN_MAX_PAWN_FEATURES);
@@ -568,7 +596,7 @@ static void nn_build_pawn_accumulator(int16_t *accumulator, struct Position *p,
  * Incrementally update the accumulators in p for a pawn move. The pawn on sq1
  * with color turn was either added (add == true) or removed (add == false).
  */
-static void nn_update_weights_for_pawn(struct Position *p, int sq1, bool turn,
+static void nn_update_weights_for_pawn(Position *p, int sq1, bool turn,
                                        bool add) {
 #ifdef DEBUG
     print(1, "nn_update_weights_for_pawn(%c%c, %d, %d)\n", SQUARE(sq1), turn,
@@ -647,7 +675,7 @@ static void update_attack_map_sub(int16_t *accumulator, IntSetSorted *indexes) {
     }
 }
 
-void nn_update_attack_maps(struct Position *p) {
+void nn_update_attack_maps(Position *p) {
     IntSetSorted current_attack_map_w, current_attack_map_b;
     intset_sorted_init(&current_attack_map_w);
     intset_sorted_init(&current_attack_map_b);
@@ -698,7 +726,7 @@ void nn_update_attack_maps(struct Position *p) {
  * pipeline. Pure function of the position and the weights: no score
  * hash table, no fuzz, no MaxPos adjustment.
  */
-int nn_compute_score(struct Position *p) {
+int nn_compute_score(Position *p) {
     int score;
     /* Phase branches share the input side; only the selection of the
      * hidden/output block depends on the position. */
@@ -853,7 +881,7 @@ int nn_compute_score(struct Position *p) {
  * fuzz and MaxPos adjustment. Returns the evaluation in 1/1000th of
  * a pawn.
  */
-int nn_evaluate_position(struct Position *p) {
+int nn_evaluate_position(Position *p) {
     int score;
 
 #ifndef DEBUG
@@ -889,7 +917,7 @@ int nn_evaluate_position(struct Position *p) {
     return score;
 }
 
-void nn_init_accumulator(struct Position *p) {
+void nn_init_accumulator(Position *p) {
     nn_build_accumulator(p->accumulator_w_q, p, White);
     nn_build_pawn_accumulator(p->accumulator_w_q, p, White);
     nn_build_accumulator(p->accumulator_b_q, p, Black);
@@ -913,7 +941,7 @@ void nn_init_accumulator(struct Position *p) {
 #endif
 }
 
-void nn_validate_weights(struct Position *p) {
+void nn_validate_weights(Position *p) {
     int16_t accumulator_w_q[ACCUMULATOR_SIZE];
     int16_t accumulator_b_q[ACCUMULATOR_SIZE];
 
@@ -1030,18 +1058,18 @@ void nn_read_weights(void) {
  * This is a shared contract with the training pipeline:
  * amy-training-nnue must label samples with the same function.
  */
-static int nn_non_pawn_piece_count(const struct Position *p) {
+static int nn_non_pawn_piece_count(const Position *p) {
     return bitboard_count_bits(p->mask[White][Knight] | p->mask[Black][Knight] |
                                p->mask[White][Bishop] | p->mask[Black][Bishop] |
                                p->mask[White][Rook] | p->mask[Black][Rook] |
                                p->mask[White][Queen] | p->mask[Black][Queen]);
 }
 
-int nn_phase_index(const struct Position *p) {
+int nn_phase_index(const Position *p) {
     return MIN(nn_non_pawn_piece_count(p) / 3, NN_PHASE_COUNT - 1);
 }
 
-void nn_phase_masks(const struct Position *p, int32_t masks[NN_PHASE_COUNT]) {
+void nn_phase_masks(const Position *p, int32_t masks[NN_PHASE_COUNT]) {
     int count = nn_non_pawn_piece_count(p);
     int phase = MIN(count / 3, NN_PHASE_COUNT - 1);
 
@@ -1131,18 +1159,6 @@ void nn_randomize_weights(void) {
     }
 }
 
-static int nn_uncompressed_length =
-    (int)(sizeof(input_layer_weights_q) + sizeof(input_pawn_weights_q) +
-          sizeof(input_attack_weights_q) + sizeof(input_layer_bias_q) +
-          sizeof(hidden_layer_1_weights_q) + sizeof(hidden_layer_1_bias_q) +
-          sizeof(hidden_layer_2_weights_q) + sizeof(hidden_layer_2_bias_q) +
-          sizeof(output_layer_weights_q) + sizeof(output_layer_bias_q));
-
-typedef struct {
-    WeightsHeader cwh_header;
-    int32_t cwh_compressed_size;
-} CompressedWeightsHeader;
-
 static void nn_save_weights_compressed(const char *file_name) {
     if (nn_header.wh_magic != wh_magic)
         return;
@@ -1203,8 +1219,8 @@ static void nn_save_weights_compressed(const char *file_name) {
     free(data);
 }
 
-static bool nn_load_weights_compressed(void) {
-    FILE *fin = fopen("network.quant.z", "rb");
+static bool nn_load_weights_compressed(const char *file_name) {
+    FILE *fin = fopen(file_name, "rb");
 
     if (fin == NULL) {
         return false;
@@ -1221,7 +1237,7 @@ static bool nn_load_weights_compressed(void) {
     items_read = fread(buffer, header.cwh_compressed_size, 1, fin);
     assert(items_read == 1);
 
-    int8_t *data = malloc(nn_uncompressed_length);
+    int8_t *data = safe_malloc(nn_uncompressed_length);
 
     int l = lzav_decompress(buffer, data, header.cwh_compressed_size,
                             nn_uncompressed_length);
@@ -1267,7 +1283,7 @@ static bool nn_load_weights_compressed(void) {
     return true;
 }
 
-static void nn_check_header(WeightsHeader *header) {
+static void nn_check_header(const WeightsHeader *header) {
     assert(header->wh_accumulator_size == ACCUMULATOR_SIZE);
     assert(header->wh_num_features == N_FEATURES);
     assert(header->wh_pawn_features_size == N_PAWN_FEATURES);

@@ -33,6 +33,8 @@
 #define NEXT_H
 
 #include "config.h"
+#include "dbase.h"
+#include "hashtable.h"
 #include "heap.h"
 #include "types.h"
 #include <stdbool.h>
@@ -53,26 +55,26 @@ typedef enum {
     QChecks
 } SearchPhase;
 
-struct SearchStatus {
+typedef struct {
     SearchPhase st_phase;
     move_t st_hashmove;
     move_t st_k1, st_k2, st_kl, st_cm, st_k3;
-};
+} SearchStatus;
 
-struct KillerEntry {
+typedef struct {
     move_t killer1, killer2;   /* killer moves */
     uint32_t kcount1, kcount2; /* killer count */
-};
+} KillerEntry;
 
-struct SearchData {
-    struct Position *position;
+typedef struct {
+    Position *position;
 
-    struct SearchStatus *current;
-    struct SearchStatus *statusTable;
-    struct KillerEntry *killer;
-    struct KillerEntry *killerTable;
+    SearchStatus *current;
+    SearchStatus *statusTable;
+    KillerEntry *killer;
+    KillerEntry *killerTable;
 #if MP
-    struct HTEntry *localHashTable;
+    HTEntry *localHashTable;
     heap_t deferred_heap;
 #endif
 
@@ -94,21 +96,18 @@ struct SearchData {
     int best_score;
     uint16_t depth;
 
-    move_t alternate_move;
-    int alternate_score;
-
     uint16_t nrootmoves;
     uint16_t movenum;
-};
+} SearchData;
 
-struct SearchData *next_create_data(struct Position *);
-void next_free_data(struct SearchData *);
-void next_enter_node(struct SearchData *);
-void next_leave_node(struct SearchData *);
-int next_move(struct SearchData *);
-int next_evasion(struct SearchData *);
-int next_move_q(struct SearchData *, int);
-void next_put_killer(struct SearchData *, move_t);
-void next_test_generators(struct Position *);
+SearchData *next_create_data(Position *);
+void next_free_data(SearchData *);
+void next_enter_node(SearchData *);
+void next_leave_node(SearchData *);
+int next_move(SearchData *);
+int next_evasion(SearchData *);
+int next_move_q(SearchData *, int);
+void next_put_killer(SearchData *, move_t);
+void next_test_generators(Position *);
 
 #endif

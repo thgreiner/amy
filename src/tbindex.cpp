@@ -2108,8 +2108,8 @@ template <int piw1, int piw2, int piw3> class T41 {
                 sqbk = reflect_xy(sqbk);
             };
         }
-        return TEnumerate3 < piw1, piw2, piw3, x_piecePawn == piw3,
-               false > ::Index(sqwk, sqw1, sqw2, sqw3, sqbk);
+        return TEnumerate3<piw1, piw2, piw3, x_piecePawn == piw3, false>::Index(
+            sqwk, sqw1, sqw2, sqw3, sqbk);
     }
 
     static INDEX TB_FASTCALL IndCalcB(square *psqW, square *psqB, square sqEnP,

@@ -334,14 +334,14 @@ void movedata_init(void) {
             continue;
 
         for (dir = 0; dir < 8; dir++) {
-            int next, next2;
+            int next;
 
             next = sq + QueenDirs[dir];
             if (next & 0x88)
                 continue;
 
             for (;;) {
-                next2 = next + QueenDirs[dir];
+                int next2 = next + QueenDirs[dir];
                 if (next2 & 0x88)
                     break;
                 NextSQ[conv[sq]][conv[next]] = conv[next2];

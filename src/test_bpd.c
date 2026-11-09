@@ -48,7 +48,7 @@ static uint8_t bpd_nibble(const BinaryPosition *bp, int sq) {
  * position_from_epd() sets them to 3 while bpd_decode() leaves
  * them at 0.
  */
-static void test_compare(const struct Position *a, const struct Position *b) {
+static void test_compare(const Position *a, const Position *b) {
     int i;
     int j;
 
@@ -80,8 +80,8 @@ static void test_compare(const struct Position *a, const struct Position *b) {
  * is identical to the original.
  */
 static void test_roundtrip(char *epd, int score) {
-    struct Position *p;
-    struct Position *q;
+    Position *p;
+    Position *q;
     BinaryPosition bp;
 
     p = dbase_create_position_from_epd(epd);
@@ -135,7 +135,7 @@ static void test_roundtrip_stale_enpassant(void) {
 
 /* Verify that the castling rook nibbles are used as intended. */
 static void test_encode_castling_nibbles(void) {
-    struct Position *p = dbase_create_position_from_epd(
+    Position *p = dbase_create_position_from_epd(
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -");
     BinaryPosition bp;
 
@@ -153,7 +153,7 @@ static void test_encode_castling_nibbles(void) {
 /* Verify that rooks without castling rights use the plain rook
  * nibbles. */
 static void test_encode_partial_castling_nibbles(void) {
-    struct Position *p =
+    Position *p =
         dbase_create_position_from_epd("r3k2r/8/8/8/8/8/8/R3K2R b Kq -");
     BinaryPosition bp;
 
@@ -171,7 +171,7 @@ static void test_encode_partial_castling_nibbles(void) {
 /* Verify that the en passant target square is encoded as
  * PN_EN_PASSANT. */
 static void test_encode_enpassant_nibble(void) {
-    struct Position *p = dbase_create_position_from_epd(
+    Position *p = dbase_create_position_from_epd(
         "rnbqkbnr/pppp1ppp/8/4pP2/8/8/PPPPP1PP/RNBQKBNR w KQkq e6");
     BinaryPosition bp;
 

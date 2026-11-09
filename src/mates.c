@@ -36,7 +36,7 @@
 #include "dbase.h"
 #include "init.h"
 
-bool mates_threat(struct Position *p, int side) {
+bool mates_threat(Position *p, int side) {
     int oside = !side;
     int ekp = p->kingSq[oside];
     BitBoard pcs;
@@ -51,14 +51,13 @@ bool mates_threat(struct Position *p, int side) {
 
     pcs = p->mask[side][Queen];
     while (pcs) {
-        int to;
         BitBoard mvs;
         fr = bitboard_find_set_bit(pcs);
         pcs &= pcs - 1;
         mvs = (p->atkTo[fr] & QueenEPM[ekp]) & ~p->mask[side][0];
         while (mvs) {
             BitBoard tmp;
-            to = bitboard_find_set_bit(mvs);
+            int to = bitboard_find_set_bit(mvs);
             mvs &= mvs - 1;
             /* check whether path is obstructed */
             tmp = InterPath[ekp][to];
@@ -67,11 +66,10 @@ bool mates_threat(struct Position *p, int side) {
             /* check wether all flight squares are covered */
             tmp = ksafe & ~QueenEPM[to];
             if (tmp) {
-                int flight;
                 int free = 0;
                 do {
                     BitBoard att;
-                    flight = bitboard_find_set_bit(tmp);
+                    int flight = bitboard_find_set_bit(tmp);
                     tmp &= tmp - 1;
                     att = p->atkFr[flight] & p->mask[side][0];
                     bitboard_clr_bit(att, fr);
@@ -110,7 +108,6 @@ bool mates_threat(struct Position *p, int side) {
                 }
             } else {
                 /* distant check */
-                int inter;
                 int def = 0;
                 tmp = p->atkFr[to];
                 bitboard_clr_bit(tmp, fr);
@@ -120,7 +117,7 @@ bool mates_threat(struct Position *p, int side) {
                 tmp = InterPath[to][ekp];
                 while (tmp) {
                     BitBoard tmp2;
-                    inter = bitboard_find_set_bit(tmp);
+                    int inter = bitboard_find_set_bit(tmp);
                     tmp &= tmp - 1;
                     tmp2 = p->atkFr[inter] & p->mask[oside][0];
                     if (bitboard_count_bits(tmp2) < 2)
@@ -141,14 +138,13 @@ bool mates_threat(struct Position *p, int side) {
 
     pcs = p->mask[side][Rook];
     while (pcs) {
-        int to;
         BitBoard mvs;
         fr = bitboard_find_set_bit(pcs);
         pcs &= pcs - 1;
         mvs = (p->atkTo[fr] & RookEPM[ekp]) & ~p->mask[side][0];
         while (mvs) {
             BitBoard tmp;
-            to = bitboard_find_set_bit(mvs);
+            int to = bitboard_find_set_bit(mvs);
             mvs &= mvs - 1;
             /* check whether path is obstructed */
             tmp = InterPath[ekp][to];
@@ -157,11 +153,10 @@ bool mates_threat(struct Position *p, int side) {
             /* check wether all flight squares are covered */
             tmp = ksafe & ~RookEPM[to];
             if (tmp) {
-                int flight;
                 int free = 0;
                 do {
                     BitBoard att;
-                    flight = bitboard_find_set_bit(tmp);
+                    int flight = bitboard_find_set_bit(tmp);
                     tmp &= tmp - 1;
                     att = p->atkFr[flight] & p->mask[side][0];
                     bitboard_clr_bit(att, fr);
@@ -200,7 +195,6 @@ bool mates_threat(struct Position *p, int side) {
                 }
             } else {
                 /* distant check */
-                int inter;
                 int def = 0;
                 tmp = p->atkFr[to];
                 bitboard_clr_bit(tmp, fr);
@@ -210,7 +204,7 @@ bool mates_threat(struct Position *p, int side) {
                 tmp = InterPath[to][ekp];
                 while (tmp) {
                     BitBoard tmp2;
-                    inter = bitboard_find_set_bit(tmp);
+                    int inter = bitboard_find_set_bit(tmp);
                     tmp &= tmp - 1;
                     tmp2 = p->atkFr[inter] & p->mask[oside][0];
                     if (bitboard_count_bits(tmp2) < 2)
@@ -231,14 +225,13 @@ bool mates_threat(struct Position *p, int side) {
 
     pcs = p->mask[side][Bishop];
     while (pcs) {
-        int to;
         BitBoard mvs;
         fr = bitboard_find_set_bit(pcs);
         pcs &= pcs - 1;
         mvs = (p->atkTo[fr] & BishopEPM[ekp]) & ~p->mask[side][0];
         while (mvs) {
             BitBoard tmp;
-            to = bitboard_find_set_bit(mvs);
+            int to = bitboard_find_set_bit(mvs);
             mvs &= mvs - 1;
             /* check whether path is obstructed */
             tmp = InterPath[ekp][to];
@@ -247,11 +240,10 @@ bool mates_threat(struct Position *p, int side) {
             /* check wether all flight squares are covered */
             tmp = ksafe & ~BishopEPM[to];
             if (tmp) {
-                int flight;
                 int free = 0;
                 do {
                     BitBoard att;
-                    flight = bitboard_find_set_bit(tmp);
+                    int flight = bitboard_find_set_bit(tmp);
                     tmp &= tmp - 1;
                     att = p->atkFr[flight] & p->mask[side][0];
                     bitboard_clr_bit(att, fr);
@@ -290,7 +282,6 @@ bool mates_threat(struct Position *p, int side) {
                 }
             } else {
                 /* distant check */
-                int inter;
                 int def = 0;
                 tmp = p->atkFr[to];
                 bitboard_clr_bit(tmp, fr);
@@ -300,7 +291,7 @@ bool mates_threat(struct Position *p, int side) {
                 tmp = InterPath[to][ekp];
                 while (tmp) {
                     BitBoard tmp2;
-                    inter = bitboard_find_set_bit(tmp);
+                    int inter = bitboard_find_set_bit(tmp);
                     tmp &= tmp - 1;
                     tmp2 = p->atkFr[inter] & p->mask[oside][0];
                     if (bitboard_count_bits(tmp2) < 2)
@@ -321,14 +312,13 @@ bool mates_threat(struct Position *p, int side) {
 
     pcs = p->mask[side][Knight];
     while (pcs) {
-        int to;
         BitBoard mvs;
         fr = bitboard_find_set_bit(pcs);
         pcs &= pcs - 1;
         mvs = (p->atkTo[fr] & KnightEPM[ekp]) & ~p->mask[side][0];
         while (mvs) {
             BitBoard def;
-            to = bitboard_find_set_bit(mvs);
+            int to = bitboard_find_set_bit(mvs);
             mvs &= mvs - 1;
             /*
              * check whether the square is defended. If so, the defender
@@ -354,11 +344,10 @@ bool mates_threat(struct Position *p, int side) {
                 continue;
             def = ksafe & ~KnightEPM[to];
             if (def) {
-                int flight;
                 int free = 0;
                 do {
                     BitBoard att;
-                    flight = bitboard_find_set_bit(def);
+                    int flight = bitboard_find_set_bit(def);
                     def &= def - 1;
                     att = p->atkFr[flight] & p->mask[side][0];
                     bitboard_clr_bit(att, fr);

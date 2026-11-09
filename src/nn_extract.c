@@ -154,7 +154,7 @@ int nn_extract_features(const uint8_t *data, size_t n_records, int32_t *feat_w,
         int32_t *afb = afeat_b + i * NN_MAX_ATTACK_FEATURES;
         int32_t *pm = phase + i * NN_PHASE_COUNT;
         BinaryPosition bp;
-        struct Position *p;
+        Position *p;
 
         memset(fw, -1, NN_MAX_PIECE_FEATURES * sizeof(int32_t));
         memset(fb, -1, NN_MAX_PIECE_FEATURES * sizeof(int32_t));

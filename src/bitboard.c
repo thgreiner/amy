@@ -57,6 +57,7 @@ int bitboard_count_bits(BitBoard i) {
 }
 #endif
 
+#ifdef DEBUG
 void bitboard_print(BitBoard x) {
     int i, j;
     for (i = 7; i >= 0; i--) {
@@ -70,3 +71,4 @@ void bitboard_print(BitBoard x) {
         print(0, "\n");
     }
 }
+#endif

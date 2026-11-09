@@ -69,8 +69,8 @@ static unsigned int ST_Size, ST_Mask;
 
 int L_HT_Bits = 16, L_HT_Size, L_HT_Mask;
 
-static struct HTEntry *TranspositionTable = NULL;
-static struct STEntry *ScoreTable = NULL;
+static HTEntry *TranspositionTable = NULL;
+static STEntry *ScoreTable = NULL;
 static int HTGeneration = 0;
 
 static OPTIONAL_ATOMIC unsigned int HTStoreFailed = 0, HTStoreTried = 0;
@@ -146,13 +146,13 @@ static void release_write_lock(atomic_int *data) {
 /**
  * Gets an entry from the global transposition table.
  */
-static inline struct HTEntry ht_get_entry(hash_t key) {
+static inline HTEntry ht_get_entry(hash_t key) {
 #if MP && HAVE_LIBPTHREAD
     atomic_int *mutex = TranspositionMutex + ((key >> 32) & MUTEX_MASK);
     acquire_read_lock(mutex);
 #endif /* MP && HAVE_LIBPTHREAD */
 
-    struct HTEntry entry = TranspositionTable[(key >> 32) & HT_Mask];
+    HTEntry entry = TranspositionTable[(key >> 32) & HT_Mask];
 
 #if MP && HAVE_LIBPTHREAD
     release_read_lock(mutex);
@@ -164,7 +164,7 @@ static inline struct HTEntry ht_get_entry(hash_t key) {
 /**
  * Puts an entry to the global transposition table.
  */
-static inline void ht_put_entry(hash_t key, struct HTEntry entry) {
+static inline void ht_put_entry(hash_t key, HTEntry entry) {
 #if MP && HAVE_LIBPTHREAD
     atomic_int *mutex = TranspositionMutex + ((key >> 32) & MUTEX_MASK);
     acquire_write_lock(mutex);
@@ -190,7 +190,7 @@ static void ht_increment_cpus(hash_t key) {
     acquire_write_lock(mutex);
 #endif /* HAVE_LIBPTHREAD */
 
-    struct HTEntry *h = &TranspositionTable[(key >> 32) & HT_Mask];
+    HTEntry *h = &TranspositionTable[(key >> 32) & HT_Mask];
 
     if (h->ht_Key == key)
         h->ht_Flags += HT_NCPU_INCREMENT;
@@ -204,13 +204,13 @@ static void ht_increment_cpus(hash_t key) {
 /**
  *
  */
-static inline bool ht_put_entry_best_effort(const hash_t key,
-                                            struct HTEntry entry, int depth) {
+static inline bool ht_put_entry_best_effort(const hash_t key, HTEntry entry,
+                                            int depth) {
     const hash_t key1 = key;
     const hash_t key2 = key + 1;
 
-    struct HTEntry entry1 = ht_get_entry(key1);
-    struct HTEntry entry2 = ht_get_entry(key2);
+    HTEntry entry1 = ht_get_entry(key1);
+    HTEntry entry2 = ht_get_entry(key2);
 
     /* Overwrite any matching entry. */
     if (entry1.ht_Key == key) {
@@ -258,15 +258,14 @@ static inline bool ht_put_entry_best_effort(const hash_t key,
 
 #if MP
 LookupResult ht_probe(const hash_t key, int *score, int depth, move_t *bestm,
-                      bool *threat, int ply, int exclusiveP,
-                      struct HTEntry *localHT)
+                      bool *threat, int ply, int exclusiveP, HTEntry *localHT)
 #else
 LookupResult ht_probe(const hash_t key, int *score, int depth, move_t *bestm,
                       bool *threat, int ply)
 #endif
 {
     hash_t effective_key = key;
-    struct HTEntry h = ht_get_entry(effective_key);
+    HTEntry h = ht_get_entry(effective_key);
     bool found = h.ht_Key == key;
 
     if (!found) {
@@ -350,7 +349,7 @@ LookupResult ht_probe_score(hash_t key, int *score) {
     acquire_read_lock(ScoreMutex + ((key >> 32) & MUTEX_MASK));
 #endif /* MP && HAVE_LIBPTHREAD */
 
-    struct STEntry h = ScoreTable[(key >> 32) & ST_Mask];
+    STEntry h = ScoreTable[(key >> 32) & ST_Mask];
 
 #if MP && HAVE_LIBPTHREAD
     release_read_lock(ScoreMutex + ((key >> 32) & MUTEX_MASK));
@@ -368,11 +367,11 @@ void ht_store(hash_t key, int best, int alpha, int beta, int bestm, int depth,
               int threat, int ply
 #if MP
               ,
-              struct HTEntry *localHT
+              HTEntry *localHT
 #endif
 ) {
     hash_t effective_key = key;
-    struct HTEntry entry = ht_get_entry(effective_key);
+    HTEntry entry = ht_get_entry(effective_key);
     bool found = entry.ht_Key == key;
 
     if (!found) {
@@ -445,7 +444,7 @@ void ht_store(hash_t key, int best, int alpha, int beta, int bestm, int depth,
 }
 
 void ht_store_score(hash_t key, int score) {
-    struct STEntry h = {.st_Key = key, .st_Score = score};
+    STEntry h = {.st_Key = key, .st_Score = score};
 
 #if MP && HAVE_LIBPTHREAD
     acquire_write_lock(ScoreMutex + ((key >> 32) & MUTEX_MASK));
@@ -456,20 +455,6 @@ void ht_store_score(hash_t key, int score) {
 #if MP && HAVE_LIBPTHREAD
     release_write_lock(ScoreMutex + ((key >> 32) & MUTEX_MASK));
 #endif /* MP && HAVE_LIBPTHREAD */
-}
-
-/* Moved this to a seperate routine to make the PB-Move
- * selection work better..
- */
-
-void ht_clear(void) {
-    unsigned int i;
-    struct HTEntry *h = TranspositionTable;
-
-    for (i = 0; i < HT_Size; i++, h++) {
-        h->ht_Key = 0;
-        h->ht_Flags = 0;
-    }
 }
 
 void ht_age(void) {
@@ -507,7 +492,7 @@ void ht_allocate(void) {
     HT_Size = 1 << HT_Bits;
     HT_Mask = HT_Size - 1;
 
-    TranspositionTable = safe_calloc(HT_Size, sizeof(struct HTEntry));
+    TranspositionTable = safe_calloc(HT_Size, sizeof(HTEntry));
 
     /* Thread-local hash table - only calculate sizes and bits here...*/
     L_HT_Size = 1 << L_HT_Bits;
@@ -516,11 +501,11 @@ void ht_allocate(void) {
     ST_Size = 1 << ST_Bits;
     ST_Mask = ST_Size - 1;
 
-    ScoreTable = safe_calloc(ST_Size, sizeof(struct STEntry));
+    ScoreTable = safe_calloc(ST_Size, sizeof(STEntry));
 
     print(0, "Hashtable sizes: %d k, %d k (%d, %d bits)\n",
-          ((1 << HT_Bits) * sizeof(struct HTEntry)) / 1024,
-          ((1 << ST_Bits) * sizeof(struct STEntry)) / 1024, HT_Bits, ST_Bits);
+          ((1 << HT_Bits) * sizeof(HTEntry)) / 1024,
+          ((1 << ST_Bits) * sizeof(STEntry)) / 1024, HT_Bits, ST_Bits);
 
 #if MP && HAVE_LIBPTHREAD
     for (int i = 0; i < MUTEX_COUNT; i++) {
@@ -533,7 +518,7 @@ void ht_allocate(void) {
 void ht_show_statistics(void) {
     unsigned int i;
     unsigned int cnt = 0;
-    struct HTEntry *h = TranspositionTable;
+    HTEntry *h = TranspositionTable;
 
     for (i = 0; i < HT_Size; i++, h++) {
         if ((h->ht_Flags & HT_AGE) == HTGeneration)
@@ -551,7 +536,7 @@ void ht_show_statistics(void) {
           utils_percentage(HTStoreFailed, HTStoreTried));
 }
 
-void ht_guess_sizes(char *size) {
+void ht_guess_sizes(const char *size) {
     const int64_t min_size = 64LL * 1024LL;
     const int64_t max_size = 1024LL * 1024LL * 1024LL; /* 1 TB is plenty */
     int64_t total_size = min_size;
@@ -609,15 +594,15 @@ void ht_guess_sizes(char *size) {
     budget = total_size * 4 / 5;
 
     for (HT_Bits = 1; HT_Bits < 31; HT_Bits++) {
-        if ((1ULL << (HT_Bits + 1)) * (uint64_t)sizeof(struct HTEntry) >
+        if ((1ULL << (HT_Bits + 1)) * (uint64_t)sizeof(HTEntry) >
             (uint64_t)budget)
             break;
     }
 
-    total_size -= (1LL << HT_Bits) * sizeof(struct HTEntry);
+    total_size -= (1LL << HT_Bits) * sizeof(HTEntry);
 
     for (ST_Bits = 1; ST_Bits < 31; ST_Bits++) {
-        if ((1ULL << (ST_Bits + 1)) * (uint64_t)sizeof(struct STEntry) >
+        if ((1ULL << (ST_Bits + 1)) * (uint64_t)sizeof(STEntry) >
             (uint64_t)total_size)
             break;
     }

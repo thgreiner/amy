@@ -54,18 +54,18 @@ typedef enum {
     OnEvaluation
 } LookupResult;
 
-struct HTEntry {
+typedef struct {
     hash_t ht_Key;
     move_t ht_Move;
     int ht_Score;
     short ht_Flags;
     short ht_Depth;
-};
+} HTEntry;
 
-struct STEntry {
+typedef struct {
     hash_t st_Key;
     int st_Score;
-};
+} STEntry;
 
 extern hash_t HashKeys[2][8][64];
 extern hash_t HashKeysEP[64];
@@ -80,8 +80,8 @@ void ht_age(void);
 void ht_allocate(void);
 #if MP
 LookupResult ht_probe(hash_t, int *, int, move_t *, bool *, int, int,
-                      struct HTEntry *);
-void ht_store(hash_t, int, int, int, int, int, int, int, struct HTEntry *);
+                      HTEntry *);
+void ht_store(hash_t, int, int, int, int, int, int, int, HTEntry *);
 #else
 LookupResult ht_probe(hash_t, int *, int, move_t *, bool *, int);
 void ht_store(hash_t, int, int, int, int, int, int, int);
@@ -89,7 +89,7 @@ void ht_store(hash_t, int, int, int, int, int, int, int);
 LookupResult ht_probe_score(hash_t, int *);
 void ht_store_score(hash_t, int);
 void ht_show_statistics(void);
-void ht_guess_sizes(char *);
+void ht_guess_sizes(const char *);
 void ht_init(void);
 
 #endif

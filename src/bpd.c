@@ -143,7 +143,7 @@ static bool bpd_write_log(void) {
     return true;
 }
 
-void bpd_encode(const struct Position *p, int score, BinaryPosition *out) {
+void bpd_encode(const Position *p, int score, BinaryPosition *out) {
     int i;
 
     out->score = score;
@@ -185,7 +185,7 @@ void bpd_encode(const struct Position *p, int score, BinaryPosition *out) {
     }
 }
 
-void bpd_log_evaluation(const struct Position *p, int score) {
+void bpd_log_evaluation(const Position *p, int score) {
     if (log_disabled)
         return;
 
@@ -216,7 +216,7 @@ void bpd_flush_log(void) {
  * hash keys, king squares) are not touched; the caller has to call
  * dbase_recalc_attacks() afterwards.
  */
-static void bpd_decode_into(const BinaryPosition *in, struct Position *p) {
+static void bpd_decode_into(const BinaryPosition *in, Position *p) {
     int i;
 
     p->turn = in->turn ? Black : White;
@@ -264,16 +264,16 @@ static void bpd_decode_into(const BinaryPosition *in, struct Position *p) {
     }
 }
 
-struct Position *bpd_decode(const BinaryPosition *in) {
-    struct Position *p;
+Position *bpd_decode(const BinaryPosition *in) {
+    Position *p;
     int i;
     int whiteKing = 0;
     int blackKing = 0;
 
     /* Allocate like dbase_create_position_from_epd() does */
-    p = safe_calloc(1, sizeof(struct Position));
+    p = safe_calloc(1, sizeof(Position));
     p->gameLogSize = BPD_INITIAL_GAME_LOG_SIZE;
-    p->gameLog = safe_calloc(p->gameLogSize, sizeof(struct GameLog));
+    p->gameLog = safe_calloc(p->gameLogSize, sizeof(GameLog));
     p->actLog = p->gameLog;
     p->actLog->gl_IrrevCount = 0;
 
@@ -352,8 +352,7 @@ int bpd_write_test_data(const char *path) {
     }
 
     for (i = 0; i < n; i++) {
-        struct Position *p =
-            dbase_create_position_from_epd((char *)bpd_test_epds[i]);
+        Position *p = dbase_create_position_from_epd((char *)bpd_test_epds[i]);
 
         bpd_encode(p, i + 1, &testdata[i]);
         dbase_free_position(p);

@@ -46,7 +46,7 @@ static void test_randomized_attack_weights(void) {
  * Assert that the stored attack map equals the expected list of
  * indexes (exact match, including order: the maps are sorted).
  */
-static void assert_attack_map_eq(IntSetSorted *actual, const int expected[],
+static void assert_attack_map_eq(const IntSetSorted *actual, const int expected[],
                                  size_t n) {
     assert(intset_sorted_count(actual) == n);
     for (size_t i = 0; i < n; i++) {
@@ -58,7 +58,7 @@ static void assert_attack_map_eq(IntSetSorted *actual, const int expected[],
  * Assert that the stored attack maps equal freshly computed ones, i.e.
  * that they are up to date for the current position.
  */
-static void assert_attack_maps_up_to_date(struct Position *p) {
+static void assert_attack_maps_up_to_date(Position *p) {
     IntSetSorted w, b;
 
     intset_sorted_init(&w);
@@ -75,7 +75,7 @@ static void assert_attack_maps_up_to_date(struct Position *p) {
  * corrupt the position state (pieces and masks), and any failure
  * afterwards would be a ghost.
  */
-static void assert_move_legal(struct Position *p, move_t move) {
+static void assert_move_legal(Position *p, move_t move) {
     heap_t heap = heap_allocate();
     bool legal = false;
 
@@ -98,7 +98,7 @@ static void assert_move_legal(struct Position *p, move_t move) {
  * (correctly) unchanged.
  */
 static void test_knight_move(void) {
-    struct Position *p = dbase_initial_position();
+    Position *p = dbase_initial_position();
 
     nn_init_accumulator(p);
     nn_validate_weights(p);
@@ -131,7 +131,7 @@ static void test_knight_move(void) {
  * (from' 56, to' 49: king on g1, mirror 7)
  */
 static void test_promotion(void) {
-    struct Position *p = dbase_create_position_from_epd(
+    Position *p = dbase_create_position_from_epd(
         "3r1k2/p3qppP/8/3p4/3r4/5QP1/P4PB1/4R1K1 w - -");
 
     int expected_w_before[] = {73971, 79012, 79026};
@@ -179,7 +179,7 @@ static void test_promotion(void) {
           (king on e8, mirror 0x3f)
  */
 static void test_castle(void) {
-    struct Position *p = dbase_create_position_from_epd(
+    Position *p = dbase_create_position_from_epd(
         "r1bqkb1r/pppp1ppp/2n2n2/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R w KQkq -");
 
     int expected_w[] = {17571, 43437};
@@ -220,8 +220,7 @@ static void test_castle(void) {
  * must be reset for the accumulator and the map to stay consistent.
  */
 static void test_king_move(void) {
-    struct Position *p =
-        dbase_create_position_from_epd("4k3/8/8/8/8/8/8/4K3 w - -");
+    Position *p = dbase_create_position_from_epd("4k3/8/8/8/8/8/8/4K3 w - -");
 
     nn_init_accumulator(p);
     nn_validate_weights(p);
@@ -273,7 +272,7 @@ static void test_king_move(void) {
  * part of the attack maps.
  */
 static void test_en_passant(void) {
-    struct Position *p = dbase_create_position_from_epd(
+    Position *p = dbase_create_position_from_epd(
         "rnbqkbnr/1pp1pppp/p7/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6");
 
     int expected_w[] = {37039};
@@ -314,7 +313,7 @@ static void test_en_passant(void) {
  * maps.
  */
 static void test_attack_update_initial_position(void) {
-    struct Position *p = dbase_initial_position();
+    Position *p = dbase_initial_position();
 
     nn_init_accumulator(p);
     nn_validate_weights(p);
@@ -338,7 +337,7 @@ static void test_attack_update_initial_position(void) {
           (king on e8, mirror 0x3f)
  */
 static void test_attack_update_rook(void) {
-    struct Position *p =
+    Position *p =
         dbase_create_position_from_epd("4k3/8/8/8/8/8/K7/1R4r1 w - -");
 
     int expected_w[] = {69702};
@@ -399,7 +398,7 @@ static void test_attack_update_rook(void) {
           (black king on h8, mirror 0x3f)
  */
 static void test_attack_update_queen(void) {
-    struct Position *p =
+    Position *p =
         dbase_create_position_from_epd("6k1/8/3b4/2n1r3/3Q4/8/8/1K6 w - -");
 
     int expected_w_before[] = {83682, 87787, 91876};
@@ -444,8 +443,7 @@ static void test_attack_update_queen(void) {
    Kd2 (no mirror): Rook a4 -> Knight a5: plane 15, sq 24*64+32=1568 -> 63008
  */
 static void test_attack_update_king_mirror(void) {
-    struct Position *p =
-        dbase_create_position_from_epd("3k4/8/8/n7/R7/8/4K3/8 w - -");
+    Position *p = dbase_create_position_from_epd("3k4/8/8/n7/R7/8/4K3/8 w - -");
 
     int expected_mirrored[] = {63463};
     int expected_unmirrored[] = {63008};
@@ -484,7 +482,7 @@ static void test_attack_update_king_mirror(void) {
  * accumulator must not change.
  */
 static void test_attack_update_idempotent(void) {
-    struct Position *p =
+    Position *p =
         dbase_create_position_from_epd("4k3/8/8/8/8/8/K7/1R4r1 w - -");
 
     int16_t acc_w[ACCUMULATOR_SIZE], acc_b[ACCUMULATOR_SIZE];
@@ -511,7 +509,7 @@ static void test_attack_update_idempotent(void) {
  * the evaluation must bring them up to date.
  */
 static void test_evaluate_updates_attack_maps(void) {
-    struct Position *p =
+    Position *p =
         dbase_create_position_from_epd("4k3/8/8/8/8/8/K7/1R4r1 w - -");
 
     /* The test needs a working hash table for nn_evaluate_position(). */
@@ -552,7 +550,7 @@ static void test_evaluate_updates_attack_maps(void) {
 }
 
 static void stress_position(const char *epd, int iterations) {
-    struct Position *p = dbase_create_position_from_epd((char *)epd);
+    Position *p = dbase_create_position_from_epd((char *)epd);
     nn_init_accumulator(p);
     nn_validate_weights(p);
 
@@ -635,7 +633,7 @@ static void test_phase_index(void) {
     static const int expected[] = {0, 1, 1, 2, 2, 3, 3, 3};
 
     for (int i = 0; i < 8; i++) {
-        struct Position *p = dbase_create_position_from_epd(
+        Position *p = dbase_create_position_from_epd(
             (char *)epd_with_n_nonpawn(counts[i]));
 
         assert(nn_phase_index(p) == expected[i]);
@@ -647,7 +645,7 @@ static void test_phase_masks(void) {
     /* Non-edge buckets: exactly nn_phase_index() active. */
     static const int counts[] = {0, 1, 3, 4, 6, 7, 9, 10, 11, 12};
     for (size_t i = 0; i < 10; i++) {
-        struct Position *p = dbase_create_position_from_epd(
+        Position *p = dbase_create_position_from_epd(
             (char *)epd_with_n_nonpawn(counts[i]));
         int masks[NN_PHASE_COUNT];
         nn_phase_masks(p, masks);
@@ -661,7 +659,7 @@ static void test_phase_masks(void) {
     /* Bucket tops (counts 2, 5, 8): the phase itself and the higher
      * one are both active (training co-trains both heads). */
     for (int phase = 0; phase < NN_PHASE_COUNT - 1; phase++) {
-        struct Position *p = dbase_create_position_from_epd(
+        Position *p = dbase_create_position_from_epd(
             (char *)epd_with_n_nonpawn(phase * 3 + 2));
         int masks[NN_PHASE_COUNT];
         nn_phase_masks(p, masks);
@@ -691,12 +689,11 @@ static void test_phase_selection(void) {
     int delta = 100 * NN_TEST_SCALE;
 
     /* Phase 0: kings only. */
-    struct Position *p0 =
-        dbase_create_position_from_epd("4k3/8/8/8/8/8/8/K7 b - -");
+    Position *p0 = dbase_create_position_from_epd("4k3/8/8/8/8/8/8/K7 b - -");
     assert(nn_phase_index(p0) == 0);
 
     /* Phase 3: 12 non-pawn pieces. */
-    struct Position *p3 = dbase_initial_position();
+    Position *p3 = dbase_initial_position();
     assert(nn_phase_index(p3) == 3);
 
     nn_init_accumulator(p0);

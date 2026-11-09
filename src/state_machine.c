@@ -52,7 +52,7 @@ bool PostMode = false;
 bool AutoSave = false;
 bool SelfPlayMode = false;
 
-struct Position *CurrentPosition = NULL;
+Position *CurrentPosition = NULL;
 int ComputerSide;
 
 int self_play_games_remaining = 0;
@@ -61,8 +61,6 @@ int self_play_games_remaining = 0;
  * Implements the state machine.
  */
 void state_machine_run(void) {
-    const char *gameend;
-
     cmd_newgame(NULL);
 
     ComputerSide = Black;
@@ -91,7 +89,7 @@ void state_machine_run(void) {
             if (!utils_read_line_prompt(InputBuffer, 1023, prompt)) {
                 State = STATE_END;
             } else {
-                struct Command *command = cmd_parse_input(InputBuffer);
+                Command *command = cmd_parse_input(InputBuffer);
                 if (command) {
                     cmd_execute(command);
                     if (command->move != M_NONE) {
@@ -138,7 +136,7 @@ void state_machine_run(void) {
          * Check for game termination
          */
 
-        gameend = dbase_game_end(CurrentPosition);
+        const char *gameend = dbase_game_end(CurrentPosition);
         if (gameend != NULL) {
             print(0, "%s\n", gameend);
             if (State == STATE_ANALYZING) {

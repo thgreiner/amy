@@ -39,7 +39,7 @@
  * Verify that the set contains exactly the given values (in ascending
  * order, which is also the invariant of IntSetSorted).
  */
-static void assert_intset_eq(IntSetSorted *set, const int32_t expected[],
+static void assert_intset_eq(const IntSetSorted *set, const int32_t expected[],
                              size_t n) {
     size_t i;
 
@@ -49,7 +49,7 @@ static void assert_intset_eq(IntSetSorted *set, const int32_t expected[],
     }
 }
 
-static void assert_intset_empty(IntSetSorted *set) {
+static void assert_intset_empty(const IntSetSorted *set) {
     assert(intset_sorted_count(set) == 0);
 }
 
@@ -58,7 +58,7 @@ static void assert_intset_empty(IntSetSorted *set) {
  * so both attack maps must be empty.
  */
 static void test_attack_map_initial_position(void) {
-    struct Position *p;
+    Position *p;
     IntSetSorted w;
     IntSetSorted b;
 
@@ -83,7 +83,7 @@ static void test_attack_map_initial_position(void) {
    black: Rook g1 -> Rook b1: plane 17, sq 6*64+1=385   -> 70017
  */
 static void test_attack_map_rook_both_sides(void) {
-    struct Position *p;
+    Position *p;
     IntSetSorted w;
     IntSetSorted b;
     int32_t expected_w[] = {69702};
@@ -113,7 +113,7 @@ static void test_attack_map_rook_both_sides(void) {
    black: (empty, the only attack is the excluded bishop -> pawn one)
  */
 static void test_attack_map_pawn_and_knight(void) {
-    struct Position *p;
+    Position *p;
     IntSetSorted w;
     IntSetSorted b;
     int32_t expected_w[] = {1632, 5730, 29267};
@@ -141,7 +141,7 @@ static void test_attack_map_pawn_and_knight(void) {
           Queen d4 -> Rook e5:    plane 22, sq 27*64+36=1764  -> 91876
  */
 static void test_attack_map_queen_attacks(void) {
-    struct Position *p;
+    Position *p;
     IntSetSorted w;
     IntSetSorted b;
     int32_t expected_w[] = {83682, 87787, 91876};
@@ -170,7 +170,7 @@ static void test_attack_map_queen_attacks(void) {
           Rook d6 -> Queen d4:    plane 18, sq 43*64+27=2779  -> 76507
  */
 static void test_attack_map_queen_line_filter(void) {
-    struct Position *p;
+    Position *p;
     IntSetSorted w;
     IntSetSorted b;
     int32_t expected_b[] = {55012, 75044};

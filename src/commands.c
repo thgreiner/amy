@@ -37,13 +37,11 @@
 #include <string.h>
 
 #include "bitboard.h"
-#include "blunder.h"
 #include "bookup.h"
 #include "bpd.h"
 #include "commands.h"
 #include "dbase.h"
 #include "eco.h"
-#include "filter.h"
 #include "heap.h"
 #include "inline.h"
 #include "neural_net.h"
@@ -96,12 +94,11 @@ static void cmd_show_score(char *);
 static void cmd_test_score(char *);
 static void cmd_set_search_depth(char *);
 
-static struct CommandEntry Commands[] = {
+static CommandEntry Commands[] = {
     {"analyze", &cmd_analyze, false, false, "enter analyze mode (xboard)",
      NULL},
     {"anno", &cmd_annotate, false, false, "annotate a game", NULL},
     {"bench", &cmd_benchmark, false, false, "run a benchmark", NULL},
-    {"blunder", &blunder_check, false, false, "check for blunders", NULL},
     {"book", &cmd_book, false, false, "display book moves", NULL},
     {"bk", &cmd_book, false, false, "display book moves (xboard)", NULL},
     {"bookup", &book_up, false, false, "create a book", NULL},
@@ -117,8 +114,6 @@ static struct CommandEntry Commands[] = {
     {"epd", &cmd_set_epd, false, false, "set position in EPD", NULL},
     {"edit", &cmd_edit, false, false, "edit position (xboard!)", NULL},
     {"exit", &cmd_stop_analyze, true, true, "exit analyze mode (xboard)", NULL},
-    {"filter", &filter_quiescent_positions, false, false,
-     "filter quiescent positions", NULL},
     {"flatten", &cmd_flatten, true, false, "flatten book", NULL},
     {"force", &cmd_force, true, false, "switch force mode (xboard)", NULL},
     {"fuzz", &cmd_fuzz, true, false, "play more randomly", NULL},
@@ -155,11 +150,11 @@ static struct CommandEntry Commands[] = {
 
 char AutoSaveFileName[64];
 
-struct Command *cmd_parse_input(char *line) {
-    static struct Command theCommand;
+Command *cmd_parse_input(char *line) {
+    static Command theCommand;
     char *token;
     int move;
-    struct CommandEntry *entry;
+    CommandEntry *entry;
 
     token = utils_next_token(&line, " \t\n\r");
     if (token == NULL)
@@ -197,7 +192,7 @@ struct Command *cmd_parse_input(char *line) {
     return NULL;
 }
 
-void cmd_execute(struct Command *theCommand) {
+void cmd_execute(Command *theCommand) {
     if (theCommand->move != M_NONE) {
         dbase_do_move(CurrentPosition, theCommand->move);
     } else {
@@ -231,13 +226,8 @@ static void cmd_show_eco(char *args) {
 }
 
 static void cmd_test(char *fname) {
-    struct Position *p;
     int solved = 0, total = 0;
     FILE *fin, *fout;
-    int i;
-    int btav = 0;
-    int btval;
-    int bsval;
     int lctval = 1900;
     char line[256];
 
@@ -254,8 +244,10 @@ static void cmd_test(char *fname) {
 
     fout = fopen("nsolved.epd", "w");
 
-    for (i = 1;; i++) {
+    for (int i = 1;; i++) {
+        Position *p;
         int move, j;
+        int btav = 0;
         bool correct = false;
 
         if (fgets(line, 256, fin) == NULL)
@@ -266,7 +258,7 @@ static void cmd_test(char *fname) {
 
         /* TestSwap(); */
 
-        move = search_iterate(p, NULL, M_NONE, NULL);
+        move = search_iterate(p);
         for (j = 0; goodmove[j] != M_NONE; j++)
             if (move == goodmove[j])
                 correct = true;
@@ -305,8 +297,8 @@ static void cmd_test(char *fname) {
                 fprintf(fout, "%s", line);
         }
 
-        btval = 2630 - (btav / total);
-        bsval = (btav / (17 * 60));
+        int btval = 2630 - (btav / total);
+        int bsval = (btav / (17 * 60));
         bsval = 2830 - bsval * bsval;
 
         print(0, "solved %d out of %d  (BT2630 = %d, LCT2 = %d, BS2830 = %d)\n",
@@ -323,7 +315,6 @@ static void cmd_test(char *fname) {
 }
 
 static void cmd_test_score(char *fname) {
-    struct Position *p;
     FILE *fin, *fout;
     char line[256];
 
@@ -344,7 +335,7 @@ static void cmd_test_score(char *fname) {
 
         if (fgets(line, 256, fin) == NULL)
             break;
-        p = dbase_create_position_from_epd(line);
+        Position *p = dbase_create_position_from_epd(line);
         int score = nn_evaluate_position(p);
 
         if (fout) {
@@ -432,7 +423,7 @@ void cmd_edit(char *args) {
     int i;
     int side = White;
     char buffer[16];
-    struct Position *p = CurrentPosition;
+    Position *p = CurrentPosition;
 
     for (i = 0; i < 64; i++)
         p->piece[i] = Neutral;
@@ -548,10 +539,10 @@ static void cmd_set_epd(char *args) {
 
 static void cmd_run_annotate(char *fname, int side) {
     FILE *fin = fopen(fname, "r");
-    struct Position *p;
+    Position *p;
 
     if (fin) {
-        struct PGNHeader header;
+        PGNHeader header;
         char move[16];
 
         while (!pgn_scan_header(fin, &header)) {
@@ -565,7 +556,7 @@ static void cmd_run_annotate(char *fname, int side) {
                           (p->ply / 2) + 1);
                     print(0, "%s\n", dbase_san(p, themove, san_buffer));
                     if (side == -1 || (side == p->turn)) {
-                        search_iterate(p, NULL, M_NONE, NULL);
+                        search_iterate(p);
                     }
                     dbase_do_move(p, themove);
                 }
@@ -581,7 +572,7 @@ static void cmd_run_annotate(char *fname, int side) {
 static void cmd_annotate(char *args) {
     int side = -1;
     char *arg1 = strtok(args, " \n\r");
-    char *arg2 = strtok(NULL, " \n\r");
+    const char *arg2 = strtok(NULL, " \n\r");
 
     if (!arg1) {
         print(0, "Usage: anno <file> [w|b|wb]\n");
@@ -652,7 +643,7 @@ static void cmd_show_distribution(char *args) {
 }
 
 static void cmd_help(char *args) {
-    struct CommandEntry *entry = Commands;
+    CommandEntry *entry = Commands;
 
     (void)args;
     print(2, "\nEnter a legal move (like e4, Nxd5, O-O, d1=Q+) or one of the\n"
@@ -679,7 +670,7 @@ static void cmd_benchmark(char *args) {
     const int cycles = 10000000;
     unsigned long start, end;
     double elapsed;
-    struct Position *p;
+    Position *p;
 
     p = dbase_initial_position();
 
@@ -699,7 +690,7 @@ static void cmd_benchmark(char *args) {
     dbase_free_position(p);
 }
 
-static BitBoard cmd_search_fully(struct Position *p, BitBoard cnt, int depth,
+static BitBoard cmd_search_fully(Position *p, BitBoard cnt, int depth,
                                  heap_t heap) {
     unsigned int i;
 

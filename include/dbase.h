@@ -116,15 +116,25 @@ int bitboard_count_bits(BitBoard);
 int bitboard_find_set_bit(BitBoard);
 #endif
 
-struct Position {
+typedef struct {
+    move_t gl_Move;        /* the move that has been made in the position */
+    int8_t gl_Piece;       /* the piece that was captured (if any) */
+    int8_t gl_Castle;      /* the castling rights */
+    int8_t gl_EnPassant;   /* the enpassant target square (if any) */
+    uint8_t gl_IrrevCount; /* number of moves since last irreversible move */
+    hash_t gl_HashKey;     /* used to detect repetitions */
+    hash_t gl_PawnKey;
+} GameLog;
+
+typedef struct {
     BitBoard atkTo[64];
     BitBoard atkFr[64];
     BitBoard mask[2][7];
     BitBoard slidingPieces;
     hash_t hkey;
     hash_t pkey;
-    struct GameLog *gameLog;
-    struct GameLog *actLog;
+    GameLog *gameLog;
+    GameLog *actLog;
     unsigned int gameLogSize;
     int material[2], nonPawn[2];
     int16_t accumulator_w_q[ACCUMULATOR_SIZE];
@@ -139,17 +149,7 @@ struct Position {
     int8_t turn; /* 0 == white, 1 == black */
     int8_t kingSq[2];
     int8_t material_signature[2];
-};
-
-struct GameLog {
-    move_t gl_Move;        /* the move that has been made in the position */
-    int8_t gl_Piece;       /* the piece that was captured (if any) */
-    int8_t gl_Castle;      /* the castling rights */
-    int8_t gl_EnPassant;   /* the enpassant target square (if any) */
-    uint8_t gl_IrrevCount; /* number of moves since last irreversible move */
-    hash_t gl_HashKey;     /* used to detect repetitions */
-    hash_t gl_PawnKey;
-};
+} Position;
 
 extern int Value[];
 extern int goodmove[MAX_EPD_MOVES];
@@ -157,40 +157,39 @@ extern int badmove[MAX_EPD_MOVES];
 extern char PieceName[];
 extern const int8_t CastleMask[2][2];
 
-void dbase_do_move(struct Position *, move_t move);
-void dbase_undo_move(struct Position *, move_t move);
-void dbase_do_null(struct Position *);
-void dbase_undo_null(struct Position *);
-void dbase_gen_to(struct Position *, Square, heap_t);
-void dbase_gen_enpas(struct Position *, heap_t);
-void dbase_gen_from(struct Position *, Square, heap_t);
-void dbase_gen_checks(struct Position *, heap_t);
-bool dbase_may_castle(struct Position *, move_t move);
-bool dbase_legal_move(struct Position *, move_t move);
-bool dbase_is_checking_move(struct Position *, move_t move);
-int dbase_legal_moves(struct Position *, heap_t);
-void dbase_plegal_moves(struct Position *, heap_t);
-int dbase_repeated(struct Position *, int mode);
+void dbase_do_move(Position *, move_t move);
+void dbase_undo_move(Position *, move_t move);
+void dbase_do_null(Position *);
+void dbase_undo_null(Position *);
+void dbase_gen_to(const Position *, Square, heap_t);
+void dbase_gen_enpas(const Position *, heap_t);
+void dbase_gen_from(const Position *, Square, heap_t);
+void dbase_gen_checks(Position *, heap_t);
+bool dbase_may_castle(Position *, move_t move);
+bool dbase_legal_move(Position *, move_t move);
+bool dbase_is_checking_move(Position *, move_t move);
+int dbase_legal_moves(Position *, heap_t);
+void dbase_plegal_moves(Position *, heap_t);
+int dbase_repeated(const Position *, int mode);
 const char *dbase_color_name(Color c);
-char *dbase_san(struct Position *, move_t, char *);
-move_t dbase_parse_san(struct Position *, char *);
+char *dbase_san(Position *, move_t, char *);
+move_t dbase_parse_san(Position *, char *);
 move_t dbase_parse_san_list(char *, Color, move_t *, int, int *);
-char *dbase_make_epd(struct Position *);
-void dbase_show_position(struct Position *);
+char *dbase_make_epd(Position *);
+void dbase_show_position(Position *);
 
-struct Position *dbase_create_position_from_epd(char *);
-struct Position *dbase_initial_position(void);
-struct Position *dbase_clone_position(struct Position *src);
-void dbase_free_position(struct Position *);
+Position *dbase_create_position_from_epd(char *);
+Position *dbase_initial_position(void);
+Position *dbase_clone_position(const Position *src);
+void dbase_free_position(Position *);
 
-void dbase_show_moves(struct Position *);
-move_t dbase_parse_gsan(struct Position *, char *san);
-move_t dbase_parse_gsan_list(char *san, Color side, move_t *mvs, int cnt);
+void dbase_show_moves(Position *);
+move_t dbase_parse_gsan(Position *, const char *san);
 char *dbase_ics_san(move_t move);
-void dbase_recalc_attacks(struct Position *);
-const char *dbase_game_end(struct Position *);
+void dbase_recalc_attacks(Position *);
+const char *dbase_game_end(Position *);
 
-bool dbase_check_draw(const struct Position *);
-bool dbase_is_passed(const struct Position *, int, int);
+bool dbase_check_draw(const Position *);
+bool dbase_is_passed(const Position *, int, int);
 
 #endif

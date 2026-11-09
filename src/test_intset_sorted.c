@@ -56,7 +56,7 @@ static int is_sorted_ascending(const IntSetSorted *s) {
 static void test_intset_sorted_basics(void) {
     IntSetSorted s;
     int32_t junk[] = {50, 10, 30, 20, 40, 0, -1, 60};
-    int32_t *d;
+    const int32_t *d;
     int32_t want[] = {-1, 0, 10, 20, 30, 40, 50, 60};
     size_t i;
 
@@ -105,8 +105,8 @@ static void test_intset_sorted_full(void) {
 static void test_intset_sorted_set_ops(void) {
     IntSetSorted a, b, r;
     IntSetSorted big1, big2, small;
-    int32_t av[] = {1, 2, 3, 4, 5};
-    int32_t bv[] = {2, 4, 6};
+    const int32_t av[] = {1, 2, 3, 4, 5};
+    const int32_t bv[] = {2, 4, 6};
     int32_t dr[] = {1, 3, 5};
     int32_t ir[] = {2, 4};
     int32_t ur[] = {1, 2, 3, 4, 5, 6};

@@ -44,8 +44,8 @@ static const char *MAGIC = "ATRE";
 /**
  * Allocate a tree node.
  */
-static tree_node_t *tree_allocate_node(void *key_data, size_t key_len,
-                                       void *value_data, size_t value_len) {
+static tree_node_t *tree_allocate_node(const void *key_data, size_t key_len,
+                                       const void *value_data, size_t value_len) {
     tree_node_t *node = safe_malloc(sizeof(tree_node_t));
 
     node->key_data = safe_malloc(key_len);
@@ -82,7 +82,7 @@ void tree_free_node(tree_node_t *node) {
 /**
  * Compare two keys.
  */
-static int tree_cmp_keys(char *key1, size_t len1, char *key2, size_t len2) {
+static int tree_cmp_keys(const char *key1, size_t len1, const char *key2, size_t len2) {
     size_t min_len = (len1 < len2) ? len1 : len2;
     int result = memcmp(key1, key2, min_len);
 
@@ -96,14 +96,14 @@ static int tree_cmp_keys(char *key1, size_t len1, char *key2, size_t len2) {
 /**
  * Get the depth of a node - returns 0 if node is NULL.
  */
-static inline unsigned int tree_get_depth(tree_node_t *node) {
+static inline unsigned int tree_get_depth(const tree_node_t *node) {
     return (node == NULL) ? 0 : node->depth;
 }
 
 /**
  * Checks whether node is a leaf node (has no children).
  */
-static inline bool tree_is_leaf(tree_node_t *node) {
+static inline bool tree_is_leaf(const tree_node_t *node) {
     return node->left_child == NULL && node->right_child == NULL;
 }
 
@@ -215,10 +215,6 @@ tree_node_t *tree_add_node(tree_node_t *node, void *key_data, size_t key_len,
 
     if (comparison == 0) {
         node->value_data = safe_realloc(node->value_data, value_len);
-        if (node->value_data == NULL) {
-            perror("Failed to allocate value_data");
-            exit(1);
-        }
         memcpy(node->value_data, value_data, value_len);
         return node;
     } else if (comparison < 0) {
@@ -341,13 +337,11 @@ static inline size_t tree_read_size(FILE *fin) {
  */
 static tree_node_t *tree_load_internal(FILE *fin) {
     tree_node_t *node = NULL;
-    size_t key_len;
-    size_t value_len;
     char *key_data = safe_malloc(8);
     char *value_data = safe_malloc(256);
 
     for (;;) {
-        key_len = tree_read_size(fin);
+        size_t key_len = tree_read_size(fin);
         if (key_len == 0)
             break;
 
@@ -356,7 +350,7 @@ static tree_node_t *tree_load_internal(FILE *fin) {
         if (amount_read != 1)
             break;
 
-        value_len = tree_read_size(fin);
+        size_t value_len = tree_read_size(fin);
         if (value_len == 0)
             break;
 

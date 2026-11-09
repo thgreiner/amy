@@ -50,7 +50,7 @@ extern bool EasyMode;
 extern bool PostMode;
 extern bool SelfPlayMode;
 extern int ComputerSide;
-extern struct Position *CurrentPosition;
+extern Position *CurrentPosition;
 extern bool AutoSave;
 extern int self_play_games_remaining;
 

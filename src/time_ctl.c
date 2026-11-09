@@ -64,7 +64,7 @@ static struct TimeControl globalTimeControl = {.first.moves = 60,
                                                .first.total_time = 5 * 60,
                                                .hasSecondTimeControl = false};
 
-void time_ctl_update(struct Position *p, int mtime) {
+void time_ctl_update(const Position *p, int mtime) {
     Time[p->turn] += -mtime + Increment;
 
     if (Moves[p->turn] > 0) {
@@ -82,7 +82,7 @@ void time_ctl_update(struct Position *p, int mtime) {
     }
 }
 
-void time_ctl_calc(struct Position *p, float *soft, float *hard) {
+void time_ctl_calc(Position *p, float *soft, float *hard) {
     char time_as_text[16];
     if (TMoves >= 0) {
         if (Moves[p->turn] > 0) {
@@ -143,7 +143,7 @@ static struct TimeControl time_ctl_parse_xboard(char *args[]) {
     int ttmoves, ttime, tminutes, tseconds, inc = 0;
 
     sscanf(args[0], "%d", &ttmoves);
-    char *colon = strchr(args[1], ':'); /* check for time in xx:yy format */
+    const char *colon = strchr(args[1], ':'); /* check for time in xx:yy format */
     if (colon) {
         sscanf(args[1], "%d:%d", &tminutes, &tseconds);
         ttime = (tminutes * 60) + tseconds;

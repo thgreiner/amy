@@ -47,13 +47,13 @@
 #include "hashtable.h"
 #endif
 
-struct SearchData *next_create_data(struct Position *p) {
-    struct SearchData *sd = safe_calloc(1, sizeof(struct SearchData));
+SearchData *next_create_data(Position *p) {
+    SearchData *sd = safe_calloc(1, sizeof(SearchData));
 
     sd->position = p;
-    sd->statusTable = safe_calloc(MAX_TREE_SIZE, sizeof(struct SearchStatus));
+    sd->statusTable = safe_calloc(MAX_TREE_SIZE, sizeof(SearchStatus));
     sd->current = sd->statusTable;
-    sd->killerTable = safe_calloc(MAX_TREE_SIZE, sizeof(struct KillerEntry));
+    sd->killerTable = safe_calloc(MAX_TREE_SIZE, sizeof(KillerEntry));
     sd->killer = sd->killerTable;
 
     sd->heap = heap_allocate();
@@ -62,7 +62,7 @@ struct SearchData *next_create_data(struct Position *p) {
     sd->data_heap_size = 0;
 
 #if MP
-    sd->localHashTable = safe_calloc(L_HT_Size, sizeof(struct HTEntry));
+    sd->localHashTable = safe_calloc(L_HT_Size, sizeof(HTEntry));
     sd->deferred_heap = heap_allocate();
 #endif
 
@@ -71,7 +71,7 @@ struct SearchData *next_create_data(struct Position *p) {
     return sd;
 }
 
-void next_free_data(struct SearchData *sd) {
+void next_free_data(SearchData *sd) {
     free(sd->statusTable);
     free(sd->killerTable);
     free(sd->data_heap);
@@ -85,8 +85,8 @@ void next_free_data(struct SearchData *sd) {
     free(sd);
 }
 
-void next_enter_node(struct SearchData *sd) {
-    struct SearchStatus *st;
+void next_enter_node(SearchData *sd) {
+    SearchStatus *st;
 
     st = ++(sd->current);
 
@@ -100,7 +100,7 @@ void next_enter_node(struct SearchData *sd) {
 #endif
 }
 
-void next_leave_node(struct SearchData *sd) {
+void next_leave_node(SearchData *sd) {
     heap_pop_section(sd->heap);
     sd->current--;
     sd->killer--;
@@ -110,7 +110,7 @@ void next_leave_node(struct SearchData *sd) {
 #endif
 }
 
-static inline void grow_data_heap(struct SearchData *sd) {
+static inline void grow_data_heap(SearchData *sd) {
     if (sd->heap->current_section->end > sd->data_heap_size) {
         sd->data_heap_size = sd->heap->current_section->end + 256;
         sd->data_heap =
@@ -122,10 +122,10 @@ static inline void grow_data_heap(struct SearchData *sd) {
     }
 }
 
-move_t next_move(struct SearchData *sd) {
+move_t next_move(SearchData *sd) {
     heap_section_t section = sd->heap->current_section;
-    struct SearchStatus *st = sd->current;
-    struct Position *p = sd->position;
+    SearchStatus *st = sd->current;
+    Position *p = sd->position;
     move_t move;
 
     switch (st->st_phase) {
@@ -414,10 +414,10 @@ move_t next_move(struct SearchData *sd) {
     return M_NONE;
 }
 
-move_t next_evasion(struct SearchData *sd) {
+move_t next_evasion(SearchData *sd) {
     heap_section_t section = sd->heap->current_section;
-    struct SearchStatus *st = sd->current;
-    struct Position *p = sd->position;
+    SearchStatus *st = sd->current;
+    Position *p = sd->position;
     move_t move;
 
     switch (st->st_phase) {
@@ -719,9 +719,9 @@ move_t next_evasion(struct SearchData *sd) {
     return M_NONE;
 }
 
-static void next_generate_qcaptures(struct SearchData *sd, int alpha) {
+static void next_generate_qcaptures(SearchData *sd, int alpha) {
     heap_section_t section = sd->heap->current_section;
-    struct Position *p = sd->position;
+    Position *p = sd->position;
     BitBoard pwn7th;
     BitBoard att, def;
     int score;
@@ -735,7 +735,6 @@ static void next_generate_qcaptures(struct SearchData *sd, int alpha) {
 
     while (pwn7th) {
         int next;
-        int j;
         BitBoard tmp;
 
         i = bitboard_find_set_bit(pwn7th);
@@ -755,7 +754,7 @@ static void next_generate_qcaptures(struct SearchData *sd, int alpha) {
         tmp = p->atkTo[i] & p->mask[OPP(p->turn)][0];
         while (tmp) {
             int sw;
-            j = bitboard_find_set_bit(tmp);
+            int j = bitboard_find_set_bit(tmp);
             tmp &= tmp - 1;
             move_t move = dbase_make_promotion(i, j, Queen, M_CAPTURE);
             if ((sw = swap_off(p, move)) >= 0) {
@@ -777,12 +776,11 @@ static void next_generate_qcaptures(struct SearchData *sd, int alpha) {
     def = p->mask[OPP(p->turn)][Queen];
     while (def) {
         BitBoard tmp2;
-        int j;
         i = bitboard_find_set_bit(def);
         def &= def - 1;
         tmp2 = p->atkFr[i] & att;
         while (tmp2) {
-            j = bitboard_find_set_bit(tmp2);
+            int j = bitboard_find_set_bit(tmp2);
             tmp2 &= tmp2 - 1;
             move_t move = dbase_make_move(j, i, M_CAPTURE);
             int sw = swap_off(p, move);
@@ -798,12 +796,11 @@ static void next_generate_qcaptures(struct SearchData *sd, int alpha) {
     def = p->mask[OPP(p->turn)][Rook];
     while (def) {
         BitBoard tmp2;
-        int j;
         i = bitboard_find_set_bit(def);
         def &= def - 1;
         tmp2 = p->atkFr[i] & att;
         while (tmp2) {
-            j = bitboard_find_set_bit(tmp2);
+            int j = bitboard_find_set_bit(tmp2);
             tmp2 &= tmp2 - 1;
             move_t move = dbase_make_move(j, i, M_CAPTURE);
             int sw = swap_off(p, move);
@@ -819,12 +816,11 @@ static void next_generate_qcaptures(struct SearchData *sd, int alpha) {
     def = p->mask[OPP(p->turn)][Bishop] | p->mask[OPP(p->turn)][Knight];
     while (def) {
         BitBoard tmp2;
-        int j;
         i = bitboard_find_set_bit(def);
         def &= def - 1;
         tmp2 = p->atkFr[i] & att;
         while (tmp2) {
-            j = bitboard_find_set_bit(tmp2);
+            int j = bitboard_find_set_bit(tmp2);
             tmp2 &= tmp2 - 1;
             move_t move = dbase_make_move(j, i, M_CAPTURE);
             int sw = swap_off(p, move);
@@ -840,12 +836,11 @@ static void next_generate_qcaptures(struct SearchData *sd, int alpha) {
     def = p->mask[OPP(p->turn)][Pawn];
     while (def) {
         BitBoard tmp2;
-        int j;
         i = bitboard_find_set_bit(def);
         def &= def - 1;
         tmp2 = p->atkFr[i] & att;
         while (tmp2) {
-            j = bitboard_find_set_bit(tmp2);
+            int j = bitboard_find_set_bit(tmp2);
             tmp2 &= tmp2 - 1;
             move_t move = dbase_make_move(j, i, M_CAPTURE);
             int sw = swap_off(p, move);
@@ -858,9 +853,9 @@ static void next_generate_qcaptures(struct SearchData *sd, int alpha) {
     }
 }
 
-move_t next_move_q(struct SearchData *sd, int alpha) {
+move_t next_move_q(SearchData *sd, int alpha) {
     heap_section_t section = sd->heap->current_section;
-    struct SearchStatus *st = sd->current;
+    SearchStatus *st = sd->current;
     move_t move;
 
     switch (st->st_phase) {
@@ -906,8 +901,8 @@ move_t next_move_q(struct SearchData *sd, int alpha) {
  * Enter move in Killertable
  */
 
-void next_put_killer(struct SearchData *sd, move_t m) {
-    struct KillerEntry *k = sd->killer;
+void next_put_killer(SearchData *sd, move_t m) {
+    KillerEntry *k = sd->killer;
 
     if (m == k->killer1) {
         k->kcount1 += 1;
@@ -935,8 +930,7 @@ void next_put_killer(struct SearchData *sd, move_t m) {
     }
 }
 
-static void test_next_move(struct SearchData *sd,
-                           move_t (*func)(struct SearchData *)) {
+static void test_next_move(SearchData *sd, move_t (*func)(SearchData *)) {
     bool comma = false;
     next_enter_node(sd);
 
@@ -958,12 +952,12 @@ static void test_next_move(struct SearchData *sd,
     print(0, "\n");
 }
 
-move_t next_move_q_fixed_alpha(struct SearchData *sd) {
+move_t next_move_q_fixed_alpha(SearchData *sd) {
     return next_move_q(sd, -500000);
 }
 
-void next_test_generators(struct Position *p) {
-    struct SearchData *sd = next_create_data(p);
+void next_test_generators(Position *p) {
+    SearchData *sd = next_create_data(p);
     print(0, "next_move:\n");
     test_next_move(sd, &next_move);
     print(0, "\nNextEvasion:\n");

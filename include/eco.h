@@ -36,6 +36,6 @@
 
 void eco_parse_pgn(char *);
 char *eco_get_code(hash_t);
-bool eco_find_code(const struct Position *, char *);
+bool eco_find_code(const Position *, char *);
 
 #endif

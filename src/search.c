@@ -77,8 +77,6 @@
 
 #define DEFERRED_DEPTH_OFFSET 32768
 
-#define ALTERNATE_DELTA 1500
-
 /*
  * We use fractional ply extensions.
  * See D. Levy, D. Broughton and M. Taylor: The SEX Algorithm in Computer Chess
@@ -175,11 +173,11 @@ OPTIONAL_ATOMIC unsigned long HTry, HHit, STry, SHit;
 
 /* prototypes for search routines */
 
-static int search_quies(struct SearchData *, int, int, int);
+static int search_quies(SearchData *, int, int, int);
 #if MP
-static int search_negascout(struct SearchData *, int, int, int, int, int);
+static int search_negascout(SearchData *, int, int, int, int, int);
 #else
-static int search_negascout(struct SearchData *, int, int, int, int);
+static int search_negascout(SearchData *, int, int, int, int);
 #endif
 
 /*
@@ -199,7 +197,7 @@ static const int bpd_log_eval_diff_threshold = 650;
  * check for user input.
  *
  */
-static bool search_terminate(struct SearchData *sd) {
+static bool search_terminate(SearchData *sd) {
     if ((sd->nodes_cnt + sd->qnodes_cnt) > sd->check_nodes_cnt) {
         unsigned long now = utils_get_time();
 
@@ -213,7 +211,7 @@ static bool search_terminate(struct SearchData *sd) {
 
         if (sd->master && utils_input_ready()) {
             char buffer[64];
-            struct Command *theCommand;
+            Command *theCommand;
 
             utils_read_line(buffer, 64);
 
@@ -310,7 +308,7 @@ static bool search_is_recapture(int piece1, int piece2) {
  *
  */
 
-static int search_check_extend(struct Position *p) {
+static int search_check_extend(Position *p) {
     int kp = p->kingSq[p->turn];
     BitBoard att;
 
@@ -454,7 +452,7 @@ static int search_check_extend(struct Position *p) {
  * Compute an optimistic score for a move.
  */
 
-static int search_score_move(struct Position *p, move_t move) {
+static int search_score_move(Position *p, move_t move) {
     int score = 0;
 
     if (move & M_CAPTURE)
@@ -480,9 +478,9 @@ static int search_score_move(struct Position *p, move_t move) {
  * Store the result of the full width search
  */
 
-static void search_store_result(struct SearchData *sd, int score, int alpha,
-                                int beta, move_t move, int depth, int threat) {
-    struct Position *p = sd->position;
+static void search_store_result(SearchData *sd, int score, int alpha, int beta,
+                                move_t move, int depth, int threat) {
+    const Position *p = sd->position;
 
     if (!(move & M_TACTICAL) && score > alpha) {
         sd->historyTab[p->turn][move & 4095] += depth * depth;
@@ -504,8 +502,8 @@ static void search_store_result(struct SearchData *sd, int score, int alpha,
  *
  */
 
-static int search_quies(struct SearchData *sd, int alpha, int beta, int depth) {
-    struct Position *p = sd->position;
+static int search_quies(SearchData *sd, int alpha, int beta, int depth) {
+    Position *p = sd->position;
     int best;
     move_t move;
     int talpha;
@@ -595,15 +593,15 @@ EXIT:
  * ICCA Journal, Volume 19, No. 1, pp. 3-16
  */
 
-static int search_negascout(struct SearchData *sd, int alpha, int beta,
+static int search_negascout(SearchData *sd, int alpha, int beta,
                             const int depth, int node_type
 #if MP
                             ,
                             int exclusiveP
 #endif /* MP  */
 ) {
-    struct Position *p = sd->position;
-    struct SearchStatus *st;
+    Position *p = sd->position;
+    SearchStatus *st;
     int best = -INF;
     move_t bestm = M_NONE;
     int tmp;
@@ -635,11 +633,7 @@ static int search_negascout(struct SearchData *sd, int alpha, int beta,
     if (sd->ply >= MaxDepth)
         goto EXIT;
 
-    /*
-     * Check for insufficent material or theoretical draw.
-     */
-
-    if (/* InsufMat(p) || dbase_check_draw(p) || */ dbase_repeated(p, false)) {
+    if (dbase_repeated(p, false)) {
         best = 0;
         goto EXIT;
     }
@@ -1132,7 +1126,7 @@ EXIT:
 /**
  * print the SAN of a move prefixed by the move number.
  */
-static char *search_numbered_san(struct Position *p, int move, char *buffer,
+static char *search_numbered_san(Position *p, int move, char *buffer,
                                  size_t len) {
     char san_buffer[16];
     if (p->turn == White)
@@ -1149,7 +1143,7 @@ static char *search_numbered_san(struct Position *p, int move, char *buffer,
  * cmd_analyze the hashtable to find the principal variation.
  */
 
-static void search_analysis_loop(struct Position *p, int depth) {
+static void search_analysis_loop(Position *p, int depth) {
     move_t move;
     bool dummy = false;
     int score;
@@ -1184,7 +1178,7 @@ static void search_analysis_loop(struct Position *p, int depth) {
             return;
         }
 
-        char *san = dbase_san(p, move, buffer);
+        const char *san = dbase_san(p, move, buffer);
         strcat(BestLine, san);
         strcat(BestLine, " ");
         strcat(ShortBestLine, san);
@@ -1206,7 +1200,7 @@ static void search_analysis_loop(struct Position *p, int depth) {
     }
 }
 
-static void search_analyze_ht(struct Position *p, move_t move) {
+static void search_analyze_ht(Position *p, move_t move) {
     search_numbered_san(p, move, BestLine, sizeof(BestLine));
     strcat(BestLine, " ");
     char san_buffer[16];
@@ -1220,7 +1214,7 @@ static void search_analyze_ht(struct Position *p, move_t move) {
 /**
  * Initialize the search variables.
  */
-static void search_init(struct SearchData *sd) {
+static void search_init(SearchData *sd) {
     sd->ply = 0;
     sd->nodes_cnt = sd->qnodes_cnt = sd->check_nodes_cnt = 0;
     RCExt = ChkExt = DiscExt = DblExt = SingExt = PPExt = ZZExt = 0;
@@ -1277,8 +1271,8 @@ static void *search_iterate_int(void *x) {
     unsigned long nodes[256];
     int last = 0;
     double elapsed;
-    struct SearchData *sd = x;
-    struct Position *p;
+    SearchData *sd = x;
+    Position *p;
     bool any_pv_printed = false;
     bool pv_valid = false;
 
@@ -1309,7 +1303,6 @@ static void *search_iterate_int(void *x) {
             int tmp;
             int next_depth = (sd->depth - 2) * OnePly;
             move_t move = mvs[sd->movenum];
-            bool is_alternate = !is_pv && move == sd->alternate_move;
 
             nodes[sd->movenum] = sd->nodes_cnt;
 
@@ -1330,18 +1323,13 @@ static void *search_iterate_int(void *x) {
                 next_depth += ExtendInCheck;
 
             if (next_depth >= 0) {
-                int effective_alpha =
-                    is_alternate ? (alpha - ALTERNATE_DELTA) : alpha;
 #if MP
-                tmp = -search_negascout(sd, -beta, -effective_alpha, next_depth,
+                tmp = -search_negascout(sd, -beta, -alpha, next_depth,
                                         is_pv ? PVNode : CutNode, 0);
 #else
-                tmp = -search_negascout(sd, -beta, -effective_alpha, next_depth,
+                tmp = -search_negascout(sd, -beta, -alpha, next_depth,
                                         is_pv ? PVNode : CutNode);
 #endif
-                if (is_alternate) {
-                    sd->alternate_score = tmp;
-                }
             } else {
                 tmp = -search_quies(sd, -beta, -alpha, 0);
             }
@@ -1715,7 +1703,7 @@ void search_stop_helpers(void) {
  * In parallel search start up all helper threads
  */
 
-static void search_start_helpers(struct Position *p) {
+static void search_start_helpers(Position *p) {
 #if HAVE_LIBPTHREAD
     pthread_attr_t attr;
     int nthread;
@@ -1737,7 +1725,7 @@ static void search_start_helpers(struct Position *p) {
      */
 
     for (nthread = 0; nthread < (NumberOfCPUs - 1); nthread++) {
-        struct SearchData *sd = next_create_data(dbase_clone_position(p));
+        SearchData *sd = next_create_data(dbase_clone_position(p));
         sd->master = false;
         pthread_create(tids + nthread, &attr, &search_iterate_int, sd);
     }
@@ -1747,20 +1735,10 @@ static void search_start_helpers(struct Position *p) {
 
 #endif /* MP */
 
-/**
- * The basic root iteration procedure.
- *
- * Parameters:
- *  p: the position to search
- *  score_ptr: pointer to return the root score in
- *  alternate_move: an alternate move to search
- *  alternate_score_ptr: a pointer to return the alternate score in
- */
-int search_iterate(struct Position *p, int *score_ptr, move_t alternate_move,
-                   int *alternate_score_ptr) {
+int search_iterate(Position *p) {
     float soft, hard;
     int cnt;
-    struct SearchData *sd;
+    SearchData *sd;
 
     FHTime = 0;
 
@@ -1812,17 +1790,9 @@ int search_iterate(struct Position *p, int *score_ptr, move_t alternate_move,
 
     sd = next_create_data(p);
     sd->master = true;
-    sd->alternate_move = alternate_move;
     search_iterate_int(sd);
 
     move_t best_move = sd->best_move;
-    if (score_ptr != NULL) {
-        *score_ptr = sd->best_score;
-    }
-
-    if (alternate_move != M_NONE && alternate_score_ptr != NULL) {
-        *alternate_score_ptr = sd->alternate_score;
-    }
 
     next_free_data(sd);
 
@@ -1836,9 +1806,8 @@ int search_iterate(struct Position *p, int *score_ptr, move_t alternate_move,
 /**
  * Search the root node.
  */
-void search_root(struct Position *p) {
+void search_root(Position *p) {
     move_t move = M_NONE;
-    struct Position *q;
 
     SearchMode = Searching;
 
@@ -1857,8 +1826,8 @@ void search_root(struct Position *p) {
     }
 
     if (move == M_NONE) {
-        q = dbase_clone_position(p);
-        move = search_iterate(q, NULL, M_NONE, NULL);
+        Position *q = dbase_clone_position(p);
+        move = search_iterate(q);
         dbase_free_position(q);
     }
 
@@ -1881,37 +1850,18 @@ void search_root(struct Position *p) {
 }
 
 /**
- * Do a quiescence search only. Returns the score.
- */
-int search_quiescence(struct Position *p) {
-    struct SearchData *sd;
-
-    nn_eval_init();
-    MaxDepth = MAX_TREE_SIZE - 1;
-
-    sd = next_create_data(p);
-    sd->master = true;
-    search_init(sd);
-
-    int score = search_quies(sd, -INF, INF, 0);
-    next_free_data(sd);
-
-    return score;
-}
-
-/**
  * Implements the permanent brain.
  */
-pb_result_t search_permanent_brain(struct Position *p) {
+pb_result_t search_permanent_brain(Position *p) {
     if (!dbase_legal_move(p, PBMove)) {
-        struct Position *q;
+        Position *q;
 
         q = dbase_clone_position(p);
         SearchMode = Puzzling;
         PBAltMove = M_NONE;
 
         print(2, "Puzzling over a move to ponder on...\n");
-        PBMove = search_iterate(q, NULL, M_NONE, NULL);
+        PBMove = search_iterate(q);
         dbase_free_position(q);
 
         if (SearchMode == Interrupted) {
@@ -1931,7 +1881,7 @@ pb_result_t search_permanent_brain(struct Position *p) {
 
     if (dbase_legal_move(p, PBMove)) {
         move_t move = M_NONE;
-        struct Position *q;
+        Position *q;
         bool inbook = false;
         char san_buffer[16];
 
@@ -1958,7 +1908,7 @@ pb_result_t search_permanent_brain(struct Position *p) {
         SearchMode = Pondering;
 
         if (!inbook) {
-            move = search_iterate(q, NULL, M_NONE, NULL);
+            move = search_iterate(q);
         }
 
         dbase_free_position(q);
@@ -1991,7 +1941,7 @@ pb_result_t search_permanent_brain(struct Position *p) {
             dbase_do_move(p, move);
 
             return PB_HIT;
-        } else if (!PBHit && PBAltMove != M_NONE) {
+        } else if (PBAltMove != M_NONE) {
             print(2, "PB not Hit! Alternate move is %s\n",
                   dbase_san(p, PBAltMove, san_buffer));
 
@@ -2007,13 +1957,13 @@ pb_result_t search_permanent_brain(struct Position *p) {
 /**
  * Analysis mode for xboard.
  */
-void search_analysis(struct Position *p) {
-    struct Position *q;
+void search_analysis(const Position *p) {
+    Position *q;
 
     SearchMode = Analyzing;
 
     q = dbase_clone_position(p);
-    search_iterate(q, NULL, M_NONE, NULL);
+    search_iterate(q);
     dbase_free_position(q);
 }
 

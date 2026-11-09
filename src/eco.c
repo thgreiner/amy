@@ -69,7 +69,7 @@ void eco_parse_pgn(char *fname) {
 
         print(0, ".");
 
-        struct Position *p = dbase_initial_position();
+        Position *p = dbase_initial_position();
 
         if (fgets(buffer, 1024, fin) != NULL) {
             for (x = strtok(buffer, " \n\r\t"); x;
@@ -133,9 +133,8 @@ char *eco_get_code(hash_t hkey) {
     return retval;
 }
 
-bool eco_find_code(const struct Position *p, char *result) {
+bool eco_find_code(const Position *p, char *result) {
     int ply = 0;
-    char *res;
     bool found = false;
 
     while (ply <= p->ply) {
@@ -143,7 +142,7 @@ bool eco_find_code(const struct Position *p, char *result) {
         if (ply == p->ply) {
             key = p->hkey;
         }
-        res = eco_get_code(key);
+        char *res = eco_get_code(key);
         if (res != NULL) {
             strcpy(result, res);
             found = true;

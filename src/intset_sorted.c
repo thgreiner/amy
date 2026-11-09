@@ -47,7 +47,7 @@ bool intset_sorted_remove(IntSetSorted *s, int32_t value) {
 
 size_t intset_sorted_count(const IntSetSorted *s) { return s->count; }
 
-int32_t *intset_sorted_data(IntSetSorted *s) { return s->data; }
+const int32_t *intset_sorted_data(const IntSetSorted *s) { return s->data; }
 
 /* a - b, two-pointer merge. Result is sorted and <= a->count, so it can't
  * overflow. */

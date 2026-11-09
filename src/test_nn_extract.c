@@ -38,6 +38,7 @@
 #include "bpd.h"
 #include "dbase.h"
 #include "nn_extract.h"
+#include "safe_malloc.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -48,12 +49,12 @@
  * Encode an EPD position as one BPD record in a malloc'd buffer.
  */
 static uint8_t *make_record(const char *epd, int score) {
-    struct Position *p = dbase_create_position_from_epd((char *)epd);
+    Position *p = dbase_create_position_from_epd((char *)epd);
     BinaryPosition bp;
     uint8_t *data;
 
     bpd_encode(p, score, &bp);
-    data = malloc(sizeof(BinaryPosition));
+    data = safe_malloc(sizeof(BinaryPosition));
     memcpy(data, &bp, sizeof(BinaryPosition));
     dbase_free_position(p);
     return data;
@@ -127,7 +128,7 @@ static void test_initial_position(void) {
     static int32_t ph[NN_PHASE_COUNT];
     uint8_t *data;
     int i;
-    int anchors[4] = {27, 4004, 4464, 4559};
+    const int anchors[4] = {27, 4004, 4464, 4559};
 
     data = make_record("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -",
                        12345);

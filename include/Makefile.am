@@ -1,15 +1,8 @@
-noinst_HEADERS = amy.h attack_map.h bitboard.h blunder.h bookup.h bpd.h commands.h \
-                 dbase.h eco.h \
-                 filter.h hashtable.h heap.h \
-                 init.h inline.h intset_sorted.h learn.h linenoise.h magic.h \
-                 mates.h movedata.h \
-                 neural_net.h next.h nn_extract.h pgn_read.h pgn_write.h probe.h random.h \
-                 recog.h safe_malloc.h search.h search_io.h state_machine.h swap.h \
-                 test_attack_map.h test_blunder.h test_bpd.h test_dbase.h \
-                 test_intset_sorted.h test_neural_net.h test_nn_extract.h \
-                 test_pgn_write.h test_utils.h time_ctl.h tree.h \
-                 types.h utils.h
+# All public headers are distributed; new files are picked up
+# automatically, no list to maintain.  $(srcdir) keeps this
+# correct for out-of-tree builds (make distcheck).
+noinst_HEADERS = $(notdir $(wildcard $(srcdir)/*.h))
 
 .PHONY: format
 format:
-	clang-format -i ${noinst_HEADERS}
+	clang-format -i $(wildcard $(srcdir)/*.h)

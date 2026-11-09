@@ -33,7 +33,7 @@
 #define SEARCH_IO_H
 
 void searchio_header(void);
-void searchio_output(int depth, unsigned long time, int score, char *line,
+void searchio_output(int depth, unsigned long time, int score, const char *line,
                      unsigned long nodes);
 void searchio_output_fail_high_low(int, unsigned long, int, char *,
                                    unsigned long);

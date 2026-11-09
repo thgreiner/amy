@@ -1,28 +1,50 @@
-.zed
-*.db
-*.emd
-*~
-.amyrc
-.cache
-Makefile
+# --- Autotools / generated build system ---
+aclocal.m4
+autom4te.cache/
 config.h
 config.h.in
 config.log
 config.status
-Amy.log
-autom4te.cache
-aclocal.m4
-nsolved.epd
-stamp-h1
-doc/index.html
-amy-*.tar.gz
+config.guess
+config.sub
 configure
+Makefile
 Makefile.in
 Makefile.deps
-.DS_Store
-*.dSYM
+stamp-h*
+
+# --- Build artifacts ---
+Amy
+*.o
+*.lo
+*.la
+.deps/
+.libs/
 src/nn_crosscheck
 src/libamy_nn_extract.dylib
-network.quant
-network.quant.z
+
+# --- Data & network files ---
+*.db
+*.emd
+nsolved.epd
+nets/*
+!nets/.gitkeep
+
+# --- Logs ---
+Amy.log
+
+# --- Editor / OS / local config ---
+.amyrc
+.clangd
+.cache
+.zed
+.DS_Store
+*~
+*.dSYM
 compile_commands.json
+
+# --- Release tarballs ---
+amy-*.tar.gz
+
+# --- Generated docs ---
+doc/index.html

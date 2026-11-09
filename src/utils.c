@@ -60,7 +60,7 @@ int Verbosity = 9;
 /**
  * Open a log file, remember fp in global variable LogFile
  */
-void utils_open_log_file(char *name) {
+void utils_open_log_file(const char *name) {
     if (LogFile) {
         fclose(LogFile);
     }

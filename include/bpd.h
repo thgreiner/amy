@@ -32,6 +32,7 @@
 #ifndef BPD_H
 #define BPD_H
 
+#include "dbase.h"
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -82,19 +83,17 @@ typedef struct {
     uint8_t turn;    /* side to move: 0 == white, 1 == black */
 } BinaryPosition;
 
-struct Position; /* forward declaration, see dbase.h */
-
 /*
  * Encode the position p together with score into *out.
  */
-void bpd_encode(const struct Position *p, int score, BinaryPosition *out);
+void bpd_encode(const Position *p, int score, BinaryPosition *out);
 
 /*
  * Create a new position (see dbase_create_position_from_epd()) from the
  * binary representation. Returns NULL if the data is malformed (no king
  * of one of the colors). Release with dbase_free_position().
  */
-struct Position *bpd_decode(const BinaryPosition *in);
+Position *bpd_decode(const BinaryPosition *in);
 
 /*
  * When true, evaluations are logged in all modes; when false, they are
@@ -106,7 +105,7 @@ extern bool EvalLog;
 /*
  * Log the position with its score to the evaluation log.
  */
-void bpd_log_evaluation(const struct Position *, int);
+void bpd_log_evaluation(const Position *, int);
 
 /*
  * Write all buffered evaluations to the log file. The log is buffered

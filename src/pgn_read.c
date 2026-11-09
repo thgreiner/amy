@@ -72,18 +72,18 @@ static char *pgn_read_line(FILE *fin) {
 #endif
 }
 
-int pgn_scan_header(FILE *fin, struct PGNHeader *header) {
+int pgn_scan_header(FILE *fin, PGNHeader *header) {
     char *current_line;
     int state = 0;
 
     /* Clear it */
-    memset(header, 0, sizeof(struct PGNHeader));
+    memset(header, 0, sizeof(PGNHeader));
 
     while ((current_line = pgn_read_line(fin)) != NULL) {
         if (current_line[0] == '[') {
             char *x = current_line + 1;
-            char *key = utils_next_token(&x, " \"");
-            char *value = utils_next_token(&x, "\"");
+            const char *key = utils_next_token(&x, " \"");
+            const char *value = utils_next_token(&x, "\"");
             size_t len = strlen(value);
 
             if (!strcmp("Event", key)) {
@@ -148,7 +148,7 @@ int pgn_scan_header(FILE *fin, struct PGNHeader *header) {
     return 1;
 }
 
-void pgn_free_header(struct PGNHeader *header) {
+void pgn_free_header(PGNHeader *header) {
     free(header->event);
     free(header->site);
     free(header->date);
@@ -169,7 +169,7 @@ int pgn_scan_move(FILE *fin, char *nextMove) {
     static int haveLine = 0;
     static char *x;
 
-    char *token;
+    const char *token;
 
     int braces = 0;
     int parens = 0;
@@ -255,20 +255,13 @@ int pgn_scan_move(FILE *fin, char *nextMove) {
     return 1;
 }
 
-void pgn_get_and_reset_comment(char *destination, unsigned int length) {
-    strncpy(destination, comment_buffer, length);
-
-    comment_ptr = comment_buffer;
-    *comment_buffer = 0;
-}
-
-void pgn_load_game(struct Position *p, char *file_name) {
+void pgn_load_game(Position *p, const char *file_name) {
     FILE *fin = fopen(file_name, "r");
 
     if (fin) {
-        struct PGNHeader header;
-        char move[16];
+        PGNHeader header;
         if (!pgn_scan_header(fin, &header)) {
+            char move[16];
             while (!pgn_scan_move(fin, move)) {
                 int themove = dbase_parse_san(p, move);
                 if (themove != M_NONE) {

@@ -44,10 +44,10 @@ extern bool fuzz_evaluation;
  * (material + MaxPos) to skip the expensive full evaluation.
  * Reset to nn_eval_init's initial value before every search. */
 extern int MaxPos;
-int eval_material_balance(const struct Position *);
+int eval_material_balance(const Position *);
 void nn_eval_init(void);
 
-/* Architecture of the quantized network (network.quant layout). */
+/* Architecture of the quantized network (amy.net layout). */
 #define HIDDEN_1_SIZE 32
 #define HIDDEN_2_SIZE 32
 
@@ -82,10 +82,8 @@ void nn_eval_init(void);
  * most cap indices into out and returns the count, or -1 if the count
  * would exceed cap.
  */
-int nn_compute_piece_indices(const struct Position *p, int side, int *out,
-                             int cap);
-int nn_compute_pawn_indices(const struct Position *p, int side, int *out,
-                            int cap);
+int nn_compute_piece_indices(const Position *p, int side, int *out, int cap);
+int nn_compute_pawn_indices(const Position *p, int side, int *out, int cap);
 
 void nn_read_weights(void);
 
@@ -93,7 +91,7 @@ void nn_read_weights(void);
  * total number of non-pawn pieces on both sides. This is a shared
  * contract with the training pipeline (amy-training-nnue): samples must
  * be labeled with the same value. */
-int nn_phase_index(const struct Position *p);
+int nn_phase_index(const Position *p);
 
 /*
  * Training-side of the phase contract (amy-training-nnue): the active
@@ -102,7 +100,7 @@ int nn_phase_index(const struct Position *p);
  * of a bucket (total non-pawn pieces 2, 5, 8) additionally activate
  * the higher phase, so training can co-train the two adjacent heads.
  */
-void nn_phase_masks(const struct Position *p, int32_t masks[NN_PHASE_COUNT]);
+void nn_phase_masks(const Position *p, int32_t masks[NN_PHASE_COUNT]);
 
 /*
  * Raw network score: attack-map refresh, phase-branch selection and
@@ -110,19 +108,19 @@ void nn_phase_masks(const struct Position *p, int32_t masks[NN_PHASE_COUNT]);
  * weights (no score hash table, no fuzz, no MaxPos). Exposed so
  * tests exercise the pipeline without the caching wrapper.
  */
-int nn_compute_score(struct Position *p);
+int nn_compute_score(Position *p);
 
 /*
  * Evaluate the position with score caching, fuzz and MaxPos
  * adjustment. Returns the evaluation in 1/1000th of a pawn.
  */
-int nn_evaluate_position(struct Position *);
-void nn_init_accumulator(struct Position *);
-void nn_update_weights_for_piece(struct Position *p, int tp, int sq, bool turn,
+int nn_evaluate_position(Position *);
+void nn_init_accumulator(Position *);
+void nn_update_weights_for_piece(Position *p, int tp, int sq, bool turn,
                                  bool add);
-void nn_update_weights_for_king(struct Position *p, int old_king_sq);
-void nn_update_attack_maps(struct Position *);
-void nn_validate_weights(struct Position *);
+void nn_update_weights_for_king(Position *p, int old_king_sq);
+void nn_update_attack_maps(Position *);
+void nn_validate_weights(Position *);
 void nn_randomize_weights(void);
 
 #endif

@@ -44,7 +44,7 @@
 #include "init.h"
 #include "inline.h"
 
-typedef int RECOGNIZER(const struct Position *, int *score);
+typedef int RECOGNIZER(const Position *, int *score);
 
 static RECOGNIZER *Recognizers[64];
 static int RecognizerAvailable[32];
@@ -106,7 +106,7 @@ void recog_init(void) {
                    recog_sig(1, 0, 0, 0, 0));
 }
 
-int recog_probe(const struct Position *p, int *score) {
+int recog_probe(const Position *p, int *score) {
     int index = RECOGNIZER_INDEX(p);
     RECOGNIZER *rec = Recognizers[index];
     if (rec != NULL) {
@@ -119,14 +119,14 @@ int recog_probe(const struct Position *p, int *score) {
     return Useless;
 }
 
-static int recog_kk(const struct Position *p, int *score) {
+static int recog_kk(const Position *p, int *score) {
     (void)p;
     *score = 0;
 
     return ExactScore;
 }
 
-static int recog_kbk(const struct Position *p, int *score) {
+static int recog_kbk(const Position *p, int *score) {
     BitBoard pcs;
     int color = White;
 
@@ -195,7 +195,7 @@ static int KBNKTab[] = {500, 450, 425, 400, 375, 350, 325, 300, 450, 300, 300,
                         100, 100, 300, 425, 325, 300, 300, 300, 300, 300, 300,
                         450, 300, 325, 350, 375, 400, 425, 450, 500};
 
-static int recog_kbnk(const struct Position *p, int *score) {
+static int recog_kbnk(const Position *p, int *score) {
     if (p->material_signature[White] && p->material_signature[Black]) {
 
         /*
@@ -271,7 +271,7 @@ static int recog_kbnk(const struct Position *p, int *score) {
     }
 }
 
-static int recog_knk(const struct Position *p, int *score) {
+static int recog_knk(const Position *p, int *score) {
     if (p->material_signature[White] && p->material_signature[Black]) {
         return Useless;
     } else {
@@ -292,7 +292,7 @@ static int recog_knk(const struct Position *p, int *score) {
     }
 }
 
-static int recog_kbkp(const struct Position *p, int *score) {
+static int recog_kbkp(const Position *p, int *score) {
     if (p->material_signature[White] && p->material_signature[Black]) {
 
         /*
@@ -389,7 +389,7 @@ static int recog_kbkp(const struct Position *p, int *score) {
     }
 }
 
-static int recog_knkp(const struct Position *p, int *score) {
+static int recog_knkp(const Position *p, int *score) {
     int color = White;
 
     if (p->material_signature[Black] & SIGNATURE_BIT(Knight)) {

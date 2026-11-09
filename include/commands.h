@@ -34,27 +34,27 @@
 
 typedef void (*COMMAND)(char *args);
 
-struct Command {
+typedef struct {
     int move;
     COMMAND command_func;
     int allowed_during_search;
     int interrupts_search;
     char *args;
-};
+} Command;
 
-struct CommandEntry {
+typedef struct {
     char *name;
     COMMAND command_func;
     int allowed_during_search;
     int interrupts_search;
     char *short_help;
     char *long_help;
-};
+} CommandEntry;
 
 extern char AutoSaveFileName[64];
 
-struct Command *cmd_parse_input(char *line);
-void cmd_execute(struct Command *theCommand);
+Command *cmd_parse_input(char *);
+void cmd_execute(Command *);
 void cmd_newgame(char *);
 
 #endif

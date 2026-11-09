@@ -36,10 +36,10 @@
 #include "pgn_write.h"
 #include <stdio.h>
 
-void pgn_load_game(struct Position *, char *);
-int pgn_scan_header(FILE *, struct PGNHeader *);
+void pgn_load_game(Position *, const char *);
+int pgn_scan_header(FILE *, PGNHeader *);
 int pgn_scan_move(FILE *, char *);
 void pgn_get_and_reset_comment(char *, unsigned int);
-void pgn_free_header(struct PGNHeader *);
+void pgn_free_header(PGNHeader *);
 
 #endif

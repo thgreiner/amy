@@ -39,51 +39,51 @@ static void test_strip_null(void) { assert(utils_strip(NULL) == NULL); }
 
 static void test_strip_empty(void) {
     char buf[] = "";
-    char *result = utils_strip(buf);
+    const char *result = utils_strip(buf);
     assert(result == buf);
     assert(result[0] == 0);
 }
 
 static void test_strip_only_whitespace(void) {
     char buf[] = "   \t  ";
-    char *result = utils_strip(buf);
+    const char *result = utils_strip(buf);
     assert(result != NULL);
     assert(result[0] == 0);
 }
 
 static void test_strip_leading_and_trailing_spaces(void) {
     char buf[] = "   hello world   ";
-    char *result = utils_strip(buf);
+    const char *result = utils_strip(buf);
     assert(!strcmp(result, "hello world"));
 }
 
 static void test_strip_leading_only(void) {
     char buf[] = "    hello";
-    char *result = utils_strip(buf);
+    const char *result = utils_strip(buf);
     assert(!strcmp(result, "hello"));
 }
 
 static void test_strip_trailing_only(void) {
     char buf[] = "hello    ";
-    char *result = utils_strip(buf);
+    const char *result = utils_strip(buf);
     assert(!strcmp(result, "hello"));
 }
 
 static void test_strip_mixed_whitespace(void) {
     char buf[] = "\t\n\r  value \t\n";
-    char *result = utils_strip(buf);
+    const char *result = utils_strip(buf);
     assert(!strcmp(result, "value"));
 }
 
 static void test_strip_preserves_internal_whitespace(void) {
     char buf[] = "  a b\tc  ";
-    char *result = utils_strip(buf);
+    const char *result = utils_strip(buf);
     assert(!strcmp(result, "a b\tc"));
 }
 
 static void test_strip_single_char(void) {
     char buf[] = " x ";
-    char *result = utils_strip(buf);
+    const char *result = utils_strip(buf);
     assert(!strcmp(result, "x"));
 }
 

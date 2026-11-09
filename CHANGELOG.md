@@ -2,11 +2,32 @@
 
 ## [0.9.8]
 
-* Use R/W-locks instead of mutexes for hashtables
-* All configuration parameters can be read from/written to file
-* Neural network now uses 4 per-phase hidden/output branches (selected by
-  total piece count of knights, bishops, rooks, and queens of both sides);
-  new `network.quant` format, retrained network required
+* Replace the classical heuristic evaluation with a quantized neural
+  network (NNUE): 256-wide accumulator network with half-mirrored
+  piece framing, separate pawn and attack features, and 4 per-phase
+  hidden/output branches (selected by total piece count of knights,
+  bishops, rooks, and queens of both sides)
+* New `network.quant` weights file format (LZAV compressed); a
+  retrained network is required. The engine now identifies as
+  "Amy <version>-neural"
+* Remove the classical evaluation, its parameter configuration
+  (`conf`, `conf-save`, `-conf`) and the YAML parser
+* Training pipeline support: log root position evaluations to
+  `evaluation_log.bin` (new `evallog` rc option, binary BPD format),
+  new `bpd-test` command to write test positions in the same format,
+  `nn_crosscheck` tool and `nn_extract` library to verify and
+  reproduce feature generation against the Python reference
+* New `self` command: play N games of selfplay, appended to
+  `selfplay.pgn`
+* New `fuzz` rc option: adds randomness to book move selection and
+  search
+* Hashtables: use R/W-locks instead of mutexes, store the full
+  position key in entries, fix CPU time increment in MP mode
+* Use linenoise for interactive line editing on POSIX systems
+* New logo
+* Bug fix: xboard mode
+* Convert eco.pgn to UTF-8
+* Remove obsolete `--with-dbpath` (rocksdb) configure option
 
 
 ## [0.9.7] 2025-01-08

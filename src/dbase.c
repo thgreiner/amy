@@ -80,18 +80,18 @@ const int8_t CastleMask[2][2] = {
 /* local prototypes
  */
 
-static void dbase_atk_set(struct Position *, Piece, Color, Square);
-static void dbase_atk_clr(struct Position *, Square);
-static void dbase_gain_attack(struct Position *, Square, Square);
-static void dbase_loose_attack(struct Position *, Square, Square);
-static void dbase_gain_attacks(struct Position *, Square);
-static void dbase_loose_attacks(struct Position *, Square);
+static void dbase_atk_set(Position *, Piece, Color, Square);
+static void dbase_atk_clr(Position *, Square);
+static void dbase_gain_attack(Position *, Square, Square);
+static void dbase_loose_attack(Position *, Square, Square);
+static void dbase_gain_attacks(Position *, Square);
+static void dbase_loose_attacks(Position *, Square);
 
 /*
  * Routines to up/downdate the global database
  */
 
-static void dbase_show_move_list(struct Position *p) {
+static void dbase_show_move_list(Position *p) {
     int ply;
     for (ply = 0; ply < p->ply; ply++) {
         int move = p->gameLog[ply].gl_Move;
@@ -99,7 +99,7 @@ static void dbase_show_move_list(struct Position *p) {
     }
 }
 
-static void dbase_panic(struct Position *p) {
+static void dbase_panic(Position *p) {
     dbase_show_position(p);
     dbase_show_move_list(p);
     fflush(stdout);
@@ -107,7 +107,7 @@ static void dbase_panic(struct Position *p) {
 }
 
 #ifdef DEBUG
-static void dbase_debug_engine(struct Position *p) {
+static void dbase_debug_engine(Position *p) {
     int kingSq = p->kingSq[White];
     int i, color;
     BitBoard temp;
@@ -171,8 +171,7 @@ static void dbase_debug_engine(struct Position *p) {
  * Generate attacks for a piece "type" of "color" on square "square"
  */
 
-static void dbase_atk_set(struct Position *p, Piece type, Color color,
-                          Square square) {
+static void dbase_atk_set(Position *p, Piece type, Color color, Square square) {
     BitBoard attacks;
 
     switch (type) {
@@ -209,7 +208,7 @@ static void dbase_atk_set(struct Position *p, Piece type, Color color,
     }
 }
 
-static void dbase_atk_clr(struct Position *p, Square square) {
+static void dbase_atk_clr(Position *p, Square square) {
     BitBoard tmp = p->atkTo[square];
     p->atkTo[square] = 0;
 
@@ -225,9 +224,8 @@ static void dbase_atk_clr(struct Position *p, Square square) {
  * been removed
  */
 
-static void dbase_gain_attack(struct Position *p, const Square from,
-                              const Square to) {
-    signed char *nsq = NextSQ[from];
+static void dbase_gain_attack(Position *p, const Square from, const Square to) {
+    const signed char *nsq = NextSQ[from];
     int sq = to;
     const BitBoard all = p->mask[0][0] | p->mask[1][0];
 
@@ -249,9 +247,9 @@ static void dbase_gain_attack(struct Position *p, const Square from,
  * onto "to"
  */
 
-static void dbase_loose_attack(struct Position *p, const Square from,
+static void dbase_loose_attack(Position *p, const Square from,
                                const Square to) {
-    signed char *nsq = NextSQ[from];
+    const signed char *nsq = NextSQ[from];
     int sq = to;
     const BitBoard all = p->mask[0][0] | p->mask[1][0];
 
@@ -273,12 +271,11 @@ static void dbase_loose_attack(struct Position *p, const Square from,
  * the piece on this square has been removed
  */
 
-static void dbase_gain_attacks(struct Position *p, Square to) {
+static void dbase_gain_attacks(Position *p, Square to) {
     BitBoard tmp = p->atkFr[to] & p->slidingPieces;
-    int i;
 
     while (tmp) {
-        i = bitboard_find_set_bit(tmp);
+        int i = bitboard_find_set_bit(tmp);
         tmp &= tmp - 1;
         dbase_gain_attack(p, i, to);
     }
@@ -289,12 +286,11 @@ static void dbase_gain_attacks(struct Position *p, Square to) {
  * a piece has been put onto this square
  */
 
-static void dbase_loose_attacks(struct Position *p, Square to) {
+static void dbase_loose_attacks(Position *p, Square to) {
     BitBoard tmp = p->atkFr[to] & p->slidingPieces;
-    int i;
 
     while (tmp) {
-        i = bitboard_find_set_bit(tmp);
+        int i = bitboard_find_set_bit(tmp);
         tmp &= tmp - 1;
         dbase_loose_attack(p, i, to);
     }
@@ -311,7 +307,7 @@ static inline bool is_sliding(Piece tp) { return tp >= Bishop && tp <= Queen; }
  * to move two pieces
  */
 
-static void dbase_do_castle(struct Position *p, move_t move) {
+static void dbase_do_castle(Position *p, move_t move) {
     int8_t from = M_FROM(move);
     int8_t to = M_TO(move);
     int8_t or = (move & M_SCASTLE) ? from + 3 : from - 4;
@@ -371,7 +367,7 @@ static void dbase_do_castle(struct Position *p, move_t move) {
  * Unmake a castle move
  */
 
-static void dbase_undo_castle(struct Position *p, move_t move) {
+static void dbase_undo_castle(Position *p, move_t move) {
     int8_t from = M_FROM(move);
     int8_t to = M_TO(move);
     int8_t or = (move & M_SCASTLE) ? from + 3 : from - 4;
@@ -425,7 +421,7 @@ static void dbase_undo_castle(struct Position *p, move_t move) {
  * updates the global database
  */
 
-void dbase_do_move(struct Position *p, move_t move) {
+void dbase_do_move(Position *p, move_t move) {
     int8_t from = M_FROM(move);
     int8_t to = M_TO(move);
     int8_t tp = TYPE(p->piece[from]);
@@ -615,8 +611,7 @@ void dbase_do_move(struct Position *p, move_t move) {
     /* Grow gameLog if needed. */
     if (p->ply >= p->gameLogSize) {
         p->gameLogSize *= 2;
-        p->gameLog =
-            realloc(p->gameLog, sizeof(struct GameLog) * p->gameLogSize);
+        p->gameLog = realloc(p->gameLog, sizeof(GameLog) * p->gameLogSize);
         p->actLog = p->gameLog + p->ply;
     } else {
         p->actLog++;
@@ -634,7 +629,7 @@ void dbase_do_move(struct Position *p, move_t move) {
     p->hkey ^= STMKey;
 }
 
-void dbase_undo_move(struct Position *p, move_t move) {
+void dbase_undo_move(Position *p, move_t move) {
     int8_t from = M_FROM(move);
     int8_t to = M_TO(move);
     int8_t tp = TYPE(p->piece[to]);
@@ -771,7 +766,7 @@ void dbase_undo_move(struct Position *p, move_t move) {
  * Make a null move, i.e. swap the p->turn on the move
  */
 
-void dbase_do_null(struct Position *p) {
+void dbase_do_null(Position *p) {
     /* Update GameLog */
     p->actLog->gl_Move = M_NULL;
     p->actLog->gl_EnPassant = p->enPassant;
@@ -789,8 +784,7 @@ void dbase_do_null(struct Position *p) {
     /* Grow gameLog if needed. */
     if (p->ply >= p->gameLogSize) {
         p->gameLogSize *= 2;
-        p->gameLog =
-            realloc(p->gameLog, sizeof(struct GameLog) * p->gameLogSize);
+        p->gameLog = realloc(p->gameLog, sizeof(GameLog) * p->gameLogSize);
         p->actLog = p->gameLog + p->ply;
     } else {
         p->actLog++;
@@ -808,7 +802,7 @@ void dbase_do_null(struct Position *p) {
  * Unmake a null move
  */
 
-void dbase_undo_null(struct Position *p) {
+void dbase_undo_null(Position *p) {
     p->turn = OPP(p->turn);
 
     /* Decrement ActLog */
@@ -823,15 +817,14 @@ void dbase_undo_null(struct Position *p) {
  * Given the Masks and the p->piece[] array, recalculate all necessary data
  */
 
-void dbase_recalc_attacks(struct Position *p) {
-    int i;
+void dbase_recalc_attacks(Position *p) {
     BitBoard tmp;
 
-    for (i = 0; i < 64; i++) {
+    for (int i = 0; i < 64; i++) {
         p->atkTo[i] = p->atkFr[i] = 0;
     }
 
-    for (i = Pawn; i <= King; i++) {
+    for (int i = Pawn; i <= King; i++) {
         p->mask[White][i] = p->mask[Black][i] = 0;
     }
 
@@ -912,7 +905,7 @@ void dbase_recalc_attacks(struct Position *p) {
 /*
  * Generate all capturing moves to a square "square"
  */
-void dbase_gen_to(struct Position *p, Square square, heap_t heap) {
+void dbase_gen_to(const Position *p, Square square, heap_t heap) {
     BitBoard tmp = p->atkFr[square] & p->mask[p->turn][0];
 
     while (tmp) {
@@ -932,7 +925,7 @@ void dbase_gen_to(struct Position *p, Square square, heap_t heap) {
     }
 }
 
-void dbase_gen_enpas(struct Position *p, heap_t heap) {
+void dbase_gen_enpas(const Position *p, heap_t heap) {
     BitBoard tmp;
 
     if (!p->enPassant)
@@ -950,7 +943,7 @@ void dbase_gen_enpas(struct Position *p, heap_t heap) {
  * Generate all non-capturing moves from "square"
  */
 
-void dbase_gen_from(struct Position *p, Square square, heap_t heap) {
+void dbase_gen_from(const Position *p, Square square, heap_t heap) {
     if (TYPE(p->piece[square]) != Pawn) {
         BitBoard tmp;
 
@@ -1007,7 +1000,7 @@ void dbase_gen_from(struct Position *p, Square square, heap_t heap) {
  * Test if castling is legal
  */
 
-bool dbase_may_castle(struct Position *p, move_t move) {
+bool dbase_may_castle(Position *p, move_t move) {
     /* Sometimes there might be a legal castling move, but for the
        wrong p->turn, probably from the Countermove table */
     if (M_FROM(move) != ((p->turn == White) ? e1 : e8))
@@ -1055,7 +1048,7 @@ bool dbase_may_castle(struct Position *p, move_t move) {
  * Test if a move is legal
  */
 
-bool dbase_legal_move(struct Position *p, move_t move) {
+bool dbase_legal_move(Position *p, move_t move) {
     int fr = M_FROM(move);
     int to = M_TO(move);
 
@@ -1141,7 +1134,7 @@ bool dbase_legal_move(struct Position *p, move_t move) {
  * Test wether a move will give check
  */
 
-bool dbase_is_checking_move(struct Position *p, move_t move) {
+bool dbase_is_checking_move(Position *p, move_t move) {
     int fr = M_FROM(move);
     int to = M_TO(move);
     int tp = TYPE(p->piece[fr]);
@@ -1224,11 +1217,11 @@ bool dbase_is_checking_move(struct Position *p, move_t move) {
  * not be checks!
  */
 
-void dbase_gen_checks(struct Position *p, heap_t heap) {
+void dbase_gen_checks(Position *p, heap_t heap) {
     BitBoard tmp;
     BitBoard fr;
     int kp = p->kingSq[OPP(p->turn)];
-    BitBoard *ip = InterPath[kp];
+    const BitBoard *ip = InterPath[kp];
     BitBoard fsq = p->mask[p->turn][0];
     BitBoard all = (p->mask[White][0] | p->mask[Black][0]);
 
@@ -1366,9 +1359,9 @@ void dbase_gen_checks(struct Position *p, heap_t heap) {
  * if mode = false, only check if current position is repeated
  */
 
-int dbase_repeated(struct Position *p, int mode) {
+int dbase_repeated(const Position *p, int mode) {
     int i, cnt = 0;
-    struct GameLog *gl;
+    GameLog *gl;
 
     if (p->ply == 0)
         return 0;
@@ -1406,7 +1399,7 @@ const char *dbase_color_name(Color c) {
     return (c == White) ? "White" : "Black";
 }
 
-char *dbase_san(struct Position *p, move_t move, char *buffer) {
+char *dbase_san(Position *p, move_t move, char *buffer) {
     char *x = buffer;
 
     int8_t to = M_TO(move);
@@ -1438,13 +1431,12 @@ char *dbase_san(struct Position *p, move_t move, char *buffer) {
         bool aamb = false, /* set for ambigous moves */
             ramb = false,  /* set means ambigous rank */
             famb = false;  /* set means ambigous file */
-        int i;
 
         tmp = p->atkFr[to] & p->mask[p->turn][tp];
 
         /* check for ambigous move */
         while (tmp) {
-            i = bitboard_find_set_bit(tmp);
+            int i = bitboard_find_set_bit(tmp);
             tmp &= tmp - 1;
             if (i != fr) {
                 int incheck;
@@ -1536,7 +1528,7 @@ char *dbase_ics_san(move_t move) {
  * Parse a move string in e2e4 notation
  */
 
-move_t parse_gsan_internal(struct Position *p, char *san, heap_t heap) {
+move_t parse_gsan_internal(Position *p, const char *san, heap_t heap) {
     if (!strncmp(san, "O-O-O", 5) || !strncmp(san, "o-o-o", 5) ||
         !strncmp(san, "0-0-0", 5)) {
         move_t move =
@@ -1569,16 +1561,16 @@ move_t parse_gsan_internal(struct Position *p, char *san, heap_t heap) {
         move_t move = heap->data[i];
         if ((move & 4095) == mask) {
             if (move & M_PROMOTION_MASK && strlen(san) >= 5) {
-                char p = *(san + 4);
+                char promo = *(san + 4);
                 move = move & (~M_PROMOTION_MASK);
 
-                if (p == 'q' || p == 'Q')
+                if (promo == 'q' || promo == 'Q')
                     return move | (Queen << M_PROMOTION_OFFSET);
-                if (p == 'r' || p == 'R')
+                if (promo == 'r' || promo == 'R')
                     return move | (Rook << M_PROMOTION_OFFSET);
-                if (p == 'n' || p == 'N')
+                if (promo == 'n' || promo == 'N')
                     return move | (Knight << M_PROMOTION_OFFSET);
-                if (p == 'b' || p == 'B')
+                if (promo == 'b' || promo == 'B')
                     return move | (Bishop << M_PROMOTION_OFFSET);
             } else
                 return move;
@@ -1587,7 +1579,7 @@ move_t parse_gsan_internal(struct Position *p, char *san, heap_t heap) {
     return M_NONE;
 }
 
-move_t dbase_parse_gsan(struct Position *p, char *san) {
+move_t dbase_parse_gsan(Position *p, const char *san) {
     heap_t heap = heap_allocate();
     move_t move = parse_gsan_internal(p, san, heap);
     heap_free(heap);
@@ -1596,67 +1588,10 @@ move_t dbase_parse_gsan(struct Position *p, char *san) {
 }
 
 /*
- * Parse a move string in e2e4 notation against a supplied move list
- */
-
-move_t dbase_parse_gsan_list(char *san, Color side, move_t *mvs, int cnt) {
-    int fr, to;
-    int mask;
-    int i;
-
-    if (!strncmp(san, "O-O-O", 5) || !strncmp(san, "o-o-o", 5) ||
-        !strncmp(san, "0-0-0", 5)) {
-        int move =
-            M_LCASTLE | (side == White ? (c1 << 6) + e1 : (c8 << 6) + e8);
-
-        for (i = 0; i < cnt; i++)
-            if (move == mvs[i])
-                return move;
-        return M_NONE;
-    }
-
-    if (!strncmp(san, "O-O", 3) || !strncmp(san, "o-o", 3) ||
-        !strncmp(san, "0-0", 3)) {
-        int move =
-            M_SCASTLE | (side == White ? (g1 << 6) + e1 : (g8 << 6) + e8);
-
-        for (i = 0; i < cnt; i++)
-            if (move == mvs[i])
-                return move;
-        return M_NONE;
-    }
-
-    fr = *san - 'a' + 8 * (*(san + 1) - '1');
-    to = *(san + 2) - 'a' + 8 * (*(san + 3) - '1');
-
-    mask = fr + (to << 6);
-
-    for (i = 0; i < cnt; i++) {
-        if ((mvs[i] & 4095) == mask) {
-            if (mvs[i] & M_PROMOTION_MASK) {
-                char p = *(san + 4);
-                int move = mvs[i] & (~M_PROMOTION_MASK);
-
-                if (p == 'q' || p == 'Q')
-                    return move | (Queen << M_PROMOTION_OFFSET);
-                if (p == 'r' || p == 'R')
-                    return move | (Rook << M_PROMOTION_OFFSET);
-                if (p == 'n' || p == 'N')
-                    return move | (Knight << M_PROMOTION_OFFSET);
-                if (p == 'b' || p == 'B')
-                    return move | (Bishop << M_PROMOTION_OFFSET);
-            } else
-                return mvs[i];
-        }
-    }
-    return M_NONE;
-}
-
-/*
  * Test a pseudolegal move for legality
  */
 
-static bool dbase_try_move(struct Position *p, move_t move) {
+static bool dbase_try_move(Position *p, move_t move) {
     bool tmp;
     dbase_do_move(p, move);
     tmp = dbase_in_check(p, OPP(p->turn));
@@ -1668,7 +1603,7 @@ static bool dbase_try_move(struct Position *p, move_t move) {
 /*
  * Parse a move string (in SAN)
  */
-static move_t parse_san_with_heap(struct Position *p, char *san, heap_t heap) {
+static move_t parse_san_with_heap(Position *p, char *san, heap_t heap) {
     int tp = Neutral;
     int frk = -1, ffl = -1, trk = -1, tfl = -1;
     int pro = 0;
@@ -1808,7 +1743,7 @@ static move_t parse_san_with_heap(struct Position *p, char *san, heap_t heap) {
     return M_NONE;
 }
 
-move_t dbase_parse_san(struct Position *p, char *san) {
+move_t dbase_parse_san(Position *p, char *san) {
     heap_t heap = heap_allocate();
     move_t move = parse_san_with_heap(p, san, heap);
     heap_free(heap);
@@ -1816,147 +1751,11 @@ move_t dbase_parse_san(struct Position *p, char *san) {
 }
 
 /*
- * Parse a move string (in SAN) against supplied move list
- */
-
-move_t dbase_parse_san_list(char *san, Color side, move_t *mvs, int cnt,
-                            int *pmap) {
-    int tp = Neutral;
-    int frk = -1, ffl = -1, trk = -1, tfl = -1;
-    int pro = 0;
-    int move;
-    int i;
-
-    /* Check castling first */
-
-    if (!strncmp(san, "O-O-O", 5) || !strncmp(san, "o-o-o", 5) ||
-        !strncmp(san, "0-0-0", 5)) {
-        move = M_LCASTLE | (side == White ? (c1 << 6) + e1 : (c8 << 6) + e8);
-        for (i = 0; i < cnt; i++)
-            if (move == mvs[i])
-                return move;
-        return M_NONE;
-    }
-
-    if (!strncmp(san, "O-O", 3) || !strncmp(san, "o-o", 3) ||
-        !strncmp(san, "0-0", 3)) {
-        move = M_SCASTLE | (side == White ? (g1 << 6) + e1 : (g8 << 6) + e8);
-        for (i = 0; i < cnt; i++)
-            if (move == mvs[i])
-                return move;
-        return M_NONE;
-    }
-
-    /* special handling of pawn captures a la 'cd' */
-    if (strlen(san) == 2 && *san >= 'a' && *san <= 'h' && *(san + 1) >= 'a' &&
-        *(san + 1) <= 'h') {
-        ffl = *san - 'a';
-        tfl = *(san + 1) - 'a';
-
-        for (i = 0; i < cnt; i++) {
-            int fr = M_FROM(mvs[i]);
-            int to = M_TO(mvs[i]);
-
-            if (pmap[fr] == Pawn && (mvs[i] & (M_CAPTURE | M_ENPASSANT)) &&
-                (fr & 7) == ffl && (to & 7) == tfl)
-                return mvs[i];
-        }
-        return M_NONE;
-    }
-
-    /* Next examine the string */
-    for (; *san; san++) {
-        switch (*san) {
-        case 'a':
-        case 'b':
-        case 'c':
-        case 'd':
-        case 'e':
-        case 'f':
-        case 'g':
-        case 'h': {
-            ffl = tfl;
-            tfl = *san - 'a';
-            break;
-        }
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-        case '5':
-        case '6':
-        case '7':
-        case '8': {
-            frk = trk;
-            trk = *san - '1';
-            break;
-        }
-        case 'N':
-            tp = Knight;
-            break;
-        case 'B':
-            tp = Bishop;
-            break;
-        case 'R':
-            tp = Rook;
-            break;
-        case 'Q':
-            tp = Queen;
-            break;
-        case 'K':
-            tp = King;
-            break;
-        case '=':
-            san++;
-            if (*san == 'Q')
-                pro = Queen;
-            else if (*san == 'R')
-                pro = Rook;
-            else if (*san == 'B')
-                pro = Bishop;
-            else if (*san == 'N')
-                pro = Knight;
-            else
-                return M_NONE;
-            break;
-        case 'x':
-        case '+':
-        case '#':
-            break;
-        default:
-            return M_NONE;
-        }
-    }
-
-    if (tp == Neutral)
-        tp = Pawn;
-
-    for (i = 0; i < cnt; i++) {
-        int fr = M_FROM(mvs[i]), to = M_TO(mvs[i]);
-
-        if (TYPE(pmap[fr]) != tp)
-            continue;
-        if ((to & 7) != tfl || (to >> 3) != trk)
-            continue;
-        if (ffl != -1 && (fr & 7) != ffl)
-            continue;
-        if (frk != -1 && (fr >> 3) != frk)
-            continue;
-        if (pro && (dbase_promo_type(mvs[i]) != pro))
-            continue;
-
-        return mvs[i];
-    }
-
-    return M_NONE;
-}
-
-/*
  * Generate all pseudolegal (!) moves
  * or test if there are any, if mvs = NULL
  */
 
-void dbase_plegal_moves(struct Position *p, heap_t heap) {
+void dbase_plegal_moves(Position *p, heap_t heap) {
     BitBoard tmp;
 
     tmp = p->mask[OPP(p->turn)][0];
@@ -1985,7 +1784,7 @@ void dbase_plegal_moves(struct Position *p, heap_t heap) {
  *     the number of generated moves
  */
 
-void legal_moves_internal(struct Position *p, heap_t heap, heap_t tmp_heap) {
+void legal_moves_internal(Position *p, heap_t heap, heap_t tmp_heap) {
     BitBoard tmp;
 
     tmp = p->mask[OPP(p->turn)][0];
@@ -2052,7 +1851,7 @@ void legal_moves_internal(struct Position *p, heap_t heap, heap_t tmp_heap) {
     heap_pop_section(tmp_heap);
 }
 
-int dbase_legal_moves(struct Position *p, heap_t heap) {
+int dbase_legal_moves(Position *p, heap_t heap) {
     heap_t tmp_heap = heap_allocate();
     heap_t destination = heap;
 
@@ -2078,7 +1877,7 @@ int dbase_legal_moves(struct Position *p, heap_t heap) {
  * print the current position
  */
 
-void dbase_show_position(struct Position *p) {
+void dbase_show_position(Position *p) {
     int rk, fl;
 
     nn_compute_score(p);
@@ -2108,19 +1907,7 @@ void dbase_show_position(struct Position *p) {
         }
         switch (rk) {
         case 7:
-            print(0, "|   Attack Map: [");
-            for (size_t i = 0; i < p->attack_map_w.count; i++) {
-                char buffer[16];
-
-                if (i != 0)
-                    print(0, ", ");
-
-                am_attack_index_to_string(p, White, p->attack_map_w.data[i],
-                                          buffer);
-
-                print(0, buffer);
-            }
-            print(0, "] [");
+            print(0, "|   Attack Map: ");
             for (size_t i = 0; i < p->attack_map_b.count; i++) {
                 char buffer[16];
 
@@ -2132,8 +1919,9 @@ void dbase_show_position(struct Position *p) {
 
                 print(0, buffer);
             }
-            print(0, "]\n");
+            print(0, "\n");
             break;
+
         case 6:
             print(0, "|   Hashkey: %llx\n", p->hkey);
             break;
@@ -2167,8 +1955,19 @@ void dbase_show_position(struct Position *p) {
             print(0, "|   Index: %d\n", RECOGNIZER_INDEX(p));
             break;
         case 0:
-            print(0, "|   mates_threat: %d %d\n", mates_threat(p, White),
-                  mates_threat(p, Black));
+            print(0, "|   Attack Map: ");
+            for (size_t i = 0; i < p->attack_map_w.count; i++) {
+                char buffer[16];
+
+                if (i != 0)
+                    print(0, ", ");
+
+                am_attack_index_to_string(p, White, p->attack_map_w.data[i],
+                                          buffer);
+
+                print(0, buffer);
+            }
+            print(0, "\n");
             break;
         default:
             print(0, "|\n");
@@ -2183,7 +1982,7 @@ void dbase_show_position(struct Position *p) {
  * Display all legal moves.
  */
 
-void dbase_show_moves(struct Position *p) {
+void dbase_show_moves(Position *p) {
     unsigned int i;
     char san_buffer[16];
 
@@ -2235,7 +2034,7 @@ int badmove[MAX_EPD_MOVES];
 /**
  * Read a position from an EPD string.
  */
-static void dbase_read_epd(struct Position *p, char *x) {
+static void dbase_read_epd(Position *p, char *x) {
     int rk = 7, fl = 0;
     int i;
     char *ops[MAX_EPD_OPS];
@@ -2403,7 +2202,7 @@ static void dbase_read_epd(struct Position *p, char *x) {
     goodmove[0] = M_NONE;
     badmove[0] = M_NONE;
 
-    for (i = 0; ops[i] && i < (MAX_EPD_OPS - 1); i++) {
+    for (i = 0; i < MAX_EPD_OPS && ops[i]; i++) {
         char *op = strtok(ops[i], " ");
 
         if (op) {
@@ -2451,10 +2250,10 @@ static void dbase_read_epd(struct Position *p, char *x) {
  * Create an EPD of the current position
  */
 
-char *dbase_make_epd(struct Position *p) {
+char *dbase_make_epd(Position *p) {
     static char epdbuffer[2048];
-    char wname[] = " PNBRQK";
-    char bname[] = " pnbrqk";
+    const char wname[] = " PNBRQK";
+    const char bname[] = " pnbrqk";
     char san_buffer[16];
 
     char *x = epdbuffer;
@@ -2535,7 +2334,7 @@ char *dbase_make_epd(struct Position *p) {
  *
  */
 
-const char *dbase_game_end(struct Position *p) {
+const char *dbase_game_end(Position *p) {
     if (p->actLog->gl_IrrevCount >= 100) {
         return "1/2-1/2 {50 move rule}";
     }
@@ -2563,73 +2362,11 @@ const char *dbase_game_end(struct Position *p) {
     return NULL;
 }
 
-/**
- * Returns true if the given side only has a bishops and no other
- * major pieces.
- */
-static bool has_only_bishops(const struct Position *p, Color side) {
-    return (p->mask[side][Bishop] != 0ULL) &&
-           ((p->mask[side][Knight] | p->mask[side][Rook] |
-             p->mask[side][Queen]) == 0ULL);
-}
-/*
- * Check if this is a theoretical draw
- */
-bool dbase_check_draw(const struct Position *p) {
-    if (p->material[Black] == 0) {
-        if (p->nonPawn[White] == 0) {
-            if (!(p->mask[White][Pawn] & NotAFileMask)) {
-                if (p->mask[Black][King] & CornerMaskA8)
-                    return true;
-            }
-            if (!(p->mask[White][Pawn] & NotHFileMask)) {
-                if (p->mask[Black][King] & CornerMaskH8)
-                    return true;
-            }
-        } else if (has_only_bishops(p, White)) {
-            if (!(p->mask[White][Pawn] & NotAFileMask) &&
-                (p->mask[Black][King] & CornerMaskA8)) {
-                if (p->mask[White][Bishop] & BlackSquaresMask)
-                    return true;
-            }
-            if (!(p->mask[White][Pawn] & NotHFileMask) &&
-                (p->mask[Black][King] & CornerMaskH8)) {
-                if (p->mask[White][Bishop] & WhiteSquaresMask)
-                    return true;
-            }
-        }
-    }
-    if (p->material[White] == 0) {
-        if (p->nonPawn[Black] == 0) {
-            if (!(p->mask[Black][Pawn] & NotAFileMask)) {
-                if (p->mask[White][King] & CornerMaskA1)
-                    return true;
-            }
-            if (!(p->mask[Black][Pawn] & NotHFileMask)) {
-                if (p->mask[White][King] & CornerMaskH1)
-                    return true;
-            }
-        } else if (has_only_bishops(p, Black)) {
-            if (!(p->mask[Black][Pawn] & NotAFileMask) &&
-                (p->mask[White][King] & CornerMaskA1)) {
-                if (p->mask[Black][Bishop] & WhiteSquaresMask)
-                    return true;
-            }
-            if (!(p->mask[Black][Pawn] & NotHFileMask) &&
-                (p->mask[White][King] & CornerMaskH1)) {
-                if (p->mask[Black][Bishop] & BlackSquaresMask)
-                    return true;
-            }
-        }
-    }
-    return false;
-}
-
 /*
  * Check if the pawn is passed
  */
 
-bool dbase_is_passed(const struct Position *p, int sq, int side) {
+bool dbase_is_passed(const Position *p, int sq, int side) {
     if (side == White)
         return !(p->mask[Black][Pawn] & PassedMaskW[sq]);
     else
@@ -2640,10 +2377,10 @@ bool dbase_is_passed(const struct Position *p, int sq, int side) {
  * Create a position from an EPD
  */
 
-struct Position *dbase_create_position_from_epd(char *epd) {
-    struct Position *p = safe_calloc(1, sizeof(struct Position));
+Position *dbase_create_position_from_epd(char *epd) {
+    Position *p = safe_calloc(1, sizeof(Position));
     p->gameLogSize = INITIAL_GAME_LOG_SIZE;
-    p->gameLog = safe_calloc(p->gameLogSize, sizeof(struct GameLog));
+    p->gameLog = safe_calloc(p->gameLogSize, sizeof(GameLog));
     p->actLog = p->gameLog;
     dbase_read_epd(p, epd);
     p->actLog->gl_IrrevCount = 0;
@@ -2658,8 +2395,8 @@ struct Position *dbase_create_position_from_epd(char *epd) {
  * Create a position in the usual starting position
  */
 
-struct Position *dbase_initial_position(void) {
-    struct Position *p = dbase_create_position_from_epd(
+Position *dbase_initial_position(void) {
+    Position *p = dbase_create_position_from_epd(
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -");
 
     /* we are 'in book' in the InitalPosition */
@@ -2668,13 +2405,13 @@ struct Position *dbase_initial_position(void) {
     return p;
 }
 
-struct Position *dbase_clone_position(struct Position *src) {
-    struct Position *p = safe_calloc(1, sizeof(struct Position));
-    memcpy(p, src, sizeof(struct Position));
+Position *dbase_clone_position(const Position *src) {
+    Position *p = safe_calloc(1, sizeof(Position));
+    memcpy(p, src, sizeof(Position));
 
     p->gameLogSize = src->gameLogSize;
-    p->gameLog = safe_calloc(p->gameLogSize, sizeof(struct GameLog));
-    memcpy(p->gameLog, src->gameLog, sizeof(struct GameLog) * p->gameLogSize);
+    p->gameLog = safe_calloc(p->gameLogSize, sizeof(GameLog));
+    memcpy(p->gameLog, src->gameLog, sizeof(GameLog) * p->gameLogSize);
 
     p->actLog = p->gameLog + (src->actLog - src->gameLog);
 
@@ -2685,7 +2422,7 @@ struct Position *dbase_clone_position(struct Position *src) {
  * Release the resources connected with a Position
  */
 
-void dbase_free_position(struct Position *p) {
+void dbase_free_position(Position *p) {
     if (p) {
         free(p->gameLog);
         free(p);

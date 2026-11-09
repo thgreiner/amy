@@ -34,6 +34,7 @@
 
 #include "dbase.h"
 
+/* x is a piece type 1..6 (Pawn..King) */
 #define SIGNATURE_BIT(x) (1 << ((x) - 1))
 #define CALCULATE_INDEX(a, b) (((a) | (b)) + 32 * ((a) != 0 && (b) != 0))
 #define RECOGNIZER_INDEX(p)                                                    \
@@ -41,6 +42,6 @@
                     (p)->material_signature[Black])
 
 void recog_init(void);
-int recog_probe(const struct Position *p, int *score);
+int recog_probe(const Position *p, int *score);
 
 #endif

@@ -8,6 +8,14 @@ AC_INIT([amy],[0.9.8-pre])
 AC_CONFIG_SRCDIR(src/dbase.c)
 AM_INIT_AUTOMAKE([foreign])
 
+# NB: source lists in Makefile.am files must stay literal file names.
+# automake parses _SOURCES values to build the dist/object lists and
+# mangles make functions ($(wildcard)/$(filter)) inside them.  The
+# headers in include/Makefile.am can use a wildcard because noinst_HEADERS
+# is only expanded by make at dist time.
+
+AC_CANONICAL_HOST
+
 m4_include([m4/ax_gcc_builtin.m4])
 
 AC_ARG_ENABLE(mt,
@@ -53,6 +61,19 @@ if test "x$ac_cv_header_termios_h" = "xyes" -a "x$ac_cv_func_tcgetattr" = "xyes"
 fi
 AM_CONDITIONAL([HAVE_LINENOISE],
   [test "x$ac_cv_header_termios_h" = "xyes" -a "x$ac_cv_func_tcgetattr" = "xyes"])
+
+dnl The hand-rolled ctypes nn_extract dylib (src/Makefile.am) links the
+dnl plain, non-fPIC objects of the Amy binary.  That only works on macOS
+dnl Apple Silicon, where objects are position-independent by default.
+AC_MSG_CHECKING(whether to build the nn_extract ctypes library)
+case "$host" in
+  aarch64-apple-darwin*)
+    build_nn_extract=yes ;;
+  *)
+    build_nn_extract=no ;;
+esac
+AC_MSG_RESULT($build_nn_extract)
+AM_CONDITIONAL([BUILD_NN_EXTRACT], [test "x$build_nn_extract" = xyes])
 
 AX_GCC_BUILTIN(__builtin_ctzll)
 AX_GCC_BUILTIN(__builtin_popcountll)

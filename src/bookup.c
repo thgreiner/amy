@@ -184,13 +184,13 @@ void book_close(void) {
 }
 
 static void book_up_internal(char *file_name, int verbosity) {
-    struct Position *p;
+    Position *p;
     FILE *fin;
     int afterEco = 0;
     tree_node_t *database = NULL;
     int lines = 0;
 
-    struct PGNHeader header;
+    PGNHeader header;
     char move[12];
 
     fin = fopen(file_name, "rb");
@@ -279,7 +279,7 @@ void book_up(char *file_name) { book_up_internal(file_name, 0); }
 
 void book_up_quiet(char *file_name) { book_up_internal(file_name, 9); }
 
-static void book_get_all_moves(struct Position *p, int *cnt, move_t *book_moves,
+static void book_get_all_moves(Position *p, int *cnt, move_t *book_moves,
                                struct BookQuery *entries) {
     unsigned int i;
 
@@ -455,20 +455,21 @@ static void book_calculate_probabilities(int cnt, struct BookQuery *entries,
     }
 }
 
-int book_select(struct Position *p) {
-    int i, cnt = 0;
+int book_select(Position *p) {
+    int cnt = 0;
     struct BookQuery be[32];
     move_t moves[32];
-    double props[32];
-    double random_value = random_double();
 
     book_get_all_moves(p, &cnt, moves, be);
 
     if (cnt != 0) {
+        double props[32];
+        double random_value = random_double();
+
         book_sort(cnt, moves, be);
         book_calculate_probabilities(cnt, be, props);
 
-        for (i = 0; i < cnt; i++) {
+        for (int i = 0; i < cnt; i++) {
             if (props[i] > 0.0) {
                 random_value -= props[i];
                 if (random_value <= 0.0) {
@@ -481,7 +482,7 @@ int book_select(struct Position *p) {
     return M_NONE;
 }
 
-void book_query(struct Position *p) {
+void book_query(Position *p) {
     int i, cnt = 0;
     struct BookQuery be[32];
     move_t moves[32];
@@ -541,7 +542,7 @@ static void book_put_learn_entry(hash_t hk, int learn_value, int flags) {
 void book_create_learn_db(char *file_name) {
     FILE *fin = fopen(file_name, "rb");
     char buffer[1024];
-    struct Position *p;
+    Position *p;
 
     if (fin == NULL) {
         print(0, "Can't open learn file %s\n", file_name);
@@ -609,7 +610,7 @@ static tree_node_t *flatten_internal(tree_node_t *source, tree_node_t *target,
     if (source == NULL) {
         return target;
     }
-    struct BookEntry *entry = (struct BookEntry *)source->value_data;
+    const struct BookEntry *entry = (const struct BookEntry *)source->value_data;
     (*read)++;
     if ((entry->win + entry->draw + entry->loss) > threshold) {
         target = tree_add_node(target, source->key_data, source->key_len,

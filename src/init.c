@@ -162,9 +162,9 @@ void init_geometry(void) {
     int edge[100];
     int trto[100];
     int i, j, k, l;
-    int dirs[] = {1, -1, 10, -10, 9, -9, 11, -11};
-    int dirb[] = {9, -9, 11, -11};
-    int dirr[] = {1, -1, 10, -10};
+    const int dirs[] = {1, -1, 10, -10, 9, -9, 11, -11};
+    const int dirb[] = {9, -9, 11, -11};
+    const int dirr[] = {1, -1, 10, -10};
 
     for (i = 0; i < 100; i++) {
         edge[i] = 0;

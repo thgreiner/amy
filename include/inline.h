@@ -74,31 +74,6 @@ static inline int dbase_king_dist(int sq1, int sq2) {
 }
 
 /**
- * Calculate the 'minimum distance' between two squares.
- * This the minimum of the file and rank distances.
- */
-static inline int dbase_min_dist(int sq1, int sq2) {
-    int file_dist = ABS((sq1 & 7) - (sq2 & 7));
-    int rank_dist = ABS((sq1 >> 3) - (sq2 >> 3));
-
-    return MIN(file_dist, rank_dist);
-}
-
-/**
- * Calculate the 'Manhattan distance' between two squares.
- */
-static inline int dbase_manhattan_dist(int sq1, int sq2) {
-    int file_dist = ABS((sq1 & 7) - (sq2 & 7));
-    int rank_dist = ABS((sq1 >> 3) - (sq2 >> 3));
-
-    return file_dist + rank_dist;
-}
-
-static inline int dbase_file_dist(int sq1, int sq2) {
-    return ABS((sq1 & 7) - (sq2 & 7));
-}
-
-/**
  * Calculate the distance of 'sq' to any edge on the chessboard
  */
 static inline int dbase_edge_dist(int sq) {
@@ -134,7 +109,7 @@ static inline bool dbase_is_promo_square(int sq) {
 /*
  * Test whether a side is in check
  */
-static inline bool dbase_in_check(struct Position *p, int side) {
+static inline bool dbase_in_check(Position *p, int side) {
     int sq = p->kingSq[side];
     return (p->atkFr[sq] & p->mask[!side][0]);
 }

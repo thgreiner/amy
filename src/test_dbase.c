@@ -33,8 +33,7 @@
 #include <assert.h>
 
 static void test_parse_san_promotions(void) {
-    struct Position *p =
-        dbase_create_position_from_epd("4K1k1/P7/8/8/8/8/8/8 w - -");
+    Position *p = dbase_create_position_from_epd("4K1k1/P7/8/8/8/8/8/8 w - -");
 
     move_t move = dbase_parse_san(p, "a8=Q");
     assert(move == dbase_make_promotion(a7, a8, Queen, 0));
