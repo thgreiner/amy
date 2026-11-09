@@ -37,8 +37,9 @@
 #include "hashtable.h"
 #include "inline.h"
 #include "intset_sorted.h"
+#include "lzav.h"
 #include "random.h"
-#include "search.h"
+#include "safe_malloc.h"
 #include "utils.h"
 #include <stddef.h>
 #include <stdint.h>
@@ -89,7 +90,8 @@ int eval_material_balance(const struct Position *p) {
 #define SCALE_H1 (SCALE_INPUT * SCALE)
 #define SCALE_H1_HALF (SCALE_H1 / 2 - 1)
 
-static const uint32_t wh_magic = 0x57594d41; // "AMYW"
+static const uint32_t wh_magic = 0x57594d41;            // "AMYW"
+static const uint32_t wh_magic_compressed = 0x5A594d41; // "AMYZ"
 
 static const uint8_t wh_quantization_int_8 = 1;
 static const uint8_t wh_quantization_int_16 = 2;
@@ -120,6 +122,8 @@ typedef struct {
     char wh_date[32];        // Date of training, ISO8601 formatted
 } WeightsHeader;
 
+static WeightsHeader nn_header;
+
 int8_t input_layer_weights_q[N_FEATURES][ACCUMULATOR_SIZE];
 int8_t input_pawn_weights_q[N_PAWN_FEATURES][ACCUMULATOR_SIZE];
 int8_t input_attack_weights_q[N_ATTACK_FEATURES][ACCUMULATOR_SIZE];
@@ -139,14 +143,29 @@ static void nn_update_weights_for_pawn(struct Position *p, int sq1, bool turn,
                                        bool add);
 static void nn_build_pawn_accumulator(int16_t *accumulator, struct Position *p,
                                       int side);
+static void nn_save_weights_compressed(const char *);
+static void nn_check_header(WeightsHeader *header);
+static bool nn_load_weights_compressed(void);
+static bool nn_load_weights_uncompressed(void);
 
 void nn_read_weights_quantized(void) {
+    bool weights_loaded =
+        nn_load_weights_compressed() || nn_load_weights_uncompressed();
+
+    if (weights_loaded) {
+        print(0, "Loaded weights \"%s\" (%s).\n", nn_header.wh_name,
+              nn_header.wh_date);
+    } else {
+        print(0, "No weights found.\n");
+    }
+}
+
+static bool nn_load_weights_uncompressed(void) {
     FILE *fin = fopen("network.quant", "rb");
     size_t items_read;
 
     if (fin == NULL) {
-        print(0, "No weights found.\n");
-        return;
+        return false;
     }
 
     WeightsHeader header;
@@ -154,28 +173,8 @@ void nn_read_weights_quantized(void) {
     items_read = fread(&header, sizeof(header), 1, fin);
     assert(items_read == 1);
 
-    // Verify that the weights file is valid
-    assert(header.wh_magic == wh_magic);
-    assert(header.wh_accumulator_size == ACCUMULATOR_SIZE);
-    assert(header.wh_num_features == N_FEATURES);
-    assert(header.wh_pawn_features_size == N_PAWN_FEATURES);
-    assert(header.wh_attack_features_size == N_ATTACK_FEATURES);
-    assert(header.wh_hidden_layer_1_size == HIDDEN_1_SIZE);
-    assert(header.wh_hidden_layer_2_size == HIDDEN_2_SIZE);
-    assert(header.wh_accumulator_weights_quantization == wh_quantization_int_8);
-    assert(header.wh_accumulator_bias_quantization == wh_quantization_int_16);
-    assert(header.wh_hidden_layer_1_weights_quantization ==
-           wh_quantization_int_16);
-    assert(header.wh_hidden_layer_1_bias_quantization ==
-           wh_quantization_int_32);
-    assert(header.wh_hidden_layer_2_weights_quantization ==
-           wh_quantization_int_16);
-    assert(header.wh_hidden_layer_2_bias_quantization ==
-           wh_quantization_int_32);
-    assert(header.wh_output_layer_weights_quantization ==
-           wh_quantization_int_32);
-    assert(header.wh_output_layer_bias_quantization == wh_quantization_int_32);
-    assert(header.wh_phase_count == NN_PHASE_COUNT);
+    nn_check_header(&header);
+    nn_header = header;
 
     items_read = fread(input_layer_weights_q, sizeof(int8_t),
                        ACCUMULATOR_SIZE * N_FEATURES, fin);
@@ -220,7 +219,9 @@ void nn_read_weights_quantized(void) {
 
     fclose(fin);
 
-    print(0, "Loaded weights \"%s\" (%s).\n", header.wh_name, header.wh_date);
+    nn_save_weights_compressed("network.quant.z");
+
+    return true;
 }
 
 #ifdef STATISTICS_Q
@@ -1128,4 +1129,164 @@ void nn_randomize_weights(void) {
         memcpy(output_layer_bias_q[phase], output_layer_bias_q[0],
                sizeof(output_layer_bias_q[0]));
     }
+}
+
+static int nn_uncompressed_length =
+    (int)(sizeof(input_layer_weights_q) + sizeof(input_pawn_weights_q) +
+          sizeof(input_attack_weights_q) + sizeof(input_layer_bias_q) +
+          sizeof(hidden_layer_1_weights_q) + sizeof(hidden_layer_1_bias_q) +
+          sizeof(hidden_layer_2_weights_q) + sizeof(hidden_layer_2_bias_q) +
+          sizeof(output_layer_weights_q) + sizeof(output_layer_bias_q));
+
+typedef struct {
+    WeightsHeader cwh_header;
+    int32_t cwh_compressed_size;
+} CompressedWeightsHeader;
+
+static void nn_save_weights_compressed(const char *file_name) {
+    if (nn_header.wh_magic != wh_magic)
+        return;
+
+    int8_t *data = safe_malloc(nn_uncompressed_length);
+
+    int8_t *ptr = data;
+
+    memcpy(ptr, input_layer_weights_q, sizeof(input_layer_weights_q));
+    ptr += sizeof(input_layer_weights_q);
+
+    memcpy(ptr, input_pawn_weights_q, sizeof(input_pawn_weights_q));
+    ptr += sizeof(input_pawn_weights_q);
+
+    memcpy(ptr, input_attack_weights_q, sizeof(input_attack_weights_q));
+    ptr += sizeof(input_attack_weights_q);
+
+    memcpy(ptr, input_layer_bias_q, sizeof(input_layer_bias_q));
+    ptr += sizeof(input_layer_bias_q);
+
+    memcpy(ptr, hidden_layer_1_weights_q, sizeof(hidden_layer_1_weights_q));
+    ptr += sizeof(hidden_layer_1_weights_q);
+
+    memcpy(ptr, hidden_layer_1_bias_q, sizeof(hidden_layer_1_bias_q));
+    ptr += sizeof(hidden_layer_1_bias_q);
+
+    memcpy(ptr, hidden_layer_2_weights_q, sizeof(hidden_layer_2_weights_q));
+    ptr += sizeof(hidden_layer_2_weights_q);
+
+    memcpy(ptr, hidden_layer_2_bias_q, sizeof(hidden_layer_2_bias_q));
+    ptr += sizeof(hidden_layer_2_bias_q);
+
+    memcpy(ptr, output_layer_weights_q, sizeof(output_layer_weights_q));
+    ptr += sizeof(output_layer_weights_q);
+
+    memcpy(ptr, output_layer_bias_q, sizeof(output_layer_bias_q));
+    ptr += sizeof(output_layer_bias_q);
+
+    int max_len = lzav_compress_bound_hi(
+        nn_uncompressed_length); // Note the different bound function
+    void *comp_buf = safe_malloc(max_len);
+    int comp_len =
+        lzav_compress_hi(data, comp_buf, nn_uncompressed_length, max_len);
+
+    CompressedWeightsHeader new_header;
+    new_header.cwh_header = nn_header;
+    new_header.cwh_header.wh_magic = wh_magic_compressed;
+    new_header.cwh_compressed_size = comp_len;
+
+    FILE *fout = fopen(file_name, "w");
+    if (fout) {
+        fwrite(&new_header, sizeof(new_header), 1, fout);
+        fwrite(comp_buf, comp_len, 1, fout);
+        fclose(fout);
+    }
+
+    free(comp_buf);
+    free(data);
+}
+
+static bool nn_load_weights_compressed(void) {
+    FILE *fin = fopen("network.quant.z", "rb");
+
+    if (fin == NULL) {
+        return false;
+    }
+
+    CompressedWeightsHeader header;
+    size_t items_read = fread(&header, sizeof(header), 1, fin);
+    assert(items_read == 1);
+
+    nn_check_header(&header.cwh_header);
+    nn_header = header.cwh_header;
+
+    int8_t *buffer = safe_malloc(header.cwh_compressed_size);
+    items_read = fread(buffer, header.cwh_compressed_size, 1, fin);
+    assert(items_read == 1);
+
+    int8_t *data = malloc(nn_uncompressed_length);
+
+    int l = lzav_decompress(buffer, data, header.cwh_compressed_size,
+                            nn_uncompressed_length);
+    assert(l >= 0);
+
+    fclose(fin);
+
+    int8_t *ptr = data;
+
+    memcpy(input_layer_weights_q, ptr, sizeof(input_layer_weights_q));
+    ptr += sizeof(input_layer_weights_q);
+
+    memcpy(input_pawn_weights_q, ptr, sizeof(input_pawn_weights_q));
+    ptr += sizeof(input_pawn_weights_q);
+
+    memcpy(input_attack_weights_q, ptr, sizeof(input_attack_weights_q));
+    ptr += sizeof(input_attack_weights_q);
+
+    memcpy(input_layer_bias_q, ptr, sizeof(input_layer_bias_q));
+    ptr += sizeof(input_layer_bias_q);
+
+    memcpy(hidden_layer_1_weights_q, ptr, sizeof(hidden_layer_1_weights_q));
+    ptr += sizeof(hidden_layer_1_weights_q);
+
+    memcpy(hidden_layer_1_bias_q, ptr, sizeof(hidden_layer_1_bias_q));
+    ptr += sizeof(hidden_layer_1_bias_q);
+
+    memcpy(hidden_layer_2_weights_q, ptr, sizeof(hidden_layer_2_weights_q));
+    ptr += sizeof(hidden_layer_2_weights_q);
+
+    memcpy(hidden_layer_2_bias_q, ptr, sizeof(hidden_layer_2_bias_q));
+    ptr += sizeof(hidden_layer_2_bias_q);
+
+    memcpy(output_layer_weights_q, ptr, sizeof(output_layer_weights_q));
+    ptr += sizeof(output_layer_weights_q);
+
+    memcpy(output_layer_bias_q, ptr, sizeof(output_layer_bias_q));
+    ptr += sizeof(output_layer_bias_q);
+
+    free(buffer);
+    free(data);
+
+    return true;
+}
+
+static void nn_check_header(WeightsHeader *header) {
+    assert(header->wh_accumulator_size == ACCUMULATOR_SIZE);
+    assert(header->wh_num_features == N_FEATURES);
+    assert(header->wh_pawn_features_size == N_PAWN_FEATURES);
+    assert(header->wh_attack_features_size == N_ATTACK_FEATURES);
+    assert(header->wh_hidden_layer_1_size == HIDDEN_1_SIZE);
+    assert(header->wh_hidden_layer_2_size == HIDDEN_2_SIZE);
+    assert(header->wh_accumulator_weights_quantization ==
+           wh_quantization_int_8);
+    assert(header->wh_accumulator_bias_quantization == wh_quantization_int_16);
+    assert(header->wh_hidden_layer_1_weights_quantization ==
+           wh_quantization_int_16);
+    assert(header->wh_hidden_layer_1_bias_quantization ==
+           wh_quantization_int_32);
+    assert(header->wh_hidden_layer_2_weights_quantization ==
+           wh_quantization_int_16);
+    assert(header->wh_hidden_layer_2_bias_quantization ==
+           wh_quantization_int_32);
+    assert(header->wh_output_layer_weights_quantization ==
+           wh_quantization_int_32);
+    assert(header->wh_output_layer_bias_quantization == wh_quantization_int_32);
+    assert(header->wh_phase_count == NN_PHASE_COUNT);
 }

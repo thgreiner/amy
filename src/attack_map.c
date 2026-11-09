@@ -250,6 +250,6 @@ void am_attack_index_to_string(const struct Position *p, int side, int index,
     int plane = index / 4096;
     int attacker = (plane + 2) / 5 + 1;
 
-    snprintf(buffer, 9, "%c%c%c" RIGHT_ARROW_UTF8 "2%c%c", PieceName[attacker],
+    snprintf(buffer, 9, "%c%c%c" RIGHT_ARROW_UTF8 "%c%c", PieceName[attacker],
              SQUARE(from), SQUARE(to));
 }

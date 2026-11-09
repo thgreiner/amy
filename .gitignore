@@ -24,4 +24,5 @@ Makefile.deps
 src/nn_crosscheck
 src/libamy_nn_extract.dylib
 network.quant
+network.quant.z
 compile_commands.json
