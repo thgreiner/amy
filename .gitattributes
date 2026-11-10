@@ -1,0 +1,4 @@
+# Trained NNUE nets are large binary artifacts; keep them in git LFS.
+# (Only the compressed .z files are tracked; the uncompressed amy.net is
+# a local build artifact, see .gitignore.)
+nets/*.net*.z filter=lfs diff=lfs merge=lfs -text

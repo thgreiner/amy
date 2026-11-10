@@ -1,0 +1,12 @@
+name: amy-training-nnue
+channels:
+  - defaults
+dependencies:
+  - python=3.13
+  - pip
+  - pip:
+    - black
+    - isort
+    - matplotlib
+    - mlx
+    - pytest

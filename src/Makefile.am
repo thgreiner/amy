@@ -69,6 +69,10 @@ eco.o: ${srcdir}/eco.c
 	$(CC) $(CFLAGS) $(AM_CFLAGS) $(DEFAULT_INCLUDES) -DECODIR=\"${pkgdatadir}\" \
         ${srcdir}/eco.c -c -o eco.o
 
+neural_net.o: ${srcdir}/neural_net.c
+	$(CC) $(CFLAGS) $(AM_CFLAGS) $(DEFAULT_INCLUDES) -DNETDIR=\"${pkgdatadir}\" \
+        ${srcdir}/neural_net.c -c -o neural_net.o
+
 -include Makefile.deps
 
 # Note: in out-of-tree builds make vpath-qualifies the source names on

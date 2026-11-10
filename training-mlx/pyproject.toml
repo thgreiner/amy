@@ -1,0 +1,36 @@
+[project]
+name = "amy-training-nnue"
+version = "0.1.0"
+description = "Training application for amy's NNUE evaluation function, trained on BPD self-play data"
+requires-python = ">=3.13"
+dependencies = [
+    "mlx",
+    "numpy",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black",
+    "isort",
+    "pytest",
+    "matplotlib",
+]
+
+[project.scripts]
+amy-training-nnue = "amy_training_nnue.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["amy_training_nnue"]
+
+[tool.black]
+line-length = 88
+
+[tool.isort]
+profile = "black"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

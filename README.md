@@ -4,8 +4,9 @@
 What is Amy?
 ============
 
-Amy is a chess playing program.  It is compatible with xboard, uses endgame
-table bases and an opening book.
+Amy is a chess playing program. It is compatible with xboard, uses endgame
+table bases and an opening book. Since version 0.9.8 Amy uses a neural net for 
+evaluation.
 
 Copyright
 =========
@@ -24,10 +25,13 @@ On Un*x or Linux systems this is very simple:
 	./configure
 	make
 
-should do it. Make sure to specify compiler options with good optimization, I
-typically use something like (assuming a bash or ksh shell):
 
-	export CFLAGS='-O2 -march=native'
+Make sure to specify compiler options with good optimization. Use optimization
+level '-O3' to make sure the operations in the neural net code are converted to
+AVX (x86) / NEON (ARM) instructions, otherwise the performance will be much
+lower:
+
+	export CFLAGS='-O3 -march=native'
 	export CXXFLAGS=$CFLAGS
 	./configure
 	make
@@ -160,6 +164,21 @@ evallog=true
 
 Since people using Windows have reported that they have to resort to DOS mode
 for creating a .amyrc file, Amy also looks for Amy.ini.
+
+
+NNUE evaluation
+===============
+
+The trained network is loaded at startup, in this order:
+
+1. `nets/amy.net.z` (or `nets/amy.net`) in the working directory — dev
+   workflow, and an override for installed binaries;
+2. the installed copy in `$(pkgdatadir)` (e.g.
+   `/usr/local/share/amy/amy.net.z` after `make install`).
+
+The training pipeline (Python/MLX) lives in `training-mlx/` — see
+`training-mlx/README.md` and `training-mlx/AGENTS.md` for setup, usage,
+and the bit-exact verification against the C engine.
 
 
 THANKS

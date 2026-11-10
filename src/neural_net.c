@@ -87,8 +87,20 @@ typedef struct {
  * Global and static variables
  */
 
+/*
+ * Net lookup paths, in order of preference.  The CWD-relative paths
+ * come first (dev workflow, and a user override for installed
+ * binaries); the NETDIR paths are the copies installed by "make
+ * install" (NETDIR is defined to pkgdatadir in src/Makefile.am,
+ * mirroring BOOKDIR/ECODIR).  The compressed .z file is the canonical
+ * shipped artifact, so it is tried before the uncompressed one.
+ */
 #define NET_NAME "nets/amy.net"
 #define NET_NAME_COMPRESSED "nets/amy.net.z"
+#ifdef NETDIR
+#define NET_NAME_INSTALLED NETDIR PATH_SEPARATOR "amy.net"
+#define NET_NAME_COMPRESSED_INSTALLED NETDIR PATH_SEPARATOR "amy.net.z"
+#endif
 
 /*
  * Indexing schema for features:
@@ -189,12 +201,45 @@ int eval_material_balance(const Position *p) {
 }
 
 void nn_read_weights_quantized(void) {
-    bool weights_loaded =
-        nn_load_weights_compressed(NET_NAME_COMPRESSED) || nn_load_weights_uncompressed(NET_NAME);
+    static const char *const compressed_names[] = {
+        NET_NAME_COMPRESSED,
+#ifdef NETDIR
+        NET_NAME_COMPRESSED_INSTALLED,
+#endif
+    };
+    static const char *const uncompressed_names[] = {
+        NET_NAME,
+#ifdef NETDIR
+        NET_NAME_INSTALLED,
+#endif
+    };
+
+    bool weights_loaded = false;
+    const char *net_file = NULL;
+
+    for (size_t i = 0;
+         i < sizeof(compressed_names) / sizeof(compressed_names[0]) &&
+         !weights_loaded;
+         i++) {
+        if (nn_load_weights_compressed(compressed_names[i])) {
+            weights_loaded = true;
+            net_file = compressed_names[i];
+        }
+    }
+
+    for (size_t i = 0;
+         i < sizeof(uncompressed_names) / sizeof(uncompressed_names[0]) &&
+         !weights_loaded;
+         i++) {
+        if (nn_load_weights_uncompressed(uncompressed_names[i])) {
+            weights_loaded = true;
+            net_file = uncompressed_names[i];
+        }
+    }
 
     if (weights_loaded) {
-        print(0, "Net is \"%s (%s)\".\n\n", nn_header.wh_name,
-              nn_header.wh_date);
+        print(0, "Net is \"%s (%s)\" (\"%s\").\n\n", nn_header.wh_name,
+              nn_header.wh_date, net_file);
     } else {
         print(0, "No net found.\n\n");
     }

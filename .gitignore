@@ -29,6 +29,8 @@ src/libamy_nn_extract.dylib
 nsolved.epd
 nets/*
 !nets/.gitkeep
+!nets/Makefile.am
+!nets/amy.net.z
 
 # --- Logs ---
 Amy.log
