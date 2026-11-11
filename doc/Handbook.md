@@ -53,7 +53,7 @@ A typical resource file might look like this:
 | evallog | If set to `true`, Amy logs the evaluation of each searched root position to `evaluation_log.bin` (binary BPD format) in all modes. During selfplay, evaluations are logged unconditionally. |
 | fuzz | Adds randomness to book move selection and evaluation if set to `true` |
 | ht | Determines the size of the hashtable. Use the suffixes `k` to specify the size in kilobytes or `m` to specify the size in megabytes. |
-| tbpath | Specifies the path were the endgame tablebases are located. |
+| tbpath | Specifies the path where the endgame tablebases are located. |
 
 # Using the command line interface
 
@@ -67,7 +67,7 @@ suites) are accessible only via the command line interface.
 Opening books are created or updated using the `bookup` command. It
 expects the filename of an PGN file containing one or more games in the
 PGN format. While parsing the PGN file Amy will output a dot for every
-hundred games red as a progress indicator.
+hundred games read as a progress indicator.
 
     White(1): bookup ClassicGames.pgn
        Parsing PGN file PGN/ClassicGames.pgn. '.'= 100 Games
@@ -128,6 +128,21 @@ position (BPD) format, the same format used for `evaluation_log.bin`,
 to a file:
 
     White(1): bpd-test bpd_test.bin
+
+## Running the engine unit tests
+
+Amy ships with an internal unit test suite covering the engine's
+internal components (position database, attack maps, BPD format, NNUE,
+and more). It is aimed at engine development; do not confuse it with
+the `test` command above, which plays EPD test suites to measure
+playing strength.
+
+Run all suites with the `--test` command line option:
+
+    Amy --test
+
+Amy executes the suites, prints `All tests passed.` on success, and
+exits.
 
 # Using a graphical user interface
 
