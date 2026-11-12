@@ -143,7 +143,8 @@ static struct TimeControl time_ctl_parse_xboard(char *args[]) {
     int ttmoves, ttime, tminutes, tseconds, inc = 0;
 
     sscanf(args[0], "%d", &ttmoves);
-    const char *colon = strchr(args[1], ':'); /* check for time in xx:yy format */
+    const char *colon =
+        strchr(args[1], ':'); /* check for time in xx:yy format */
     if (colon) {
         sscanf(args[1], "%d:%d", &tminutes, &tseconds);
         ttime = (tminutes * 60) + tseconds;

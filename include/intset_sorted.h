@@ -42,7 +42,8 @@ bool intset_sorted_contains(const IntSetSorted *s, int32_t value);
 
 size_t intset_sorted_count(const IntSetSorted *s);
 
-const int32_t *intset_sorted_data(const IntSetSorted *s); /* dense, sorted, count elems */
+const int32_t *
+intset_sorted_data(const IntSetSorted *s); /* dense, sorted, count elems */
 
 /* Result written to *dst (must be distinct from *a and *b).
  * union may return false if the result exceeds capacity (leaves *dst empty);

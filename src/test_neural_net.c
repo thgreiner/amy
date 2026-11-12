@@ -46,8 +46,8 @@ static void test_randomized_attack_weights(void) {
  * Assert that the stored attack map equals the expected list of
  * indexes (exact match, including order: the maps are sorted).
  */
-static void assert_attack_map_eq(const IntSetSorted *actual, const int expected[],
-                                 size_t n) {
+static void assert_attack_map_eq(const IntSetSorted *actual,
+                                 const int expected[], size_t n) {
     assert(intset_sorted_count(actual) == n);
     for (size_t i = 0; i < n; i++) {
         assert(actual->data[i] == expected[i]);

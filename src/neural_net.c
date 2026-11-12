@@ -39,8 +39,10 @@
 #include "intset_sorted.h"
 #include "lzav.h"
 #include "random.h"
+#include "running_average.h"
 #include "safe_malloc.h"
 #include "utils.h"
+#include <assert.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -171,6 +173,9 @@ static int nn_uncompressed_length =
           sizeof(hidden_layer_2_weights_q) + sizeof(hidden_layer_2_bias_q) +
           sizeof(output_layer_weights_q) + sizeof(output_layer_bias_q));
 
+static RunningAverageBuffer nn_ra_pos_buffer;
+static RunningAverageBuffer nn_ra_pos_sq_buffer;
+
 /*
  * Forward declarations
  */
@@ -183,6 +188,7 @@ static void nn_save_weights_compressed(const char *);
 static void nn_check_header(const WeightsHeader *header);
 static bool nn_load_weights_compressed(const char *);
 static bool nn_load_weights_uncompressed(const char *);
+static void nn_update_maxpos(Position *, int);
 
 /*
  * Functions
@@ -191,7 +197,12 @@ static bool nn_load_weights_uncompressed(const char *);
 /**
  * Do the pre-search initialization of evaluation.
  */
-void nn_eval_init(void) { MaxPos = MaxPosInit; }
+void nn_eval_init(void) {
+    MaxPos = MaxPosInit;
+
+    ra_init(&nn_ra_pos_buffer, MaxPosInit / 32);
+    ra_init(&nn_ra_pos_sq_buffer, MaxPosInit / 32 * MaxPosInit / 32);
+}
 
 /**
  * Evaluate the material balance (from white's perspective).
@@ -939,27 +950,53 @@ int nn_evaluate_position(Position *p) {
 
     score = nn_compute_score(p);
 
+    nn_update_maxpos(p, score);
     /** Add a bit of fuzz. */
     if (fuzz_evaluation) {
         score += random_fuzz();
     }
 
-    /*
-     * Adjust MaxPos if necessary. If the current difference between the
-     * material balance and the evaluation is greater than MaxPos, adopt
-     * it as the new maximum.
-     */
-    int material_balance =
-        (p->turn == 0) ? eval_material_balance(p) : -eval_material_balance(p);
-    int pos_score = abs(material_balance - score);
-
-    if (pos_score > MaxPos) {
-        MaxPos = pos_score;
-    }
-
     ht_store_score(p->hkey, score);
 
     return score;
+}
+
+/*
+ * Adjust MaxPos if necessary. If the current difference between the
+ * material balance and the evaluation is greater than MaxPos, adopt
+ * it as the new maximum.
+ */
+static void nn_update_maxpos(Position *p, int score) {
+    int material_balance = (p->turn == White) ? eval_material_balance(p)
+                                              : -eval_material_balance(p);
+    int pos_score = material_balance - score;
+    int scaled_pos_score = pos_score / 32;
+
+    assert(scaled_pos_score < 32767);
+
+    int avg_pos = ra_update(&nn_ra_pos_buffer, scaled_pos_score);
+    int avg_pos_sq =
+        ra_update(&nn_ra_pos_sq_buffer, scaled_pos_score * scaled_pos_score);
+
+    assert(avg_pos_sq > 0);
+
+    int variance = avg_pos_sq - avg_pos * avg_pos;
+    int estimate = (64 + variance / 64) / 2;
+    int estimate2 = (estimate + variance / estimate) / 2;
+
+    // Confidence interval of 95%, but limit to the approximate value of a Queen
+    MaxPos = MIN(64 * estimate2, 11000);
+
+    /*
+    static int output = 0;
+
+    if (output == 0) {
+        for (int i=0; i < MaxPos; i += 100) print_no_log(1, " ");
+        print_no_log(1, "%d  \r", MaxPos);
+    }
+
+    output = (output + 1) & 511;
+    */
 }
 
 void nn_init_accumulator(Position *p) {

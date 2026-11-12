@@ -117,6 +117,7 @@ int utils_read_line(char *buffer, int cnt) {
  */
 int utils_read_line_prompt(char *buffer, int cnt, const char *prompt) {
 #ifndef HAVE_LINENOISE
+    printf("%s", prompt);
     return fgets(buffer, cnt, stdin) != NULL;
 #else
     char *line = linenoise(prompt ? prompt : "");

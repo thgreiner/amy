@@ -5,13 +5,12 @@ noinst_PROGRAMS = nn_crosscheck
 # extract concrete file names from _SOURCES values (for the dist list and
 # object list) and mangles nested make functions.
 # Adding a .c file here is the price of using automake for this.
-amy_core_sources = attack_map.c \
-                   bitboard.c bpd.c bookup.c commands.c dbase.c eco.c \
-                   hashtable.c heap.c \
-                   intset_sorted.c init.c learn.c magic.c mates.c movedata.c mytb.cpp \
-                   neural_net.c next.c nn_extract.c pgn_read.c pgn_write.c probe.c \
-                   random.c recog.c search.c search_io.c state_machine.c swap.c \
-                   time_ctl.c tree.c utils.c
+amy_core_sources = attack_map.c bitboard.c bpd.c bookup.c commands.c dbase.c \
+                   eco.c hashtable.c heap.c intset_sorted.c init.c learn.c \
+                   magic.c mates.c movedata.c mytb.cpp neural_net.c next.c \
+                   nn_extract.c pgn_read.c pgn_write.c probe.c random.c \
+                   running_average.c recog.c search.c search_io.c \
+                   state_machine.c swap.c time_ctl.c tree.c utils.c
 
 amy_test_sources = test_attack_map.c test_bpd.c \
                    test_dbase.c test_intset_sorted.c test_neural_net.c \

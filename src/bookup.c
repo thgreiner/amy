@@ -610,7 +610,8 @@ static tree_node_t *flatten_internal(tree_node_t *source, tree_node_t *target,
     if (source == NULL) {
         return target;
     }
-    const struct BookEntry *entry = (const struct BookEntry *)source->value_data;
+    const struct BookEntry *entry =
+        (const struct BookEntry *)source->value_data;
     (*read)++;
     if ((entry->win + entry->draw + entry->loss) > threshold) {
         target = tree_add_node(target, source->key_data, source->key_len,

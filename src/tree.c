@@ -45,7 +45,8 @@ static const char *MAGIC = "ATRE";
  * Allocate a tree node.
  */
 static tree_node_t *tree_allocate_node(const void *key_data, size_t key_len,
-                                       const void *value_data, size_t value_len) {
+                                       const void *value_data,
+                                       size_t value_len) {
     tree_node_t *node = safe_malloc(sizeof(tree_node_t));
 
     node->key_data = safe_malloc(key_len);
@@ -82,7 +83,8 @@ void tree_free_node(tree_node_t *node) {
 /**
  * Compare two keys.
  */
-static int tree_cmp_keys(const char *key1, size_t len1, const char *key2, size_t len2) {
+static int tree_cmp_keys(const char *key1, size_t len1, const char *key2,
+                         size_t len2) {
     size_t min_len = (len1 < len2) ? len1 : len2;
     int result = memcmp(key1, key2, min_len);
 
