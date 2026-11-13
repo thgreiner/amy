@@ -37,6 +37,7 @@
 #include "config.h"
 #include "heap.h"
 #include "intset_sorted.h"
+#include "running_average.h"
 #include "types.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -141,6 +142,7 @@ typedef struct {
     int16_t accumulator_b_q[ACCUMULATOR_SIZE];
     IntSetSorted attack_map_w;
     IntSetSorted attack_map_b;
+    MaxPosState maxpos_state;
     uint16_t outOfBookCnt[2];
     uint16_t ply;
     int8_t piece[64];

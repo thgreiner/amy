@@ -125,13 +125,13 @@ typedef struct {
 
 bool fuzz_evaluation = false;
 
-/* MaxPos is the maximum difference between the material balance and
- * the evaluation. It is used to form a cheap optimistic score estimate
+/* MaxPos (inside the position's MaxPosState, see running_average.h) is
+ * the maximum difference between the material balance and the
+ * evaluation. It is used to form a cheap optimistic score estimate
  * (material + MaxPos) which can replace the expensive full evaluation.
  * The initial value (two pawns in millipawns) is re-set before every
  * search by nn_eval_init(). */
 static const int MaxPosInit = 2000;
-int MaxPos = MaxPosInit;
 
 static bool verbose = true;
 
@@ -173,9 +173,6 @@ static int nn_uncompressed_length =
           sizeof(hidden_layer_2_weights_q) + sizeof(hidden_layer_2_bias_q) +
           sizeof(output_layer_weights_q) + sizeof(output_layer_bias_q));
 
-static RunningAverageBuffer nn_ra_pos_buffer;
-static RunningAverageBuffer nn_ra_pos_sq_buffer;
-
 /*
  * Forward declarations
  */
@@ -197,11 +194,11 @@ static void nn_update_maxpos(Position *, int);
 /**
  * Do the pre-search initialization of evaluation.
  */
-void nn_eval_init(void) {
-    MaxPos = MaxPosInit;
+void nn_eval_init(Position *p) {
+    p->maxpos_state.maxpos = MaxPosInit;
 
-    ra_init(&nn_ra_pos_buffer, MaxPosInit / 32);
-    ra_init(&nn_ra_pos_sq_buffer, MaxPosInit / 32 * MaxPosInit / 32);
+    ra_init(&p->maxpos_state.ra_pos, MaxPosInit / 32);
+    ra_init(&p->maxpos_state.ra_pos_sq, MaxPosInit / 32 * MaxPosInit / 32);
 }
 
 /**
@@ -951,6 +948,7 @@ int nn_evaluate_position(Position *p) {
     score = nn_compute_score(p);
 
     nn_update_maxpos(p, score);
+
     /** Add a bit of fuzz. */
     if (fuzz_evaluation) {
         score += random_fuzz();
@@ -962,9 +960,10 @@ int nn_evaluate_position(Position *p) {
 }
 
 /*
- * Adjust MaxPos if necessary. If the current difference between the
- * material balance and the evaluation is greater than MaxPos, adopt
- * it as the new maximum.
+ * Adjust MaxPos if necessary. This function calculates the variance of
+ * the deviation between material and positional evaluation based on
+ * a running window. It sets MaxPos to the estimated 95% confidence
+ * interval.
  */
 static void nn_update_maxpos(Position *p, int score) {
     int material_balance = (p->turn == White) ? eval_material_balance(p)
@@ -974,29 +973,34 @@ static void nn_update_maxpos(Position *p, int score) {
 
     assert(scaled_pos_score < 32767);
 
-    int avg_pos = ra_update(&nn_ra_pos_buffer, scaled_pos_score);
-    int avg_pos_sq =
-        ra_update(&nn_ra_pos_sq_buffer, scaled_pos_score * scaled_pos_score);
+    int avg_pos = ra_update(&p->maxpos_state.ra_pos, scaled_pos_score);
+    int avg_pos_sq = ra_update(&p->maxpos_state.ra_pos_sq,
+                               scaled_pos_score * scaled_pos_score);
 
     assert(avg_pos_sq > 0);
 
     int variance = avg_pos_sq - avg_pos * avg_pos;
+#if HAVE___BUILTIN_CLZ
+    int estimate = 1 << ((32 - __builtin_clz(variance)) / 2);
+#else
     int estimate = (64 + variance / 64) / 2;
+#endif
     int estimate2 = (estimate + variance / estimate) / 2;
 
-    // Confidence interval of 95%, but limit to the approximate value of a Queen
-    MaxPos = MIN(64 * estimate2, 11000);
+    // Confidence interval of 95%, but limit to the interval between Pawn and Queen
+    p->maxpos_state.maxpos = MAX(MIN(64 * estimate2, 11000), 1000);
 
-    /*
+#ifdef DEBUG
     static int output = 0;
 
     if (output == 0) {
-        for (int i=0; i < MaxPos; i += 100) print_no_log(1, " ");
-        print_no_log(1, "%d  \r", MaxPos);
+        for (int i = 0; i < p->maxpos_state.maxpos; i += 100)
+            print_no_log(1, " ");
+        print_no_log(1, "%d  \r", p->maxpos_state.maxpos);
     }
 
-    output = (output + 1) & 511;
-    */
+    output = (output + 1) & 1023;
+#endif
 }
 
 void nn_init_accumulator(Position *p) {

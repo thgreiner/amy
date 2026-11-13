@@ -809,9 +809,9 @@ static int search_negascout(SearchData *sd, int alpha, int beta,
     is_futile = !incheck && !threat && alpha < CMLIMIT && alpha > -CMLIMIT;
     if (is_futile) {
         if (p->turn == White) {
-            optimistic = eval_material_balance(p) + MaxPos;
+            optimistic = eval_material_balance(p) + p->maxpos_state.maxpos;
         } else {
-            optimistic = -eval_material_balance(p) + MaxPos;
+            optimistic = -eval_material_balance(p) + p->maxpos_state.maxpos;
         }
     }
 #endif /* FUTILITY */
@@ -1780,7 +1780,7 @@ int search_iterate(Position *p) {
     SoftLimit2 = StartTime + (int)(85 * soft);
     HardLimit = StartTime + (int)(hard * ONE_SECOND);
 
-    nn_eval_init();
+    nn_eval_init(p);
     ht_age();
     searchio_header();
 

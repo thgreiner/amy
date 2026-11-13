@@ -549,6 +549,57 @@ static void test_evaluate_updates_attack_maps(void) {
     dbase_free_position(p);
 }
 
+/*
+ * The MaxPos state lives in the position (MaxPosState, see
+ * running_average.h), so that parallel search threads observe the
+ * statistics of their own search line. Check initialization, state
+ * independence between positions, advancement on evaluation, and
+ * propagation through dbase_clone_position().
+ */
+static void test_maxpos_state(void) {
+    /* A position no other test evaluates: the score hash table must
+     * not hold its key, so the evaluation below is computed fresh and
+     * advances the state exactly once. */
+    Position *p = dbase_create_position_from_epd("8/8/8/8/8/8/4k3/4K3 b - -");
+    Position *q = dbase_initial_position();
+
+    /* The test needs a working hash table for nn_evaluate_position(). */
+    if (L_HT_Size == 0) {
+        ht_allocate();
+    }
+
+    /* MaxPosInit is 2000 (see neural_net.c). */
+    nn_eval_init(p);
+    nn_eval_init(q);
+    assert(p->maxpos_state.maxpos == 2000);
+    assert(p->maxpos_state.ra_pos.ra_sum == (2000 / 32) * WINDOW_SIZE);
+    assert(p->maxpos_state.ra_pos.ra_index == 0);
+
+    /* Evaluating p must not touch q's state. */
+    nn_evaluate_position(p);
+    assert(q->maxpos_state.maxpos == 2000);
+    assert(q->maxpos_state.ra_pos.ra_sum == (2000 / 32) * WINDOW_SIZE);
+    assert(q->maxpos_state.ra_pos.ra_index == 0);
+
+    /* p's state advanced by exactly one sample, and MaxPos stays
+     * within the documented Pawn..Queen band. */
+    assert(p->maxpos_state.ra_pos.ra_index == 1);
+    assert(p->maxpos_state.ra_pos_sq.ra_index == 1);
+    assert(p->maxpos_state.maxpos >= 1000 && p->maxpos_state.maxpos <= 11000);
+
+    /* Cloning copies the state; re-initialization re-seeds it. */
+    Position *c = dbase_clone_position(p);
+    assert(memcmp(&c->maxpos_state, &p->maxpos_state,
+                  sizeof(MaxPosState)) == 0);
+    nn_eval_init(c);
+    assert(c->maxpos_state.maxpos == 2000);
+    assert(c->maxpos_state.ra_pos.ra_sum == (2000 / 32) * WINDOW_SIZE);
+
+    dbase_free_position(p);
+    dbase_free_position(q);
+    dbase_free_position(c);
+}
+
 static void stress_position(const char *epd, int iterations) {
     Position *p = dbase_create_position_from_epd((char *)epd);
     nn_init_accumulator(p);
@@ -749,6 +800,7 @@ void test_all_neural_net(void) {
     test_attack_update_king_mirror();
     test_attack_update_idempotent();
     test_evaluate_updates_attack_maps();
+    test_maxpos_state();
 
     test_phase_index();
     test_phase_masks();

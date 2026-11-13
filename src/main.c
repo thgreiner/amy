@@ -54,6 +54,7 @@
 #include "test_neural_net.h"
 #include "test_nn_extract.h"
 #include "test_pgn_write.h"
+#include "test_running_average.h"
 #include "test_utils.h"
 #include "utils.h"
 
@@ -75,6 +76,7 @@ static void main_run_tests(void) {
     test_all_neural_net();
     test_all_nn_extract();
     test_all_pgn_write();
+    test_all_running_average();
     test_all_utils();
     print(0, "All tests passed.\n");
 }

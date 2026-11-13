@@ -14,7 +14,8 @@ amy_core_sources = attack_map.c bitboard.c bpd.c bookup.c commands.c dbase.c \
 
 amy_test_sources = test_attack_map.c test_bpd.c \
                    test_dbase.c test_intset_sorted.c test_neural_net.c \
-                   test_nn_extract.c test_pgn_write.c test_utils.c
+                   test_nn_extract.c test_pgn_write.c test_running_average.c \
+                   test_utils.c
 
 Amy_SOURCES = $(amy_core_sources) $(amy_test_sources) main.c
 nn_crosscheck_SOURCES = $(amy_core_sources) $(amy_test_sources) nn_crosscheck.c
