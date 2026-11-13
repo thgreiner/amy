@@ -76,6 +76,7 @@ AC_MSG_RESULT($build_nn_extract)
 AM_CONDITIONAL([BUILD_NN_EXTRACT], [test "x$build_nn_extract" = xyes])
 
 AX_GCC_BUILTIN(__builtin_ctzll)
+AX_GCC_BUILTIN(__builtin_clz)
 AX_GCC_BUILTIN(__builtin_popcountll)
 
 AC_CONFIG_FILES([Makefile EPD/Makefile PGN/Makefile src/Makefile doc/Makefile include/Makefile nets/Makefile])

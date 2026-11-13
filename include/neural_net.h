@@ -41,11 +41,14 @@ extern bool fuzz_evaluation;
 
 /* Maximum offset between material balance (eval_material_balance) and
  * the evaluation. Forms a cheap, optimistic score estimate
- * (material + MaxPos) to skip the expensive full evaluation.
- * Reset to nn_eval_init's initial value before every search. */
-extern int MaxPos;
+ * (material + MaxPos) to skip the expensive full evaluation. Reset to
+ * nn_eval_init's initial value before every search.
+ *
+ * MaxPos itself is part of the position's MaxPosState (see
+ * running_average.h), so each search line - and in parallel search,
+ * each thread - tracks its own statistics. */
 int eval_material_balance(const Position *);
-void nn_eval_init(void);
+void nn_eval_init(Position *);
 
 /* Architecture of the quantized network (amy.net layout). */
 #define HIDDEN_1_SIZE 32

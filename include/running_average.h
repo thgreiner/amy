@@ -40,6 +40,19 @@ typedef struct {
     unsigned int ra_index;
 } RunningAverageBuffer;
 
+/*
+ * The position's MaxPos state: the estimated maximum deviation between
+ * material balance and evaluation, tracked as the 95% confidence
+ * interval of a running window of positional scores (see
+ * nn_update_maxpos()). Lives in the Position so that parallel search
+ * threads each observe the statistics of their own search line.
+ */
+typedef struct {
+    int maxpos;
+    RunningAverageBuffer ra_pos;
+    RunningAverageBuffer ra_pos_sq;
+} MaxPosState;
+
 void ra_init(RunningAverageBuffer *buf, int);
 int ra_update(RunningAverageBuffer *buf, int);
 
