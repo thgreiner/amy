@@ -24,6 +24,7 @@ ADJECTIVES = [
     "iron",
     "little",
     "lucky",
+    "maroon",
     "modern",
     "modest",
     "narrow",
