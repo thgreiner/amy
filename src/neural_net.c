@@ -962,7 +962,7 @@ int nn_evaluate_position(Position *p) {
 /*
  * Adjust MaxPos if necessary. This function calculates the variance of
  * the deviation between material and positional evaluation based on
- * a running window. It sets MaxPos to the estimated 95% confidence
+ * a running window. It sets MaxPos to the estimated 99% confidence
  * interval.
  */
 static void nn_update_maxpos(Position *p, int score) {
@@ -987,8 +987,9 @@ static void nn_update_maxpos(Position *p, int score) {
 #endif
     int estimate2 = (estimate + variance / estimate) / 2;
 
-    // Confidence interval of 95%, but limit to the interval between Pawn and Queen
-    p->maxpos_state.maxpos = MAX(MIN(64 * estimate2, 11000), 1000);
+    // Confidence interval of 99%, but limit to the interval between Pawn and
+    // Queen
+    p->maxpos_state.maxpos = MAX(MIN(96 * estimate2, 11000), 1000);
 
 #ifdef DEBUG
     static int output = 0;
@@ -1091,37 +1092,40 @@ static void nn_show_weights(void) {
     }
     print(1, "\n");
 
-    print(1, "hidden_1 weights (phase 0):\n");
-    for (int i = 0; i < 8; i++) {
-        print(1, "%d, ", hidden_layer_1_weights_q[0][0][i]);
-    }
-    print(1, "\n");
+    for (int phase = 0; phase < 4; phase++) {
+        print(1, "hidden_1 weights (phase %d):\n", phase);
+        for (int i = 0; i < 8; i++) {
+            print(1, "%d, ", hidden_layer_1_weights_q[phase][0][i]);
+        }
+        print(1, "\n");
 
-    print(1, "hidden_1 bias (phase 0):\n");
-    for (int i = 0; i < 8; i++) {
-        print(1, "%d, ", hidden_layer_1_bias_q[0][i]);
-    }
-    print(1, "\n");
+        print(1, "hidden_1 bias (phase %d):\n", phase);
+        for (int i = 0; i < 8; i++) {
+            print(1, "%d, ", hidden_layer_1_bias_q[phase][i]);
+        }
+        print(1, "\n");
 
-    print(1, "hidden_2 weights (phase 0):\n");
-    for (int i = 0; i < 8; i++) {
-        print(1, "%d, ", hidden_layer_2_weights_q[0][0][i]);
-    }
-    print(1, "\n");
+        print(1, "hidden_2 weights (phase %d):\n", phase);
+        for (int i = 0; i < 8; i++) {
+            print(1, "%d, ", hidden_layer_2_weights_q[phase][0][i]);
+        }
+        print(1, "\n");
 
-    print(1, "hidden_2 bias (phase 0):\n");
-    for (int i = 0; i < 8; i++) {
-        print(1, "%d, ", hidden_layer_2_bias_q[0][i]);
-    }
-    print(1, "\n");
+        print(1, "hidden_2 bias (phase %d):\n", phase);
+        for (int i = 0; i < 8; i++) {
+            print(1, "%d, ", hidden_layer_2_bias_q[phase][i]);
+        }
+        print(1, "\n");
 
-    print(1, "output weights (phase 0):\n");
-    for (int i = 0; i < 8; i++) {
-        print(1, "%d, ", output_layer_weights_q[0][i]);
-    }
-    print(1, "\n");
+        print(1, "output weights (phase %d):\n", phase);
+        for (int i = 0; i < 8; i++) {
+            print(1, "%d, ", output_layer_weights_q[phase][i]);
+        }
+        print(1, "\n");
 
-    print(1, "output bias (phase 0): %d\n", output_layer_bias_q[0][0]);
+        print(1, "output bias (phase %d): %d\n", phase,
+              output_layer_bias_q[phase][0]);
+    }
 }
 #endif
 

@@ -589,8 +589,8 @@ static void test_maxpos_state(void) {
 
     /* Cloning copies the state; re-initialization re-seeds it. */
     Position *c = dbase_clone_position(p);
-    assert(memcmp(&c->maxpos_state, &p->maxpos_state,
-                  sizeof(MaxPosState)) == 0);
+    assert(memcmp(&c->maxpos_state, &p->maxpos_state, sizeof(MaxPosState)) ==
+           0);
     nn_eval_init(c);
     assert(c->maxpos_state.maxpos == 2000);
     assert(c->maxpos_state.ra_pos.ra_sum == (2000 / 32) * WINDOW_SIZE);
