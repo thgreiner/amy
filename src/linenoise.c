@@ -550,7 +550,7 @@ FILE *lndebug_fp = NULL;
         fflush(lndebug_fp);                                                    \
     } while (0)
 #else
-#define lndebug(fmt, ...)
+#define lndebug(...)
 #endif
 
 /* ======================= Low level terminal handling ====================== */
@@ -796,7 +796,7 @@ static void refreshLineWithCompletion(struct linenoiseState *ls,
 static int completeLine(struct linenoiseState *ls, int keypressed) {
     linenoiseCompletions lc = {0, NULL};
     int nwritten;
-    char c = keypressed;
+    char c = (char)keypressed;
 
     completionCallback(ls->buf, &lc);
     if (lc.len == 0) {
@@ -901,7 +901,7 @@ static void abInit(struct abuf *ab) {
     ab->len = 0;
 }
 
-static void abAppend(struct abuf *ab, const char *s, int len) {
+static void abAppend(struct abuf *ab, const char *s, size_t len) {
     char *new = realloc(ab->b, ab->len + len);
 
     if (new == NULL)
@@ -1346,7 +1346,7 @@ static void refreshSingleLine(struct linenoiseState *l, int flags) {
             abAppend(&ab, buf, len);
         }
         /* Show hints if any. */
-        refreshShowHints(&ab, l, pwidth, fullwidth);
+        refreshShowHints(&ab, l, (int)pwidth, fullwidth);
     }
 
     /* Erase to right */
@@ -1385,7 +1385,7 @@ static void refreshMultiLine(struct linenoiseState *l, int flags) {
     int rpos = l->oldrpos; /* cursor relative row from previous refresh. */
     int rpos2;             /* rpos after refresh. */
     int col;               /* column position, zero-based. */
-    int old_rows = l->oldrows;
+    int old_rows = (int)l->oldrows;
     int fd = l->ofd, j;
     struct abuf ab;
 
@@ -1393,7 +1393,7 @@ static void refreshMultiLine(struct linenoiseState *l, int flags) {
         return;
     bufwidth = utf8StrWidth(render, render_len);
     poswidth = utf8StrWidth(render, render_pos);
-    rows = (pwidth + bufwidth + l->cols - 1) / l->cols;
+    rows = (int)(pwidth + bufwidth + l->cols - 1) / l->cols;
     l->oldrows = rows;
 
     /* First step: clear all the lines used before. To do so start by
@@ -1437,7 +1437,7 @@ static void refreshMultiLine(struct linenoiseState *l, int flags) {
         }
 
         /* Show hints if any. */
-        refreshShowHints(&ab, l, pwidth, bufwidth);
+        refreshShowHints(&ab, l, (int)pwidth, bufwidth);
 
         /* If we are at the very end of the screen with our prompt, we need to
          * emit a newline and move the prompt to the first column. */
@@ -1453,7 +1453,7 @@ static void refreshMultiLine(struct linenoiseState *l, int flags) {
         }
 
         /* Move cursor to right position. */
-        rpos2 = (pwidth + poswidth + l->cols) /
+        rpos2 = (int)(pwidth + poswidth + l->cols) /
                 l->cols; /* Current cursor relative row */
         lndebug("rpos2 %d", rpos2);
 
@@ -1465,7 +1465,7 @@ static void refreshMultiLine(struct linenoiseState *l, int flags) {
         }
 
         /* Set column. */
-        col = (pwidth + poswidth) % l->cols;
+        col = (int)(pwidth + poswidth) % l->cols;
         lndebug("set col %d", 1 + col);
         if (col)
             snprintf(seq, 64, "\r\x1b[%dC", col);
@@ -1982,7 +1982,7 @@ char *linenoiseEditFeed(struct linenoiseState *l) {
     int nread;
     char seq[3];
 
-    nread = read(l->ifd, &c, 1);
+    nread = (int)read(l->ifd, &c, 1);
     if (nread < 0) {
         return (errno == EAGAIN || errno == EWOULDBLOCK) ? linenoiseEditMore
                                                          : NULL;
@@ -1998,7 +1998,7 @@ char *linenoiseEditFeed(struct linenoiseState *l) {
         /* Read next character when 0 */
         if (retval == 0)
             return linenoiseEditMore;
-        c = retval;
+        c = (char)retval;
     }
 
     switch (c) {
@@ -2244,7 +2244,7 @@ void linenoisePrintKeyCodes(void) {
         char c;
         int nread;
 
-        nread = read(STDIN_FILENO, &c, 1);
+        nread = (int)read(STDIN_FILENO, &c, 1);
         if (nread <= 0)
             continue;
         memmove(quit, quit + 1, sizeof(quit) - 1); /* shift string to left. */
@@ -2300,7 +2300,7 @@ static char *linenoiseReadLine(FILE *fp, int *err) {
                 return line;
             }
         } else {
-            line[len] = c;
+            line[len] = (char)c;
             len++;
         }
     }
