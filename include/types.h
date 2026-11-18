@@ -32,7 +32,19 @@
 #ifndef TYPES_H
 #define TYPES_H
 
+#include "config.h"
 #include <stdint.h>
+
+/*
+ * OPTIONAL_ATOMIC: use stdatomic.h in multi-threaded builds, or
+ * define to nothing otherwise.
+ */
+#if HAVE_STDATOMIC_H && MP
+#include <stdatomic.h>
+#define OPTIONAL_ATOMIC _Atomic
+#else
+#define OPTIONAL_ATOMIC
+#endif
 
 typedef int32_t move_t;
 typedef uint64_t ran_t;

@@ -63,7 +63,7 @@ extern int ReduceNullMoveDeep;
 extern int16_t ExtendRecapture[];
 
 extern unsigned long FHTime;
-extern bool AbortSearch;
+extern OPTIONAL_ATOMIC bool AbortSearch;
 
 #if MP
 extern int NumberOfCPUs;

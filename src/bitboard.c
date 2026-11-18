@@ -35,7 +35,6 @@
 
 #include "bitboard.h"
 #include "config.h"
-#include "utils.h"
 
 #if !HAVE___BUILTIN_CTZLL
 #include <strings.h>
@@ -58,6 +57,8 @@ int bitboard_count_bits(BitBoard i) {
 #endif
 
 #ifdef DEBUG
+#include "utils.h"
+
 void bitboard_print(BitBoard x) {
     int i, j;
     for (i = 7; i >= 0; i--) {

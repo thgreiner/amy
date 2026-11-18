@@ -30,7 +30,13 @@
 */
 
 #include "types.h"
+
+#include <stdbool.h>
 #include <stddef.h>
+
+#if MP && HAVE_LIBPTHREAD
+#include <pthread.h>
+#endif
 
 /**
    A C-program for MT19937-64 (2004/9/29 version).
@@ -98,7 +104,15 @@ struct mt19937_64 {
     size_t mti;
 };
 
-static struct mt19937_64 context;
+/*
+ * The generator state is per-thread (thread_local): search helper
+ * threads call random64() as well (start-up stagger, evaluation
+ * fuzz), and they would otherwise race on one shared generator. The
+ * main thread is seeded by random_init() as before; any other thread
+ * seeds its own copy lazily on first use, from its thread id.
+ */
+static thread_local struct mt19937_64 context;
+static thread_local bool context_seeded;
 
 /* initializes mt[NN] with a seed */
 void init_genrand64(unsigned long long seed) {
@@ -108,11 +122,20 @@ void init_genrand64(unsigned long long seed) {
             (6364136223846793005ULL * (context.mt[context.mti - 1] ^
                                        (context.mt[context.mti - 1] >> 62)) +
              context.mti);
+    context_seeded = true;
 }
 
 ran_t random64(void) {
     /* This is the altered Cocoa with Love implementation. */
     unsigned long long result;
+
+    if (!context_seeded) {
+#if MP && HAVE_LIBPTHREAD
+        init_genrand64((unsigned long long)(uintptr_t)pthread_self());
+#else
+        init_genrand64(0);
+#endif
+    }
 
     if (context.mti >= NN) { /* generate NN words at one time */
         size_t mid = NN / 2;

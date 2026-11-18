@@ -54,11 +54,11 @@ EXTRA_Amy_SOURCES = tbindex.cpp tbdecode.c
 
 EXTRA_DIST = bitboard_x86.s
 
-Eco.db: ${srcdir}/../PGN/eco.pgn
+Eco.db: ${srcdir}/../PGN/eco.pgn | Amy
 	echo "eco ${srcdir}/../PGN/eco.pgn" | ./Amy
 
-Book.db: Eco.db ${srcdir}/../PGN/ClassicGames.pgn
-	-rm Book.db
+Book.db: Eco.db ${srcdir}/../PGN/ClassicGames.pgn | Amy
+	-rm -f Book.db
 	echo "bookup ${srcdir}/../PGN/ClassicGames.pgn" | ./Amy
 
 bookup.o: ${srcdir}/bookup.c

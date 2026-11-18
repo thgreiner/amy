@@ -34,7 +34,7 @@
 
 #include "dbase.h"
 
-extern int EGTBProbe, EGTBProbeSucc;
+extern OPTIONAL_ATOMIC int EGTBProbe, EGTBProbeSucc;
 
 void probe_init(char *);
 int probe_egtb(const Position *, int *, int);

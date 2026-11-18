@@ -44,7 +44,6 @@
 #include "init.h"
 #include "inline.h"
 #include "magic.h"
-#include "mates.h"
 #include "neural_net.h"
 #include "recog.h"
 #include "safe_malloc.h"

@@ -987,7 +987,8 @@ static void nn_update_maxpos(Position *p, int score) {
 #endif
     int estimate2 = (estimate + variance / estimate) / 2;
 
-    // Confidence interval of 95%, but limit to the interval between Pawn and Queen
+    // Confidence interval of 95%, but limit to the interval between Pawn and
+    // Queen
     p->maxpos_state.maxpos = MAX(MIN(64 * estimate2, 11000), 1000);
 
 #ifdef DEBUG

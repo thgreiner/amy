@@ -122,14 +122,15 @@ static const int ResearchWindow = 1500;
  * search tree data
  */
 
-int MaxDepth;
+OPTIONAL_ATOMIC int MaxDepth;
 
-unsigned long RCExt, ChkExt, DiscExt, DblExt, SingExt, PPExt, ZZExt;
+OPTIONAL_ATOMIC unsigned long RCExt, ChkExt, DiscExt, DblExt, SingExt, PPExt,
+    ZZExt;
 unsigned long HardLimit, SoftLimit, SoftLimit2;
-unsigned long StartTime, WallTimeStart;
-unsigned long CurTime;
+OPTIONAL_ATOMIC unsigned long StartTime, WallTimeStart;
+OPTIONAL_ATOMIC unsigned long CurTime;
 unsigned long FHTime;
-bool AbortSearch;
+OPTIONAL_ATOMIC bool AbortSearch;
 bool NeedTime = false;
 int PrintOK;
 static int MaxSearchDepth = MAX_TREE_SIZE - 1;
@@ -158,7 +159,7 @@ enum {
 
 enum { PVNode = 0, AllNode = 1, CutNode = 2, CutNodeNoNull = 3 };
 
-static int SearchMode = Searching;
+static OPTIONAL_ATOMIC int SearchMode = Searching;
 
 /* Permanent Brain Variables */
 int PBMove, PBActMove;
@@ -1217,14 +1218,21 @@ static void search_analyze_ht(Position *p, move_t move) {
 static void search_init(SearchData *sd) {
     sd->ply = 0;
     sd->nodes_cnt = sd->qnodes_cnt = sd->check_nodes_cnt = 0;
-    RCExt = ChkExt = DiscExt = DblExt = SingExt = PPExt = ZZExt = 0;
-    PrintOK = (SearchMode == Analyzing) ? true : false;
-    DoneAtRoot = false;
-    EGTBProbe = EGTBProbeSucc = 0;
+    /*
+     * Search-wide bookkeeping is the master thread's business: the
+     * helpers simply run until AbortSearch is set, and must not
+     * reset or update these, or the threads would zero each
+     * other's counters.
+     */
+    if (sd->master) {
+        RCExt = ChkExt = DiscExt = DblExt = SingExt = PPExt = ZZExt = 0;
+        PrintOK = (SearchMode == Analyzing) ? true : false;
+        DoneAtRoot = false;
+        EGTBProbe = EGTBProbeSucc = 0;
 
-    /* Initialize scoring tables */
-
-    HTry = HHit = STry = SHit = 0;
+        /* Initialize scoring tables */
+        HTry = HHit = STry = SHit = 0;
+    }
 }
 
 // Marcin Ciura's gap sequence for shell sort
@@ -1355,7 +1363,8 @@ static void *search_iterate_int(void *x) {
                         sd->nodes_cnt + sd->qnodes_cnt);
                 }
 
-                NeedTime = true;
+                if (sd->master)
+                    NeedTime = true;
 
                 beta = tmp;
                 alpha = tmp - ResearchWindow;
@@ -1419,10 +1428,12 @@ static void *search_iterate_int(void *x) {
 
                     if (!(move & M_TACTICAL))
                         next_put_killer(sd, move);
-                    PBMove = M_NONE;
                     is_pv = true;
 
-                    FHTime = (CurTime - StartTime) / ONE_SECOND;
+                    if (sd->master) {
+                        PBMove = M_NONE;
+                        FHTime = (CurTime - StartTime) / ONE_SECOND;
+                    }
                 }
 
                 if (sd->master && PrintOK) {
@@ -1547,7 +1558,8 @@ static void *search_iterate_int(void *x) {
             last = sd->best_score;
         }
 
-        NeedTime = false;
+        if (sd->master)
+            NeedTime = false;
         search_resort_moves_list(sd->nrootmoves, mvs, nodes);
 
         /*
@@ -1572,9 +1584,10 @@ static void *search_iterate_int(void *x) {
             }
         */
 
-        CurTime = utils_get_time();
+        if (sd->master)
+            CurTime = utils_get_time();
 
-        if (sd->depth > 3) {
+        if (sd->master && sd->depth > 3) {
             /*
              * Do ten checks per second.
              */
@@ -1785,7 +1798,12 @@ int search_iterate(Position *p) {
     searchio_header();
 
 #if MP
-    search_start_helpers(p);
+    /*
+     * Analysis mode keeps its output on the main thread: helper
+     * threads would clobber BestLine and interleave stdout.
+     */
+    if (SearchMode != Analyzing)
+        search_start_helpers(p);
 #endif /* MP */
 
     sd = next_create_data(p);

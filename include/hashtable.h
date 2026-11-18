@@ -33,17 +33,9 @@
 #define HASHTABLE_H
 
 #include "config.h"
-#include "dbase.h"
 #include "types.h"
 #include <stdbool.h>
 #include <stdint.h>
-
-#if HAVE_STDATOMIC_H && MP
-#include <stdatomic.h>
-#define OPTIONAL_ATOMIC _Atomic
-#else
-#define OPTIONAL_ATOMIC
-#endif
 
 typedef enum {
     ExactScore,

@@ -59,7 +59,7 @@ extern int FTbSetCacheSize(void *buffer, unsigned long size);
 extern int TB_CRC_CHECK;
 
 static int EGTBMenCount;
-int EGTBProbe, EGTBProbeSucc;
+OPTIONAL_ATOMIC int EGTBProbe, EGTBProbeSucc;
 
 #if MP && HAVE_LIBPTHREAD
 static pthread_mutex_t EGTBMutex = PTHREAD_MUTEX_INITIALIZER;

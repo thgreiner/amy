@@ -32,6 +32,8 @@
 #ifndef SWAP_H
 #define SWAP_H
 
+#include "dbase.h"
+
 int swap_off(Position *, int);
 
 #endif

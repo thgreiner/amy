@@ -38,7 +38,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "dbase.h"
 #include "hashtable.h"
 #include "random.h"
 #include "safe_malloc.h"
@@ -521,8 +520,20 @@ void ht_show_statistics(void) {
     HTEntry *h = TranspositionTable;
 
     for (i = 0; i < HT_Size; i++, h++) {
+#if MP && HAVE_LIBPTHREAD
+        /*
+         * Take the bucket read lock: helper threads may still be
+         * probing (and incrementing ht_Flags under their write lock)
+         * while the master prints these statistics.
+         */
+        atomic_int *mutex = TranspositionMutex + (i & MUTEX_MASK);
+        acquire_read_lock(mutex);
+#endif /* MP && HAVE_LIBPTHREAD */
         if ((h->ht_Flags & HT_AGE) == HTGeneration)
             cnt++;
+#if MP && HAVE_LIBPTHREAD
+        release_read_lock(mutex);
+#endif /* MP && HAVE_LIBPTHREAD */
     }
 
     char buf1[16], buf2[16];
