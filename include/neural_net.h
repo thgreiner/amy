@@ -36,6 +36,14 @@
 #include "intset_sorted.h"
 #include <stdbool.h>
 
+typedef enum {
+    NN_LWR_OK,
+    NN_LWR_FILE_NOT_FOUND,
+    NN_LWR_BAD_HEADER,
+    NN_LWR_WRONG_LAYOUT,
+    NN_LWR_CORRUPTED
+} NnLoadWeightsResult;
+
 /* If true, random noise is added to the evaluation score. */
 extern bool fuzz_evaluation;
 
@@ -88,7 +96,7 @@ void nn_eval_init(Position *);
 int nn_compute_piece_indices(const Position *p, int side, int *out, int cap);
 int nn_compute_pawn_indices(const Position *p, int side, int *out, int cap);
 
-void nn_read_weights(void);
+NnLoadWeightsResult nn_read_weights(const char **file_name);
 
 /* Game phase of the position (0..NN_PHASE_COUNT-1), determined by the
  * total number of non-pawn pieces on both sides. This is a shared
@@ -125,5 +133,8 @@ void nn_update_weights_for_king(Position *p, int old_king_sq);
 void nn_update_attack_maps(Position *);
 void nn_validate_weights(Position *);
 void nn_randomize_weights(void);
+
+const char *nn_net_name(char *, size_t);
+const char *nn_result_to_string(NnLoadWeightsResult, char *, size_t);
 
 #endif

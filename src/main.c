@@ -177,6 +177,23 @@ static void main_show_version(void) {
 #endif
 }
 
+static void load_net(void) {
+    const char *file_name;
+    NnLoadWeightsResult result = nn_read_weights(&file_name);
+
+    if (result == NN_LWR_OK) {
+        char buffer[128];
+        print(0, "Net is \"%s\", loaded from '%s'.\n\n",
+              nn_net_name(buffer, sizeof(buffer)), file_name);
+    } else if (result == NN_LWR_FILE_NOT_FOUND) {
+        print(0, "No net found.\n\n");
+    } else {
+        char buffer[128];
+        print(0, "Couldn't load net from %s: %s\n\n", file_name,
+              nn_result_to_string(result, buffer, sizeof(buffer)));
+    }
+}
+
 int main(int argc, char *argv[]) {
 #if HAVE_SETBUF
     setbuf(stdin, NULL);
@@ -199,7 +216,7 @@ int main(int argc, char *argv[]) {
 
     main_show_version();
 
-    nn_read_weights();
+    load_net();
 
     ht_allocate();
     probe_init(EGTBPath);

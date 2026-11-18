@@ -117,12 +117,18 @@ static void dump_set(const char *tag, const char *side, const int *v, int n) {
 }
 
 int main(void) {
+    const char *file_name;
+
     utils_open_log_file("Amy.log");
     movedata_init();
     init_all();
     ht_init();
     ht_allocate();
-    nn_read_weights();
+
+    if (nn_read_weights(&file_name) != NN_LWR_OK) {
+        fprintf(stderr, "Could not load weights!\n");
+        exit(1);
+    }
 
     const char *epds[] = {
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -",

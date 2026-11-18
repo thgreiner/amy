@@ -34,6 +34,7 @@
  */
 
 #include "config.h"
+#include "neural_net.h"
 #include "safe_malloc.h"
 #include <stdarg.h>
 #include <stddef.h>
@@ -77,12 +78,19 @@ static void pgn_get_hostname(char *hostname_buf) {
 #endif
 }
 
-static char *pgn_get_white_name(void) {
-    return (ComputerSide == White) ? (AMY_NAME) : (OpponentName);
+static char *pgn_get_amy_name(char *buffer) {
+    char net_name_buffer[128];
+    snprintf(buffer, 256, "%s (%s)", AMY_NAME,
+             nn_net_name(net_name_buffer, sizeof(net_name_buffer)));
+    return buffer;
 }
 
-static char *pgn_get_black_name(void) {
-    return (ComputerSide == Black) ? (AMY_NAME) : (OpponentName);
+static char *pgn_get_white_name(char *buffer) {
+    return (ComputerSide == White) ? pgn_get_amy_name(buffer) : OpponentName;
+}
+
+static char *pgn_get_black_name(char *buffer) {
+    return (ComputerSide == Black) ? pgn_get_amy_name(buffer) : OpponentName;
 }
 
 static void pgn_save_moves(FILE *fout, Position *p) {
@@ -129,6 +137,8 @@ void pgn_save_game(Position *p, const char *file_name, bool append) {
             char date_buf[16];
             char time_buf[16];
             char hostname_buf[256];
+            char white_name_buf[256];
+            char black_name_buf[256];
 
             pgn_get_hostname(hostname_buf);
             pgn_get_date_time(date_buf, time_buf);
@@ -159,8 +169,8 @@ void pgn_save_game(Position *p, const char *file_name, bool append) {
                 header.eco = eco;
             }
 
-            header.white = pgn_get_white_name();
-            header.black = pgn_get_black_name();
+            header.white = pgn_get_white_name(white_name_buf);
+            header.black = pgn_get_black_name(black_name_buf);
 
             pgn_print_header(fout, &header);
 

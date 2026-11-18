@@ -56,7 +56,6 @@
  */
 
 typedef struct {
-    uint32_t wh_magic;                // should always be wh_magic
     uint16_t wh_accumulator_size;     // Size of the accumulator
     uint16_t wh_num_features;         // Number of input features (planes)
     uint16_t wh_pawn_features_size;   // Number of pawn input features
@@ -181,11 +180,13 @@ static void nn_update_weights_for_pawn(Position *p, int sq1, bool turn,
                                        bool add);
 static void nn_build_pawn_accumulator(int16_t *accumulator, const Position *p,
                                       int side);
-static void nn_save_weights_compressed(const char *);
-static void nn_check_header(const WeightsHeader *header);
-static bool nn_load_weights_compressed(const char *);
-static bool nn_load_weights_uncompressed(const char *);
 static void nn_update_maxpos(Position *, int);
+
+static NnLoadWeightsResult nn_check_header(const WeightsHeader *header);
+static NnLoadWeightsResult nn_load_weights_compressed(FILE *);
+static NnLoadWeightsResult nn_load_weights_uncompressed(FILE *);
+static void nn_save_weights_compressed(const char *);
+static NnLoadWeightsResult nn_load_weights(const char *);
 
 /*
  * Functions
@@ -206,115 +207,6 @@ void nn_eval_init(Position *p) {
  */
 int eval_material_balance(const Position *p) {
     return p->material[White] - p->material[Black];
-}
-
-void nn_read_weights_quantized(void) {
-    static const char *const compressed_names[] = {
-        NET_NAME_COMPRESSED,
-#ifdef NETDIR
-        NET_NAME_COMPRESSED_INSTALLED,
-#endif
-    };
-    static const char *const uncompressed_names[] = {
-        NET_NAME,
-#ifdef NETDIR
-        NET_NAME_INSTALLED,
-#endif
-    };
-
-    bool weights_loaded = false;
-    const char *net_file = NULL;
-
-    for (size_t i = 0;
-         i < sizeof(compressed_names) / sizeof(compressed_names[0]) &&
-         !weights_loaded;
-         i++) {
-        if (nn_load_weights_compressed(compressed_names[i])) {
-            weights_loaded = true;
-            net_file = compressed_names[i];
-        }
-    }
-
-    for (size_t i = 0;
-         i < sizeof(uncompressed_names) / sizeof(uncompressed_names[0]) &&
-         !weights_loaded;
-         i++) {
-        if (nn_load_weights_uncompressed(uncompressed_names[i])) {
-            weights_loaded = true;
-            net_file = uncompressed_names[i];
-        }
-    }
-
-    if (weights_loaded) {
-        print(0, "Net is \"%s (%s)\" (\"%s\").\n\n", nn_header.wh_name,
-              nn_header.wh_date, net_file);
-    } else {
-        print(0, "No net found.\n\n");
-    }
-}
-
-static bool nn_load_weights_uncompressed(const char *file_name) {
-    FILE *fin = fopen(file_name, "rb");
-    size_t items_read;
-
-    if (fin == NULL) {
-        return false;
-    }
-
-    WeightsHeader header;
-
-    items_read = fread(&header, sizeof(header), 1, fin);
-    assert(items_read == 1);
-
-    nn_check_header(&header);
-    nn_header = header;
-
-    items_read = fread(input_layer_weights_q, sizeof(int8_t),
-                       ACCUMULATOR_SIZE * N_FEATURES, fin);
-    assert(items_read == ACCUMULATOR_SIZE * N_FEATURES);
-
-    items_read = fread(input_pawn_weights_q, sizeof(int8_t),
-                       ACCUMULATOR_SIZE * N_PAWN_FEATURES, fin);
-    assert(items_read == ACCUMULATOR_SIZE * N_PAWN_FEATURES);
-
-    items_read = fread(input_attack_weights_q, sizeof(int8_t),
-                       ACCUMULATOR_SIZE * N_ATTACK_FEATURES, fin);
-    assert(items_read == ACCUMULATOR_SIZE * N_ATTACK_FEATURES);
-
-    items_read =
-        fread(input_layer_bias_q, sizeof(int16_t), ACCUMULATOR_SIZE, fin);
-    assert(items_read == ACCUMULATOR_SIZE);
-
-    for (int phase = 0; phase < NN_PHASE_COUNT; phase++) {
-        items_read = fread(hidden_layer_1_weights_q[phase], sizeof(int16_t),
-                           HIDDEN_1_SIZE * 2 * ACCUMULATOR_SIZE, fin);
-        assert(items_read == HIDDEN_1_SIZE * 2 * ACCUMULATOR_SIZE);
-
-        items_read = fread(hidden_layer_1_bias_q[phase], sizeof(int32_t),
-                           HIDDEN_1_SIZE, fin);
-        assert(items_read == HIDDEN_1_SIZE);
-
-        items_read = fread(hidden_layer_2_weights_q[phase], sizeof(int16_t),
-                           HIDDEN_1_SIZE * HIDDEN_2_SIZE, fin);
-        assert(items_read == HIDDEN_1_SIZE * HIDDEN_2_SIZE);
-
-        items_read = fread(hidden_layer_2_bias_q[phase], sizeof(int32_t),
-                           HIDDEN_2_SIZE, fin);
-        assert(items_read == HIDDEN_2_SIZE);
-
-        items_read = fread(output_layer_weights_q[phase], sizeof(int32_t),
-                           HIDDEN_2_SIZE, fin);
-        assert(items_read == HIDDEN_2_SIZE);
-
-        items_read = fread(output_layer_bias_q[phase], sizeof(int32_t), 1, fin);
-        assert(items_read == 1);
-    }
-
-    fclose(fin);
-
-    nn_save_weights_compressed(NET_NAME_COMPRESSED);
-
-    return true;
 }
 
 static void nn_update_accumulator_add(int16_t *accumulator_q, int offset) {
@@ -977,7 +869,7 @@ static void nn_update_maxpos(Position *p, int score) {
     int avg_pos_sq = ra_update(&p->maxpos_state.ra_pos_sq,
                                scaled_pos_score * scaled_pos_score);
 
-    assert(avg_pos_sq > 0);
+    assert(avg_pos_sq >= 0);
 
     int variance = avg_pos_sq - avg_pos * avg_pos;
 #if HAVE___BUILTIN_CLZ
@@ -1129,13 +1021,6 @@ static void nn_show_weights(void) {
 }
 #endif
 
-void nn_read_weights(void) {
-    nn_read_weights_quantized();
-#ifdef DEBUG
-    nn_show_weights();
-#endif
-}
-
 /*
  * Game phase of the position, determined by the total number of
  * non-pawn pieces on both sides (0..12 for legal positions), grouped
@@ -1250,9 +1135,6 @@ void nn_randomize_weights(void) {
 }
 
 static void nn_save_weights_compressed(const char *file_name) {
-    if (nn_header.wh_magic != wh_magic)
-        return;
-
     int8_t *data = safe_malloc(nn_uncompressed_length);
 
     int8_t *ptr = data;
@@ -1295,11 +1177,11 @@ static void nn_save_weights_compressed(const char *file_name) {
 
     CompressedWeightsHeader new_header;
     new_header.cwh_header = nn_header;
-    new_header.cwh_header.wh_magic = wh_magic_compressed;
     new_header.cwh_compressed_size = comp_len;
 
     FILE *fout = fopen(file_name, "w");
     if (fout) {
+        fwrite(&wh_magic_compressed, sizeof(wh_magic_compressed), 1, fout);
         fwrite(&new_header, sizeof(new_header), 1, fout);
         fwrite(comp_buf, comp_len, 1, fout);
         fclose(fout);
@@ -1309,31 +1191,178 @@ static void nn_save_weights_compressed(const char *file_name) {
     free(data);
 }
 
-static bool nn_load_weights_compressed(const char *file_name) {
+NnLoadWeightsResult nn_read_weights_quantized(const char **file_name) {
+    static const char *const names[] = {
+        NET_NAME_COMPRESSED,
+        NET_NAME,
+#ifdef NETDIR
+        NET_NAME_COMPRESSED_INSTALLED,
+        NET_NAME_INSTALLED,
+#endif
+    };
+
+    NnLoadWeightsResult result = NN_LWR_FILE_NOT_FOUND;
+
+    for (size_t i = 0; i < sizeof(names) / sizeof(names[0]); i++) {
+        result = nn_load_weights(names[i]);
+        if (result != NN_LWR_FILE_NOT_FOUND) {
+            *file_name = names[i];
+            break;
+        }
+    }
+
+    return result;
+}
+
+NnLoadWeightsResult nn_read_weights(const char **file_name) {
+    NnLoadWeightsResult result = nn_read_weights_quantized(file_name);
+
+#ifdef DEBUG
+    nn_show_weights();
+#endif
+
+    return result;
+}
+
+static NnLoadWeightsResult nn_load_weights(const char *file_name) {
     FILE *fin = fopen(file_name, "rb");
 
     if (fin == NULL) {
-        return false;
+        return NN_LWR_FILE_NOT_FOUND;
     }
 
+    uint32_t magic;
+    size_t items_read = fread(&magic, sizeof(magic), 1, fin);
+
+    if (items_read != 1) {
+        fclose(fin);
+        return NN_LWR_BAD_HEADER;
+    }
+
+    NnLoadWeightsResult result;
+
+    if (magic == wh_magic) {
+        result = nn_load_weights_uncompressed(fin);
+    } else if (magic == wh_magic_compressed) {
+        result = nn_load_weights_compressed(fin);
+    } else {
+        result = NN_LWR_BAD_HEADER;
+    }
+
+    fclose(fin);
+    return result;
+}
+
+static NnLoadWeightsResult nn_load_weights_uncompressed(FILE *fin) {
+    size_t items_read;
+
+    WeightsHeader header;
+
+    items_read = fread(&header, sizeof(header), 1, fin);
+    if (items_read != 1) {
+        return NN_LWR_BAD_HEADER;
+    }
+
+    int check_result = nn_check_header(&header);
+    if (check_result != NN_LWR_OK) {
+        return check_result;
+    }
+
+    nn_header = header;
+
+    items_read = fread(input_layer_weights_q, sizeof(int8_t),
+                       ACCUMULATOR_SIZE * N_FEATURES, fin);
+    if (items_read != ACCUMULATOR_SIZE * N_FEATURES) {
+        return NN_LWR_CORRUPTED;
+    }
+
+    items_read = fread(input_pawn_weights_q, sizeof(int8_t),
+                       ACCUMULATOR_SIZE * N_PAWN_FEATURES, fin);
+    if (items_read != ACCUMULATOR_SIZE * N_PAWN_FEATURES) {
+        return NN_LWR_CORRUPTED;
+    }
+
+    items_read = fread(input_attack_weights_q, sizeof(int8_t),
+                       ACCUMULATOR_SIZE * N_ATTACK_FEATURES, fin);
+    if (items_read != ACCUMULATOR_SIZE * N_ATTACK_FEATURES) {
+        return NN_LWR_CORRUPTED;
+    }
+
+    items_read =
+        fread(input_layer_bias_q, sizeof(int16_t), ACCUMULATOR_SIZE, fin);
+    if (items_read != ACCUMULATOR_SIZE) {
+        return NN_LWR_CORRUPTED;
+    }
+
+    for (int phase = 0; phase < NN_PHASE_COUNT; phase++) {
+        items_read = fread(hidden_layer_1_weights_q[phase], sizeof(int16_t),
+                           HIDDEN_1_SIZE * 2 * ACCUMULATOR_SIZE, fin);
+        if (items_read != HIDDEN_1_SIZE * 2 * ACCUMULATOR_SIZE) {
+            return NN_LWR_CORRUPTED;
+        }
+
+        items_read = fread(hidden_layer_1_bias_q[phase], sizeof(int32_t),
+                           HIDDEN_1_SIZE, fin);
+        if (items_read != HIDDEN_1_SIZE) {
+            return NN_LWR_CORRUPTED;
+        }
+
+        items_read = fread(hidden_layer_2_weights_q[phase], sizeof(int16_t),
+                           HIDDEN_1_SIZE * HIDDEN_2_SIZE, fin);
+        if (items_read != HIDDEN_1_SIZE * HIDDEN_2_SIZE) {
+            return NN_LWR_CORRUPTED;
+        }
+
+        items_read = fread(hidden_layer_2_bias_q[phase], sizeof(int32_t),
+                           HIDDEN_2_SIZE, fin);
+        if (items_read != HIDDEN_2_SIZE) {
+            return NN_LWR_CORRUPTED;
+        }
+
+        items_read = fread(output_layer_weights_q[phase], sizeof(int32_t),
+                           HIDDEN_2_SIZE, fin);
+        if (items_read != HIDDEN_2_SIZE) {
+            return NN_LWR_CORRUPTED;
+        }
+
+        items_read = fread(output_layer_bias_q[phase], sizeof(int32_t), 1, fin);
+        if (items_read != 1) {
+            return NN_LWR_CORRUPTED;
+        }
+    }
+
+    nn_save_weights_compressed(NET_NAME_COMPRESSED);
+
+    return NN_LWR_OK;
+}
+
+static NnLoadWeightsResult nn_load_weights_compressed(FILE *fin) {
     CompressedWeightsHeader header;
     size_t items_read = fread(&header, sizeof(header), 1, fin);
-    assert(items_read == 1);
+    if (items_read != 1) {
+        return NN_LWR_BAD_HEADER;
+    }
 
-    nn_check_header(&header.cwh_header);
+    int check_result = nn_check_header(&header.cwh_header);
+    if (check_result != NN_LWR_OK) {
+        return check_result;
+    }
+
     nn_header = header.cwh_header;
 
     int8_t *buffer = safe_malloc(header.cwh_compressed_size);
     items_read = fread(buffer, header.cwh_compressed_size, 1, fin);
-    assert(items_read == 1);
+    if (items_read != 1) {
+        return NN_LWR_CORRUPTED;
+    }
 
     int8_t *data = safe_malloc(nn_uncompressed_length);
 
     int l = lzav_decompress(buffer, data, header.cwh_compressed_size,
                             nn_uncompressed_length);
-    assert(l >= 0);
-
-    fclose(fin);
+    if (l < 0) {
+        return NN_LWR_CORRUPTED;
+    }
 
     int8_t *ptr = data;
 
@@ -1370,29 +1399,69 @@ static bool nn_load_weights_compressed(const char *file_name) {
     free(buffer);
     free(data);
 
-    return true;
+    return NN_LWR_OK;
 }
 
-static void nn_check_header(const WeightsHeader *header) {
-    assert(header->wh_accumulator_size == ACCUMULATOR_SIZE);
-    assert(header->wh_num_features == N_FEATURES);
-    assert(header->wh_pawn_features_size == N_PAWN_FEATURES);
-    assert(header->wh_attack_features_size == N_ATTACK_FEATURES);
-    assert(header->wh_hidden_layer_1_size == HIDDEN_1_SIZE);
-    assert(header->wh_hidden_layer_2_size == HIDDEN_2_SIZE);
-    assert(header->wh_accumulator_weights_quantization ==
-           wh_quantization_int_8);
-    assert(header->wh_accumulator_bias_quantization == wh_quantization_int_16);
-    assert(header->wh_hidden_layer_1_weights_quantization ==
-           wh_quantization_int_16);
-    assert(header->wh_hidden_layer_1_bias_quantization ==
-           wh_quantization_int_32);
-    assert(header->wh_hidden_layer_2_weights_quantization ==
-           wh_quantization_int_16);
-    assert(header->wh_hidden_layer_2_bias_quantization ==
-           wh_quantization_int_32);
-    assert(header->wh_output_layer_weights_quantization ==
-           wh_quantization_int_32);
-    assert(header->wh_output_layer_bias_quantization == wh_quantization_int_32);
-    assert(header->wh_phase_count == NN_PHASE_COUNT);
+#define CHECK_LAYOUT(x)                                                        \
+    {                                                                          \
+        if (!(x))                                                              \
+            return NN_LWR_WRONG_LAYOUT;                                        \
+    }
+
+static NnLoadWeightsResult nn_check_header(const WeightsHeader *header) {
+    CHECK_LAYOUT(header->wh_accumulator_size == ACCUMULATOR_SIZE);
+    CHECK_LAYOUT(header->wh_num_features == N_FEATURES);
+    CHECK_LAYOUT(header->wh_pawn_features_size == N_PAWN_FEATURES);
+    CHECK_LAYOUT(header->wh_attack_features_size == N_ATTACK_FEATURES);
+    CHECK_LAYOUT(header->wh_hidden_layer_1_size == HIDDEN_1_SIZE);
+    CHECK_LAYOUT(header->wh_hidden_layer_2_size == HIDDEN_2_SIZE);
+    CHECK_LAYOUT(header->wh_accumulator_weights_quantization ==
+                 wh_quantization_int_8);
+    CHECK_LAYOUT(header->wh_accumulator_bias_quantization ==
+                 wh_quantization_int_16);
+    CHECK_LAYOUT(header->wh_hidden_layer_1_weights_quantization ==
+                 wh_quantization_int_16);
+    CHECK_LAYOUT(header->wh_hidden_layer_1_bias_quantization ==
+                 wh_quantization_int_32);
+    CHECK_LAYOUT(header->wh_hidden_layer_2_weights_quantization ==
+                 wh_quantization_int_16);
+    CHECK_LAYOUT(header->wh_hidden_layer_2_bias_quantization ==
+                 wh_quantization_int_32);
+    CHECK_LAYOUT(header->wh_output_layer_weights_quantization ==
+                 wh_quantization_int_32);
+    CHECK_LAYOUT(header->wh_output_layer_bias_quantization ==
+                 wh_quantization_int_32);
+    CHECK_LAYOUT(header->wh_phase_count == NN_PHASE_COUNT);
+
+    return NN_LWR_OK;
+}
+
+const char *nn_net_name(char *buffer, size_t length) {
+    snprintf(buffer, length, "%s (%s)", nn_header.wh_name, nn_header.wh_date);
+    return buffer;
+}
+
+const char *nn_result_to_string(NnLoadWeightsResult result, char *buffer,
+                                size_t length) {
+    switch (result) {
+    case NN_LWR_OK:
+        strncpy(buffer, "OK", length);
+        break;
+    case NN_LWR_FILE_NOT_FOUND:
+        strncpy(buffer, "File not found", length);
+        break;
+    case NN_LWR_BAD_HEADER:
+        strncpy(buffer, "Corrupt header", length);
+        break;
+    case NN_LWR_WRONG_LAYOUT:
+        strncpy(buffer, "Wrong layout", length);
+        break;
+    case NN_LWR_CORRUPTED:
+        strncpy(buffer, "File corrupted", length);
+        break;
+    default:
+        buffer[0] = 0;
+    }
+
+    return buffer;
 }
