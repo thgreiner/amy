@@ -20,6 +20,7 @@ Amy
 *.la
 .deps/
 .libs/
+src/bpd_analyze
 src/nn_crosscheck
 src/libamy_nn_extract.dylib
 
@@ -34,6 +35,7 @@ nets/*
 
 # --- Logs ---
 Amy.log
+evaluation_log.bin
 
 # --- Editor / OS / local config ---
 .amyrc

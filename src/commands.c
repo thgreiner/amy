@@ -374,8 +374,11 @@ static void cmd_set_xboard(char *args) {
     XBoardMode = true;
     Verbosity = 1;
 
+    char buffer[128];
+
     print(0, "\n");
-    print(0, "feature myname=\"Amy " VERSION "-neural\"\n");
+    print(0, "feature myname=\"Amy " VERSION " (%s)\"\n",
+          nn_net_name(buffer, sizeof(buffer)));
     print(0, "feature san=1\n");
     print(0, "feature name=1\n");
     print(0, "feature done=1\n");

@@ -49,7 +49,6 @@
 #include "probe.h"
 #include "random.h"
 #include "recog.h"
-#include "safe_malloc.h"
 #include "search_io.h"
 #include "state_machine.h"
 #include "swap.h"
@@ -60,6 +59,7 @@
 #include <string.h>
 
 #if HAVE_LIBPTHREAD
+#include "safe_malloc.h"
 #include <pthread.h>
 #endif
 
@@ -808,11 +808,7 @@ static int search_negascout(SearchData *sd, int alpha, int beta,
 #if FUTILITY
     is_futile = !incheck && !threat && alpha < CMLIMIT && alpha > -CMLIMIT;
     if (is_futile) {
-        if (p->turn == White) {
-            optimistic = eval_material_balance(p) + p->maxpos_state.maxpos;
-        } else {
-            optimistic = -eval_material_balance(p) + p->maxpos_state.maxpos;
-        }
+        optimistic = eval_material_balance(p) + p->maxpos_state.maxpos;
     }
 #endif /* FUTILITY */
 

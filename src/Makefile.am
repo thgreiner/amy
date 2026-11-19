@@ -1,5 +1,5 @@
 bin_PROGRAMS = Amy
-noinst_PROGRAMS = nn_crosscheck
+noinst_PROGRAMS = nn_crosscheck bpd_analyze
 
 # NB: these lists cannot use $(wildcard)/$(filter): automake 1.19 tries to
 # extract concrete file names from _SOURCES values (for the dist list and
@@ -19,6 +19,7 @@ amy_test_sources = test_attack_map.c test_bpd.c \
 
 Amy_SOURCES = $(amy_core_sources) $(amy_test_sources) main.c
 nn_crosscheck_SOURCES = $(amy_core_sources) $(amy_test_sources) nn_crosscheck.c
+bpd_analyze_SOURCES = bpd_analyze.c tree.c
 
 if HAVE_LINENOISE
 Amy_SOURCES += linenoise.c
@@ -52,8 +53,6 @@ pkgdata_DATA = Eco.db Book.db
 
 EXTRA_Amy_SOURCES = tbindex.cpp tbdecode.c
 
-EXTRA_DIST = bitboard_x86.s
-
 Eco.db: ${srcdir}/../PGN/eco.pgn
 	echo "eco ${srcdir}/../PGN/eco.pgn" | ./Amy
 
@@ -86,7 +85,7 @@ $(OBJS): Makefile
 
 .PHONY: format
 format:
-	clang-format -i $(Amy_SOURCES) nn_crosscheck.c $(EXTRA_Amy_SOURCES)
+	clang-format -i $(Amy_SOURCES) nn_crosscheck.c $(EXTRA_Amy_SOURCES) $(bpd_analyze_SOURCES)
 
 .PHONY: clean-local
 clean-local:

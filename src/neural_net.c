@@ -203,10 +203,10 @@ void nn_eval_init(Position *p) {
 }
 
 /**
- * Evaluate the material balance (from white's perspective).
+ * Evaluate the material balance (from side to move's perspective).
  */
 int eval_material_balance(const Position *p) {
-    return p->material[White] - p->material[Black];
+    return p->material[p->turn] - p->material[OPP(p->turn)];
 }
 
 static void nn_update_accumulator_add(int16_t *accumulator_q, int offset) {
@@ -455,31 +455,14 @@ void nn_update_weights_for_king(Position *p, int old_king_sq) {
  * c1 and c2.
  */
 static int nn_pp_index(int sq1, bool c1, int sq2, bool c2) {
-    // print(1, "    nn_pp_index(%d, %d, %d, %d)\n", sq1, c1, sq2, c2);
-
     int i1 = c1 * 48 + sq1 - 8;
     int i2 = c2 * 48 + sq2 - 8;
-
-    // print(1, "      i1 = %d  i2 = %d\n", i1, i2);
 
     int hi = MAX(i1, i2);
     int lo = MIN(i1, i2);
 
-    // print(1, "      hi = %d  lo = %d\n", h1, lo);
-
     return hi * (hi - 1) / 2 + lo;
 }
-
-/*
- * Populates accumulator_w and accumulator_b with the pawn features of p.
- *
- * Iterates through all unique pairs of pawns that are within one file of
- * distance. For example, in the starting position the white pawn at b2 would be
- * paired up with the white pawns (b2, a2) and (b2, c2) and the black pawns (b2,
- * a7), (b2, b7) and (b2, c7). For every pair of pawns and their colors the
- * index into the features array is calculated using nn_pp_index, and the
- * accumulators are updated.
- */
 
 /*
  * Compute the shared pawn pair feature indices of the given side: every
@@ -527,8 +510,6 @@ static void nn_build_pawn_accumulator(int16_t *accumulator, const Position *p,
                                       int side) {
     int indices[NN_MAX_PAWN_FEATURES];
     int n = nn_compute_pawn_indices(p, side, indices, NN_MAX_PAWN_FEATURES);
-
-    assert(n >= 0);
 
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < ACCUMULATOR_SIZE; j++) {
@@ -858,8 +839,7 @@ int nn_evaluate_position(Position *p) {
  * interval.
  */
 static void nn_update_maxpos(Position *p, int score) {
-    int material_balance = (p->turn == White) ? eval_material_balance(p)
-                                              : -eval_material_balance(p);
+    int material_balance = eval_material_balance(p);
     int pos_score = material_balance - score;
     int scaled_pos_score = pos_score / 32;
 
@@ -975,6 +955,12 @@ static void nn_show_weights(void) {
     print(1, "input weights:\n");
     for (int i = 0; i < 8; i++) {
         print(1, "%d, ", input_layer_weights_q[0][i]);
+    }
+    print(1, "\n");
+
+    print(1, "attack weights:\n");
+    for (int i = 0; i < 8; i++) {
+        print(1, "%d, ", input_attack_weights_q[0][i]);
     }
     print(1, "\n");
 
