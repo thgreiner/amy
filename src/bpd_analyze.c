@@ -91,8 +91,11 @@ static void create_histogram(tree_node_t *database, size_t max_count) {
     printf("  #     Count   relative\n");
 
     for (size_t s = 1; s <= max_count; s++) {
-        double percentage = (100.0 * (double)buckets[s]) / (double)total_nodes;
-        printf("%3lu: %8lu    %5.2f %%\n", s, buckets[s], percentage);
+        if (buckets[s] != 0) {
+            double percentage =
+                (100.0 * (double)buckets[s]) / (double)total_nodes;
+            printf("%3lu: %8lu    %5.2f %%\n", s, buckets[s], percentage);
+        }
     }
 
     free(buckets);
@@ -156,7 +159,6 @@ static void analyze(const char *file_name) {
     }
 
     printf("Total positions: %lu\n", total_positions);
-    printf("Max occurence: %lu\n", max_count);
 
     create_histogram(database, max_count);
 }

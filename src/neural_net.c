@@ -1423,7 +1423,8 @@ static NnLoadWeightsResult nn_check_header(const WeightsHeader *header) {
 }
 
 const char *nn_net_name(char *buffer, size_t length) {
-    snprintf(buffer, length, "%s (%s)", nn_header.wh_name, nn_header.wh_date);
+    snprintf(buffer, length, "%s (%.*s)", nn_header.wh_name, 10,
+             nn_header.wh_date);
     return buffer;
 }
 
