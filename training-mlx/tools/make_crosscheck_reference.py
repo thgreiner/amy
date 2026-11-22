@@ -80,7 +80,8 @@ params = {
 quantized = quantize_parameters(params)
 
 tmp = Path(tempfile.mkdtemp(prefix="nnue_ref_"))
-write_network_quant(tmp / "amy.net", quantized)
+(tmp / "nets").mkdir()
+write_network_quant(tmp / "nets" / "amy.net", quantized)
 
 proc = subprocess.run([str(BIN)], cwd=tmp, capture_output=True, text=True)
 if proc.returncode != 0:

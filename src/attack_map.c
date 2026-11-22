@@ -66,6 +66,7 @@ static void am_compute_attacks(int from, int attacker, int victim,
         attacks &= attacks - 1;
 
         int index = am_index(attacker, victim, from ^ mirror, to);
+
         /* The set capacity is a hard bound on the number of attack
          * features per side; reaching it means a real position has
          * more attacks than the network can represent.  Fail loudly
@@ -206,6 +207,25 @@ static void am_compute_all_attacks_of_side(const Position *p, int side,
                            p->atkTo[from] & p->mask[!side][Queen], indexes,
                            mirror);
     }
+
+    int from = bitboard_find_set_bit(p->mask[side][King]);
+
+    // exclude attacks on pawns that already attack the king
+    BitBoard excl = ~PawnEPM[side][from];
+    am_compute_attacks(from, King, Pawn,
+                       p->atkTo[from] & excl & p->mask[!side][Pawn], indexes,
+                       mirror);
+    am_compute_attacks(from, King, Knight,
+                       p->atkTo[from] & p->mask[!side][Knight], indexes,
+                       mirror);
+    // Only include king attacks on bishops via rook moves
+    am_compute_attacks(from, King, Bishop,
+                       p->atkTo[from] & RookEPM[from] & p->mask[!side][Bishop],
+                       indexes, mirror);
+    // Only include king attacks on rooks via bishop moves
+    am_compute_attacks(from, King, Rook,
+                       p->atkTo[from] & BishopEPM[from] & p->mask[!side][Rook],
+                       indexes, mirror);
 }
 
 void am_compute_attack_maps(const Position *p, IntSetSorted *indexes_w,

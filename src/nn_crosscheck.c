@@ -125,8 +125,15 @@ int main(void) {
     ht_init();
     ht_allocate();
 
-    if (nn_read_weights(&file_name) != NN_LWR_OK) {
-        fprintf(stderr, "Could not load weights!\n");
+    NnLoadWeightsResult result = nn_read_weights(&file_name);
+
+    if (result == NN_LWR_FILE_NOT_FOUND) {
+        fprintf(stderr, "No net found.\n\n");
+        exit(1);
+    } else if (result != NN_LWR_OK) {
+        char buffer[128];
+        fprintf(stderr, "Couldn't load net from %s: %s\n\n", file_name,
+                nn_result_to_string(result, buffer, sizeof(buffer)));
         exit(1);
     }
 

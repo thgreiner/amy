@@ -430,7 +430,6 @@ void dbase_do_move(Position *p, move_t move) {
     p->actLog->gl_EnPassant = p->enPassant;
     p->actLog->gl_Castle = p->castle;
     p->actLog->gl_HashKey = p->hkey;
-    p->actLog->gl_PawnKey = p->pkey;
 
     if (move & M_CANY) {
         dbase_do_castle(p, move);
@@ -456,8 +455,6 @@ void dbase_do_move(Position *p, move_t move) {
 
         /* update hashkey */
         p->hkey ^= HashKeys[p->turn][tp][from];
-        if (tp == Pawn)
-            p->pkey ^= HashKeys[p->turn][Pawn][from];
 
         if (tp == King) {
             /* No more castling rights */
@@ -483,10 +480,8 @@ void dbase_do_move(Position *p, move_t move) {
             if (is_sliding(sp))
                 bitboard_clr_bit(p->slidingPieces, to);
 
-            /* Update oppponents material and PawnCount */
+            /* Update oppponents material */
             p->material[OPP(p->turn)] -= Value[sp];
-            if (sp != Pawn)
-                p->nonPawn[OPP(p->turn)] -= Value[sp];
 
             /* update material signature */
             if (!(p->mask[OPP(p->turn)][sp])) {
@@ -495,8 +490,6 @@ void dbase_do_move(Position *p, move_t move) {
 
             /* update hashkey */
             p->hkey ^= HashKeys[OPP(p->turn)][sp][to];
-            if (sp == Pawn)
-                p->pkey ^= HashKeys[OPP(p->turn)][Pawn][to];
             if (to == (OPP(p->turn) == White ? h1 : h8)) {
                 p->castle &= ~(CastleMask[OPP(p->turn)][0]);
             }
@@ -532,7 +525,6 @@ void dbase_do_move(Position *p, move_t move) {
 
             /* update hashkey */
             p->hkey ^= HashKeys[OPP(p->turn)][Pawn][so];
-            p->pkey ^= HashKeys[OPP(p->turn)][Pawn][so];
 
             /* re-calculate attacks through to-square */
             dbase_loose_attacks(p, to);
@@ -547,7 +539,6 @@ void dbase_do_move(Position *p, move_t move) {
 
             /* Update own material */
             p->material[p->turn] += Value[tp] - Value[Pawn];
-            p->nonPawn[p->turn] += Value[tp];
 
             if (!(p->mask[p->turn][Pawn])) {
                 p->material_signature[p->turn] &= ~SIGNATURE_BIT(Pawn);
@@ -572,8 +563,6 @@ void dbase_do_move(Position *p, move_t move) {
 
         /* update hashkey */
         p->hkey ^= HashKeys[p->turn][tp][to];
-        if (tp == Pawn)
-            p->pkey ^= HashKeys[p->turn][Pawn][to];
     }
 
     // nn_validate_weights(p);
@@ -662,7 +651,6 @@ void dbase_undo_move(Position *p, move_t move) {
         if (move & M_PROMOTION_MASK) {
             /* Update own material */
             p->material[p->turn] -= Value[tp] - Value[Pawn];
-            p->nonPawn[p->turn] -= Value[tp];
 
             /* update material signature */
             if (!(p->mask[p->turn][tp])) {
@@ -690,10 +678,8 @@ void dbase_undo_move(Position *p, move_t move) {
             if (is_sliding(sp))
                 bitboard_set_bit(p->slidingPieces, to);
 
-            /* Update oppponents material and PawnCount */
+            /* Update oppponents material */
             p->material[OPP(p->turn)] += Value[sp];
-            if (sp != Pawn)
-                p->nonPawn[OPP(p->turn)] += Value[sp];
 
             /* update material signature */
             p->material_signature[OPP(p->turn)] |= SIGNATURE_BIT(sp);
@@ -755,7 +741,6 @@ void dbase_undo_move(Position *p, move_t move) {
     p->castle = p->actLog->gl_Castle;
 
     p->hkey = p->actLog->gl_HashKey;
-    p->pkey = p->actLog->gl_PawnKey;
 
     /*
     dbase_debug_engine(move);
@@ -830,9 +815,8 @@ void dbase_recalc_attacks(Position *p) {
 
     p->slidingPieces = 0;
 
-    p->material[White] = p->material[Black] = p->nonPawn[White] =
-        p->nonPawn[Black] = p->material_signature[White] =
-            p->material_signature[Black] = p->hkey = p->pkey = 0;
+    p->material[White] = p->material[Black] = p->material_signature[White] =
+        p->material_signature[Black] = p->hkey = 0;
 
     tmp = p->mask[White][0];
     while (tmp) {
@@ -844,11 +828,6 @@ void dbase_recalc_attacks(Position *p) {
             bitboard_set_bit(p->slidingPieces, i);
         p->material[White] += Value[pc];
         p->hkey ^= HashKeys[White][pc][i];
-        if (pc != Pawn)
-            p->nonPawn[White] += Value[pc];
-        else {
-            p->pkey ^= HashKeys[White][Pawn][i];
-        }
 
         if (pc != King) {
             p->material_signature[White] |= SIGNATURE_BIT(pc);
@@ -865,11 +844,6 @@ void dbase_recalc_attacks(Position *p) {
             bitboard_set_bit(p->slidingPieces, i);
         p->material[Black] += Value[pc];
         p->hkey ^= HashKeys[Black][pc][i];
-        if (pc != Pawn)
-            p->nonPawn[Black] += Value[pc];
-        else {
-            p->pkey ^= HashKeys[Black][Pawn][i];
-        }
 
         if (pc != King) {
             p->material_signature[Black] |= SIGNATURE_BIT(pc);
@@ -1927,8 +1901,7 @@ void dbase_show_position(Position *p) {
             break;
         case 4: {
             int bit;
-            print(0, "|   Black (%5d, %5d)  ", p->material[Black],
-                  p->nonPawn[Black]);
+            print(0, "|   Black (%5d)  ", p->material[Black]);
             for (bit = 0; bit < 5; bit++) {
                 print(0, "%c",
                       (p->material_signature[Black] & (1 << bit))
@@ -1940,8 +1913,7 @@ void dbase_show_position(Position *p) {
         }
         case 3: {
             int bit;
-            print(0, "|   White (%5d, %5d)  ", p->material[White],
-                  p->nonPawn[White]);
+            print(0, "|   White (%5d)  ", p->material[White]);
             for (bit = 0; bit < 5; bit++) {
                 print(0, "%c",
                       (p->material_signature[White] & (1 << bit))

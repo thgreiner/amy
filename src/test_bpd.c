@@ -62,13 +62,11 @@ static void test_compare(const Position *a, const Position *b) {
             assert(a->mask[i][j] == b->mask[i][j]);
         }
         assert(a->material[i] == b->material[i]);
-        assert(a->nonPawn[i] == b->nonPawn[i]);
         assert(a->material_signature[i] == b->material_signature[i]);
         assert(a->kingSq[i] == b->kingSq[i]);
     }
     assert(a->slidingPieces == b->slidingPieces);
     assert(a->hkey == b->hkey);
-    assert(a->pkey == b->pkey);
     assert(a->castle == b->castle);
     assert(a->enPassant == b->enPassant);
     assert(a->turn == b->turn);

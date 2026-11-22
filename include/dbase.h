@@ -132,25 +132,24 @@ typedef struct {
     BitBoard atkFr[64];
     BitBoard mask[2][7];
     BitBoard slidingPieces;
+    int8_t piece[64];
     hash_t hkey;
-    hash_t pkey;
     GameLog *gameLog;
     GameLog *actLog;
     unsigned int gameLogSize;
-    int material[2], nonPawn[2];
-    int16_t accumulator_w_q[ACCUMULATOR_SIZE];
-    int16_t accumulator_b_q[ACCUMULATOR_SIZE];
-    IntSetSorted attack_map_w;
-    IntSetSorted attack_map_b;
-    MaxPosState maxpos_state;
+    int material[2];
     uint16_t outOfBookCnt[2];
     uint16_t ply;
-    int8_t piece[64];
     int8_t castle;
     int8_t enPassant;
     int8_t turn; /* 0 == white, 1 == black */
     int8_t kingSq[2];
     int8_t material_signature[2];
+    int16_t accumulator_w_q[ACCUMULATOR_SIZE];
+    int16_t accumulator_b_q[ACCUMULATOR_SIZE];
+    IntSetSorted attack_map_w;
+    IntSetSorted attack_map_b;
+    MaxPosState maxpos_state;
 } Position;
 
 extern int Value[];

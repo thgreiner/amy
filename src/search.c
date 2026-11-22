@@ -582,6 +582,16 @@ EXIT:
 }
 
 /*
+ * Determines whether the side to move is unlikely to be in zugzwang.
+ */
+static bool is_zugzwang_unlikely(Position *p) {
+    return (bitboard_count_bits(p->mask[p->turn][Queen]) > 0) ||
+           (bitboard_count_bits(p->mask[p->turn][Rook]) >= 2) ||
+           (bitboard_count_bits(p->mask[p->turn][Knight] |
+                                p->mask[p->turn][Bishop] |
+                                p->mask[p->turn][Rook]) >= 3);
+}
+/*
  * The main search_negascout routine with handles things like
  * search extensions, hash table lookup etc.
  *
@@ -758,7 +768,7 @@ static int search_negascout(SearchData *sd, int alpha, int beta,
         if (AbortSearch)
             goto EXIT;
         if (nms >= beta) {
-            if (p->nonPawn[p->turn] >= Value[Queen]) {
+            if (is_zugzwang_unlikely(p)) {
                 best = nms;
                 goto EXIT;
             } else {
@@ -853,9 +863,7 @@ static int search_negascout(SearchData *sd, int alpha, int beta,
          * passed pawn push extension
          */
 
-        if (TYPE(p->piece[M_FROM(move)]) == Pawn &&
-            p->nonPawn[OPP(p->turn)] <= Value[Queen]) {
-
+        if (TYPE(p->piece[M_FROM(move)]) == Pawn && nn_phase_index(p) < 2) {
             int to = M_TO(move);
 
             if (((p->turn == White && to >= a7) ||

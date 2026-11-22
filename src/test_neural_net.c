@@ -572,13 +572,13 @@ static void test_maxpos_state(void) {
     nn_eval_init(p);
     nn_eval_init(q);
     assert(p->maxpos_state.maxpos == 2000);
-    assert(p->maxpos_state.ra_pos.ra_sum == (2000 / 32) * WINDOW_SIZE);
+    assert(p->maxpos_state.ra_pos.ra_sum == 0);
     assert(p->maxpos_state.ra_pos.ra_index == 0);
 
     /* Evaluating p must not touch q's state. */
     nn_evaluate_position(p);
     assert(q->maxpos_state.maxpos == 2000);
-    assert(q->maxpos_state.ra_pos.ra_sum == (2000 / 32) * WINDOW_SIZE);
+    assert(q->maxpos_state.ra_pos.ra_sum == 0);
     assert(q->maxpos_state.ra_pos.ra_index == 0);
 
     /* p's state advanced by exactly one sample, and MaxPos stays
@@ -593,7 +593,7 @@ static void test_maxpos_state(void) {
            0);
     nn_eval_init(c);
     assert(c->maxpos_state.maxpos == 2000);
-    assert(c->maxpos_state.ra_pos.ra_sum == (2000 / 32) * WINDOW_SIZE);
+    assert(c->maxpos_state.ra_pos.ra_sum == 0);
 
     dbase_free_position(p);
     dbase_free_position(q);

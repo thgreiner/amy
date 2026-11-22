@@ -56,7 +56,7 @@ def test_constants():
     k = cfeatures.constants()
     assert k.n_features == 11 * 32 * 64
     assert k.n_pawn_features == 4560
-    assert k.n_attack_features == 24 * 64 * 64
+    assert k.n_attack_features == 28 * 64 * 64
     assert k.accumulator_size == 256
     assert k.max_piece_features == 36
     assert k.max_pawn_features == 128

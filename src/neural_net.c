@@ -43,6 +43,7 @@
 #include "safe_malloc.h"
 #include "utils.h"
 #include <assert.h>
+#include <math.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -172,6 +173,9 @@ static int nn_uncompressed_length =
           sizeof(hidden_layer_2_weights_q) + sizeof(hidden_layer_2_bias_q) +
           sizeof(output_layer_weights_q) + sizeof(output_layer_bias_q));
 
+static unsigned long nn_eval_in_window;
+static unsigned long nn_eval_outside_window;
+
 /*
  * Forward declarations
  */
@@ -198,8 +202,11 @@ static NnLoadWeightsResult nn_load_weights(const char *);
 void nn_eval_init(Position *p) {
     p->maxpos_state.maxpos = MaxPosInit;
 
-    ra_init(&p->maxpos_state.ra_pos, MaxPosInit / 32);
-    ra_init(&p->maxpos_state.ra_pos_sq, MaxPosInit / 32 * MaxPosInit / 32);
+    ra_init(&p->maxpos_state.ra_pos, 0);
+    ra_init(&p->maxpos_state.ra_pos_sq, 0);
+
+    nn_eval_in_window = 0;
+    nn_eval_outside_window = 0;
 }
 
 /**
@@ -814,6 +821,7 @@ int nn_evaluate_position(Position *p) {
     STry++;
     if (ht_probe_score(p->hkey, &score) == Useful) {
         SHit++;
+        nn_update_maxpos(p, score);
         return score;
     }
 #endif
@@ -859,9 +867,8 @@ static void nn_update_maxpos(Position *p, int score) {
 #endif
     int estimate2 = (estimate + variance / estimate) / 2;
 
-    // Confidence interval of 99%, but limit to the interval between Pawn and
-    // Queen
-    p->maxpos_state.maxpos = MAX(MIN(96 * estimate2, 11000), 1000);
+    int minimal_max_pos = MAX(1000, ABS(pos_score));
+    p->maxpos_state.maxpos = MAX(96 * estimate2, minimal_max_pos);
 
 #ifdef DEBUG
     static int output = 0;
@@ -952,9 +959,25 @@ void nn_validate_weights(Position *p) {
 
 #ifdef DEBUG
 static void nn_show_weights(void) {
-    print(1, "input weights:\n");
-    for (int i = 0; i < 8; i++) {
-        print(1, "%d, ", input_layer_weights_q[0][i]);
+    for (int i = 0; i < N_FEATURES; i++) {
+        double total = 0.0;
+        for (int j = 0; j < ACCUMULATOR_SIZE; j++) {
+            int w = input_layer_weights_q[i][j];
+            total += w * w;
+        }
+        double v = sqrt(total) / 64.0;
+        print(1, "|input_layer_weights_q[%d]| = %f\n", i, v);
+    }
+    print(1, "\n");
+
+    for (int i = 0; i < N_PAWN_FEATURES; i++) {
+        double total = 0.0;
+        for (int j = 0; j < ACCUMULATOR_SIZE; j++) {
+            int w = input_pawn_weights_q[i][j];
+            total += w * w;
+        }
+        double v = sqrt(total) / 64.0;
+        print(1, "|input_pawn_weights_q[%d]| = %f\n", i, v);
     }
     print(1, "\n");
 
@@ -1021,9 +1044,7 @@ static void nn_show_weights(void) {
  */
 static int nn_non_pawn_piece_count(const Position *p) {
     return bitboard_count_bits(p->mask[White][Knight] | p->mask[Black][Knight] |
-                               p->mask[White][Bishop] | p->mask[Black][Bishop] |
-                               p->mask[White][Rook] | p->mask[Black][Rook] |
-                               p->mask[White][Queen] | p->mask[Black][Queen]);
+                               p->slidingPieces);
 }
 
 int nn_phase_index(const Position *p) {
