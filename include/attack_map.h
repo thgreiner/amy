@@ -4,7 +4,7 @@
 #include "dbase.h"
 #include "intset_sorted.h"
 
-#define N_ATTACK_FEATURES (28 * 4096)
+#define N_ATTACK_FEATURES (56 * 4096)
 
 void am_compute_attack_maps(const Position *, IntSetSorted *, IntSetSorted *);
 

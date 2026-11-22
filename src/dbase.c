@@ -43,6 +43,7 @@
 #include "heap.h"
 #include "init.h"
 #include "inline.h"
+#include "intset_sorted.h"
 #include "magic.h"
 #include "mates.h"
 #include "neural_net.h"
@@ -1847,10 +1848,33 @@ int dbase_legal_moves(Position *p, heap_t heap) {
     return cnt;
 }
 
+static void print_attack_map(Position *p, bool turn, bool attacks) {
+    const int32_t defenders_index = 28 * 4096;
+
+    IntSetSorted *map = (turn == White) ? &p->attack_map_w : &p->attack_map_b;
+    bool printed = false;
+    for (size_t i = 0; i < map->count; i++) {
+        int32_t index = map->data[i];
+
+        if ((attacks && index < defenders_index) ||
+            (!attacks && index >= defenders_index)) {
+
+            char buffer[16];
+
+            if (printed)
+                print(0, ", ");
+
+            am_attack_index_to_string(p, turn, map->data[i], buffer);
+
+            print(0, buffer);
+            printed = true;
+        }
+    }
+    print(0, "\n");
+}
 /*
  * print the current position
  */
-
 void dbase_show_position(Position *p) {
     int rk, fl;
 
@@ -1882,21 +1906,13 @@ void dbase_show_position(Position *p) {
         switch (rk) {
         case 7:
             print(0, "|   Attack Map: ");
-            for (size_t i = 0; i < p->attack_map_b.count; i++) {
-                char buffer[16];
-
-                if (i != 0)
-                    print(0, ", ");
-
-                am_attack_index_to_string(p, Black, p->attack_map_b.data[i],
-                                          buffer);
-
-                print(0, buffer);
-            }
-            print(0, "\n");
+            print_attack_map(p, Black, true);
             break;
-
         case 6:
+            print(0, "|   Defence Map: ");
+            print_attack_map(p, Black, false);
+            break;
+        case 5:
             print(0, "|   Hashkey: %llx\n", p->hkey);
             break;
         case 4: {
@@ -1923,23 +1939,16 @@ void dbase_show_position(Position *p) {
             print(0, "\n");
             break;
         }
-        case 1:
+        case 2:
             print(0, "|   Index: %d\n", RECOGNIZER_INDEX(p));
+            break;
+        case 1:
+            print(0, "|   Defence Map: ");
+            print_attack_map(p, White, false);
             break;
         case 0:
             print(0, "|   Attack Map: ");
-            for (size_t i = 0; i < p->attack_map_w.count; i++) {
-                char buffer[16];
-
-                if (i != 0)
-                    print(0, ", ");
-
-                am_attack_index_to_string(p, White, p->attack_map_w.data[i],
-                                          buffer);
-
-                print(0, buffer);
-            }
-            print(0, "\n");
+            print_attack_map(p, White, true);
             break;
         default:
             print(0, "|\n");

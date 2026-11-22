@@ -94,8 +94,8 @@ static void assert_move_legal(Position *p, move_t move) {
 
 /*
  * A knight move changes the piece accumulator only; the attack maps
- * stay empty in this position, but the update round must leave them
- * (correctly) unchanged.
+ * (all defence features in the initial position) are unaffected, but
+ * the update round must leave them (correctly) unchanged.
  */
 static void test_knight_move(void) {
     Position *p = dbase_initial_position();
@@ -126,23 +126,30 @@ static void test_knight_move(void) {
 /*
  * A promotion changes the piece accumulator (rook -> queen). The
  * promoted queen on h8 attacks the g7 pawn, so the update after the
- * move must add exactly that one white feature:
- *   Queen h8 -> Pawn g7: plane 19, sq 56*64+49=3633 -> 81457
- * (from' 56, to' 49: king on g1, mirror 7)
+ * move must add exactly that one feature to the black map (the white
+ * queen's attack on the black pawn is stored in the black frame,
+ * keyed on the black king f8, mirror 0x3f):
+ *   Qh8xg7: plane 19, sq 0*64+9=9 -> 77833
+ * (h8 63^0x3f = 0, g7 54^0x3f = 9)
  */
 static void test_promotion(void) {
     Position *p = dbase_create_position_from_epd(
         "3r1k2/p3qppP/8/3p4/3r4/5QP1/P4PB1/4R1K1 w - -");
 
-    int expected_w_before[] = {73971, 79012, 79026};
-    int expected_w_after[] = {73971, 79012, 79026, 81457};
+    int expected_w_before[] = {168530, 193674, 193681, 213066, 221257};
+    int expected_w_after[] = {168530, 193674, 193681, 213066, 221257};
+
+    int expected_b_before[] = {77515,  80522,  80540,  172316, 174364,
+                               193226, 193231, 205508, 213129, 213130};
+    int expected_b_after[] = {77515,  77833,  80522,  80540,  172316, 174364,
+                              193226, 193231, 205508, 213129, 213130};
 
     nn_init_accumulator(p);
     nn_validate_weights(p);
 
     nn_update_attack_maps(p);
-    assert_attack_map_eq(&p->attack_map_w, expected_w_before, 3);
-    assert_attack_map_eq(&p->attack_map_b, NULL, 0);
+    assert_attack_map_eq(&p->attack_map_w, expected_w_before, 5);
+    assert_attack_map_eq(&p->attack_map_b, expected_b_before, 10);
     nn_validate_weights(p);
 
     int move = dbase_make_promotion(h7, h8, Queen, 0);
@@ -151,16 +158,16 @@ static void test_promotion(void) {
     nn_validate_weights(p);
 
     nn_update_attack_maps(p);
-    assert_attack_map_eq(&p->attack_map_w, expected_w_after, 4);
-    assert_attack_map_eq(&p->attack_map_b, NULL, 0);
+    assert_attack_map_eq(&p->attack_map_w, expected_w_after, 5);
+    assert_attack_map_eq(&p->attack_map_b, expected_b_after, 11);
     nn_validate_weights(p);
 
     dbase_undo_move(p, move);
     nn_validate_weights(p);
 
     nn_update_attack_maps(p);
-    assert_attack_map_eq(&p->attack_map_w, expected_w_before, 3);
-    assert_attack_map_eq(&p->attack_map_b, NULL, 0);
+    assert_attack_map_eq(&p->attack_map_w, expected_w_before, 5);
+    assert_attack_map_eq(&p->attack_map_b, expected_b_before, 10);
     nn_validate_weights(p);
 
     dbase_free_position(p);
@@ -168,29 +175,40 @@ static void test_promotion(void) {
 
 /*
  * Castling moves the king (full accumulator rebuild) and a rook
- * (piece update). The stored attack maps must be refreshed afterwards;
- * they are unchanged by the move itself (white king e1 -> g1 stays in
- * the same mirror frame, and the rook on f1 attacks no enemy piece).
+ * (piece update), so the stored attack maps must be refreshed.
+ * The white king e1 -> g1 stays in the same mirror frame (both on
+ * files e..h), but the king and the rook (h1 -> f1) now defend
+ * different squares, so the white map changes; the black map is
+ * unchanged.  The attack (offset 0) features are:
 
-   white: Knight f3 -> Pawn e5: plane 4,  sq 21*64+37  -> 17571
-          Bishop b5 -> Knight c6: plane 10, sq 11*64+42 -> 43437
-          (king on e1/g1, mirror 7)
-   black: Knight f6 -> Pawn e4: plane 4,  sq 16*64+11  -> 17571
-          (king on e8, mirror 0x3f)
+   black map (black frame, king e8, mirror 0x3f):
+     Nf3xe5: plane 4,  sq 42*64+27  -> 19099
+     Bb5xc6: plane 10, sq 30*64+21  -> 42901
+   white map (white frame, king e1/g1, mirror 7):
+     Nf6xe4: plane 4,  sq 42*64+27  -> 19099
  */
 static void test_castle(void) {
     Position *p = dbase_create_position_from_epd(
         "r1bqkb1r/pppp1ppp/2n2n2/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R w KQkq -");
 
-    int expected_w[] = {17571, 43437};
-    int expected_b[] = {17571};
+    int expected_w_before[] = {19099,  115282, 131468, 132232, 132236, 151884,
+                               151886, 172040, 172495, 176582, 192780, 192781,
+                               196882, 200965, 213194, 213196};
+    int expected_b[] = {19099,  42901,  115282, 115477, 115605, 132232,
+                        132236, 132431, 132443, 148804, 151689, 151884,
+                        151886, 172040, 172495, 180226, 180677, 192780,
+                        192781, 196882, 200965, 213194, 213196, 221378};
+    int expected_w_after[] = {19099,  115282, 131468, 132232, 132236,
+                              151884, 151886, 166274, 172170, 172495,
+                              176582, 188548, 192780, 192781, 196882,
+                              200965, 213064, 213065, 213066};
 
     nn_init_accumulator(p);
     nn_validate_weights(p);
 
     nn_update_attack_maps(p);
-    assert_attack_map_eq(&p->attack_map_w, expected_w, 2);
-    assert_attack_map_eq(&p->attack_map_b, expected_b, 1);
+    assert_attack_map_eq(&p->attack_map_w, expected_w_before, 16);
+    assert_attack_map_eq(&p->attack_map_b, expected_b, 24);
     nn_validate_weights(p);
 
     int move = dbase_make_move(e1, g1, M_SCASTLE);
@@ -199,16 +217,16 @@ static void test_castle(void) {
     nn_validate_weights(p);
 
     nn_update_attack_maps(p);
-    assert_attack_map_eq(&p->attack_map_w, expected_w, 2);
-    assert_attack_map_eq(&p->attack_map_b, expected_b, 1);
+    assert_attack_map_eq(&p->attack_map_w, expected_w_after, 19);
+    assert_attack_map_eq(&p->attack_map_b, expected_b, 24);
     nn_validate_weights(p);
 
     dbase_undo_move(p, move);
     nn_validate_weights(p);
 
     nn_update_attack_maps(p);
-    assert_attack_map_eq(&p->attack_map_w, expected_w, 2);
-    assert_attack_map_eq(&p->attack_map_b, expected_b, 1);
+    assert_attack_map_eq(&p->attack_map_w, expected_w_before, 16);
+    assert_attack_map_eq(&p->attack_map_b, expected_b, 24);
     nn_validate_weights(p);
 
     dbase_free_position(p);
@@ -260,14 +278,15 @@ static void test_king_move(void) {
 }
 
 /*
- * A white pawn captures the black d5 pawn en passant on d6. The white
- * bishop f1 attacks the a6 pawn (e2 is empty) in both positions:
-   Bishop f1 -> Pawn a6: plane 9, sq 2*64+47=175 -> 37039
-   (white king e1, mirror 7)
+ * A white pawn captures the black d5 pawn en passant on d6. The
+ * white bishop f1 attacks the a6 pawn (e2 is empty) in both
+ * positions; the feature lives in the black map in the black frame
+ * (king e8, mirror 0x3f):
+   Bf1xa6: plane 9, sq 58*64+23=3735 -> 40599
  * After the capture the black queen d8 attacks the pawn on d6
- * (d7 is empty):
-   Queen d8 -> Pawn d6: plane 19, sq 4*64+20=276 -> 78100
-   (black king e8, mirror 0x3f)
+ * (d7 is empty); that feature lives in the white map in the white
+ * frame (king e1, mirror 7):
+   Qd8xd6: plane 19, sq 60*64+44=3884 -> 81708
  * The black e7 pawn also attacks d6, but pawn -> pawn attacks are not
  * part of the attack maps.
  */
@@ -275,15 +294,26 @@ static void test_en_passant(void) {
     Position *p = dbase_create_position_from_epd(
         "rnbqkbnr/1pp1pppp/p7/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6");
 
-    int expected_w[] = {37039};
-    int expected_b_after[] = {78100};
+    int expected_w_before[] = {131468, 151689, 151884, 151886, 172040,
+                               172495, 176129, 176582, 192780, 192781,
+                               200965, 213194, 213196, 221378};
+    int expected_w_after[] = {
+        81708,  131468, 151689, 151884, 151886, 172040, 172495, 176129,
+        176582, 192780, 192781, 200965, 213194, 213196, 221378,
+    };
+    int expected_b_before[] = {40599,  131147, 131479, 151689, 151691, 151886,
+                               172040, 172503, 176129, 176582, 192779, 192781,
+                               192796, 200965, 213194, 213195, 221378};
+    int expected_b_after[] = {40599,  131147, 131479, 151689, 151691, 151886,
+                              172040, 172503, 176129, 176582, 192779, 192781,
+                              200965, 213194, 213195, 221378};
 
     nn_init_accumulator(p);
     nn_validate_weights(p);
 
     nn_update_attack_maps(p);
-    assert_attack_map_eq(&p->attack_map_w, expected_w, 1);
-    assert_attack_map_eq(&p->attack_map_b, NULL, 0);
+    assert_attack_map_eq(&p->attack_map_w, expected_w_before, 14);
+    assert_attack_map_eq(&p->attack_map_b, expected_b_before, 17);
     nn_validate_weights(p);
 
     int move = dbase_make_move(e5, d6, M_ENPASSANT);
@@ -292,25 +322,26 @@ static void test_en_passant(void) {
     nn_validate_weights(p);
 
     nn_update_attack_maps(p);
-    assert_attack_map_eq(&p->attack_map_w, expected_w, 1);
-    assert_attack_map_eq(&p->attack_map_b, expected_b_after, 1);
+    assert_attack_map_eq(&p->attack_map_w, expected_w_after, 15);
+    assert_attack_map_eq(&p->attack_map_b, expected_b_after, 16);
     nn_validate_weights(p);
 
     dbase_undo_move(p, move);
     nn_validate_weights(p);
 
     nn_update_attack_maps(p);
-    assert_attack_map_eq(&p->attack_map_w, expected_w, 1);
-    assert_attack_map_eq(&p->attack_map_b, NULL, 0);
+    assert_attack_map_eq(&p->attack_map_w, expected_w_before, 14);
+    assert_attack_map_eq(&p->attack_map_b, expected_b_before, 17);
     nn_validate_weights(p);
 
     dbase_free_position(p);
 }
 
 /*
- * In the initial position both attack maps are empty, so the first
- * update must not change the accumulators and must store the empty
- * maps.
+ * In the initial position no piece attacks an enemy piece, so both
+ * attack maps hold only the 18 own-piece defence features each (own
+ * pieces defending own pieces, offset 28).  The first update must
+ * store those maps without changing the accumulators.
  */
 static void test_attack_update_initial_position(void) {
     Position *p = dbase_initial_position();
@@ -319,8 +350,8 @@ static void test_attack_update_initial_position(void) {
     nn_validate_weights(p);
 
     nn_update_attack_maps(p);
-    assert(p->attack_map_w.count == 0);
-    assert(p->attack_map_b.count == 0);
+    assert(p->attack_map_w.count == 18);
+    assert(p->attack_map_b.count == 18);
     assert_attack_maps_up_to_date(p);
     nn_validate_weights(p);
 
@@ -328,20 +359,25 @@ static void test_attack_update_initial_position(void) {
 }
 
 /*
- * Both rooks attack each other. The first update adds both features;
- * after the capture the maps must be empty again; undo re-adds them.
+ * Both rooks attack each other and the white king defends the rook.
+ * In the white frame (king a2, no mirror) the white map holds the
+ * black attack Rg1xb1 (offset 0) and the white defence Ka2->b1
+ * (offset 28); in the black frame (king e8, mirror 0x3f) the black
+ * map holds the white attack Rb1xg1.  After the capture the maps
+ * must be empty again; undo re-adds them.
 
-   white: Rook b1 -> Rook g1: plane 17, sq 1*64+6=70     -> 69702
-          (king on a1, no mirror)
-   black: Rook g1 -> Rook b1: plane 17, sq 57*64+62=3710 -> 73342
-          (king on e8, mirror 0x3f)
+   white frame:
+     Rg1xb1: plane 17,       sq 6*64+1=38    -> 70017
+     Ka2->b1: plane 27, +28, sq 8*64+1=513   -> 225793
+   black frame:
+     Rb1xg1: plane 17,       sq 62*64+57=4025 -> 73657
  */
 static void test_attack_update_rook(void) {
     Position *p =
         dbase_create_position_from_epd("4k3/8/8/8/8/8/K7/1R4r1 w - -");
 
-    int expected_w[] = {69702};
-    int expected_b[] = {73342};
+    int expected_w[] = {70017, 225793};
+    int expected_b[] = {73657};
     int16_t acc_w[ACCUMULATOR_SIZE], acc_b[ACCUMULATOR_SIZE];
 
     nn_init_accumulator(p);
@@ -351,7 +387,7 @@ static void test_attack_update_rook(void) {
     memcpy(acc_b, p->accumulator_b_q, sizeof(acc_b));
 
     nn_update_attack_maps(p);
-    assert_attack_map_eq(&p->attack_map_w, expected_w, 1);
+    assert_attack_map_eq(&p->attack_map_w, expected_w, 2);
     assert_attack_map_eq(&p->attack_map_b, expected_b, 1);
     nn_validate_weights(p);
 
@@ -373,7 +409,7 @@ static void test_attack_update_rook(void) {
     nn_validate_weights(p);
 
     nn_update_attack_maps(p);
-    assert_attack_map_eq(&p->attack_map_w, expected_w, 1);
+    assert_attack_map_eq(&p->attack_map_w, expected_w, 2);
     assert_attack_map_eq(&p->attack_map_b, expected_b, 1);
     nn_validate_weights(p);
 
@@ -382,34 +418,43 @@ static void test_attack_update_rook(void) {
 
 /*
  * The white queen on d4 attacks the knight on c5, the bishop on d6
- * (rook move) and the rook on e5 (bishop move). Capturing the knight
- * removes all three white features: from c5 the queen reaches the
- * bishop only via a bishop move and the rook only via a rook move,
- * neither of which is counted. The black bishop and rook now attack
- * the queen on c5.
+ * (rook move) and the rook on e5 (bishop move); all three are stored
+ * in the black map in the black frame (king h8, mirror 0x3f).  The
+ * black pieces defend each other (black map, offset 28): Bd6->c5,
+ * Bd6->e5, Re5->c5.  The white map is empty: nothing of black attacks
+ * queen or king.
+ * Capturing the knight removes all three white attack features: from
+ * c5 the queen reaches the bishop only via a bishop move and the
+ * rook only via a rook move, neither of which is counted.  The black
+ * bishop and rook now attack the queen on c5 (white map, white frame,
+ * king b1, no mirror).
 
-   before
-   white: Queen d4 -> Knight c5:  plane 20, sq 27*64+34=1762  -> 83682
-          Queen d4 -> Bishop d6:  plane 21, sq 27*64+43=1771  -> 87787
-          Queen d4 -> Rook e5:    plane 22, sq 27*64+36=1764  -> 91876
-   after Qxc5
-   black: Bishop d6 -> Queen c5:  plane 13, sq 20*64+29=1309  -> 54557
-          Rook e5 -> Queen c5:    plane 18, sq 27*64+29=1757  -> 75485
-          (black king on h8, mirror 0x3f)
+   before (black frame, mirror 0x3f):
+     Qd4xc5:  plane 20,      sq 36*64+29  -> 84253
+     Qd4xd6:  plane 21,      sq 36*64+20  -> 88340
+     Qd4xe5:  plane 22,      sq 36*64+27  -> 92443
+     Bd6->c5: plane 10, +28, sq 20*64+29  -> 156957
+     Bd6->e5: plane 12, +28, sq 20*64+27  -> 165147
+     Re5->c5: plane 15, +28, sq 27*64+29  -> 177885
+   after Qxc5 (white frame, no mirror):
+     Bd6xc5:  plane 13,      sq 43*64+34  -> 56034
+     Re5xc5:  plane 18,      sq 36*64+34  -> 76066
+   black map after Qxc5: only Bd6->e5 remains -> 165147
  */
 static void test_attack_update_queen(void) {
     Position *p =
         dbase_create_position_from_epd("6k1/8/3b4/2n1r3/3Q4/8/8/1K6 w - -");
 
-    int expected_w_before[] = {83682, 87787, 91876};
-    int expected_b_after[] = {54557, 75485};
+    int expected_b_before[] = {84253, 88340, 92443, 156957, 165147, 177885};
+    int expected_w_after[] = {56034, 76066};
+    int expected_b_after[] = {165147};
 
     nn_init_accumulator(p);
     nn_validate_weights(p);
 
     nn_update_attack_maps(p);
-    assert_attack_map_eq(&p->attack_map_w, expected_w_before, 3);
-    assert_attack_map_eq(&p->attack_map_b, NULL, 0);
+    assert_attack_map_eq(&p->attack_map_w, NULL, 0);
+    assert_attack_map_eq(&p->attack_map_b, expected_b_before, 6);
     nn_validate_weights(p);
 
     int move = dbase_make_move(d4, c5, M_CAPTURE);
@@ -418,60 +463,84 @@ static void test_attack_update_queen(void) {
     nn_validate_weights(p);
 
     nn_update_attack_maps(p);
-    assert_attack_map_eq(&p->attack_map_w, NULL, 0);
-    assert_attack_map_eq(&p->attack_map_b, expected_b_after, 2);
+    assert_attack_map_eq(&p->attack_map_w, expected_w_after, 2);
+    assert_attack_map_eq(&p->attack_map_b, expected_b_after, 1);
     nn_validate_weights(p);
 
     dbase_undo_move(p, move);
     nn_validate_weights(p);
 
     nn_update_attack_maps(p);
-    assert_attack_map_eq(&p->attack_map_w, expected_w_before, 3);
-    assert_attack_map_eq(&p->attack_map_b, NULL, 0);
+    assert_attack_map_eq(&p->attack_map_w, NULL, 0);
+    assert_attack_map_eq(&p->attack_map_b, expected_b_before, 6);
     nn_validate_weights(p);
 
     dbase_free_position(p);
 }
 
 /*
- * The white rook attacks the black knight. The white king on e2 is in
- * the right half of the board, so the white attack indexes use mirror
- * 7. Moving Ke2-d2 crosses the mirror boundary and remaps every white
- * attack index.
+ * The white rook on a4 attacks the black knight on a5; the feature
+ * lives in the black map in the black frame (king d8 on file d:
+ * rank flip 0x38, no horizontal mirror).  Moving the white king
+ * Ke2-d2 crosses the white mirror boundary, but the white map is
+ * empty and the black frame is unchanged, so the feature stays at
+ * 63512.  Moving the black king Kd8-e8 crosses the black mirror
+ * boundary and remaps the feature; each undo restores the previous
+ * value.
 
-   Ke2 (mirror 7):  Rook a4 -> Knight a5: plane 15, sq 31*64+39=2023 -> 63463
-   Kd2 (no mirror): Rook a4 -> Knight a5: plane 15, sq 24*64+32=1568 -> 63008
+   black frame, king d8 (mirror 0x38):
+     Ra4xa5: plane 15, sq 32*64+24=2072  -> 63512
+   black frame, king e8 (mirror 0x3f):
+     Ra4xa5: plane 15, sq 39*64+31=2527  -> 63967
  */
 static void test_attack_update_king_mirror(void) {
     Position *p = dbase_create_position_from_epd("3k4/8/8/n7/R7/8/4K3/8 w - -");
 
-    int expected_mirrored[] = {63463};
-    int expected_unmirrored[] = {63008};
+    int expected_b_d8[] = {63512};
+    int expected_b_e8[] = {63967};
 
     nn_init_accumulator(p);
     nn_validate_weights(p);
 
     nn_update_attack_maps(p);
-    assert_attack_map_eq(&p->attack_map_w, expected_mirrored, 1);
-    assert_attack_map_eq(&p->attack_map_b, NULL, 0);
+    assert_attack_map_eq(&p->attack_map_w, NULL, 0);
+    assert_attack_map_eq(&p->attack_map_b, expected_b_d8, 1);
     nn_validate_weights(p);
 
-    int move = dbase_make_move(e2, d2, 0);
-    assert_move_legal(p, move);
-    dbase_do_move(p, move);
-    nn_validate_weights(p);
-
-    nn_update_attack_maps(p);
-    assert_attack_map_eq(&p->attack_map_w, expected_unmirrored, 1);
-    assert_attack_map_eq(&p->attack_map_b, NULL, 0);
-    nn_validate_weights(p);
-
-    dbase_undo_move(p, move);
+    int move1 = dbase_make_move(e2, d2, 0);
+    assert_move_legal(p, move1);
+    dbase_do_move(p, move1);
     nn_validate_weights(p);
 
     nn_update_attack_maps(p);
-    assert_attack_map_eq(&p->attack_map_w, expected_mirrored, 1);
-    assert_attack_map_eq(&p->attack_map_b, NULL, 0);
+    assert_attack_map_eq(&p->attack_map_w, NULL, 0);
+    assert_attack_map_eq(&p->attack_map_b, expected_b_d8, 1);
+    nn_validate_weights(p);
+
+    int move2 = dbase_make_move(d8, e8, 0);
+    assert_move_legal(p, move2);
+    dbase_do_move(p, move2);
+    nn_validate_weights(p);
+
+    nn_update_attack_maps(p);
+    assert_attack_map_eq(&p->attack_map_w, NULL, 0);
+    assert_attack_map_eq(&p->attack_map_b, expected_b_e8, 1);
+    nn_validate_weights(p);
+
+    dbase_undo_move(p, move2);
+    nn_validate_weights(p);
+
+    nn_update_attack_maps(p);
+    assert_attack_map_eq(&p->attack_map_w, NULL, 0);
+    assert_attack_map_eq(&p->attack_map_b, expected_b_d8, 1);
+    nn_validate_weights(p);
+
+    dbase_undo_move(p, move1);
+    nn_validate_weights(p);
+
+    nn_update_attack_maps(p);
+    assert_attack_map_eq(&p->attack_map_w, NULL, 0);
+    assert_attack_map_eq(&p->attack_map_b, expected_b_d8, 1);
     nn_validate_weights(p);
 
     dbase_free_position(p);
@@ -532,7 +601,7 @@ static void test_evaluate_updates_attack_maps(void) {
     dbase_do_move(p, move);
 
     /* The stored maps are stale now; the evaluation must fix that. */
-    assert(p->attack_map_w.count == 1);
+    assert(p->attack_map_w.count == 2);
     assert(p->attack_map_b.count == 1);
 
     nn_evaluate_position(p);

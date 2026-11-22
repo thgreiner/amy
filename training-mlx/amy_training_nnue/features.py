@@ -78,7 +78,7 @@ N_PAWN_FEATURES = N_PAWN_IDS * (N_PAWN_IDS - 1) // 2  # 4560
 # king-relative (see attack_map.c in the engine; test_nn_extract.c
 # pins the plane numbering).
 ATTACK_PLANE_SIZE = 64 * 64  # 4096
-N_ATTACK_FEATURES = 28 * ATTACK_PLANE_SIZE  # 98304
+N_ATTACK_FEATURES = 56 * ATTACK_PLANE_SIZE  # 98304
 ACCUMULATOR_SIZE = 256
 HIDDEN_SIZE_1 = 32
 HIDDEN_SIZE_2 = 32

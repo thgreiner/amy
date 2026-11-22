@@ -161,8 +161,8 @@ static void test_initial_position(void) {
      */
 
     /* No pieces attack pieces in the initial position. */
-    assert(row_count(afw, NN_MAX_ATTACK_FEATURES) == 0);
-    assert(row_count(afb, NN_MAX_ATTACK_FEATURES) == 0);
+    assert(row_count(afw, NN_MAX_ATTACK_FEATURES) == 18);
+    assert(row_count(afb, NN_MAX_ATTACK_FEATURES) == 18);
 
     /*
      * Opponent king plane (plane 10): each king canonicalizes to its
@@ -206,14 +206,17 @@ static void test_pawn_attacks_bishop(void) {
      * 3 piece features per side: 1 own non-king + 1 opponent
      * non-king + the opponent king (the own king is not a feature).
      *
-     * White: (Pawn, Bishop) plane 1; white king e1 -> flip 7,
-     * b4 25^7 = 30, c5 34^7 = 37: 4096*1 + 64*30 + 37.
-     * Black: the (Bishop, Pawn) attack on b4 is excluded, because
-     * the pawn on b4 attacks the bishop (b4 in PawnEPM[Black][c5]).
+     * Attack features: the white pawn b4 attacks the bishop c5, so
+     * the feature is stored in the black row in the black frame
+     * (king e8, mirror 0x3f): (Pawn, Bishop) plane 1,
+     * b4 25^0x3f = 38, c5 34^0x3f = 29: 4096*1 + 64*38 + 29 = 6557.
+     * The white row is empty: the bishop's attack on b4 is excluded
+     * because the pawn on b4 attacks the bishop (b4 in
+     * PawnEPM[Black][c5]), and the white king defends nothing.
      */
-    assert(row_count(afw, NN_MAX_ATTACK_FEATURES) == 1);
-    assert(afw[0] == 4096 + 64 * 30 + 37);
-    assert(row_count(afb, NN_MAX_ATTACK_FEATURES) == 0);
+    assert(row_count(afw, NN_MAX_ATTACK_FEATURES) == 0);
+    assert(row_count(afb, NN_MAX_ATTACK_FEATURES) == 1);
+    assert(afb[0] == 4096 + 64 * 38 + 29);
 
     free(data);
 }
@@ -242,12 +245,15 @@ static void test_knight_attacks_pawn(void) {
     assert(row_count(pfb, NN_MAX_PAWN_FEATURES) == 0);
 
     /*
-     * White: (Knight, Pawn) plane 4; white king e1 -> flip 7,
-     * f3 21^7 = 18, g5 38^7 = 33: 4096*4 + 64*18 + 33.
+     * The white knight f3 attacks the pawn g5; the feature is stored
+     * in the black row in the black frame (king e8, mirror 0x3f):
+     * (Knight, Pawn) plane 4, f3 21^0x3f = 42, g5 38^0x3f = 25:
+     * 4096*4 + 64*42 + 25 = 19097.  The white row is empty: the
+     * black pawn g5 attacks the empty squares f4 and h4.
      */
-    assert(row_count(afw, NN_MAX_ATTACK_FEATURES) == 1);
-    assert(afw[0] == 4096 * 4 + 64 * 18 + 33);
-    assert(row_count(afb, NN_MAX_ATTACK_FEATURES) == 0);
+    assert(row_count(afw, NN_MAX_ATTACK_FEATURES) == 0);
+    assert(row_count(afb, NN_MAX_ATTACK_FEATURES) == 1);
+    assert(afb[0] == 4096 * 4 + 64 * 42 + 25);
 
     free(data);
 }

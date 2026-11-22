@@ -6,7 +6,7 @@
 #include <stdint.h>
 
 #ifndef INTSET_SORTED_MAX
-#define INTSET_SORTED_MAX 32
+#define INTSET_SORTED_MAX 48
 #endif
 
 /*

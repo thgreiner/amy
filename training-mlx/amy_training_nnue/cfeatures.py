@@ -33,7 +33,7 @@ RECORD_SIZE = 40
 # which compares them against the live nn_export_constants() values.
 MAX_PIECE_FEATURES = 36
 MAX_PAWN_FEATURES = 128
-MAX_ATTACK_FEATURES = 32
+MAX_ATTACK_FEATURES = 48
 
 
 class NnExtractError(RuntimeError):
