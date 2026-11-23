@@ -90,30 +90,30 @@ static const int OnePly = 16;
  * discovered check.
  */
 
-int ExtendInCheck = 14;
-int ExtendDoubleCheck = 4;
-int ExtendDiscoveredCheck = 4;
-int ExtendSingularReply = 12;
+static const int ExtendInCheck = 14;
+static const int ExtendDoubleCheck = 4;
+static const int ExtendDiscoveredCheck = 4;
+static const int ExtendSingularReply = 12;
 
 /*
  * A passed pawn push to the seventh rank is extended.
  */
 
-int ExtendPassedPawn = 14;
-int ExtendZugzwang = 12;
+static const int ExtendPassedPawn = 14;
+static const int ExtendZugzwang = 12;
 
 /*
  * The tree below a null move is searched with reduced search depth.
  */
 
-int ReduceNullMove = 48;
-int ReduceNullMoveDeep = 65;
+static const int ReduceNullMove = 48;
+static const int ReduceNullMoveDeep = 65;
 
 /*
  * Captures and recaptures are extended.
  */
 
-int16_t ExtendRecapture[] = {0, 4, 6, 6, 8, 10};
+static const int16_t ExtendRecapture[] = {0, 4, 6, 6, 8, 10};
 
 static const int PVWindow = 250;
 static const int ResearchWindow = 1500;
@@ -827,7 +827,8 @@ static int search_negascout(SearchData *sd, int alpha, int beta,
      * a shallow search to find a good candidate.
      */
 
-    if (depth > 2 * OnePly && ((alpha + 1) != beta) &&
+    if (depth > 3 * OnePly && ((alpha + 1) != beta) &&
+        st->st_hashmove != M_NULL && !incheck &&
         !dbase_legal_move(p, st->st_hashmove)) {
 #if MP
         search_negascout(sd, alpha, beta, depth - 2 * OnePly, PVNode, 0);

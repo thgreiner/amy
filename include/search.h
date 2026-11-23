@@ -52,16 +52,6 @@ typedef enum {
 
 } pb_result_t;
 
-extern int ExtendInCheck;
-extern int ExtendDoubleCheck;
-extern int ExtendDiscoveredCheck;
-extern int ExtendSingularReply;
-extern int ExtendPassedPawn;
-extern int ExtendZugzwang;
-extern int ReduceNullMove;
-extern int ReduceNullMoveDeep;
-extern int16_t ExtendRecapture[];
-
 extern unsigned long FHTime;
 extern bool AbortSearch;
 
