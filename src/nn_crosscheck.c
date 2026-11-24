@@ -20,7 +20,6 @@
 #include "neural_net.h"
 #include "utils.h"
 
-extern int8_t input_layer_weights_q[];
 extern int16_t hidden_layer_1_weights_q[NN_PHASE_COUNT][HIDDEN_1_SIZE]
                                        [2 * ACCUMULATOR_SIZE];
 extern int32_t hidden_layer_1_bias_q[NN_PHASE_COUNT][HIDDEN_1_SIZE];
@@ -50,12 +49,12 @@ static int instrumented_eval(const Position *p) {
     }
     int16_t acc[2 * ACCUMULATOR_SIZE];
     if (p->turn == White) {
-        memcpy(acc, p->accumulator_w_q, ACCUMULATOR_SIZE * sizeof(int16_t));
-        memcpy(acc + ACCUMULATOR_SIZE, p->accumulator_b_q,
+        memcpy(acc, p->accumulator[White], ACCUMULATOR_SIZE * sizeof(int16_t));
+        memcpy(acc + ACCUMULATOR_SIZE, p->accumulator[Black],
                ACCUMULATOR_SIZE * sizeof(int16_t));
     } else {
-        memcpy(acc, p->accumulator_b_q, ACCUMULATOR_SIZE * sizeof(int16_t));
-        memcpy(acc + ACCUMULATOR_SIZE, p->accumulator_w_q,
+        memcpy(acc, p->accumulator[Black], ACCUMULATOR_SIZE * sizeof(int16_t));
+        memcpy(acc + ACCUMULATOR_SIZE, p->accumulator[White],
                ACCUMULATOR_SIZE * sizeof(int16_t));
     }
     for (int i = 0; i < 2 * ACCUMULATOR_SIZE; i++) {
@@ -171,13 +170,13 @@ int main(void) {
         }
         printf("\n");
         for (int k = 0; k < ACCUMULATOR_SIZE; k++) {
-            printf("%d", p->accumulator_w_q[k]);
+            printf("%d", p->accumulator[White][k]);
             if (k < ACCUMULATOR_SIZE - 1)
                 fputc(' ', stdout);
         }
         printf("\n");
         for (int k = 0; k < ACCUMULATOR_SIZE; k++) {
-            printf("%d", p->accumulator_b_q[k]);
+            printf("%d", p->accumulator[Black][k]);
             if (k < ACCUMULATOR_SIZE - 1)
                 fputc(' ', stdout);
         }

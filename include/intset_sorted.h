@@ -40,10 +40,14 @@ bool intset_sorted_remove(IntSetSorted *s, int32_t value);
 
 bool intset_sorted_contains(const IntSetSorted *s, int32_t value);
 
-size_t intset_sorted_count(const IntSetSorted *s);
+static inline size_t intset_sorted_count(const IntSetSorted *s) {
+    return s->count;
+}
 
-const int32_t *
-intset_sorted_data(const IntSetSorted *s); /* dense, sorted, count elems */
+/* dense, sorted, count elems */
+static inline const int32_t *intset_sorted_data(const IntSetSorted *s) {
+    return s->data;
+}
 
 /* Result written to *dst (must be distinct from *a and *b).
  * union may return false if the result exceeds capacity (leaves *dst empty);

@@ -257,13 +257,14 @@ int am_compute_attack_indices(const Position *p, int side, int *out, int cap) {
     am_compute_all_attacks_of_side(p, !side, side, &indexes,
                                    am_side_mirror(p, side), 0);
 
-    if ((int)indexes.count > cap) {
+    size_t n = intset_sorted_count(&indexes);
+    if ((int)n > cap) {
         return -1;
     }
-    for (size_t i = 0; i < indexes.count; i++) {
-        out[i] = indexes.data[i];
+    for (size_t i = 0; i < n; i++) {
+        out[i] = intset_sorted_data(&indexes)[i];
     }
-    return (int)indexes.count;
+    return (int)n;
 }
 
 #define RIGHT_ARROW_UTF8 "\xe2\x86\x92"

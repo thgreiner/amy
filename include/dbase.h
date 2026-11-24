@@ -145,10 +145,8 @@ typedef struct {
     int8_t turn; /* 0 == white, 1 == black */
     int8_t kingSq[2];
     int8_t material_signature[2];
-    int16_t accumulator_w_q[ACCUMULATOR_SIZE];
-    int16_t accumulator_b_q[ACCUMULATOR_SIZE];
-    IntSetSorted attack_map_w;
-    IntSetSorted attack_map_b;
+    int16_t accumulator[2][ACCUMULATOR_SIZE];
+    IntSetSorted attack_map[2];
     MaxPosState maxpos_state;
 } Position;
 

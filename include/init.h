@@ -34,22 +34,13 @@
 
 #include "bitboard.h"
 
-extern BitBoard FileMask[8], IsoMask[8];
-extern BitBoard RankMask[8];
-extern BitBoard ForwardRayW[64], ForwardRayB[64];
-extern BitBoard PassedMaskW[64], PassedMaskB[64];
-extern BitBoard OutpostMaskW[64], OutpostMaskB[64];
+extern BitBoard PassedMask[2][64];
 extern BitBoard InterPath[64][64];
 extern BitBoard Ray[64][64];
-extern BitBoard WPawnEPM[64], BPawnEPM[64];
 extern const BitBoard KnightEPM[64], KingEPM[64];
 extern const BitBoard PawnEPM[2][64];
 extern BitBoard BishopEPM[64], RookEPM[64], QueenEPM[64];
-extern BitBoard SeventhRank[2], ThirdRank[2], EighthRank[2];
-extern BitBoard LeftOf[8], RightOf[8], FarLeftOf[8], FarRightOf[8];
-extern BitBoard KingSquareW[64], KingSquareB[64];
-extern BitBoard WPawnBackwardMask[64], BPawnBackwardMask[64];
-extern BitBoard ConnectedMask[64];
+extern BitBoard SeventhRank[2], ThirdRank[2];
 
 extern signed char NextSQ[64][64];
 

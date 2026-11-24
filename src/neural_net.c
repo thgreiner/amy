@@ -338,70 +338,33 @@ void nn_update_weights_for_piece(Position *p, int tp, int sq, bool turn,
           sq, turn, add);
 #endif
 
-    const int flip_b = 0x38;
-    int king_sq_w = p->kingSq[White];
-    int king_sq_b = p->kingSq[Black];
-
     tp = ABS(tp);
 
-    void (*update_fn)(int16_t *, int) =
-        add ? nn_update_accumulator_add : nn_update_accumulator_sub;
+    for (int side = White; side <= Black; side++) {
+        // Squares in the side's own frame: rank-flipped for black, and
+        // mirrored horizontally when the king stands on files e..h
+        // (same frame as nn_compute_piece_indices()).
+        int flip = (side == Black) ? 0x38 : 0;
+        int king_sq = p->kingSq[side] ^ flip;
 
-    king_sq_b ^= flip_b;
-
-    if (turn == White) {
-        int mirror_w = 0;
-
-        // Mirror the white king position if it is on file e..h
-        if ((king_sq_w & 7) > 3) {
-            king_sq_w ^= 7;
-            mirror_w = 7;
+        // Mirror the king position if it is on file e..h
+        if ((king_sq & 7) > 3) {
+            king_sq ^= 7;
+            flip |= 7;
         }
 
-        int king_index_w = index_half_mirrored(king_sq_w);
+        // Own pieces live on plane tp-1 in the mover's frame, the same
+        // piece on plane tp+4 in the opponent's frame.
+        int plane = (side == turn) ? tp - 1 : tp + 4;
 
-        int index = 2048 * (tp - 1) + 64 * king_index_w + (sq ^ mirror_w);
-        update_fn(p->accumulator_w_q, index);
+        int index =
+            2048 * plane + 64 * index_half_mirrored(king_sq) + (sq ^ flip);
 
-        int mirror_b = 0;
-
-        // Mirror the black king position if it is on file e..h
-        if ((king_sq_b & 7) > 3) {
-            king_sq_b ^= 7;
-            mirror_b = 7;
+        if (add) {
+            nn_update_accumulator_add(p->accumulator[side], index);
+        } else {
+            nn_update_accumulator_sub(p->accumulator[side], index);
         }
-
-        int king_index_b = index_half_mirrored(king_sq_b);
-
-        index = 2048 * (tp + 4) + 64 * king_index_b + (sq ^ flip_b ^ mirror_b);
-        update_fn(p->accumulator_b_q, index);
-
-    } else {
-        int mirror_w = 0;
-
-        // Mirror the white king position if it is on file e..h
-        if ((king_sq_w & 7) > 3) {
-            king_sq_w ^= 7;
-            mirror_w = 7;
-        }
-
-        int king_index_w = index_half_mirrored(king_sq_w);
-
-        int index = 2048 * (tp + 4) + 64 * king_index_w + (sq ^ mirror_w);
-        update_fn(p->accumulator_w_q, index);
-
-        int mirror_b = 0;
-
-        // Mirror the black king position if it is on file e..h
-        if ((king_sq_b & 7) > 3) {
-            king_sq_b ^= 7;
-            mirror_b = 7;
-        }
-
-        int king_index_b = index_half_mirrored(king_sq_b);
-
-        index = 2048 * (tp - 1) + 64 * king_index_b + (sq ^ flip_b ^ mirror_b);
-        update_fn(p->accumulator_b_q, index);
     }
 
     if (tp == Pawn) {
@@ -415,8 +378,7 @@ void nn_update_weights_for_king(Position *p, int old_king_sq) {
 #endif
     int side = p->turn;
     int opp = OPP(side);
-    int16_t *accumulator =
-        (side == White) ? p->accumulator_w_q : p->accumulator_b_q;
+    int16_t *accumulator = p->accumulator[side];
 
     nn_build_accumulator(accumulator, p, side);
     nn_build_pawn_accumulator(accumulator, p, side);
@@ -429,15 +391,14 @@ void nn_update_weights_for_king(Position *p, int old_king_sq) {
      * opponent's accumulator is only adjusted incrementally and keeps
      * its attack contribution, so its stored map stays valid.
      */
-    intset_sorted_init((side == White) ? &p->attack_map_w : &p->attack_map_b);
+    intset_sorted_init(&p->attack_map[side]);
 
     /*
      * The opponent's accumulator only changed on plane 10 (opponent king
      * relative to own king): the side to move's king moved. The opponent's
      * own king, and hence its frame, is unchanged.
      */
-    int16_t *opponent_accumulator_q =
-        (opp == White) ? p->accumulator_w_q : p->accumulator_b_q;
+    int16_t *opponent_accumulator_q = p->accumulator[opp];
 
     int flip = (opp == Black) ? 0x38 : 0;
     int king_sq_opp = p->kingSq[opp] ^ flip;
@@ -551,22 +512,18 @@ static void nn_update_weights_for_pawn(Position *p, int sq1, bool turn,
         if (sq1 != sq2) {
             int c2 = bitboard_tst_bit(p->mask[White][Pawn], sq2) == 0;
 
-            int index_w = nn_pp_index(sq1 ^ mirror_w, turn, sq2 ^ mirror_w, c2);
-            int index_b =
-                nn_pp_index(sq1 ^ mirror_b, !turn, sq2 ^ mirror_b, !c2);
-            if (add) {
-                for (int i = 0; i < ACCUMULATOR_SIZE; i++) {
-                    p->accumulator_w_q[i] += input_pawn_weights_q[index_w][i];
-                }
-                for (int i = 0; i < ACCUMULATOR_SIZE; i++) {
-                    p->accumulator_b_q[i] += input_pawn_weights_q[index_b][i];
-                }
-            } else {
-                for (int i = 0; i < ACCUMULATOR_SIZE; i++) {
-                    p->accumulator_w_q[i] -= input_pawn_weights_q[index_w][i];
-                }
-                for (int i = 0; i < ACCUMULATOR_SIZE; i++) {
-                    p->accumulator_b_q[i] -= input_pawn_weights_q[index_b][i];
+            int index[2] = {
+                nn_pp_index(sq1 ^ mirror_w, turn, sq2 ^ mirror_w, c2),
+                nn_pp_index(sq1 ^ mirror_b, !turn, sq2 ^ mirror_b, !c2)};
+            for (int side = White; side <= Black; side++) {
+                int16_t *acc = p->accumulator[side];
+                const int8_t *w = input_pawn_weights_q[index[side]];
+                if (add) {
+                    for (int i = 0; i < ACCUMULATOR_SIZE; i++)
+                        acc[i] += w[i];
+                } else {
+                    for (int i = 0; i < ACCUMULATOR_SIZE; i++)
+                        acc[i] -= w[i];
                 }
             }
         }
@@ -575,15 +532,15 @@ static void nn_update_weights_for_pawn(Position *p, int sq1, bool turn,
 
 #ifdef DEBUG
 static void print_attack_map(const char *prefix, IntSetSorted *p) {
-    if (p->count == 0)
+    if (intset_sorted_count(p) == 0)
         return;
 
     print(0, "%s: ", prefix);
-    for (size_t i = 0; i < p->count; i++) {
+    for (size_t i = 0; i < intset_sorted_count(p); i++) {
         if (i != 0) {
             print(0, ", ");
         }
-        print(0, "%d", p->data[i]);
+        print(0, "%d", intset_sorted_data(p)[i]);
     }
     fprintf(stderr, "\n");
     fflush(stderr);
@@ -591,8 +548,8 @@ static void print_attack_map(const char *prefix, IntSetSorted *p) {
 #endif
 
 static void update_attack_map_add(int16_t *accumulator, IntSetSorted *indexes) {
-    for (size_t j = 0; j < indexes->count; j++) {
-        int index = indexes->data[j];
+    for (size_t j = 0; j < intset_sorted_count(indexes); j++) {
+        int index = intset_sorted_data(indexes)[j];
         for (int i = 0; i < ACCUMULATOR_SIZE; i++) {
             accumulator[i] += input_attack_weights_q[index][i];
         }
@@ -600,8 +557,8 @@ static void update_attack_map_add(int16_t *accumulator, IntSetSorted *indexes) {
 }
 
 static void update_attack_map_sub(int16_t *accumulator, IntSetSorted *indexes) {
-    for (size_t j = 0; j < indexes->count; j++) {
-        int index = indexes->data[j];
+    for (size_t j = 0; j < intset_sorted_count(indexes); j++) {
+        int index = intset_sorted_data(indexes)[j];
         for (int i = 0; i < ACCUMULATOR_SIZE; i++) {
             accumulator[i] -= input_attack_weights_q[index][i];
         }
@@ -619,13 +576,13 @@ void nn_update_attack_maps(Position *p) {
     intset_sorted_init(&diff_attack_map_w);
     intset_sorted_init(&diff_attack_map_b);
 
-    intset_sorted_diff(&p->attack_map_w, &current_attack_map_w,
+    intset_sorted_diff(&p->attack_map[White], &current_attack_map_w,
                        &diff_attack_map_w);
-    intset_sorted_diff(&p->attack_map_b, &current_attack_map_b,
+    intset_sorted_diff(&p->attack_map[Black], &current_attack_map_b,
                        &diff_attack_map_b);
 
-    update_attack_map_sub(p->accumulator_w_q, &diff_attack_map_w);
-    update_attack_map_sub(p->accumulator_b_q, &diff_attack_map_b);
+    update_attack_map_sub(p->accumulator[White], &diff_attack_map_w);
+    update_attack_map_sub(p->accumulator[Black], &diff_attack_map_b);
 
 #ifdef DEBUG
     print_attack_map("diff_attack_map_w", &diff_attack_map_w);
@@ -636,9 +593,9 @@ void nn_update_attack_maps(Position *p) {
     intset_sorted_init(&add_attack_map_w);
     intset_sorted_init(&add_attack_map_b);
 
-    intset_sorted_diff(&current_attack_map_w, &p->attack_map_w,
+    intset_sorted_diff(&current_attack_map_w, &p->attack_map[White],
                        &add_attack_map_w);
-    intset_sorted_diff(&current_attack_map_b, &p->attack_map_b,
+    intset_sorted_diff(&current_attack_map_b, &p->attack_map[Black],
                        &add_attack_map_b);
 
 #ifdef DEBUG
@@ -646,11 +603,11 @@ void nn_update_attack_maps(Position *p) {
     print_attack_map("add_attack_map_b", &add_attack_map_b);
 #endif
 
-    update_attack_map_add(p->accumulator_w_q, &add_attack_map_w);
-    update_attack_map_add(p->accumulator_b_q, &add_attack_map_b);
+    update_attack_map_add(p->accumulator[White], &add_attack_map_w);
+    update_attack_map_add(p->accumulator[Black], &add_attack_map_b);
 
-    p->attack_map_w = current_attack_map_w;
-    p->attack_map_b = current_attack_map_b;
+    p->attack_map[White] = current_attack_map_w;
+    p->attack_map[Black] = current_attack_map_b;
 }
 
 /*
@@ -672,28 +629,23 @@ int nn_compute_score(Position *p) {
 
 #ifdef DEBUG
     for (int i = 0; i < 16; i++) {
-        print(1, "%d, ", p->accumulator_w_q[i]);
+        print(1, "%d, ", p->accumulator[White][i]);
     }
     print(1, "\n");
     for (int i = 0; i < 16; i++) {
-        print(1, "%d, ", p->accumulator_b_q[i]);
+        print(1, "%d, ", p->accumulator[Black][i]);
     }
     print(1, "\n");
 #endif
 
     int16_t accumulator[2 * ACCUMULATOR_SIZE];
 
-    if (p->turn == White) {
-        memcpy(accumulator, p->accumulator_w_q,
-               ACCUMULATOR_SIZE * sizeof(int16_t));
-        memcpy(accumulator + ACCUMULATOR_SIZE, p->accumulator_b_q,
-               ACCUMULATOR_SIZE * sizeof(int16_t));
-    } else {
-        memcpy(accumulator, p->accumulator_b_q,
-               ACCUMULATOR_SIZE * sizeof(int16_t));
-        memcpy(accumulator + ACCUMULATOR_SIZE, p->accumulator_w_q,
-               ACCUMULATOR_SIZE * sizeof(int16_t));
-    }
+    /* First half of the input vector is the accumulator of the side to
+     * move, second half the opponent's. */
+    memcpy(accumulator, p->accumulator[p->turn],
+           ACCUMULATOR_SIZE * sizeof(int16_t));
+    memcpy(accumulator + ACCUMULATOR_SIZE, p->accumulator[!p->turn],
+           ACCUMULATOR_SIZE * sizeof(int16_t));
 
     for (int i = 0; i < 2 * ACCUMULATOR_SIZE; i++) {
         if (accumulator[i] < 0) {
@@ -868,7 +820,7 @@ static void nn_update_maxpos(Position *p, int score) {
     int estimate2 = (estimate + variance / estimate) / 2;
 
     int minimal_max_pos = MAX(1000, ABS(pos_score));
-    p->maxpos_state.maxpos = MAX(96 * estimate2, minimal_max_pos);
+    p->maxpos_state.maxpos = MAX(64 * estimate2, minimal_max_pos);
 
 #ifdef DEBUG
     static int output = 0;
@@ -884,10 +836,10 @@ static void nn_update_maxpos(Position *p, int score) {
 }
 
 void nn_init_accumulator(Position *p) {
-    nn_build_accumulator(p->accumulator_w_q, p, White);
-    nn_build_pawn_accumulator(p->accumulator_w_q, p, White);
-    nn_build_accumulator(p->accumulator_b_q, p, Black);
-    nn_build_pawn_accumulator(p->accumulator_b_q, p, Black);
+    nn_build_accumulator(p->accumulator[White], p, White);
+    nn_build_pawn_accumulator(p->accumulator[White], p, White);
+    nn_build_accumulator(p->accumulator[Black], p, Black);
+    nn_build_pawn_accumulator(p->accumulator[Black], p, Black);
 
     /*
      * Both accumulators are rebuilt without attack contributions, so
@@ -895,13 +847,13 @@ void nn_init_accumulator(Position *p) {
      * nn_update_attack_maps() call re-adds the full current attack
      * contribution from scratch.
      */
-    intset_sorted_init(&p->attack_map_w);
-    intset_sorted_init(&p->attack_map_b);
+    intset_sorted_init(&p->attack_map[White]);
+    intset_sorted_init(&p->attack_map[Black]);
 
 #ifdef DEBUG
     print(1, "accumulator:\n");
     for (int i = 0; i < 8; i++) {
-        print(1, "%d, ", p->accumulator_w_q[i]);
+        print(1, "%d, ", p->accumulator[White][i]);
     }
     print(1, "\n");
 #endif
@@ -922,15 +874,15 @@ void nn_validate_weights(Position *p) {
      * maps, which may lag behind the current position until the next
      * nn_update_attack_maps() call, so the reference must include
      * exactly those. */
-    for (size_t i = 0; i < p->attack_map_w.count; i++) {
-        int index = p->attack_map_w.data[i];
+    for (size_t i = 0; i < intset_sorted_count(&p->attack_map[White]); i++) {
+        int index = intset_sorted_data(&p->attack_map[White])[i];
         for (int j = 0; j < ACCUMULATOR_SIZE; j++) {
             accumulator_w_q[j] += input_attack_weights_q[index][j];
         }
     }
 
-    for (size_t i = 0; i < p->attack_map_b.count; i++) {
-        int index = p->attack_map_b.data[i];
+    for (size_t i = 0; i < intset_sorted_count(&p->attack_map[Black]); i++) {
+        int index = intset_sorted_data(&p->attack_map[Black])[i];
         for (int j = 0; j < ACCUMULATOR_SIZE; j++) {
             accumulator_b_q[j] += input_attack_weights_q[index][j];
         }
@@ -939,18 +891,18 @@ void nn_validate_weights(Position *p) {
     verbose = true;
 
     for (int i = 0; i < ACCUMULATOR_SIZE; i++) {
-        if (p->accumulator_w_q[i] != accumulator_w_q[i]) {
+        if (p->accumulator[White][i] != accumulator_w_q[i]) {
             fprintf(stderr,
-                    "i=%d accumulator_w_q[i]=%d p->accumulator_w_q[i]=%d\n", i,
-                    accumulator_w_q[i], p->accumulator_w_q[i]);
+                    "i=%d accumulator_w_q[i]=%d p->accumulator[White][i]=%d\n",
+                    i, accumulator_w_q[i], p->accumulator[White][i]);
             dbase_show_position(p);
             abort();
         }
 
-        if (p->accumulator_b_q[i] != accumulator_b_q[i]) {
+        if (p->accumulator[Black][i] != accumulator_b_q[i]) {
             fprintf(stderr,
-                    "i=%d accumulator_b_q[i]=%d p->accumulator_b_q[i]=%d\n", i,
-                    accumulator_b_q[i], p->accumulator_b_q[i]);
+                    "i=%d accumulator_b_q[i]=%d p->accumulator[Black][i]=%d\n",
+                    i, accumulator_b_q[i], p->accumulator[Black][i]);
             dbase_show_position(p);
             abort();
         }

@@ -175,6 +175,15 @@ const BitBoard KingEPM[64] = {
     0x40c0000000000000ULL,
 };
 
+/*
+ * Pawn attack tables: forward diagonals of a hypothetical pawn of
+ * "color" on "sq".  The entries for squares where real pawns can never
+ * stand (white on rank 1, black on rank 8) are deliberately non-zero:
+ * attack_map.c computes the opponent pawns attacking square "from" as
+ * PawnEPM[!defender][from], and "from" (a bishop/queen square) may be
+ * on that rank.  Do not zero them; pinned by
+ * test_attack_map_pawn_attacks_bishop_*.
+ */
 const BitBoard PawnEPM[2][64] = {{0x200ULL,
                                   0x500ULL,
                                   0xa00ULL,

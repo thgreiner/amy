@@ -38,123 +38,41 @@
 #include "magic.h"
 #include "utils.h"
 
-BitBoard FileMask[8], IsoMask[8];
-BitBoard RankMask[8];
-BitBoard ForwardRayW[64], ForwardRayB[64];
-BitBoard PassedMaskW[64], PassedMaskB[64];
-BitBoard OutpostMaskW[64], OutpostMaskB[64];
+BitBoard PassedMask[2][64];
 BitBoard InterPath[64][64];
 BitBoard Ray[64][64];
-BitBoard WPawnEPM[64], BPawnEPM[64];
 BitBoard BishopEPM[64], RookEPM[64], QueenEPM[64];
-BitBoard SeventhRank[2], EighthRank[2];
+BitBoard SeventhRank[2];
 BitBoard ThirdRank[2];
-BitBoard LeftOf[8], RightOf[8], FarLeftOf[8], FarRightOf[8];
-BitBoard KingSquareW[64], KingSquareB[64];
-BitBoard WPawnBackwardMask[64], BPawnBackwardMask[64];
-BitBoard ConnectedMask[64];
 
 void init_pawn_masks(void) {
     int i, j;
 
-    for (i = 0; i < 8; i++) {
-        FileMask[i] = 0;
-        IsoMask[i] = 0;
-        for (j = 0; j < 8; j++) {
-            FileMask[i] |= bitboard_set_mask(8 * j + i);
-            if (i > 0)
-                IsoMask[i] |= bitboard_set_mask(8 * j + i - 1);
-            if (i < 7)
-                IsoMask[i] |= bitboard_set_mask(8 * j + i + 1);
-        }
-#ifdef DEBUG
-        bitboard_print(IsoMask[i]);
-#endif
-    }
+    BitBoard rayw[64] = {0};
+    BitBoard rayb[64] = {0};
     for (i = 0; i < 64; i++) {
-        ForwardRayW[i] = ForwardRayB[i] = 0;
         for (j = i + 8; j < 64; j += 8) {
-            ForwardRayW[i] |= bitboard_set_mask(j);
+            rayw[i] |= bitboard_set_mask(j);
         }
         for (j = i - 8; j >= 0; j -= 8) {
-            ForwardRayB[i] |= bitboard_set_mask(j);
+            rayb[i] |= bitboard_set_mask(j);
         }
 #ifdef DEBUG
-        bitboard_print(ForwardRayW[i]);
-        bitboard_print(ForwardRayB[i]);
+        bitboard_print(rayw[i]);
+        bitboard_print(rayb[i]);
 #endif
     }
     for (i = 0; i < 64; i++) {
-        PassedMaskW[i] = ForwardRayW[i];
+        PassedMask[White][i] = rayw[i];
         if ((i & 7) > 0)
-            PassedMaskW[i] |= ForwardRayW[i - 1];
+            PassedMask[White][i] |= rayw[i - 1];
         if ((i & 7) < 7)
-            PassedMaskW[i] |= ForwardRayW[i + 1];
-        PassedMaskB[i] = ForwardRayB[i];
+            PassedMask[White][i] |= rayw[i + 1];
+        PassedMask[Black][i] = rayb[i];
         if ((i & 7) > 0)
-            PassedMaskB[i] |= ForwardRayB[i - 1];
+            PassedMask[Black][i] |= rayb[i - 1];
         if ((i & 7) < 7)
-            PassedMaskB[i] |= ForwardRayB[i + 1];
-        /* bitboard_print(PassedMaskW[i]); */
-        /* bitboard_print(PassedMaskB[i]); */
-        OutpostMaskW[i] = OutpostMaskB[i] = 0;
-        if ((i & 7) > 0) {
-            OutpostMaskW[i] |= ForwardRayW[i - 1];
-            OutpostMaskB[i] |= ForwardRayB[i - 1];
-        }
-        if ((i & 7) < 7) {
-            OutpostMaskW[i] |= ForwardRayW[i + 1];
-            OutpostMaskB[i] |= ForwardRayB[i + 1];
-        }
-        /*
-        printf("\n%c%c:\n", SQUARE(i));
-        Print2BitBoards(ArtIsoMaskW[i], ArtIsoMaskB[i]);
-        */
-    }
-
-    for (i = 0; i < 64; i++) {
-        int sq;
-
-        WPawnBackwardMask[i] = BPawnBackwardMask[i] = 0;
-        for (sq = i; sq > 0; sq -= 8) {
-            if ((sq & 7) > 0) {
-                WPawnBackwardMask[i] |= bitboard_set_mask(sq - 1);
-            }
-            if ((sq & 7) < 7) {
-                WPawnBackwardMask[i] |= bitboard_set_mask(sq + 1);
-            }
-        }
-        for (sq = i; sq < 64; sq += 8) {
-            if ((sq & 7) > 0) {
-                BPawnBackwardMask[i] |= bitboard_set_mask(sq - 1);
-            }
-            if ((sq & 7) < 7) {
-                BPawnBackwardMask[i] |= bitboard_set_mask(sq + 1);
-            }
-        }
-    }
-
-    for (i = 0; i < 64; i++) {
-        ConnectedMask[i] = 0;
-
-        if ((i & 7) < 7) {
-            bitboard_set_bit(ConnectedMask[i], i + 1);
-            if ((i >> 3) > 1) {
-                bitboard_set_bit(ConnectedMask[i], i - 7);
-            }
-            if ((i >> 3) < 6) {
-                bitboard_set_bit(ConnectedMask[i], i + 9);
-            }
-        }
-        if ((i & 7) > 0) {
-            bitboard_set_bit(ConnectedMask[i], i - 1);
-            if ((i >> 3) > 1) {
-                bitboard_set_bit(ConnectedMask[i], i - 9);
-            }
-            if ((i >> 3) < 6) {
-                bitboard_set_bit(ConnectedMask[i], i + 7);
-            }
-        }
+            PassedMask[Black][i] |= rayb[i + 1];
     }
 }
 
@@ -187,8 +105,7 @@ void init_geometry(void) {
             InterPath[i][j] = 0;
             Ray[i][j] = 0;
         }
-        WPawnEPM[i] = BPawnEPM[i] = BishopEPM[i] = RookEPM[i] = QueenEPM[i] =
-            0ULL;
+        BishopEPM[i] = RookEPM[i] = QueenEPM[i] = 0ULL;
     }
 
     for (j = 0; j < 100; j++) {
@@ -217,65 +134,20 @@ void init_geometry(void) {
                 QueenEPM[x] |= bitboard_set_mask(trto[k]);
             }
         }
-        if (!edge[j + 9])
-            WPawnEPM[x] |= bitboard_set_mask(x + 7);
-        if (!edge[j + 11])
-            WPawnEPM[x] |= bitboard_set_mask(x + 9);
-        if (!edge[j - 9])
-            BPawnEPM[x] |= bitboard_set_mask(x - 7);
-        if (!edge[j - 11])
-            BPawnEPM[x] |= bitboard_set_mask(x - 9);
     }
 }
 
 void init_misc_masks(void) {
-    int i, j;
+    int i;
 
     SeventhRank[White] = SeventhRank[Black] = 0;
-    EighthRank[White] = EighthRank[Black] = 0;
     ThirdRank[White] = ThirdRank[Black] = 0;
 
     for (i = 0; i < 8; i++) {
-        RankMask[i] = 0;
         SeventhRank[White] |= bitboard_set_mask(a7 + i);
         SeventhRank[Black] |= bitboard_set_mask(a2 + i);
-        EighthRank[White] |= bitboard_set_mask(a8 + i);
-        EighthRank[Black] |= bitboard_set_mask(a1 + i);
         ThirdRank[White] |= bitboard_set_mask(a3 + i);
         ThirdRank[Black] |= bitboard_set_mask(a6 + i);
-
-        for (j = 0; j < 8; j++) {
-            RankMask[i] |= bitboard_set_mask(8 * i + j);
-        }
-    }
-
-    for (i = 0; i < 8; i++) {
-        LeftOf[i] = RightOf[i] = FarLeftOf[i] = FarRightOf[i] = 0;
-        for (j = i - 1; j >= 0; j--)
-            LeftOf[i] |= FileMask[j];
-        for (j = i - 2; j >= 0; j--)
-            FarLeftOf[i] |= FileMask[j];
-        for (j = i + 1; j < 8; j++)
-            RightOf[i] |= FileMask[j];
-        for (j = i + 2; j < 8; j++)
-            FarRightOf[i] |= FileMask[j];
-    }
-
-    for (i = 0; i < 64; i++) {
-        int bdist = (i >> 3);
-        int wdist = 7 - bdist;
-        int wtarget = (i & 7) + a8;
-        int btarget = (i & 7) + a1;
-
-        KingSquareW[i] = KingSquareB[i] = 0;
-        for (j = 0; j < 64; j++) {
-            if (dbase_king_dist(wtarget, j) <= wdist) {
-                bitboard_set_bit(KingSquareW[i], j);
-            }
-            if (dbase_king_dist(btarget, j) <= bdist) {
-                bitboard_set_bit(KingSquareB[i], j);
-            }
-        }
     }
 }
 

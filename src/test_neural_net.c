@@ -50,7 +50,7 @@ static void assert_attack_map_eq(const IntSetSorted *actual,
                                  const int expected[], size_t n) {
     assert(intset_sorted_count(actual) == n);
     for (size_t i = 0; i < n; i++) {
-        assert(actual->data[i] == expected[i]);
+        assert(intset_sorted_data(actual)[i] == expected[i]);
     }
 }
 
@@ -65,8 +65,10 @@ static void assert_attack_maps_up_to_date(Position *p) {
     intset_sorted_init(&b);
     am_compute_attack_maps(p, &w, &b);
 
-    assert_attack_map_eq(&p->attack_map_w, w.data, w.count);
-    assert_attack_map_eq(&p->attack_map_b, b.data, b.count);
+    assert_attack_map_eq(&p->attack_map[White], intset_sorted_data(&w),
+                         intset_sorted_count(&w));
+    assert_attack_map_eq(&p->attack_map[Black], intset_sorted_data(&b),
+                         intset_sorted_count(&b));
 }
 
 /*
@@ -148,8 +150,8 @@ static void test_promotion(void) {
     nn_validate_weights(p);
 
     nn_update_attack_maps(p);
-    assert_attack_map_eq(&p->attack_map_w, expected_w_before, 5);
-    assert_attack_map_eq(&p->attack_map_b, expected_b_before, 10);
+    assert_attack_map_eq(&p->attack_map[White], expected_w_before, 5);
+    assert_attack_map_eq(&p->attack_map[Black], expected_b_before, 10);
     nn_validate_weights(p);
 
     int move = dbase_make_promotion(h7, h8, Queen, 0);
@@ -158,16 +160,16 @@ static void test_promotion(void) {
     nn_validate_weights(p);
 
     nn_update_attack_maps(p);
-    assert_attack_map_eq(&p->attack_map_w, expected_w_after, 5);
-    assert_attack_map_eq(&p->attack_map_b, expected_b_after, 11);
+    assert_attack_map_eq(&p->attack_map[White], expected_w_after, 5);
+    assert_attack_map_eq(&p->attack_map[Black], expected_b_after, 11);
     nn_validate_weights(p);
 
     dbase_undo_move(p, move);
     nn_validate_weights(p);
 
     nn_update_attack_maps(p);
-    assert_attack_map_eq(&p->attack_map_w, expected_w_before, 5);
-    assert_attack_map_eq(&p->attack_map_b, expected_b_before, 10);
+    assert_attack_map_eq(&p->attack_map[White], expected_w_before, 5);
+    assert_attack_map_eq(&p->attack_map[Black], expected_b_before, 10);
     nn_validate_weights(p);
 
     dbase_free_position(p);
@@ -207,8 +209,8 @@ static void test_castle(void) {
     nn_validate_weights(p);
 
     nn_update_attack_maps(p);
-    assert_attack_map_eq(&p->attack_map_w, expected_w_before, 16);
-    assert_attack_map_eq(&p->attack_map_b, expected_b, 24);
+    assert_attack_map_eq(&p->attack_map[White], expected_w_before, 16);
+    assert_attack_map_eq(&p->attack_map[Black], expected_b, 24);
     nn_validate_weights(p);
 
     int move = dbase_make_move(e1, g1, M_SCASTLE);
@@ -217,16 +219,16 @@ static void test_castle(void) {
     nn_validate_weights(p);
 
     nn_update_attack_maps(p);
-    assert_attack_map_eq(&p->attack_map_w, expected_w_after, 19);
-    assert_attack_map_eq(&p->attack_map_b, expected_b, 24);
+    assert_attack_map_eq(&p->attack_map[White], expected_w_after, 19);
+    assert_attack_map_eq(&p->attack_map[Black], expected_b, 24);
     nn_validate_weights(p);
 
     dbase_undo_move(p, move);
     nn_validate_weights(p);
 
     nn_update_attack_maps(p);
-    assert_attack_map_eq(&p->attack_map_w, expected_w_before, 16);
-    assert_attack_map_eq(&p->attack_map_b, expected_b, 24);
+    assert_attack_map_eq(&p->attack_map[White], expected_w_before, 16);
+    assert_attack_map_eq(&p->attack_map[Black], expected_b, 24);
     nn_validate_weights(p);
 
     dbase_free_position(p);
@@ -312,8 +314,8 @@ static void test_en_passant(void) {
     nn_validate_weights(p);
 
     nn_update_attack_maps(p);
-    assert_attack_map_eq(&p->attack_map_w, expected_w_before, 14);
-    assert_attack_map_eq(&p->attack_map_b, expected_b_before, 17);
+    assert_attack_map_eq(&p->attack_map[White], expected_w_before, 14);
+    assert_attack_map_eq(&p->attack_map[Black], expected_b_before, 17);
     nn_validate_weights(p);
 
     int move = dbase_make_move(e5, d6, M_ENPASSANT);
@@ -322,16 +324,16 @@ static void test_en_passant(void) {
     nn_validate_weights(p);
 
     nn_update_attack_maps(p);
-    assert_attack_map_eq(&p->attack_map_w, expected_w_after, 15);
-    assert_attack_map_eq(&p->attack_map_b, expected_b_after, 16);
+    assert_attack_map_eq(&p->attack_map[White], expected_w_after, 15);
+    assert_attack_map_eq(&p->attack_map[Black], expected_b_after, 16);
     nn_validate_weights(p);
 
     dbase_undo_move(p, move);
     nn_validate_weights(p);
 
     nn_update_attack_maps(p);
-    assert_attack_map_eq(&p->attack_map_w, expected_w_before, 14);
-    assert_attack_map_eq(&p->attack_map_b, expected_b_before, 17);
+    assert_attack_map_eq(&p->attack_map[White], expected_w_before, 14);
+    assert_attack_map_eq(&p->attack_map[Black], expected_b_before, 17);
     nn_validate_weights(p);
 
     dbase_free_position(p);
@@ -350,8 +352,8 @@ static void test_attack_update_initial_position(void) {
     nn_validate_weights(p);
 
     nn_update_attack_maps(p);
-    assert(p->attack_map_w.count == 18);
-    assert(p->attack_map_b.count == 18);
+    assert(intset_sorted_count(&p->attack_map[White]) == 18);
+    assert(intset_sorted_count(&p->attack_map[Black]) == 18);
     assert_attack_maps_up_to_date(p);
     nn_validate_weights(p);
 
@@ -383,17 +385,17 @@ static void test_attack_update_rook(void) {
     nn_init_accumulator(p);
     nn_validate_weights(p);
 
-    memcpy(acc_w, p->accumulator_w_q, sizeof(acc_w));
-    memcpy(acc_b, p->accumulator_b_q, sizeof(acc_b));
+    memcpy(acc_w, p->accumulator[White], sizeof(acc_w));
+    memcpy(acc_b, p->accumulator[Black], sizeof(acc_b));
 
     nn_update_attack_maps(p);
-    assert_attack_map_eq(&p->attack_map_w, expected_w, 2);
-    assert_attack_map_eq(&p->attack_map_b, expected_b, 1);
+    assert_attack_map_eq(&p->attack_map[White], expected_w, 2);
+    assert_attack_map_eq(&p->attack_map[Black], expected_b, 1);
     nn_validate_weights(p);
 
     /* The update must actually have changed the accumulators. */
-    assert(memcmp(acc_w, p->accumulator_w_q, sizeof(acc_w)) != 0);
-    assert(memcmp(acc_b, p->accumulator_b_q, sizeof(acc_b)) != 0);
+    assert(memcmp(acc_w, p->accumulator[White], sizeof(acc_w)) != 0);
+    assert(memcmp(acc_b, p->accumulator[Black], sizeof(acc_b)) != 0);
 
     int move = dbase_make_move(b1, g1, M_CAPTURE);
     assert_move_legal(p, move);
@@ -401,16 +403,16 @@ static void test_attack_update_rook(void) {
     nn_validate_weights(p);
 
     nn_update_attack_maps(p);
-    assert_attack_map_eq(&p->attack_map_w, NULL, 0);
-    assert_attack_map_eq(&p->attack_map_b, NULL, 0);
+    assert_attack_map_eq(&p->attack_map[White], NULL, 0);
+    assert_attack_map_eq(&p->attack_map[Black], NULL, 0);
     nn_validate_weights(p);
 
     dbase_undo_move(p, move);
     nn_validate_weights(p);
 
     nn_update_attack_maps(p);
-    assert_attack_map_eq(&p->attack_map_w, expected_w, 2);
-    assert_attack_map_eq(&p->attack_map_b, expected_b, 1);
+    assert_attack_map_eq(&p->attack_map[White], expected_w, 2);
+    assert_attack_map_eq(&p->attack_map[Black], expected_b, 1);
     nn_validate_weights(p);
 
     dbase_free_position(p);
@@ -453,8 +455,8 @@ static void test_attack_update_queen(void) {
     nn_validate_weights(p);
 
     nn_update_attack_maps(p);
-    assert_attack_map_eq(&p->attack_map_w, NULL, 0);
-    assert_attack_map_eq(&p->attack_map_b, expected_b_before, 6);
+    assert_attack_map_eq(&p->attack_map[White], NULL, 0);
+    assert_attack_map_eq(&p->attack_map[Black], expected_b_before, 6);
     nn_validate_weights(p);
 
     int move = dbase_make_move(d4, c5, M_CAPTURE);
@@ -463,16 +465,16 @@ static void test_attack_update_queen(void) {
     nn_validate_weights(p);
 
     nn_update_attack_maps(p);
-    assert_attack_map_eq(&p->attack_map_w, expected_w_after, 2);
-    assert_attack_map_eq(&p->attack_map_b, expected_b_after, 1);
+    assert_attack_map_eq(&p->attack_map[White], expected_w_after, 2);
+    assert_attack_map_eq(&p->attack_map[Black], expected_b_after, 1);
     nn_validate_weights(p);
 
     dbase_undo_move(p, move);
     nn_validate_weights(p);
 
     nn_update_attack_maps(p);
-    assert_attack_map_eq(&p->attack_map_w, NULL, 0);
-    assert_attack_map_eq(&p->attack_map_b, expected_b_before, 6);
+    assert_attack_map_eq(&p->attack_map[White], NULL, 0);
+    assert_attack_map_eq(&p->attack_map[Black], expected_b_before, 6);
     nn_validate_weights(p);
 
     dbase_free_position(p);
@@ -503,8 +505,8 @@ static void test_attack_update_king_mirror(void) {
     nn_validate_weights(p);
 
     nn_update_attack_maps(p);
-    assert_attack_map_eq(&p->attack_map_w, NULL, 0);
-    assert_attack_map_eq(&p->attack_map_b, expected_b_d8, 1);
+    assert_attack_map_eq(&p->attack_map[White], NULL, 0);
+    assert_attack_map_eq(&p->attack_map[Black], expected_b_d8, 1);
     nn_validate_weights(p);
 
     int move1 = dbase_make_move(e2, d2, 0);
@@ -513,8 +515,8 @@ static void test_attack_update_king_mirror(void) {
     nn_validate_weights(p);
 
     nn_update_attack_maps(p);
-    assert_attack_map_eq(&p->attack_map_w, NULL, 0);
-    assert_attack_map_eq(&p->attack_map_b, expected_b_d8, 1);
+    assert_attack_map_eq(&p->attack_map[White], NULL, 0);
+    assert_attack_map_eq(&p->attack_map[Black], expected_b_d8, 1);
     nn_validate_weights(p);
 
     int move2 = dbase_make_move(d8, e8, 0);
@@ -523,24 +525,24 @@ static void test_attack_update_king_mirror(void) {
     nn_validate_weights(p);
 
     nn_update_attack_maps(p);
-    assert_attack_map_eq(&p->attack_map_w, NULL, 0);
-    assert_attack_map_eq(&p->attack_map_b, expected_b_e8, 1);
+    assert_attack_map_eq(&p->attack_map[White], NULL, 0);
+    assert_attack_map_eq(&p->attack_map[Black], expected_b_e8, 1);
     nn_validate_weights(p);
 
     dbase_undo_move(p, move2);
     nn_validate_weights(p);
 
     nn_update_attack_maps(p);
-    assert_attack_map_eq(&p->attack_map_w, NULL, 0);
-    assert_attack_map_eq(&p->attack_map_b, expected_b_d8, 1);
+    assert_attack_map_eq(&p->attack_map[White], NULL, 0);
+    assert_attack_map_eq(&p->attack_map[Black], expected_b_d8, 1);
     nn_validate_weights(p);
 
     dbase_undo_move(p, move1);
     nn_validate_weights(p);
 
     nn_update_attack_maps(p);
-    assert_attack_map_eq(&p->attack_map_w, NULL, 0);
-    assert_attack_map_eq(&p->attack_map_b, expected_b_d8, 1);
+    assert_attack_map_eq(&p->attack_map[White], NULL, 0);
+    assert_attack_map_eq(&p->attack_map[Black], expected_b_d8, 1);
     nn_validate_weights(p);
 
     dbase_free_position(p);
@@ -560,13 +562,13 @@ static void test_attack_update_idempotent(void) {
     nn_update_attack_maps(p);
     nn_validate_weights(p);
 
-    memcpy(acc_w, p->accumulator_w_q, sizeof(acc_w));
-    memcpy(acc_b, p->accumulator_b_q, sizeof(acc_b));
+    memcpy(acc_w, p->accumulator[White], sizeof(acc_w));
+    memcpy(acc_b, p->accumulator[Black], sizeof(acc_b));
 
     nn_update_attack_maps(p);
 
-    assert(memcmp(acc_w, p->accumulator_w_q, sizeof(acc_w)) == 0);
-    assert(memcmp(acc_b, p->accumulator_b_q, sizeof(acc_b)) == 0);
+    assert(memcmp(acc_w, p->accumulator[White], sizeof(acc_w)) == 0);
+    assert(memcmp(acc_b, p->accumulator[Black], sizeof(acc_b)) == 0);
     nn_validate_weights(p);
 
     dbase_free_position(p);
@@ -601,13 +603,13 @@ static void test_evaluate_updates_attack_maps(void) {
     dbase_do_move(p, move);
 
     /* The stored maps are stale now; the evaluation must fix that. */
-    assert(p->attack_map_w.count == 2);
-    assert(p->attack_map_b.count == 1);
+    assert(intset_sorted_count(&p->attack_map[White]) == 2);
+    assert(intset_sorted_count(&p->attack_map[Black]) == 1);
 
     nn_evaluate_position(p);
 
-    assert_attack_map_eq(&p->attack_map_w, NULL, 0);
-    assert_attack_map_eq(&p->attack_map_b, NULL, 0);
+    assert_attack_map_eq(&p->attack_map[White], NULL, 0);
+    assert_attack_map_eq(&p->attack_map[Black], NULL, 0);
     assert_attack_maps_up_to_date(p);
     nn_validate_weights(p);
 

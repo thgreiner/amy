@@ -1144,19 +1144,14 @@ bool dbase_is_checking_move(Position *p, move_t move) {
                 return true;
         }
         break;
-    case Pawn:
-        if (p->turn == White) {
-            if ((to & 7) < 7 && (to + 9) == kp)
-                return true;
-            if ((to & 7) > 0 && (to + 7) == kp)
-                return true;
-        } else {
-            if ((to & 7) < 7 && (to - 9) == kp)
-                return true;
-            if ((to & 7) > 0 && (to - 7) == kp)
-                return true;
-        }
+    case Pawn: {
+        int dir = (p->turn == White) ? 1 : -1;
+        if ((to & 7) < 7 && (to + 9 * dir) == kp)
+            return true;
+        if ((to & 7) > 0 && (to + 7 * dir) == kp)
+            return true;
         break;
+    }
     }
 
     /*
@@ -1309,21 +1304,19 @@ void dbase_gen_checks(Position *p, heap_t heap) {
      * last find pawn checks
      */
 
-    tmp = (p->turn == White) ? BPawnEPM[kp] : WPawnEPM[kp];
+    tmp = PawnEPM[!p->turn][kp];
     tmp &= ~(p->mask[White][0] | p->mask[Black][0]);
 
     while (tmp) {
         int sq = bitboard_find_set_bit(tmp);
         tmp &= tmp - 1;
 
-        if (p->turn == White) {
-            if (p->piece[sq - 8] == Pawn) {
-                heap_append(heap, dbase_make_move(sq - 8, sq, 0));
-            }
-        } else {
-            if (p->piece[sq + 8] == -Pawn) {
-                heap_append(heap, dbase_make_move(sq + 8, sq, 0));
-            }
+        /* The pawn would stand one rank behind "sq"; that is off the board
+         * when the opponent's king is on the 2nd/7th rank. */
+        int from = sq + (p->turn == White ? -8 : 8);
+        if (from >= 0 && from < 64 &&
+            p->piece[from] == (p->turn == White ? Pawn : -Pawn)) {
+            heap_append(heap, dbase_make_move(from, sq, 0));
         }
     }
 }
@@ -1851,10 +1844,10 @@ int dbase_legal_moves(Position *p, heap_t heap) {
 static void print_attack_map(Position *p, bool turn, bool attacks) {
     const int32_t defenders_index = 28 * 4096;
 
-    IntSetSorted *map = (turn == White) ? &p->attack_map_w : &p->attack_map_b;
+    IntSetSorted *map = &p->attack_map[turn];
     bool printed = false;
-    for (size_t i = 0; i < map->count; i++) {
-        int32_t index = map->data[i];
+    for (size_t i = 0; i < intset_sorted_count(map); i++) {
+        int32_t index = intset_sorted_data(map)[i];
 
         if ((attacks && index < defenders_index) ||
             (!attacks && index >= defenders_index)) {
@@ -1864,7 +1857,7 @@ static void print_attack_map(Position *p, bool turn, bool attacks) {
             if (printed)
                 print(0, ", ");
 
-            am_attack_index_to_string(p, turn, map->data[i], buffer);
+            am_attack_index_to_string(p, turn, index, buffer);
 
             print(0, buffer);
             printed = true;
@@ -2348,10 +2341,7 @@ const char *dbase_game_end(Position *p) {
  */
 
 bool dbase_is_passed(const Position *p, int sq, int side) {
-    if (side == White)
-        return !(p->mask[Black][Pawn] & PassedMaskW[sq]);
-    else
-        return !(p->mask[White][Pawn] & PassedMaskB[sq]);
+    return !(p->mask[!side][Pawn] & PassedMask[side][sq]);
 }
 
 /**

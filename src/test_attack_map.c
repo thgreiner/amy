@@ -192,10 +192,75 @@ static void test_attack_map_queen_line_filter(void) {
     dbase_free_position(p);
 }
 
+/*
+ * The black pawn on c2 attacks the white bishop on d1, and the bishop
+ * attacks the pawn in return.  The pair must be counted exactly once:
+ * as the pawn attack on the bishop (white map), never as a bishop
+ * attack on the pawn (black map).
+
+   white: Pawn c2 -> Bishop d1: plane 1, white frame (Kg1, mirror 7):
+          sq (10^7)*64 + (3^7) = 13*64+4=836  -> 4932
+   black: (empty: the bishop -> pawn attack is excluded because the
+          pawn already attacks the bishop)
+
+ * The exclusion needs PawnEPM[White][d1] = {c2, e2}, i.e. table
+ * entries for a "pawn" on the first rank, where real pawns can never
+ * stand (see the comment on PawnEPM in movedata.c).
+ */
+static void test_attack_map_pawn_attacks_bishop_first_rank(void) {
+    Position *p;
+    IntSetSorted w;
+    IntSetSorted b;
+    int32_t expected_w[] = {4932};
+
+    p = dbase_create_position_from_epd("4k3/8/8/8/8/8/2p5/3B2K1 b - -");
+    intset_sorted_init(&w);
+    intset_sorted_init(&b);
+
+    am_compute_attack_maps(p, &w, &b);
+
+    assert_intset_eq(&w, expected_w, 1);
+    assert_intset_empty(&b);
+
+    dbase_free_position(p);
+}
+
+/*
+ * Mirror of the previous test on the last rank: the white pawn on c7
+ * attacks the black bishop on d8, which attacks the pawn in return.
+
+   white: (empty: the bishop -> pawn attack is excluded because the
+          pawn already attacks the bishop)
+   black: Pawn c7 -> Bishop d8: plane 1, black frame (Kh8, mirror 0x3f):
+          sq (50^63)*64 + (59^63) = 13*64+4=836  -> 4932
+
+ * The exclusion needs PawnEPM[Black][d8] = {c7, e7}, i.e. table
+ * entries for a "pawn" on the last rank.
+ */
+static void test_attack_map_pawn_attacks_bishop_last_rank(void) {
+    Position *p;
+    IntSetSorted w;
+    IntSetSorted b;
+    int32_t expected_b[] = {4932};
+
+    p = dbase_create_position_from_epd("3b3k/2P5/8/8/8/8/8/K7 b - -");
+    intset_sorted_init(&w);
+    intset_sorted_init(&b);
+
+    am_compute_attack_maps(p, &w, &b);
+
+    assert_intset_empty(&w);
+    assert_intset_eq(&b, expected_b, 1);
+
+    dbase_free_position(p);
+}
+
 void test_all_attack_map(void) {
     test_attack_map_initial_position();
     test_attack_map_rook_both_sides();
     test_attack_map_pawn_and_knight();
     test_attack_map_queen_attacks();
     test_attack_map_queen_line_filter();
+    test_attack_map_pawn_attacks_bishop_first_rank();
+    test_attack_map_pawn_attacks_bishop_last_rank();
 }
