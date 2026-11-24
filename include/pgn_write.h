@@ -58,6 +58,6 @@ extern char OpponentName[OPP_NAME_LENGTH];
 
 void pgn_save_game(Position *, const char *, bool);
 void pgn_print_header(FILE *, PGNHeader *);
-void pgn_emit_line(FILE *fout, int *width, const char *fmt, ...);
+bool pgn_emit_line(FILE *fout, int *width, const char *fmt, ...);
 
 #endif

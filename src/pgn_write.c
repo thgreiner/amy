@@ -93,7 +93,7 @@ static char *pgn_get_black_name(char *buffer) {
     return (ComputerSide == Black) ? pgn_get_amy_name(buffer) : OpponentName;
 }
 
-static void pgn_save_moves(FILE *fout, Position *p) {
+static bool pgn_save_moves(FILE *fout, Position *p) {
     int ply = p->ply;
     move_t *history = safe_calloc(ply, sizeof(int));
 
@@ -104,6 +104,7 @@ static void pgn_save_moves(FILE *fout, Position *p) {
     }
 
     int width = 0;
+    bool line_break = false;
 
     for (int i = 0; i < ply; i++) {
         int move = history[i];
@@ -114,12 +115,13 @@ static void pgn_save_moves(FILE *fout, Position *p) {
         char san_buffer[16];
         char *san = dbase_san(p, move, san_buffer);
 
-        pgn_emit_line(fout, &width, "%s ", san);
+        line_break = pgn_emit_line(fout, &width, "%s ", san);
 
         dbase_do_move(p, move);
     }
 
     free(history);
+    return line_break;
 }
 
 /**
@@ -174,9 +176,13 @@ void pgn_save_game(Position *p, const char *file_name, bool append) {
 
             pgn_print_header(fout, &header);
 
-            pgn_save_moves(fout, p);
+            bool line_break = pgn_save_moves(fout, p);
 
-            fprintf(fout, "\n%s\n\n", gameend);
+            if (!line_break) {
+                fprintf(fout, "\n");
+            }
+
+            fprintf(fout, "%s\n\n", gameend);
             fclose(fout);
         }
     }
@@ -187,8 +193,10 @@ void pgn_save_game(Position *p, const char *file_name, bool append) {
  * line width, and start a new line when it exceeds 72 characters.
  * The width is derived from the number of characters actually written,
  * so callers no longer need to compute it by hand.
+ *
+ * Returns 'true' when a line break has been written, false otherwise.
  */
-void pgn_emit_line(FILE *fout, int *width, const char *fmt, ...) {
+bool pgn_emit_line(FILE *fout, int *width, const char *fmt, ...) {
     va_list ap, copy;
 
     va_start(ap, fmt);
@@ -197,7 +205,7 @@ void pgn_emit_line(FILE *fout, int *width, const char *fmt, ...) {
     va_end(copy);
     if (needed <= 0) {
         va_end(ap);
-        return;
+        return false;
     }
 
     char *buf = safe_malloc(needed + 1);
@@ -212,7 +220,10 @@ void pgn_emit_line(FILE *fout, int *width, const char *fmt, ...) {
     if (*width > 72) {
         fputc('\n', fout);
         *width = 0;
+        return true;
     }
+
+    return false;
 }
 
 static inline char *pgn_str_or_empty(char *str) { return str ? str : ""; }
