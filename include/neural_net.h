@@ -66,7 +66,7 @@ void nn_eval_init(Position *);
  * hidden-2 and output layers; the input side is shared. The phase is
  * selected by the total non-pawn piece count (both sides) via
  * nn_phase_index(). */
-#define NN_PHASE_COUNT 4
+#define NN_PHASE_COUNT 8
 
 /* Piece feature index range: 11 planes (0..4 own P..Q, 5..9 opponent
  * P..Q, 10 opponent king) x 32 king positions x 64 squares. */

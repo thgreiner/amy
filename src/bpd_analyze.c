@@ -30,6 +30,7 @@
 */
 
 #include "bpd.h"
+#include "neural_net.h"
 #include "tree.h"
 #include <stdint.h>
 #include <stdio.h>
@@ -65,10 +66,10 @@ static size_t walk_tree(tree_node_t *node, size_t *buckets,
 
     int non_pawn = count_non_pawn((BinaryPosition *)node->key_data);
 
-    int phase = non_pawn / 3;
+    int phase = non_pawn / 2;
     phase_buckets[phase] += 1;
 
-    if (phase < 3 && (non_pawn % 3 == 1)) {
+    if (phase < 7 && (non_pawn % 2 == 1)) {
         phase_buckets[phase + 1] += 1;
     }
 
@@ -81,7 +82,7 @@ static size_t walk_tree(tree_node_t *node, size_t *buckets,
 
 static void create_histogram(tree_node_t *database, size_t max_count) {
     size_t *buckets = calloc(max_count + 1, sizeof(size_t));
-    size_t phase_buckets[4] = {0, 0, 0, 0};
+    size_t phase_buckets[NN_PHASE_COUNT] = {0};
 
     size_t total_nodes = walk_tree(database, buckets, phase_buckets);
 
@@ -104,7 +105,7 @@ static void create_histogram(tree_node_t *database, size_t max_count) {
     printf("Positions per phase:\n");
     printf("  #     Count   relative\n");
 
-    for (int phase = 0; phase < 4; phase++) {
+    for (int phase = 0; phase < NN_PHASE_COUNT; phase++) {
         double percentage =
             (100.0 * (double)phase_buckets[phase]) / (double)total_nodes;
         printf("%3d: %8lu    %5.2f %%\n", phase, phase_buckets[phase],

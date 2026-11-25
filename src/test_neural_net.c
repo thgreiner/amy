@@ -752,7 +752,7 @@ static const char *epd_with_n_nonpawn(int n) {
 
 static void test_phase_index(void) {
     static const int counts[] = {0, 3, 4, 6, 7, 9, 10, 12};
-    static const int expected[] = {0, 1, 1, 2, 2, 3, 3, 3};
+    static const int expected[] = {0, 1, 2, 3, 3, 4, 5, 6};
 
     for (int i = 0; i < 8; i++) {
         Position *p = dbase_create_position_from_epd(
@@ -765,8 +765,8 @@ static void test_phase_index(void) {
 
 static void test_phase_masks(void) {
     /* Non-edge buckets: exactly nn_phase_index() active. */
-    static const int counts[] = {0, 1, 3, 4, 6, 7, 9, 10, 11, 12};
-    for (size_t i = 0; i < 10; i++) {
+    static const int counts[] = {0, 2, 4, 6, 8, 10, 12, 14};
+    for (size_t i = 0; i < sizeof(counts) / sizeof(int); i++) {
         Position *p = dbase_create_position_from_epd(
             (char *)epd_with_n_nonpawn(counts[i]));
         int masks[NN_PHASE_COUNT];
@@ -782,7 +782,7 @@ static void test_phase_masks(void) {
      * one are both active (training co-trains both heads). */
     for (int phase = 0; phase < NN_PHASE_COUNT - 1; phase++) {
         Position *p = dbase_create_position_from_epd(
-            (char *)epd_with_n_nonpawn(phase * 3 + 2));
+            (char *)epd_with_n_nonpawn(phase * 2 + 1));
         int masks[NN_PHASE_COUNT];
         nn_phase_masks(p, masks);
         int n_active = 0;
@@ -814,9 +814,9 @@ static void test_phase_selection(void) {
     Position *p0 = dbase_create_position_from_epd("4k3/8/8/8/8/8/8/K7 b - -");
     assert(nn_phase_index(p0) == 0);
 
-    /* Phase 3: 12 non-pawn pieces. */
+    /* Phase 7: 14 non-pawn pieces. */
     Position *p3 = dbase_initial_position();
-    assert(nn_phase_index(p3) == 3);
+    assert(nn_phase_index(p3) == 7);
 
     nn_init_accumulator(p0);
     nn_update_attack_maps(p0);

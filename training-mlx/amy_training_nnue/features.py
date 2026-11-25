@@ -86,7 +86,7 @@ HIDDEN_SIZE_2 = 32
 # each phase has its own hidden-1, hidden-2 and output layer block in
 # the file; the input side is shared.  C's nn_export_constants() is
 # the arbiter (cross-checked in test_cfeatures.test_constants_sync).
-NN_PHASE_COUNT = 4
+NN_PHASE_COUNT = 8
 # Vertical (rank) flip used for the black perspective.
 FLIP = 0x38
 # Horizontal (file) flip used to mirror the frame to the left half.

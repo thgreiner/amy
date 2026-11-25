@@ -1000,12 +1000,12 @@ static int nn_non_pawn_piece_count(const Position *p) {
 }
 
 int nn_phase_index(const Position *p) {
-    return MIN(nn_non_pawn_piece_count(p) / 3, NN_PHASE_COUNT - 1);
+    return MIN(nn_non_pawn_piece_count(p) / 2, NN_PHASE_COUNT - 1);
 }
 
 void nn_phase_masks(const Position *p, int32_t masks[NN_PHASE_COUNT]) {
     int count = nn_non_pawn_piece_count(p);
-    int phase = MIN(count / 3, NN_PHASE_COUNT - 1);
+    int phase = MIN(count / 2, NN_PHASE_COUNT - 1);
 
     for (int i = 0; i < NN_PHASE_COUNT; i++) {
         masks[i] = 0;
@@ -1013,12 +1013,12 @@ void nn_phase_masks(const Position *p, int32_t masks[NN_PHASE_COUNT]) {
 
     masks[phase] = 1;
     /*
-     * Positions at the top of a bucket (counts 2, 5, 8): one capture
-     * away from the next phase.  Training (amy-training-nnue) co-trains
+     * Positions at the top of a bucket (counts 1, 3, 5, 7, 9, 11, 13): one
+     * capture away from the next phase.  Training (amy-training-nnue) co-trains
      * the adjacent head so the hard switch at evaluation time is as
      * smooth as possible; this rule is the shared contract.
      */
-    if (phase < NN_PHASE_COUNT - 1 && count % 3 == 2) {
+    if (phase < NN_PHASE_COUNT - 1 && count % 2 == 1) {
         masks[phase + 1] = 1;
     }
 }

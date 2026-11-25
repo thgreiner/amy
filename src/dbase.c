@@ -1933,7 +1933,8 @@ void dbase_show_position(Position *p) {
             break;
         }
         case 2:
-            print(0, "|   Index: %d\n", RECOGNIZER_INDEX(p));
+            print(0, "|   Index: %d Phase: %d\n", RECOGNIZER_INDEX(p),
+                  nn_phase_index(p));
             break;
         case 1:
             print(0, "|   Defence Map: ");
